@@ -1,5 +1,5 @@
 import { VideoProject } from "@/data/schema";
-import { fal } from "./fal";
+import { falClient } from "./fal";
 import { extractJson } from "./utils";
 
 const SYSTEM_PROMPT = `
@@ -31,7 +31,7 @@ type ProjectSuggestion = {
 };
 
 export async function createProjectSuggestion() {
-  const { data } = await fal.subscribe("fal-ai/any-llm", {
+  const { data } = await falClient.subscribe("fal-ai/any-llm", {
     input: {
       system_prompt: SYSTEM_PROMPT,
       prompt: "Create a short video project with a title and description.",

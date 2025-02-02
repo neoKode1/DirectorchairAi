@@ -14,17 +14,17 @@ export default function Header({
       </h1>
       <nav className="flex flex-row items-center justify-end gap-1">
         <Button variant="ghost" size="sm" asChild>
-          <a href="https://fal.ai" target="_blank" rel="noopener noreferrer">
-            fal.ai
+          <a href="https://nano.deeptech.ai" target="_blank" rel="noopener noreferrer">
+            Nano
           </a>
         </Button>
         <Button variant="ghost" size="sm" asChild>
           <a
-            href="https://github.com/fal-ai-community/video-starter-kit"
+            href="https://deeptech.ai"
             target="_blank"
             rel="noopener noreferrer"
           >
-            GitHub
+            Deeptech AI
           </a>
         </Button>
         {process.env.NEXT_PUBLIC_CUSTOM_KEY && openKeyDialog && (

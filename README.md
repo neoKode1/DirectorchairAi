@@ -1,38 +1,34 @@
-# AI Video Starter Kit
+# Nano - AI Video Studio
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![fal.ai](https://img.shields.io/badge/fal.ai-latest-purple)](https://fal.ai)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
 [![Remotion](https://img.shields.io/badge/Remotion-latest-blue)](https://remotion.dev)
 
-A powerful starter kit for building AI-powered video applications. Built with Next.js, Remotion, and fal.ai, this toolkit simplifies the complexities of working with AI video models in the browser.
-
-![AI Video Starter Kit](https://github.com/fal-ai-community/video-starter-kit/blob/main/src/app/opengraph-image.png?raw=true)
+A professional AI-powered video creation studio that enables users to create, edit, and compose videos with cutting-edge AI technology. Built with Next.js and Remotion, this platform offers a seamless video editing experience directly in your browser.
 
 ## Features
 
-- 🎬 **Browser-Native Video Processing**: Seamless video handling and composition in the browser
-- 🤖 **AI Model Integration**: Direct access to state-of-the-art video models through fal.ai
-  - Minimax for video generation
-  - Hunyuan for visual synthesis
-  - LTX for video manipulation
-- 🎵 **Advanced Media Capabilities**:
-  - Multi-clip video composition
-  - Audio track integration
-  - Voiceover support
-  - Extended video duration handling
-- 🛠️ **Developer Utilities**:
-  - Metadata encoding
+- 🎬 **Professional Video Editing**: Create and edit videos directly in your browser
+- 🤖 **Advanced AI Integration**: Access to state-of-the-art AI video models
+  - Video generation
+  - Visual synthesis
+  - Video manipulation
+- 🎵 **Comprehensive Media Tools**:
+  - Multi-track video composition
+  - Audio integration
+  - Voiceover capabilities
+  - Extended duration support
+- 🛠️ **Professional Features**:
+  - Metadata management
   - Video processing pipeline
-  - Ready-to-use UI components
-  - TypeScript support
+  - Modern UI components
+  - Full TypeScript support
 
 ## Tech Stack
 
-- [fal.ai](https://fal.ai) - AI model infrastructure
 - [Next.js](https://nextjs.org) - React framework
 - [Remotion](https://remotion.dev) - Video processing
-- [IndexedDB](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) - Browser-based storage (no cloud database required)
+- [IndexedDB](https://developer.mozilla.org/docs/Web/API/IndexedDB_API) - Browser-based storage
 - [Vercel](https://vercel.com) - Deployment platform
 - [UploadThing](https://uploadthing.com) - File upload
 
@@ -41,8 +37,8 @@ A powerful starter kit for building AI-powered video applications. Built with Ne
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/fal-ai-community/video-starter-kit
-cd video-starter-kit
+git clone [your-repository-url]
+cd nano-video-studio
 ```
 
 2. Install dependencies:
@@ -75,13 +71,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for more information.
-
-## Community
-
-- [Discord](https://discord.gg/fal-ai) - Join our community
-- [GitHub Discussions](https://github.com/fal-ai-community/video-starter-kit/discussions) - For questions and discussions
-- [Twitter](https://twitter.com/fal) - Follow us for updates
+We welcome contributions! Please feel free to submit pull requests.
 
 ## License
 
@@ -89,4 +79,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Deployment
 
-The easiest way to deploy your application is through [Vercel](https://vercel.com/new?utm_source=fal-ai&utm_medium=default-template&utm_campaign=video-starter-kit).
+The easiest way to deploy your application is through [Vercel](https://vercel.com).

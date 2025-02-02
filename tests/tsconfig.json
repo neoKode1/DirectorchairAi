@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "target": "ESNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"]
+    }
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
+} 

@@ -112,7 +112,7 @@ export function getAssetType(asset: InputAsset): "image" | "video" | "audio" {
 }
 
 export const assetKeyMap: Record<"image" | "video" | "audio", string> = {
-  image: "image",
+  image: "image_url",
   video: "video_url",
   audio: "audio_url",
 };

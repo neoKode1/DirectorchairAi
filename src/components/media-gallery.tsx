@@ -37,6 +37,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/data/db";
 import { LoadingIcon } from "./ui/icons";
 import { AVAILABLE_ENDPOINTS } from "@/lib/fal";
+import type { DragEventHandler } from "react";
 
 type MediaGallerySheetProps = ComponentProps<typeof Sheet> & {
   selectedMediaId: string;
@@ -195,21 +196,43 @@ export function MediaGallerySheet({
               {selectedMedia.mediaType === "image" && (
                 <img
                   src={mediaUrl}
-                  className="animate-fade-scale-in h-auto max-h-[90%] w-auto max-w-[90%] object-contain transition-all"
+                  className="animate-fade-scale-in h-auto max-h-[90%] w-auto max-w-[90%] object-contain transition-all cursor-grab"
                   onClick={preventClose}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                  }}
                 />
               )}
               {selectedMedia.mediaType === "video" && (
                 <video
                   src={mediaUrl}
-                  className="animate-fade-scale-in h-auto max-h-[90%] w-auto max-w-[90%] object-contain transition-all"
+                  className="animate-fade-scale-in h-auto max-h-[90%] w-auto max-w-[90%] object-contain transition-all cursor-grab"
                   controls
                   onClick={preventClose}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                  }}
                 />
               )}
               {(selectedMedia.mediaType === "music" ||
                 selectedMedia.mediaType === "voiceover") && (
-                <AudioPlayer media={selectedMedia} />
+                <div
+                  draggable
+                  className="cursor-grab"
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                  }}
+                >
+                  <AudioPlayer media={selectedMedia} />
+                </div>
               )}
             </>
           )}

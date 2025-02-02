@@ -16,7 +16,7 @@ import { useProjectId, useVideoProjectStore } from "@/data/store";
 import { cn, resolveDuration, resolveMediaUrl } from "@/lib/utils";
 import { Player, type PlayerRef } from "@remotion/player";
 import { preloadVideo, preloadAudio } from "@remotion/preload";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   AbsoluteFill,
   Audio,
@@ -134,8 +134,8 @@ const VideoTrackSequence: React.FC<TrackSequenceProps> = ({
         const mediaUrl = resolveMediaUrl(media);
         if (!mediaUrl) return null;
 
-        const duration = frame.duration || resolveDuration(media) || 5000;
-        const durationInFrames = Math.floor(duration / (1000 / FPS));
+        const duration = Math.max(frame.duration || resolveDuration(media) || 5000, 1000);
+        const durationInFrames = Math.max(1, Math.floor(duration / (1000 / FPS)));
 
         return (
           <Sequence
@@ -144,7 +144,14 @@ const VideoTrackSequence: React.FC<TrackSequenceProps> = ({
             durationInFrames={durationInFrames}
             premountFor={3000}
           >
-            {media.mediaType === "video" && <Video src={mediaUrl} />}
+            {media.mediaType === "video" && (
+              <Video 
+                src={mediaUrl}
+                onError={(e) => {
+                  console.error('Video playback error:', e);
+                }}
+              />
+            )}
             {media.mediaType === "image" && (
               <Img src={mediaUrl} style={{ objectFit: "cover" }} />
             )}
@@ -186,9 +193,17 @@ const AudioTrackSequence: React.FC<TrackSequenceProps> = ({
   );
 };
 
+const getDurationInFrames = (durationMs: number | undefined): number => {
+  const defaultDurationMs = 5000; // Ensure we have at least 5 seconds
+  const validatedDurationMs = durationMs && durationMs > 0 ? durationMs : defaultDurationMs;
+  return Math.max(1, Math.floor(validatedDurationMs / (1000 / FPS)));
+};
+
 export default function VideoPreview() {
   const projectId = useProjectId();
   const setPlayer = useVideoProjectStore((s) => s.setPlayer);
+  const setPlayerState = useVideoProjectStore((s) => s.setPlayerState);
+  const playerRef = useRef<PlayerRef>(null);
 
   const { data: project = PROJECT_PLACEHOLDER } = useProject(projectId);
   const {
@@ -220,14 +235,15 @@ export default function VideoPreview() {
 
   // Calculate the effective duration based on the latest keyframe
   const calculateDuration = useCallback(() => {
-    let maxTimestamp = 0;
+    let maxDuration = DEFAULT_DURATION * 1000; // Convert to milliseconds
     for (const trackFrames of Object.values(frames)) {
       for (const frame of trackFrames) {
-        maxTimestamp = Math.max(maxTimestamp, frame.timestamp);
+        const frameEnd = frame.timestamp + (frame.duration || 5000);
+        maxDuration = Math.max(maxDuration, frameEnd);
       }
     }
-    // Add 5 seconds padding after the last frame
-    return Math.max(DEFAULT_DURATION, Math.ceil((maxTimestamp + 5000) / 1000));
+    // Add 5 seconds padding after the last frame and convert to seconds
+    return Math.max(DEFAULT_DURATION, Math.ceil(maxDuration / 1000) + 5);
   }, [frames]);
 
   const duration = calculateDuration();
@@ -236,7 +252,6 @@ export default function VideoPreview() {
     (s) => s.setPlayerCurrentTimestamp,
   );
 
-  const setPlayerState = useVideoProjectStore((s) => s.setPlayerState);
   // Frame updates are super frequent, so we throttle the updates to the timestamp
   const updatePlayerCurrentTimestamp = useCallback(
     throttle(64, setPlayerCurrentTimestamp),
@@ -244,14 +259,14 @@ export default function VideoPreview() {
   );
 
   // Register events on the player
-  const playerRef = useCallback(
+  const updatePlayerRef = useCallback(
     (player: PlayerRef) => {
       if (!player) return;
       setPlayer(player);
-      player.addEventListener("play", (e) => {
+      player.addEventListener("play", () => {
         setPlayerState("playing");
       });
-      player.addEventListener("pause", (e) => {
+      player.addEventListener("pause", () => {
         setPlayerState("paused");
       });
       player.addEventListener("seeked", (e) => {
@@ -280,6 +295,19 @@ export default function VideoPreview() {
       height = size.height;
     }
   }
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (player) {
+      setPlayer(player);
+      player.addEventListener("play", () => {
+        setPlayerState("playing");
+      });
+      player.addEventListener("pause", () => {
+        setPlayerState("paused");
+      });
+    }
+  }, [playerRef, setPlayer, setPlayerState]);
 
   return (
     <div className="flex-grow flex-1 h-full flex items-center justify-center bg-background-dark dark:bg-background-light relative">

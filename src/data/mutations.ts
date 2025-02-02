@@ -1,4 +1,4 @@
-import { fal } from "@/lib/fal";
+import { falClient } from "@/lib/fal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { db } from "./db";
 import { queryKeys } from "./queries";
@@ -42,7 +42,7 @@ export const useJobCreator = ({
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      fal.queue.submit(endpointId, {
+      falClient.queue.submit(endpointId, {
         input,
       }),
     onSuccess: async (data) => {

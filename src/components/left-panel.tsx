@@ -45,6 +45,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
+import { UserIcon } from "./icons";
 
 export default function LeftPanel() {
   const projectId = useProjectId();
@@ -254,17 +255,16 @@ export default function LeftPanel() {
                 )}
               </label>
             </Button>
-          </div>
-          {mediaItems.length > 0 && (
             <Button
               variant="secondary"
               size="sm"
               onClick={() => openGenerateDialog()}
+              className="bg-purple-500 text-white hover:bg-purple-600 transition-colors"
             >
-              <SparklesIcon className="w-4 h-4 opacity-50" />
+              <UserIcon className="w-4 h-4 text-current" />
               Generate...
             </Button>
-          )}
+          </div>
         </div>
         {!isLoading && mediaItems.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center gap-4 px-4">
@@ -272,14 +272,6 @@ export default function LeftPanel() {
               Create your image, audio and voiceover collection to compose your
               videos
             </p>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => openGenerateDialog()}
-            >
-              <ImagePlusIcon className="w-4 h-4 opacity-50" />
-              Generate...
-            </Button>
           </div>
         )}
 

@@ -1,10 +1,10 @@
 import { db } from "@/data/db";
-import { queryKeys } from "@/data/queries";
-import type { MediaItem } from "@/data/schema";
+import { queryKeys, refreshVideoCache } from "@/data/queries";
+import type { MediaItem, VideoTrack } from "@/data/schema";
 import { useProjectId, useVideoProjectStore } from "@/data/store";
-import { fal } from "@/lib/fal";
+import { falClient } from "@/lib/fal";
 import { cn, resolveMediaUrl, trackIcons } from "@/lib/utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import {
   CircleXIcon,
@@ -20,6 +20,7 @@ import {
   Fragment,
   type HTMLAttributes,
   createElement,
+  MouseEvent,
 } from "react";
 import { Badge } from "./ui/badge";
 import { LoadingIcon } from "./ui/icons";
@@ -29,13 +30,15 @@ import { getMediaMetadata } from "@/lib/ffmpeg";
 type MediaItemRowProps = {
   data: MediaItem;
   onOpen: (data: MediaItem) => void;
+  onDoubleClick?: (data: MediaItem) => void;
   draggable?: boolean;
-} & HTMLAttributes<HTMLDivElement>;
+} & Omit<HTMLAttributes<HTMLDivElement>, 'onDoubleClick'>;
 
 export function MediaItemRow({
   data,
   className,
   onOpen,
+  onDoubleClick,
   draggable = true,
   ...props
 }: MediaItemRowProps) {
@@ -43,11 +46,12 @@ export function MediaItemRow({
   const queryClient = useQueryClient();
   const projectId = useProjectId();
   const { toast } = useToast();
+
   useQuery({
     queryKey: queryKeys.projectMedia(projectId, data.id),
     queryFn: async () => {
       if (data.kind === "uploaded") return null;
-      const queueStatus = await fal.queue.status(data.endpointId, {
+      const queueStatus = await falClient.queue.status(data.endpointId, {
         requestId: data.requestId,
       });
       if (queueStatus.status === "IN_PROGRESS") {
@@ -63,7 +67,7 @@ export function MediaItemRow({
 
       if (queueStatus.status === "COMPLETED") {
         try {
-          const result = await fal.queue.result(data.endpointId, {
+          const result = await falClient.queue.result(data.endpointId, {
             requestId: data.requestId,
           });
           media = {
@@ -112,12 +116,36 @@ export function MediaItemRow({
     enabled: !isDone && data.kind === "generated",
     refetchInterval: data.mediaType === "video" ? 20000 : 1000,
   });
+
   const mediaUrl = resolveMediaUrl(data) ?? "";
   const mediaId = data.id.split("-")[0];
+
   const handleOnDragStart: DragEventHandler<HTMLDivElement> = (event) => {
-    event.dataTransfer.setData("job", JSON.stringify(data));
-    return true;
-    // event.dataTransfer.dropEffect = "copy";
+    if (data.status !== "completed") {
+      event.preventDefault();
+      return;
+    }
+    
+    event.dataTransfer.effectAllowed = "copy";
+    const dragData = {
+      ...data,
+      url: mediaUrl,
+    };
+    event.dataTransfer.setData("application/json", JSON.stringify(dragData));
+    event.dataTransfer.setData("job", JSON.stringify(dragData));
+  };
+
+  const handleClick = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    onOpen(data);
+  };
+
+  const handleDoubleClick = (e: MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (data.status === "completed" && onDoubleClick) {
+      onDoubleClick(data);
+    }
   };
 
   const coverImage =
@@ -129,13 +157,15 @@ export function MediaItemRow({
     <div
       className={cn(
         "flex items-start space-x-2 py-2 w-full px-4 hover:bg-accent transition-all",
+        {
+          "cursor-grab": draggable && data.status === "completed",
+          "cursor-not-allowed": data.status !== "completed",
+        },
         className,
       )}
       {...props}
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen(data);
-      }}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       draggable={draggable && data.status === "completed"}
       onDragStart={handleOnDragStart}
     >
@@ -243,8 +273,114 @@ export function MediaItemPanel({
   mediaType,
 }: MediaItemsPanelProps) {
   const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
+  const queryClient = useQueryClient();
+  const projectId = useProjectId();
+  const { toast } = useToast();
+
+  const addToTrack = useMutation({
+    mutationFn: async (media: MediaItem) => {
+      // Get all tracks for this project
+      const tracks = await db.tracks.tracksByProject(projectId);
+      
+      // Find appropriate track based on media type
+      let track = tracks.find(t => {
+        if (media.mediaType === "video" || media.mediaType === "image") return t.type === "video";
+        if (media.mediaType === "music") return t.type === "music";
+        if (media.mediaType === "voiceover") return t.type === "voiceover";
+        return false;
+      });
+
+      // If track doesn't exist, create it
+      if (!track) {
+        let trackType: "video" | "music" | "voiceover";
+        if (media.mediaType === "video" || media.mediaType === "image") {
+          trackType = "video";
+        } else if (media.mediaType === "music") {
+          trackType = "music";
+        } else {
+          trackType = "voiceover";
+        }
+        
+        const newTrackId = await db.tracks.create({
+          type: trackType,
+          label: trackType.charAt(0).toUpperCase() + trackType.slice(1),
+          projectId: projectId,
+          locked: false
+        });
+
+        const foundTrack = await db.tracks.find(newTrackId.toString());
+        if (!foundTrack) throw new Error("Failed to create track");
+        track = foundTrack;
+      }
+
+      // Get existing keyframes to determine insertion point
+      const existingKeyframes = await db.keyFrames.keyFramesByTrack(track.id);
+      const lastKeyframe = existingKeyframes[existingKeyframes.length - 1];
+      
+      // Calculate new keyframe timestamp (place after last keyframe or at start)
+      const timestamp = lastKeyframe 
+        ? lastKeyframe.timestamp + lastKeyframe.duration 
+        : 0;
+
+      // Create keyframe data based on media type
+      const baseData = {
+        mediaId: media.id,
+        prompt: media.input?.prompt || media.metadata?.title || ""
+      };
+
+      let keyframeData;
+      if (media.mediaType === "video" || media.mediaType === "image") {
+        keyframeData = {
+          ...baseData,
+          type: "video" as const,
+          url: media.input?.image_url || ""
+        };
+      } else {
+        keyframeData = {
+          ...baseData,
+          type: "prompt" as const
+        };
+      }
+
+      // Calculate duration in frames (30fps)
+      const defaultDurationMs = 5000; // Default 5 seconds
+      const mediaDurationMs = media.metadata?.duration ?? defaultDurationMs;
+      const durationInFrames = Math.max(1, Math.floor((mediaDurationMs / 1000) * 30));
+
+      const keyframe = await db.keyFrames.create({
+        trackId: track.id,
+        timestamp: timestamp,
+        duration: durationInFrames,
+        data: keyframeData
+      });
+
+      return keyframe;
+    },
+    onSuccess: () => {
+      refreshVideoCache(queryClient, projectId);
+      toast({
+        title: "Added to timeline",
+        description: "Media has been added to the timeline.",
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to add to timeline:", error);
+      toast({
+        title: "Failed to add to timeline",
+        description: "There was an error adding the media to the timeline.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleOnOpen = (item: MediaItem) => {
     setSelectedMediaId(item.id);
+  };
+
+  const handleDoubleClick = (item: MediaItem) => {
+    if (item.status === "completed") {
+      addToTrack.mutate(item);
+    }
   };
 
   return (
@@ -261,7 +397,11 @@ export function MediaItemPanel({
         })
         .map((media) => (
           <Fragment key={media.id}>
-            <MediaItemRow data={media} onOpen={handleOnOpen} />
+            <MediaItemRow 
+              data={media} 
+              onOpen={handleOnOpen}
+              onDoubleClick={handleDoubleClick}
+            />
           </Fragment>
         ))}
     </div>

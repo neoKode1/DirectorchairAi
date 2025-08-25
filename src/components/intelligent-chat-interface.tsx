@@ -1641,7 +1641,9 @@ Starting workflow execution...`,
           setCurrentIntent(intent);
         } else {
           console.log('❌ [IntelligentChatInterface] No delegation returned from intelligence core');
-          throw new Error('No suitable model found for this request');
+          console.log('❌ [IntelligentChatInterface] Intent analysis result:', intent);
+          console.log('❌ [IntelligentChatInterface] Available models:', intelligenceCore.getModelCapabilities());
+          throw new Error('No suitable model found for this request. Please check your model preferences.');
         }
       }
       
@@ -1657,6 +1659,17 @@ Starting workflow execution...`,
       };
 
       console.log('📦 [IntelligentChatInterface] Prepared generation data:', generationData);
+      console.log('📦 [IntelligentChatInterface] Model ID:', currentDelegation.modelId);
+      console.log('📦 [IntelligentChatInterface] Parameters:', currentDelegation.parameters);
+      
+      // Validate generation data
+      if (!generationData.model) {
+        throw new Error('Missing model ID in generation data');
+      }
+      
+      if (!generationData.prompt && !generationData.image_url) {
+        throw new Error('Missing prompt or image_url in generation data');
+      }
       console.log('📦 [IntelligentChatInterface] All keys in generation data:', Object.keys(generationData));
       console.log('📦 [IntelligentChatInterface] Enhanced prompt in generation data:', generationData.prompt);
       console.log('📦 [IntelligentChatInterface] Structured prompt for display:', generationData.structuredPromptForDisplay);

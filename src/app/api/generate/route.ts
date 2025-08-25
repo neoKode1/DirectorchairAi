@@ -309,10 +309,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   } catch (error) {
     console.error('❌ [Generate API] Error:', error);
+    console.error('❌ [Generate API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ [Generate API] Error name:', error instanceof Error ? error.name : 'Unknown error type');
+    
     return NextResponse.json({
       success: false,
       error: "Failed to process generation request",
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      errorType: error instanceof Error ? error.name : 'Unknown',
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }

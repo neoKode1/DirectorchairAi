@@ -10,11 +10,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     console.log('🔗 [FAL Proxy] Request received');
     console.log('🔗 [FAL Proxy] FAL_KEY available:', !!process.env.FAL_KEY);
+    console.log('🔗 [FAL Proxy] Request URL:', request.url);
+    console.log('🔗 [FAL Proxy] Request method:', request.method);
+    console.log('🔗 [FAL Proxy] Request headers:', Object.fromEntries(request.headers.entries()));
     
     // Call the original route handler
     const response = await route.POST(request);
     
     console.log('📊 [FAL Proxy] Response status:', response.status);
+    console.log('📊 [FAL Proxy] Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Proxy request failed' }));
@@ -24,10 +28,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return response;
   } catch (error) {
     console.error('❌ [FAL Proxy] Unexpected error:', error);
+    console.error('❌ [FAL Proxy] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('❌ [FAL Proxy] Error name:', error instanceof Error ? error.name : 'Unknown error type');
+    
     return NextResponse.json({
       success: false,
       error: 'Proxy request failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      errorType: error instanceof Error ? error.name : 'Unknown',
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }

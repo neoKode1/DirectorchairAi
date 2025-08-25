@@ -1582,7 +1582,7 @@ Starting workflow execution...`,
         const styleContext = `[Image uploaded: ${styleReferenceImage} - requesting image-to-image style transfer] ${userInput}`;
         
         // Get delegation from intelligence core to ensure proper prompt enhancement
-        const intent = await intelligenceCore.analyzeUserIntent(styleContext, 'image');
+        const intent = await intelligenceCore.analyzeUserIntent(styleContext, 'image', true);
         const delegation = await intelligenceCore.selectOptimalModel(intent);
         
         if (delegation) {
@@ -1622,10 +1622,16 @@ Starting workflow execution...`,
         console.log('🔍 [IntelligentChatInterface] No delegation found, getting from intelligence core');
         console.log('🔍 [IntelligentChatInterface] Current contentType:', contentType);
         console.log('🔍 [IntelligentChatInterface] Current model preferences:', modelPreferences);
+        console.log('🔍 [IntelligentChatInterface] Has style image uploaded:', hasStyleImageUploaded);
         
-        // First analyze the intent with the current content type
-        const intent = await intelligenceCore.analyzeUserIntent(userInput, contentType);
+        // Check if we have an uploaded image for smart action detection
+        const hasUploadedImage = hasStyleImageUploaded || !!uploadedImage;
+        console.log('🔍 [IntelligentChatInterface] Has uploaded image for action detection:', hasUploadedImage);
+        
+        // First analyze the intent with the current content type and image upload status
+        const intent = await intelligenceCore.analyzeUserIntent(userInput, contentType, hasUploadedImage);
         console.log('📊 [IntelligentChatInterface] Intent analysis result:', intent);
+        console.log('📊 [IntelligentChatInterface] Detected image action type:', intelligenceCore.conversationState.imageActionType);
         
         // Then select the optimal model based on the intent
         const delegation = await intelligenceCore.selectOptimalModel(intent);

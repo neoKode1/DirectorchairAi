@@ -80,6 +80,7 @@ export interface ConversationState {
   userContext: string[];
   clarificationNeeded: boolean;
   generationAuthorized: boolean;
+  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation';
 }
 
 // New interfaces for Interactive Suggestions & Automated Workflows
@@ -780,7 +781,7 @@ export class IntelligenceCore {
   /**
    * Analyzes user input to determine intent and required actions
    */
-  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video'): Promise<UserIntent> {
+  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video', hasUploadedImage?: boolean): Promise<UserIntent> {
     console.log('🔍 [IntelligenceCore] Analyzing user intent:', userInput);
     console.log('🔍 [IntelligenceCore] Forced content type:', forcedContentType);
     const lowerInput = userInput.toLowerCase();
@@ -860,6 +861,31 @@ export class IntelligenceCore {
         confidence = 0.8;
       }
     } 
+    // Check for image action intents when an image is uploaded
+    else if (hasUploadedImage && this.containsImageActionKeywords(lowerInput)) {
+      console.log('🔍 [IntelligenceCore] ✅ Found image action keywords with uploaded image');
+      requiresGeneration = true;
+      
+      if (this.containsStyleTransferKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected style transfer intent');
+        type = 'image';
+        confidence = 0.95;
+        // Add special flag for style transfer
+        this.conversationState.imageActionType = 'style-transfer';
+      } else if (this.containsFluxKontextKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected flux kontext intent');
+        type = 'image';
+        confidence = 0.95;
+        // Add special flag for flux kontext
+        this.conversationState.imageActionType = 'flux-kontext';
+      } else if (this.containsAnimationKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected animation intent');
+        type = 'video';
+        confidence = 0.95;
+        // Add special flag for animation
+        this.conversationState.imageActionType = 'animation';
+      }
+    }
     // Check for descriptive content that should be treated as generation requests
     else if (this.containsImageKeywords(lowerInput) || this.containsVideoKeywords(lowerInput) || this.containsAudioKeywords(lowerInput) || this.containsVoiceoverKeywords(lowerInput) || this.containsCinematicKeywords(lowerInput)) {
       console.log('🔍 [IntelligenceCore] ✅ Found descriptive content keywords');
@@ -1115,6 +1141,49 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     ];
     const found = cinematicWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking cinematic keywords:', { input, cinematicWords, found });
+    return found;
+  }
+
+  private containsImageActionKeywords(input: string): boolean {
+    const actionWords = [
+      'style', 'transfer', 'look like', 'similar to', 'mimic', 'painting', 'artistic', 'filter',
+      'background', 'scene', 'environment', 'setting', 'context', 'surroundings',
+      'animate', 'move', 'motion', 'video', 'cinematic', 'action', 'dynamic'
+    ];
+    const found = actionWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking image action keywords:', { input, actionWords, found });
+    return found;
+  }
+
+  private containsStyleTransferKeywords(input: string): boolean {
+    const styleTransferWords = [
+      'style', 'transfer', 'look like', 'similar to', 'mimic', 'painting', 'artistic', 'filter',
+      'oil painting', 'watercolor', 'sketch', 'drawing', 'cartoon', 'anime', 'comic',
+      'vintage', 'retro', 'modern', 'classic', 'abstract', 'impressionist', 'realistic'
+    ];
+    const found = styleTransferWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking style transfer keywords:', { input, styleTransferWords, found });
+    return found;
+  }
+
+  private containsFluxKontextKeywords(input: string): boolean {
+    const fluxKontextWords = [
+      'background', 'scene', 'environment', 'setting', 'context', 'surroundings',
+      'place', 'location', 'atmosphere', 'ambience', 'mood', 'setting',
+      'add background', 'change background', 'new scene', 'different environment'
+    ];
+    const found = fluxKontextWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking flux kontext keywords:', { input, fluxKontextWords, found });
+    return found;
+  }
+
+  private containsAnimationKeywords(input: string): boolean {
+    const animationWords = [
+      'animate', 'move', 'motion', 'video', 'cinematic', 'action', 'dynamic',
+      'make it move', 'bring to life', 'add motion', 'create video', 'generate video'
+    ];
+    const found = animationWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking animation keywords:', { input, animationWords, found });
     return found;
   }
 
@@ -1632,36 +1701,80 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     if (!selectedModel) {
       console.log('🎯 [IntelligenceCore] No explicit model specified, providing intelligent assistance');
 
-    // Check if user has a preferred model for this category
-    let preferredModelId: string | null = null;
-    switch (intent.type) {
-      case 'image':
-        preferredModelId = this.modelPreferences.image;
-        break;
-      case 'video':
-        preferredModelId = this.modelPreferences.video;
-        break;
-      case 'audio':
-        preferredModelId = this.modelPreferences.music;
-        break;
-      case 'voiceover':
-        preferredModelId = this.modelPreferences.voiceover;
-        break;
-    }
+      // Check for image action types first
+      if (this.conversationState.imageActionType) {
+        console.log('🎯 [IntelligenceCore] Detected image action type:', this.conversationState.imageActionType);
+        
+        switch (this.conversationState.imageActionType) {
+          case 'style-transfer':
+            console.log('🎨 [IntelligenceCore] Routing to style transfer model');
+            selectedModel = this.getModelCapabilities().find(model => 
+              model.endpointId === 'fal-ai/flux-krea-lora/image-to-image'
+            );
+            break;
+          case 'flux-kontext':
+            console.log('🌍 [IntelligenceCore] Routing to flux kontext model');
+            selectedModel = this.getModelCapabilities().find(model => 
+              model.endpointId === 'fal-ai/flux-pro/kontext'
+            );
+            break;
+          case 'animation':
+            console.log('🎬 [IntelligenceCore] Routing to animation model');
+            // Use user's preferred video model or default to Veo3
+            const preferredVideoModel = this.modelPreferences.video;
+            if (preferredVideoModel && preferredVideoModel !== 'none') {
+              selectedModel = this.getModelCapabilities().find(model => 
+                model.endpointId === preferredVideoModel
+              );
+            }
+            if (!selectedModel) {
+              // Default to Veo3 for animation
+              selectedModel = this.getModelCapabilities().find(model => 
+                model.endpointId === 'fal-ai/veo3/image-to-video'
+              );
+            }
+            break;
+        }
+        
+        if (selectedModel) {
+          console.log('✅ [IntelligenceCore] Selected model for image action:', selectedModel.label);
+          isUserPreferredModel = false; // This is system-selected based on action type
+        }
+      }
 
-    console.log('🎯 [IntelligenceCore] Preferred model for', intent.type, ':', preferredModelId);
-    console.log('🎯 [IntelligenceCore] Current model preferences:', this.modelPreferences);
-      console.log('🎯 [IntelligenceCore] Model capabilities size:', this.modelCapabilities.size);
+      // If no image action type or no model found, proceed with normal model selection
+      if (!selectedModel) {
+        // Check if user has a preferred model for this category
+        let preferredModelId: string | null = null;
+        switch (intent.type) {
+          case 'image':
+            preferredModelId = this.modelPreferences.image;
+            break;
+          case 'video':
+            preferredModelId = this.modelPreferences.video;
+            break;
+          case 'audio':
+            preferredModelId = this.modelPreferences.music;
+            break;
+          case 'voiceover':
+            preferredModelId = this.modelPreferences.voiceover;
+            break;
+        }
 
-    // If user selected "none" for this category, return null
-    if (preferredModelId === 'none') {
-      console.log('❌ [IntelligenceCore] User selected "none" for', intent.type, 'generation');
-      return null;
-    }
+        console.log('🎯 [IntelligenceCore] Preferred model for', intent.type, ':', preferredModelId);
+        console.log('🎯 [IntelligenceCore] Current model preferences:', this.modelPreferences);
+        console.log('🎯 [IntelligenceCore] Model capabilities size:', this.modelCapabilities.size);
 
-      // Apply flexible workflow rules for intelligent assistance
-      selectedModel = await this.applyFlexibleWorkflowRules(intent, preferredModelId);
-      isUserPreferredModel = !!preferredModelId;
+        // If user selected "none" for this category, return null
+        if (preferredModelId === 'none') {
+          console.log('❌ [IntelligenceCore] User selected "none" for', intent.type, 'generation');
+          return null;
+        }
+
+        // Apply flexible workflow rules for intelligent assistance
+        selectedModel = await this.applyFlexibleWorkflowRules(intent, preferredModelId);
+        isUserPreferredModel = !!preferredModelId;
+      }
     }
 
     // Final validation - ensure we have a selected model

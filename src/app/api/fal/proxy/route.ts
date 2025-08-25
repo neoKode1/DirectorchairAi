@@ -25,7 +25,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error('❌ [FAL Proxy] Error response:', errorData);
     }
     
-    return response;
+    // Convert Response to NextResponse
+    const nextResponse = new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+    
+    return nextResponse;
   } catch (error) {
     console.error('❌ [FAL Proxy] Unexpected error:', error);
     console.error('❌ [FAL Proxy] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
@@ -43,7 +50,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    return await route.GET(request);
+    const response = await route.GET(request);
+    
+    // Convert Response to NextResponse
+    const nextResponse = new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+    
+    return nextResponse;
   } catch (error) {
     console.error('❌ [FAL Proxy] GET request error:', error);
     return NextResponse.json({

@@ -152,6 +152,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Call the FAL proxy
     console.log('🔗 [Generate API] Calling FAL proxy...');
     
+    let result: any;
+    
     try {
       const proxyResponse = await route.POST(proxyRequest);
       console.log('📊 [Generate API] Proxy response status:', proxyResponse.status);
@@ -167,7 +169,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }, { status: proxyResponse.status });
       }
       
-      const result = await proxyResponse.json();
+      result = await proxyResponse.json();
       console.log('✅ [Generate API] Proxy response:', result);
       console.log('🔍 [Generate API] Response keys:', Object.keys(result));
       
@@ -210,9 +212,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const result = await proxyResponse.json();
-    console.log('✅ [Generate API] Proxy response:', result);
-    console.log('🔍 [Generate API] Response keys:', Object.keys(result));
+    // Content filtering logging removed - user has full control over prompts
 
     // Content filtering logging removed - user has full control over prompts
 

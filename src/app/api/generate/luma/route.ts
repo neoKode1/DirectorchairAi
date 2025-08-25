@@ -124,15 +124,15 @@ export async function GET() {
       models: [
         {
           id: "ray2",
-          name: LUMA_MODELS.RAY2.name,
-          description: LUMA_MODELS.RAY2.description,
-          category: LUMA_MODELS.RAY2.category,
+          name: "Luma Ray 2",
+          description: "Large-scale video generative model capable of creating realistic visuals with natural, coherent motion",
+          category: "video",
         },
         {
-          id: "ray1.6",
-          name: LUMA_MODELS.RAY1_6.name,
-          description: LUMA_MODELS.RAY1_6.description,
-          category: LUMA_MODELS.RAY1_6.category,
+          id: "ray2-flash",
+          name: "Luma Ray 2 Flash (I2V)",
+          description: "Fast image-to-video generation with Luma's latest Ray 2 Flash model",
+          category: "video",
         },
       ],
     },

@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
     console.log('📝 [Veo3 API] Request body:', body);
 
     const {
+      model,
       prompt,
       negative_prompt,
       image_url,

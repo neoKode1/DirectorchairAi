@@ -1631,7 +1631,6 @@ Starting workflow execution...`,
         // First analyze the intent with the current content type and image upload status
         const intent = await intelligenceCore.analyzeUserIntent(userInput, contentType, hasUploadedImage);
         console.log('📊 [IntelligentChatInterface] Intent analysis result:', intent);
-        console.log('📊 [IntelligentChatInterface] Detected image action type:', intelligenceCore.conversationState.imageActionType);
         
         // Then select the optimal model based on the intent
         const delegation = await intelligenceCore.selectOptimalModel(intent);

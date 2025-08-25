@@ -244,7 +244,31 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${content.title}.${content.metadata?.format || 'file'}`;
+      
+      // Fix file extension mapping
+      let fileExtension = 'file';
+      if (content.metadata?.format) {
+        const format = content.metadata.format.toLowerCase();
+        if (format.includes('jpeg') || format.includes('jpg') || format === 'image_jpeg') {
+          fileExtension = 'jpg';
+        } else if (format.includes('png')) {
+          fileExtension = 'png';
+        } else if (format.includes('webp')) {
+          fileExtension = 'webp';
+        } else if (format.includes('mp4') || format.includes('video')) {
+          fileExtension = 'mp4';
+        } else if (format.includes('gif')) {
+          fileExtension = 'gif';
+        } else {
+          fileExtension = format;
+        }
+      } else if (content.type === 'image') {
+        fileExtension = 'jpg'; // Default for images
+      } else if (content.type === 'video') {
+        fileExtension = 'mp4'; // Default for videos
+      }
+      
+      a.download = `${content.title}.${fileExtension}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

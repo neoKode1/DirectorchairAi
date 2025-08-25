@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -62,10 +68,13 @@ const validAspectRatios = [
   { width: 576, height: 1024, label: "9:16 Portrait (576x1024)" },
 ];
 
-export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelInfo, onSubmit }) => {
+export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({
+  modelInfo,
+  onSubmit,
+}) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<VideoModelInput>({
     prompt: "",
     negative_prompt: "",
@@ -82,7 +91,10 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
       return false;
     }
 
-    if (formData.num_frames && (formData.num_frames < 14 || formData.num_frames > 120)) {
+    if (
+      formData.num_frames &&
+      (formData.num_frames < 14 || formData.num_frames > 120)
+    ) {
       toast({
         title: "Error",
         description: "Number of frames must be between 14 and 120",
@@ -91,25 +103,40 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
       return false;
     }
 
-    if (formData.width && (formData.width < 256 || formData.width > 1024 || formData.width % 8 !== 0)) {
+    if (
+      formData.width &&
+      (formData.width < 256 ||
+        formData.width > 1024 ||
+        formData.width % 8 !== 0)
+    ) {
       toast({
         title: "Error",
-        description: "Width must be between 256 and 1024 and be a multiple of 8",
+        description:
+          "Width must be between 256 and 1024 and be a multiple of 8",
         variant: "destructive",
       });
       return false;
     }
 
-    if (formData.height && (formData.height < 256 || formData.height > 1024 || formData.height % 8 !== 0)) {
+    if (
+      formData.height &&
+      (formData.height < 256 ||
+        formData.height > 1024 ||
+        formData.height % 8 !== 0)
+    ) {
       toast({
         title: "Error",
-        description: "Height must be between 256 and 1024 and be a multiple of 8",
+        description:
+          "Height must be between 256 and 1024 and be a multiple of 8",
         variant: "destructive",
       });
       return false;
     }
 
-    if (formData.num_inference_steps && (formData.num_inference_steps < 1 || formData.num_inference_steps > 100)) {
+    if (
+      formData.num_inference_steps &&
+      (formData.num_inference_steps < 1 || formData.num_inference_steps > 100)
+    ) {
       toast({
         title: "Error",
         description: "Number of inference steps must be between 1 and 100",
@@ -118,7 +145,10 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
       return false;
     }
 
-    if (formData.guidance_scale && (formData.guidance_scale < 1 || formData.guidance_scale > 20)) {
+    if (
+      formData.guidance_scale &&
+      (formData.guidance_scale < 1 || formData.guidance_scale > 20)
+    ) {
       toast({
         title: "Error",
         description: "Guidance scale must be between 1 and 20",
@@ -136,7 +166,10 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
       return false;
     }
 
-    if (formData.motion_bucket_id && (formData.motion_bucket_id < 1 || formData.motion_bucket_id > 255)) {
+    if (
+      formData.motion_bucket_id &&
+      (formData.motion_bucket_id < 1 || formData.motion_bucket_id > 255)
+    ) {
       toast({
         title: "Error",
         description: "Motion bucket ID must be between 1 and 255",
@@ -145,7 +178,10 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
       return false;
     }
 
-    if (formData.noise_aug_strength && (formData.noise_aug_strength < 0 || formData.noise_aug_strength > 1)) {
+    if (
+      formData.noise_aug_strength &&
+      (formData.noise_aug_strength < 0 || formData.noise_aug_strength > 1)
+    ) {
       toast({
         title: "Error",
         description: "Noise augmentation strength must be between 0 and 1",
@@ -198,21 +234,23 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
                   <div>
                     <h3 className="font-medium">Prompt</h3>
                     <p className="text-sm text-muted-foreground">
-                      Describe what you want to generate. Be specific about motion, style, and details.
+                      Describe what you want to generate. Be specific about
+                      motion, style, and details.
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Video Settings</h3>
                     <p className="text-sm text-muted-foreground">
-                      Adjust frames, dimensions, and FPS to control video length and quality.
-                      Higher values may increase generation time.
+                      Adjust frames, dimensions, and FPS to control video length
+                      and quality. Higher values may increase generation time.
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Motion Controls</h3>
                     <p className="text-sm text-muted-foreground">
-                      Use motion bucket ID and noise strength to control movement intensity.
-                      Higher motion values create more dynamic videos.
+                      Use motion bucket ID and noise strength to control
+                      movement intensity. Higher motion values create more
+                      dynamic videos.
                     </p>
                   </div>
                 </div>
@@ -228,7 +266,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
           <Textarea
             id="prompt"
             value={formData.prompt}
-            onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, prompt: e.target.value })
+            }
             placeholder="Enter your prompt here..."
             required
           />
@@ -239,7 +279,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
           <Textarea
             id="negative_prompt"
             value={formData.negative_prompt}
-            onChange={(e) => setFormData({ ...formData, negative_prompt: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, negative_prompt: e.target.value })
+            }
             placeholder="Enter things to avoid in the generation..."
           />
         </div>
@@ -255,7 +297,10 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             </SelectTrigger>
             <SelectContent>
               {validAspectRatios.map(({ width, height, label }) => (
-                <SelectItem key={`${width}x${height}`} value={`${width}x${height}`}>
+                <SelectItem
+                  key={`${width}x${height}`}
+                  value={`${width}x${height}`}
+                >
                   {label}
                 </SelectItem>
               ))}
@@ -271,7 +316,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             max={120}
             step={1}
             value={[formData.num_frames || defaultValues.num_frames]}
-            onValueChange={([value]) => setFormData({ ...formData, num_frames: value })}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, num_frames: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.num_frames} frames
@@ -286,7 +333,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             max={30}
             step={1}
             value={[formData.fps || defaultValues.fps]}
-            onValueChange={([value]) => setFormData({ ...formData, fps: value })}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, fps: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.fps} FPS
@@ -300,8 +349,12 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             min={1}
             max={100}
             step={1}
-            value={[formData.num_inference_steps || defaultValues.num_inference_steps]}
-            onValueChange={([value]) => setFormData({ ...formData, num_inference_steps: value })}
+            value={[
+              formData.num_inference_steps || defaultValues.num_inference_steps,
+            ]}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, num_inference_steps: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.num_inference_steps} steps
@@ -316,7 +369,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             max={20}
             step={0.5}
             value={[formData.guidance_scale || defaultValues.guidance_scale]}
-            onValueChange={([value]) => setFormData({ ...formData, guidance_scale: value })}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, guidance_scale: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.guidance_scale}
@@ -330,8 +385,12 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             min={1}
             max={255}
             step={1}
-            value={[formData.motion_bucket_id || defaultValues.motion_bucket_id]}
-            onValueChange={([value]) => setFormData({ ...formData, motion_bucket_id: value })}
+            value={[
+              formData.motion_bucket_id || defaultValues.motion_bucket_id,
+            ]}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, motion_bucket_id: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.motion_bucket_id}
@@ -345,8 +404,12 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             min={0}
             max={1}
             step={0.01}
-            value={[formData.noise_aug_strength || defaultValues.noise_aug_strength]}
-            onValueChange={([value]) => setFormData({ ...formData, noise_aug_strength: value })}
+            value={[
+              formData.noise_aug_strength || defaultValues.noise_aug_strength,
+            ]}
+            onValueChange={([value]) =>
+              setFormData({ ...formData, noise_aug_strength: value })
+            }
           />
           <div className="text-sm text-muted-foreground">
             Current: {formData.noise_aug_strength}
@@ -359,7 +422,9 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
             id="seed"
             type="number"
             value={formData.seed || ""}
-            onChange={(e) => setFormData({ ...formData, seed: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({ ...formData, seed: parseInt(e.target.value) })
+            }
             placeholder="Enter seed number..."
           />
         </div>
@@ -372,4 +437,4 @@ export const VideoModelInterface: React.FC<VideoModelInterfaceProps> = ({ modelI
   );
 };
 
-export default VideoModelInterface; 
+export default VideoModelInterface;

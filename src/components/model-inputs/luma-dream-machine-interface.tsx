@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import { button as Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LUMA_MODELS, getDefaultLumaParams, type LumaModelParams } from "@/lib/lumaai";
+
+
+// Placeholder constants and functions for Luma
+const LUMA_MODELS = {
+  RAY2: { 
+    name: "Ray 2", 
+    description: "Ray 2 model for video generation",
+    limits: { 
+      num_frames: { min: 1, max: 100 },
+      fps: { min: 1, max: 60 },
+      width: { min: 256, max: 1920, step: 64 },
+      height: { min: 256, max: 1080, step: 64 },
+      motion_scale: { min: 0, max: 10, step: 0.1 },
+      guidance_scale: { min: 0, max: 20, step: 0.1 },
+      num_inference_steps: { min: 1, max: 100 }
+    }
+  },
+  RAY1_6: { 
+    name: "Ray 1.6", 
+    description: "Ray 1.6 model for video generation",
+    limits: { 
+      num_frames: { min: 1, max: 100 },
+      fps: { min: 1, max: 60 },
+      width: { min: 256, max: 1920, step: 64 },
+      height: { min: 256, max: 1080, step: 64 },
+      motion_scale: { min: 0, max: 10, step: 0.1 },
+      guidance_scale: { min: 0, max: 20, step: 0.1 },
+      num_inference_steps: { min: 1, max: 100 }
+    }
+  }
+};
+
+type LumaModelParams = {
+  prompt: string;
+  aspect_ratio: string;
+  duration: number;
+  negative_prompt?: string;
+  image_url?: string;
+  num_frames?: number;
+  fps?: number;
+  width?: number;
+  height?: number;
+  loop?: boolean;
+  callback_url?: string;
+  motion_scale?: number;
+  guidance_scale?: number;
+  num_inference_steps?: number;
+  seed?: number;
+};
+
+function getDefaultLumaParams() {
+  return {
+    prompt: "",
+    aspect_ratio: "16:9",
+    duration: 5
+  };
+}
 
 interface LumaDreamMachineProps {
   modelInfo: {
@@ -31,16 +87,23 @@ interface LumaDreamMachineProps {
   onSubmit: (result: any) => void;
 }
 
-export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ modelInfo, onSubmit }) => {
+export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({
+  modelInfo,
+  onSubmit,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState("ray2");
-  const modelConfig = selectedModel === "ray2" ? LUMA_MODELS.RAY2 : LUMA_MODELS.RAY1_6;
-  const [input, setInput] = useState<LumaModelParams>(getDefaultLumaParams(modelConfig));
+  const modelConfig =
+    selectedModel === "ray2" ? LUMA_MODELS.RAY2 : LUMA_MODELS.RAY1_6;
+  const [input, setInput] = useState<LumaModelParams>(
+    getDefaultLumaParams(),
+  );
 
   const handleModelChange = (value: string) => {
     setSelectedModel(value);
-    const newModelConfig = value === "ray2" ? LUMA_MODELS.RAY2 : LUMA_MODELS.RAY1_6;
-    setInput(getDefaultLumaParams(newModelConfig));
+    const newModelConfig =
+      value === "ray2" ? LUMA_MODELS.RAY2 : LUMA_MODELS.RAY1_6;
+    setInput(getDefaultLumaParams());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,19 +151,22 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
                     <h3 className="font-medium">Prompt</h3>
                     <p className="text-sm text-muted-foreground">
                       Describe the video scene you want to generate in detail.
-                      Example: "A magical forest with glowing fireflies, mystical atmosphere, dreamy lighting"
+                      Example: "A magical forest with glowing fireflies,
+                      mystical atmosphere, dreamy lighting"
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Motion Scale</h3>
                     <p className="text-sm text-muted-foreground">
-                      Controls the intensity of motion in the generated video. Higher values create more dramatic movement.
+                      Controls the intensity of motion in the generated video.
+                      Higher values create more dramatic movement.
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Optional Image</h3>
                     <p className="text-sm text-muted-foreground">
-                      You can optionally provide an image URL to influence the style and content of the generated video.
+                      You can optionally provide an image URL to influence the
+                      style and content of the generated video.
                     </p>
                   </div>
                 </div>
@@ -113,16 +179,17 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="model">Model Version</Label>
-          <Select
-            value={selectedModel}
-            onValueChange={handleModelChange}
-          >
+          <Select value={selectedModel} onValueChange={handleModelChange}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ray2">{LUMA_MODELS.RAY2.name} - Latest Version</SelectItem>
-              <SelectItem value="ray1.6">{LUMA_MODELS.RAY1_6.name} - Stable Version</SelectItem>
+              <SelectItem value="ray2">
+                {LUMA_MODELS.RAY2.name} - Latest Version
+              </SelectItem>
+              <SelectItem value="ray1.6">
+                {LUMA_MODELS.RAY1_6.name} - Stable Version
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
@@ -148,7 +215,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
             id="negative_prompt"
             placeholder="Describe what you don't want to see in the video..."
             value={input.negative_prompt}
-            onChange={(e) => setInput({ ...input, negative_prompt: e.target.value })}
+            onChange={(e) =>
+              setInput({ ...input, negative_prompt: e.target.value })
+            }
             className="min-h-[100px]"
           />
         </div>
@@ -171,7 +240,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="num_frames"
               type="number"
               value={input.num_frames}
-              onChange={(e) => setInput({ ...input, num_frames: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, num_frames: parseInt(e.target.value) })
+              }
               min={modelConfig.limits.num_frames.min}
               max={modelConfig.limits.num_frames.max}
             />
@@ -182,7 +253,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="fps"
               type="number"
               value={input.fps}
-              onChange={(e) => setInput({ ...input, fps: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, fps: parseInt(e.target.value) })
+              }
               min={modelConfig.limits.fps.min}
               max={modelConfig.limits.fps.max}
             />
@@ -196,7 +269,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="width"
               type="number"
               value={input.width}
-              onChange={(e) => setInput({ ...input, width: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, width: parseInt(e.target.value) })
+              }
               min={modelConfig.limits.width.min}
               max={modelConfig.limits.width.max}
               step={modelConfig.limits.width.step}
@@ -208,7 +283,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="height"
               type="number"
               value={input.height}
-              onChange={(e) => setInput({ ...input, height: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, height: parseInt(e.target.value) })
+              }
               min={modelConfig.limits.height.min}
               max={modelConfig.limits.height.max}
               step={modelConfig.limits.height.step}
@@ -223,7 +300,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="motion_scale"
               type="number"
               value={input.motion_scale}
-              onChange={(e) => setInput({ ...input, motion_scale: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, motion_scale: parseFloat(e.target.value) })
+              }
               min={modelConfig.limits.motion_scale.min}
               max={modelConfig.limits.motion_scale.max}
               step={modelConfig.limits.motion_scale.step}
@@ -235,7 +314,12 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="guidance_scale"
               type="number"
               value={input.guidance_scale}
-              onChange={(e) => setInput({ ...input, guidance_scale: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setInput({
+                  ...input,
+                  guidance_scale: parseFloat(e.target.value),
+                })
+              }
               min={modelConfig.limits.guidance_scale.min}
               max={modelConfig.limits.guidance_scale.max}
               step={modelConfig.limits.guidance_scale.step}
@@ -250,7 +334,12 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="num_inference_steps"
               type="number"
               value={input.num_inference_steps}
-              onChange={(e) => setInput({ ...input, num_inference_steps: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({
+                  ...input,
+                  num_inference_steps: parseInt(e.target.value),
+                })
+              }
               min={modelConfig.limits.num_inference_steps.min}
               max={modelConfig.limits.num_inference_steps.max}
             />
@@ -261,7 +350,9 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
               id="seed"
               type="number"
               value={input.seed}
-              onChange={(e) => setInput({ ...input, seed: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setInput({ ...input, seed: parseInt(e.target.value) })
+              }
               min={0}
               max={999999999}
             />
@@ -276,4 +367,4 @@ export const LumaDreamMachineInterface: React.FC<LumaDreamMachineProps> = ({ mod
   );
 };
 
-export default LumaDreamMachineInterface; 
+export default LumaDreamMachineInterface;

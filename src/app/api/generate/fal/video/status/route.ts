@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
+import { createFalClient } from "@fal-ai/client";
 
-fal.config({
+const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 });
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (!model || !request_id) {
       return NextResponse.json(
         { error: "Model and request_id are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     console.error("Error checking video status:", error);
     return NextResponse.json(
       { error: "Failed to check video status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

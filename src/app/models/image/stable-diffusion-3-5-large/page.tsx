@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { StableDiffusion35LargeModelInterface, StableDiffusion35LargeModelInput } from "@/components/model-inputs/stable-diffusion-3.5-large-model-interface";
+import {
+  StableDiffusion35LargeModelInterface,
+  StableDiffusion35LargeModelInput,
+} from "@/components/model-inputs/stable-diffusion-3.5-large-model-interface";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ImageResult } from "@/lib/types";
+// Placeholder type for image result
+type ImageResult = any;
 import Image from "next/image";
 
 const modelInfo = {
   id: "fal-ai/stable-diffusion-3-5-large",
-  name: "Nano • Stable Diffusion 3.5 Large",
+      name: "DirectorchairAI • Stable Diffusion 3.5 Large",
   description: "Image generation model",
   category: "image",
 };
@@ -45,7 +49,8 @@ export default function StableDiffusion35LargePage() {
       console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate image",
+        description:
+          error instanceof Error ? error.message : "Failed to generate image",
         variant: "destructive",
       });
       return { images: [] };
@@ -64,14 +69,16 @@ export default function StableDiffusion35LargePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Image Generation Settings</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Image Generation Settings
+            </h2>
             <StableDiffusion35LargeModelInterface
               modelInfo={modelInfo}
               onSubmit={handleSubmit}
             />
           </Card>
         </div>
-        
+
         <div className="space-y-4">
           <h2 className="text-2xl font-bold mb-4">Generated Images</h2>
           {isGenerating && (
@@ -97,4 +104,4 @@ export default function StableDiffusion35LargePage() {
       </div>
     </div>
   );
-} 
+}

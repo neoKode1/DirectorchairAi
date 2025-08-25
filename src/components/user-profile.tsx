@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, Link } from "@nextui-org/react";
 
 interface UserProfileProps {
@@ -35,4 +37,4 @@ export default function UserProfile({
       </div>
     </div>
   );
-} 
+}

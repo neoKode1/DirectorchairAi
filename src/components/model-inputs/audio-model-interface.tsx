@@ -1,5 +1,7 @@
+'use client';
+
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -22,7 +24,10 @@ interface AudioModelInterfaceProps {
   onSubmit: (result: any) => void;
 }
 
-export function AudioModelInterface({ modelInfo, onSubmit }: AudioModelInterfaceProps) {
+export function AudioModelInterface({
+  modelInfo,
+  onSubmit,
+}: AudioModelInterfaceProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [numSteps, setNumSteps] = useState(25);
@@ -76,14 +81,16 @@ export function AudioModelInterface({ modelInfo, onSubmit }: AudioModelInterface
                   <div>
                     <h3 className="font-medium">Prompt</h3>
                     <p className="text-sm text-muted-foreground">
-                      Describe the type of audio you want to generate. Be specific about the style, mood, and instruments.
-                      Example: "Indian holy music with tabla and sitar"
+                      Describe the type of audio you want to generate. Be
+                      specific about the style, mood, and instruments. Example:
+                      "Indian holy music with tabla and sitar"
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Number of Steps</h3>
                     <p className="text-sm text-muted-foreground">
-                      Controls the quality of the generation. Higher values (max 50) produce better quality but take longer.
+                      Controls the quality of the generation. Higher values (max
+                      50) produce better quality but take longer.
                     </p>
                   </div>
                   <div>
@@ -95,7 +102,9 @@ export function AudioModelInterface({ modelInfo, onSubmit }: AudioModelInterface
                   <div>
                     <h3 className="font-medium">CFG Strength</h3>
                     <p className="text-sm text-muted-foreground">
-                      Controls how closely the generation follows your prompt. Higher values (1-10) stick closer to the prompt but might be less creative.
+                      Controls how closely the generation follows your prompt.
+                      Higher values (1-10) stick closer to the prompt but might
+                      be less creative.
                     </p>
                   </div>
                 </div>
@@ -167,4 +176,4 @@ export function AudioModelInterface({ modelInfo, onSubmit }: AudioModelInterface
       </form>
     </div>
   );
-} 
+}

@@ -1,3 +1,5 @@
+'use client';
+
 import { db } from "@/data/db";
 import {
   queryKeys,
@@ -43,17 +45,23 @@ type PreviewWindowProps = {
   mediaItems: MediaItem[];
 };
 
-function PreviewWindow({ position, visible, cursorX, mediaItems }: PreviewWindowProps) {
+function PreviewWindow({
+  position,
+  visible,
+  cursorX,
+  mediaItems,
+}: PreviewWindowProps) {
   const projectId = useProjectId();
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
-  
+
   // Get all tracks and their keyframes
-  const tracks = useQuery({
-    queryKey: ["tracks", projectId],
-    queryFn: () => db.tracks.tracksByProject(projectId),
-  }).data || [];
+  const tracks =
+    useQuery({
+      queryKey: ["tracks", projectId],
+      queryFn: () => db.tracks.tracksByProject(projectId),
+    }).data || [];
 
   // Calculate current timestamp in milliseconds
   const currentTimeMs = (position / 100) * 30 * 1000;
@@ -61,8 +69,9 @@ function PreviewWindow({ position, visible, cursorX, mediaItems }: PreviewWindow
   // Find the active keyframe at current timestamp
   const activeFrame = useMemo(() => {
     for (const track of tracks) {
-      const keyframes = queryClient.getQueryData<VideoKeyFrame[]>(["frames", track]) || [];
-      const frame = keyframes.find(frame => {
+      const keyframes =
+        queryClient.getQueryData<VideoKeyFrame[]>(["frames", track]) || [];
+      const frame = keyframes.find((frame) => {
         const frameStart = frame.timestamp;
         const frameEnd = frame.timestamp + frame.duration;
         return currentTimeMs >= frameStart && currentTimeMs < frameEnd;
@@ -86,18 +95,20 @@ function PreviewWindow({ position, visible, cursorX, mediaItems }: PreviewWindow
 
   if (!visible || !activeFrame) return null;
 
-  const currentMedia = mediaItems.find(item => item.id === activeFrame.frame.data.mediaId);
+  const currentMedia = mediaItems.find(
+    (item) => item.id === activeFrame.frame.data.mediaId,
+  );
   if (!currentMedia) return null;
 
   const mediaUrl = resolveMediaUrl(currentMedia);
   if (!mediaUrl) return null;
 
   return (
-    <div 
+    <div
       className={cn(
         "absolute pointer-events-none",
         "bg-black/90 rounded-lg overflow-hidden",
-        "border border-white/20 shadow-xl"
+        "border border-white/20 shadow-xl",
       )}
       style={{
         width: "160px",
@@ -117,7 +128,7 @@ function PreviewWindow({ position, visible, cursorX, mediaItems }: PreviewWindow
           muted
         />
       ) : (
-        <img 
+        <img
           src={mediaUrl}
           alt="Preview"
           className="w-full h-full object-cover"
@@ -131,18 +142,22 @@ function PreviewWindow({ position, visible, cursorX, mediaItems }: PreviewWindow
   );
 }
 
-export function TimelineCursor({ 
-  onPositionChange, 
-  scale = 1, 
+export function TimelineCursor({
+  onPositionChange,
+  scale = 1,
   initialPosition = 0,
-  ...props 
+  ...props
 }: TimelineCursorProps) {
   const [cursorPosition, setCursorPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [cursorX, setCursorX] = useState(0);
-  const setPlayerCurrentTimestamp = useVideoProjectStore(s => s.setPlayerCurrentTimestamp);
-  const playerCurrentTimestamp = useVideoProjectStore(s => s.playerCurrentTimestamp);
-  const setIsPlaying = useVideoProjectStore(s => s.setIsPlaying);
+  const setPlayerCurrentTimestamp = useVideoProjectStore(
+    (s) => s.setPlayerCurrentTimestamp,
+  );
+  const playerCurrentTimestamp = useVideoProjectStore(
+    (s) => s.playerCurrentTimestamp,
+  );
+  const setIsPlaying = useVideoProjectStore((s) => s.setIsPlaying);
   const projectId = useProjectId();
   const { data: mediaItems = [] } = useProjectMediaItems(projectId);
 
@@ -154,15 +169,16 @@ export function TimelineCursor({
     }
   }, [playerCurrentTimestamp, isDragging]);
 
-  const snapToGrid = (position: number) => {
-    const gridSize = 100 / 15;
-    const threshold = gridSize * 0.2;
-    const closestGrid = Math.round(position / gridSize) * gridSize;
+  // Enhanced snapping with frame precision
+  const snapToGrid = (position: number, snapEnabled = true) => {
+    if (!snapEnabled) return position;
     
-    if (Math.abs(position - closestGrid) < threshold) {
-      return closestGrid;
-    }
-    return position;
+    // Convert position to frames (30fps)
+    const totalFrames = 30 * 30; // 30 seconds * 30fps
+    const frame = Math.round((position / 100) * totalFrames);
+    
+    // Snap to nearest frame
+    return (frame / totalFrames) * 100;
   };
 
   const updatePreview = (position: number) => {
@@ -173,7 +189,7 @@ export function TimelineCursor({
 
   const handleCursorDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    const timelineElement = e.currentTarget.closest('.timeline-container');
+    const timelineElement = e.currentTarget.closest(".timeline-container");
     if (!timelineElement) return;
 
     setIsPlaying(false);
@@ -186,12 +202,16 @@ export function TimelineCursor({
       moveEvent.preventDefault();
       const deltaX = moveEvent.clientX - startX;
       const timelineWidth = timelineRect.width;
-      const scaledDeltaX = deltaX / scale; // Account for zoom level
-      const rawPosition = Math.max(0, Math.min(100, 
-        startPosition + (scaledDeltaX / timelineWidth) * 100
-      ));
+      const scaledDeltaX = deltaX / scale;
       
-      const newPosition = moveEvent.shiftKey ? rawPosition : snapToGrid(rawPosition);
+      // Calculate raw position with improved precision
+      const rawPosition = Math.max(
+        0,
+        Math.min(100, startPosition + (scaledDeltaX / timelineWidth) * 100),
+      );
+
+      // Apply snapping unless shift is held
+      const newPosition = snapToGrid(rawPosition, !moveEvent.shiftKey);
       setCursorPosition(newPosition);
       setCursorX(moveEvent.clientX);
       updatePreview(newPosition);
@@ -199,72 +219,82 @@ export function TimelineCursor({
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging) return;
-    
-    const timelineElement = e.currentTarget.closest('.timeline-container');
+
+    const timelineElement = e.currentTarget.closest(".timeline-container");
     if (!timelineElement) return;
 
     setIsPlaying(false);
     const timelineRect = timelineElement.getBoundingClientRect();
     const scrollOffset = timelineElement.scrollLeft;
     const relativeX = (e.clientX - timelineRect.left + scrollOffset) / scale;
-    const rawPosition = Math.max(0, Math.min(100, 
-      (relativeX / timelineRect.width) * 100
-    ));
     
-    const newPosition = e.shiftKey ? rawPosition : snapToGrid(rawPosition);
+    // Calculate position with improved precision
+    const rawPosition = Math.max(
+      0,
+      Math.min(100, (relativeX / timelineRect.width) * 100),
+    );
+
+    // Apply snapping unless shift is held
+    const newPosition = snapToGrid(rawPosition, !e.shiftKey);
     setCursorPosition(newPosition);
     updatePreview(newPosition);
   };
 
+  // Format time with frame precision
+  const formatTimecode = (timeInSeconds: number) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    const frames = Math.floor((timeInSeconds % 1) * 30);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}:${frames.toString().padStart(2, "0")}`;
+  };
+
   const timeInSeconds = (cursorPosition / 100) * 30;
-  const minutes = Math.floor(timeInSeconds / 60);
-  const seconds = Math.floor(timeInSeconds % 60);
-  const frames = Math.floor((timeInSeconds % 1) * 30);
-  const timeDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
+  const timeDisplay = formatTimecode(timeInSeconds);
 
   return (
-    <div 
-      className="absolute inset-0 pointer-events-auto" 
+    <div
+      className="absolute inset-0 pointer-events-auto"
       onClick={handleTimelineClick}
       style={{
         transform: `scale(${scale}, 1)`,
-        transformOrigin: '0 0',
+        transformOrigin: "0 0",
       }}
     >
-      <PreviewWindow 
+      <PreviewWindow
         position={cursorPosition}
         visible={isDragging}
         cursorX={cursorX}
         mediaItems={mediaItems}
       />
-      <div 
+      <div
         className={cn(
           "absolute h-full w-[2px]",
-          isDragging ? "bg-sky-400" : "bg-white"
+          isDragging ? "bg-sky-400" : "bg-white",
+          "transition-colors duration-150"
         )}
         style={{
           left: `${cursorPosition}%`,
-          transform: `translateX(-50%) scale(${1/scale}, 1)`,
-          transformOrigin: '0 0',
+          transform: `translateX(-50%) scale(${1 / scale}, 1)`,
+          transformOrigin: "0 0",
           zIndex: 55,
         }}
       >
-        <div 
+        <div
           className="absolute -top-3 left-1/2 -translate-x-1/2 cursor-move"
           style={{ zIndex: 56 }}
           onMouseDown={handleCursorDrag}
         >
-          <div 
+          <div
             className={cn(
               "w-0 h-0",
               "border-l-[8px] border-l-transparent",
@@ -272,28 +302,32 @@ export function TimelineCursor({
               "border-t-[8px]",
               isDragging ? "border-t-sky-400" : "border-t-white",
               "filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]",
-              "hover:scale-110 active:scale-105 transition-transform duration-75"
+              "hover:scale-110 active:scale-105",
+              "transition-all duration-150"
             )}
           />
         </div>
 
-        <div 
+        <div
           className={cn(
             "absolute -top-8 left-1/2 -translate-x-1/2",
             "px-2 py-1 rounded-md shadow-md",
             "flex items-center justify-center text-xs font-medium",
             "select-none pointer-events-none",
             "bg-white text-black",
-            isDragging && "bg-sky-400 text-white"
+            isDragging && "bg-sky-400 text-white",
+            "transition-all duration-150"
           )}
           style={{
             transform: `scale(${1 / scale})`,
-            zIndex: 57
+            zIndex: 57,
           }}
         >
           <span className="font-mono">{timeDisplay}</span>
           {isDragging && (
-            <span className="ml-1 opacity-50 text-[10px]">(Hold ⇧ to disable snap)</span>
+            <span className="ml-1 opacity-50 text-[10px]">
+              (Hold ⇧ for frame precision)
+            </span>
           )}
         </div>
       </div>
@@ -348,11 +382,15 @@ function AudioWaveform({ data }: AudioWaveformProps) {
       if (data.metadata?.waveform && Array.isArray(data.metadata.waveform)) {
         return data.metadata.waveform;
       }
+      const mediaUrl = resolveMediaUrl(data);
+      if (!mediaUrl) {
+        throw new Error("Could not resolve media URL");
+      }
       const { data: waveformInfo } = await falClient.subscribe(
         "fal-ai/ffmpeg-api/waveform",
         {
           input: {
-            media_url: resolveMediaUrl(data),
+            media_url: mediaUrl,
             points_per_second: 5,
             precision: 3,
           },
@@ -421,8 +459,10 @@ export function VideoTrackView({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
-  const setPlayerCurrentTimestamp = useVideoProjectStore(s => s.setPlayerCurrentTimestamp);
-  const setIsPlaying = useVideoProjectStore(s => s.setIsPlaying);
+  const setPlayerCurrentTimestamp = useVideoProjectStore(
+    (s) => s.setPlayerCurrentTimestamp,
+  );
+  const setIsPlaying = useVideoProjectStore((s) => s.setIsPlaying);
   const deleteKeyframe = useMutation({
     mutationFn: () => db.keyFrames.delete(frame.id),
     onSuccess: () => refreshVideoCache(queryClient, track.projectId),
@@ -480,20 +520,22 @@ export function VideoTrackView({
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!trackRef.current) return;
-    
+
     // Don't initiate drag if clicking buttons or resize handle
-    if ((e.target as HTMLElement).closest('button') || 
-        (e.target as HTMLElement).closest('.resize-handle')) {
+    if (
+      (e.target as HTMLElement).closest("button") ||
+      (e.target as HTMLElement).closest(".resize-handle")
+    ) {
       return;
     }
 
     e.stopPropagation();
     setIsDragging(true);
-    
+
     const trackRect = trackRef.current.getBoundingClientRect();
-    const timelineElement = trackRef.current.closest('.timeline-container');
+    const timelineElement = trackRef.current.closest(".timeline-container");
     if (!timelineElement) return;
-    
+
     const timelineRect = timelineElement.getBoundingClientRect();
     const startX = e.clientX;
     const startLeft = trackRect.left - timelineRect.left;
@@ -501,29 +543,29 @@ export function VideoTrackView({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!trackRef.current || !timelineElement) return;
-      
+
       moveEvent.preventDefault();
       const deltaX = moveEvent.clientX - startX;
       const timelineWidth = timelineRect.width;
-      
+
       // Calculate new position as percentage
       let newLeft = startLeft + deltaX;
       const maxLeft = timelineWidth - trackRect.width;
       newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-      
+
       // Convert to timestamp
       const newTimestamp = (newLeft / timelineWidth) * 30 * 1000;
       frame.timestamp = Math.round(newTimestamp / 100) * 100; // Snap to 100ms intervals
-      
+
       // Update visual position
       trackRef.current.style.left = `${(frame.timestamp / (30 * 1000)) * 100}%`;
     };
 
     const handleMouseUp = async () => {
       setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+
       // Save the new position
       await db.keyFrames.update(frame.id, { timestamp: frame.timestamp });
       queryClient.invalidateQueries({
@@ -531,8 +573,8 @@ export function VideoTrackView({
       });
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleResize = (
@@ -587,19 +629,20 @@ export function VideoTrackView({
 
   const handleExportFrame = async () => {
     if (!media || !mediaUrl) return;
-    
-    let exportUrl = '';
-    
-    if (media.mediaType === 'image') {
+
+    let exportUrl = "";
+
+    if (media.mediaType === "image") {
       exportUrl = mediaUrl;
-    } else if (media.mediaType === 'video') {
+    } else if (media.mediaType === "video") {
       // For video, use the thumbnail or first frame
-      exportUrl = media.metadata?.start_frame_url || media.input?.image_url || '';
+      exportUrl =
+        media.metadata?.start_frame_url || media.input?.image_url || "";
     }
 
     if (exportUrl) {
       // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = exportUrl;
       link.download = `frame-${frame.id}.jpg`; // Default to jpg extension
       document.body.appendChild(link);
@@ -622,11 +665,11 @@ export function VideoTrackView({
         isDragging && "opacity-75 shadow-xl",
         className,
       )}
-      style={{ 
+      style={{
         zIndex: isDragging ? 60 : 50,
         left: `${(frame.timestamp / (30 * 1000)) * 100}%`,
         width: `${(frame.duration / (30 * 1000)) * 100}%`,
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         bottom: 0,
       }}
@@ -655,7 +698,7 @@ export function VideoTrackView({
               </span>
             </div>
             <div className="flex flex-row shrink-0 flex-1 items-center justify-end gap-1">
-              {(media.mediaType === 'image' || media.mediaType === 'video') && (
+              {(media.mediaType === "image" || media.mediaType === "video") && (
                 <WithTooltip tooltip="Export frame">
                   <button
                     type="button"

@@ -1,97 +1,77 @@
+'use client';
+
 // AspectRatioSelector.tsx
 import { cn } from "@/lib/utils";
 import type { MouseEventHandler } from "react";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const aspectRatioOptions = {
-  "16:9": 16 / 9,
-  // "4:3": 4 / 3,
-  "1:1": 1,
-  // "3:4": 3 / 4,
-  "9:16": 9 / 16,
-} as const;
-
-export type AspectRatioOption = keyof typeof aspectRatioOptions;
+export type AspectRatioOption = "16:9" | "9:16" | "1:1";
 
 interface AspectRatioSelectorProps {
   className?: string;
   onValueChange?: (ratio: AspectRatioOption | null) => void;
   value: AspectRatioOption | null;
+  disabled?: boolean;
 }
+
+const ASPECT_RATIOS: { value: AspectRatioOption; label: string; description: string }[] = [
+  {
+    value: "16:9",
+    label: "Landscape (16:9)",
+    description: "Best for cinematic videos and standard displays",
+  },
+  {
+    value: "9:16",
+    label: "Portrait (9:16)",
+    description: "Perfect for mobile and social media stories",
+  },
+  {
+    value: "1:1",
+    label: "Square (1:1)",
+    description: "Ideal for social media posts",
+  },
+];
 
 export function AspectRatioSelector({
   className,
   onValueChange,
   value,
+  disabled = false,
 }: AspectRatioSelectorProps) {
-  const handleOnClick = (ratio: AspectRatioOption) => {
-    return ((e) => {
-      e.preventDefault();
-      if (value === ratio) {
-        onValueChange?.(null);
-        return;
-      }
-      onValueChange?.(ratio);
-    }) as MouseEventHandler<HTMLButtonElement>;
+  const handleValueChange = (newValue: string) => {
+    onValueChange?.(newValue as AspectRatioOption);
   };
-  const ratioValue = value ? aspectRatioOptions[value] : 0;
 
   return (
-    <div
-      className={cn(
-        "mx-auto w-full flex-col items-center justify-center gap-4",
-        className,
-      )}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <ToggleGroup type="single" size="xs" value={value ?? ""}>
-          {Object.keys(aspectRatioOptions).map((option) => (
-            <ToggleGroupItem
-              key={option}
-              className="tabular-nums"
-              onClick={handleOnClick(option as AspectRatioOption)}
-              value={option}
-            >
-              {option}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-      <div className="flex aspect-square w-full items-center justify-center">
-        <div className="relative flex aspect-square h-full w-full items-center justify-center">
-          <div className="text-sm tabular-nums">{value ?? "default"}</div>
-          {!!value && (
-            <div
-              className={cn(
-                "absolute border border-primary",
-                "z-40 transition-all",
-                {
-                  "w-2/5": ratioValue <= 1,
-                  "h-2/5": ratioValue > 1,
-                },
-              )}
-              style={{
-                aspectRatio: value.replace(":", "/"),
-              }}
-            />
-          )}
-          {Object.entries(aspectRatioOptions).map(([option, ratio]) => (
-            <div
-              key={option}
-              className={cn(
-                "absolute border border-dashed border-muted-foreground/70 transition-colors",
-                {
-                  "w-2/5": ratio <= 1,
-                  "h-2/5": ratio > 1,
-                },
-              )}
-              style={{
-                aspectRatio: option.replace(":", "/"),
-              }}
-            />
-          ))}
-        </div>
-      </div>
+    <div className={cn("space-y-3", className)}>
+      <Label className="text-sm font-medium">Aspect Ratio</Label>
+      <RadioGroup
+        value={value || undefined}
+        onValueChange={handleValueChange}
+        className="grid grid-cols-1 gap-2"
+        disabled={disabled}
+      >
+        {ASPECT_RATIOS.map((ratio) => (
+          <label
+            key={ratio.value}
+            className={cn(
+              "flex items-center space-x-3 rounded-lg border p-4 cursor-pointer hover:bg-accent",
+              value === ratio.value ? "border-primary" : "border-border",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <RadioGroupItem value={ratio.value} id={ratio.value} />
+            <div className="space-y-1">
+              <p className="text-sm font-medium leading-none">{ratio.label}</p>
+              <p className="text-sm text-muted-foreground">
+                {ratio.description}
+              </p>
+            </div>
+          </label>
+        ))}
+      </RadioGroup>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
+import { fal, subscribeToModel } from "@/lib/fal.server";
+import { getAspectRatioDimensions, isAspectRatioSupported } from "@/lib/utils";
+import { STYLE_PRESETS, getModelStyleSupport } from "@/lib/fal";
 
-fal.config({
-  credentials: process.env.FAL_KEY,
-});
+if (!process.env.FAL_KEY) {
+  throw new Error("FAL_KEY environment variable is not set");
+}
 
 export const runtime = "edge";
 
@@ -13,147 +15,164 @@ export async function POST(request: Request) {
     const {
       model,
       prompt,
-      negative_prompt,
-      aspect_ratio,
-      resolution,
-      style,
-      image_url,
-      // Hunyuan specific
-      num_inference_steps,
-      num_frames,
-      enable_safety_checker,
-      pro_mode,
-      // Minimax specific
-      prompt_optimizer,
       subject_reference_image_url,
+      image_url,
+      prompt_optimizer = true,
+      aspect_ratio,
+      style_preset_id,
+      style_reference_url,
+      style_strength = 0.8,
+      ...otherParams
     } = body;
 
     if (!model) {
+      return NextResponse.json({ error: "Model is required" }, { status: 400 });
+    }
+
+    if (!prompt) {
+      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    }
+
+    // Check model style support
+    const styleSupport = getModelStyleSupport(model);
+    
+    // Validate style parameters
+    if (style_preset_id && !styleSupport.supportsStylePresets) {
       return NextResponse.json(
-        { error: "Model is required" },
+        { error: `Model ${model} does not support style presets` },
         { status: 400 }
       );
     }
 
-    if (model === "fal-ai/hunyuan-video") {
-      const result = await fal.subscribe("fal-ai/hunyuan-video", {
-        input: {
-          prompt,
-          num_inference_steps: num_inference_steps || 30,
-          aspect_ratio: aspect_ratio || "16:9",
-          resolution: resolution || "720p",
-          num_frames: num_frames || 16,
-          enable_safety_checker: enable_safety_checker || true,
-          pro_mode: pro_mode || false,
-        },
-      });
+    if (style_reference_url && !styleSupport.supportsStyleReference) {
+      return NextResponse.json(
+        { error: `Model ${model} does not support style reference images` },
+        { status: 400 }
+      );
+    }
 
-      return NextResponse.json(result);
-    } else if (model === "fal-ai/pixverse/v3.5/text-to-video/fast") {
-      console.log("Pixverse text-to-video request:", {
-        prompt,
-        negative_prompt,
-        aspect_ratio,
-        resolution,
-        style,
-      });
+    if (style_strength > styleSupport.maxStyleStrength) {
+      return NextResponse.json(
+        { error: `Style strength must be between 0 and ${styleSupport.maxStyleStrength}` },
+        { status: 400 }
+      );
+    }
 
-      const result = await fal.subscribe("fal-ai/pixverse/v3.5/text-to-video/fast", {
-        input: {
-          prompt,
-          negative_prompt: negative_prompt || undefined,
-          aspect_ratio: aspect_ratio || "16:9",
-          resolution: resolution || "720p",
-          style: style || undefined,
-        },
-        logs: true,
-      });
+    // Validate aspect ratio if provided
+    if (aspect_ratio && !isAspectRatioSupported(model, aspect_ratio)) {
+      return NextResponse.json(
+        { error: `Aspect ratio ${aspect_ratio} is not supported by model ${model}` },
+        { status: 400 }
+      );
+    }
 
-      return NextResponse.json(result);
-    } else if (model === "fal-ai/pixverse/v3.5/image-to-video/fast") {
-      console.log("Pixverse image-to-video request:", {
-        prompt,
-        image_url,
-        negative_prompt,
-        aspect_ratio,
-        resolution,
-        style,
-      });
+    // Get dimensions for the aspect ratio if needed
+    const dimensions = aspect_ratio ? getAspectRatioDimensions(aspect_ratio) : null;
 
-      if (!image_url) {
-        console.error("Missing image URL in request");
-        return NextResponse.json(
-          { error: "Image URL is required" },
-          { status: 400 }
-        );
+    // Handle style parameters
+    let enhancedPrompt = prompt;
+    if (style_preset_id && styleSupport.supportsStylePresets) {
+      const preset = STYLE_PRESETS.find((p) => p.id === style_preset_id);
+      if (preset) {
+        enhancedPrompt = `${prompt}, ${preset.prompt}`;
       }
+    }
 
-      if (!prompt) {
-        return NextResponse.json(
-          { error: "Prompt is required" },
-          { status: 400 }
-        );
-      }
-
-      try {
-        const result = await fal.subscribe("fal-ai/pixverse/v3.5/image-to-video/fast", {
-          input: {
-            prompt,
-            image_url,
-            negative_prompt: negative_prompt || undefined,
-            aspect_ratio: aspect_ratio || "16:9",
-            resolution: resolution || "720p",
-            style: style || undefined,
-          },
-          logs: true,
-          onQueueUpdate: (update) => {
-            if (update.status === "IN_PROGRESS") {
-              console.log("Generation progress:", update.logs);
-            }
-          }
-        });
-
-        console.log("Pixverse API response:", result);
-        return NextResponse.json(result);
-      } catch (error) {
-        console.error("Pixverse API error:", error);
-        return NextResponse.json(
-          { error: "Failed to generate video" },
-          { status: 500 }
-        );
-      }
-    } else if (model === "fal-ai/minimax/video-01-live/image-to-video") {
-      const result = await fal.subscribe("fal-ai/minimax/video-01-live/image-to-video", {
-        input: {
-          prompt,
-          image_url,
-          prompt_optimizer: prompt_optimizer || true,
-          num_frames: 24,
-          fps: 8
-        },
-        logs: true,
-        onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            console.log("Generation progress:", update.logs);
+    // Prepare style reference object if needed
+    const styleReference = style_reference_url && styleSupport.supportsStyleReference
+      ? {
+          style_reference: {
+            url: style_reference_url,
+            weight: style_strength
           }
         }
-      });
+      : {};
 
-      return NextResponse.json(result);
-    } else if (model === "fal-ai/minimax/video-01-subject-reference") {
-      const result = await fal.subscribe("fal-ai/minimax/video-01-subject-reference", {
-        input: {
-          prompt,
-          subject_reference_image_url,
-          prompt_optimizer: prompt_optimizer || true,
-        },
+    if (model === "fal-ai/hunyuan-video") {
+      const input = {
+        prompt: enhancedPrompt,
+        aspect_ratio,
+        style_strength,
+        ...styleReference,
+        ...otherParams
+      };
+
+      const result = await subscribeToModel("hunyuan", {
+        input,
         logs: true,
       });
 
       return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: "Unsupported model" }, { status: 400 });
+    if (model === "fal-ai/minimax/video-01-live/image-to-video") {
+      if (!image_url) {
+        return NextResponse.json(
+          { error: "Image URL is required for Minimax I2V" },
+          { status: 400 }
+        );
+      }
+
+      const input = {
+        prompt: enhancedPrompt,
+        image_url,
+        prompt_optimizer,
+        style_strength,
+        ...styleReference,
+        ...otherParams
+      };
+
+      const result = await subscribeToModel("minimax-i2v", {
+        input,
+        logs: true,
+        onQueueUpdate: (update: any) => {
+          if (update.status === "IN_PROGRESS") {
+            console.log("Generation progress:", update.logs);
+          }
+        },
+      });
+
+      return NextResponse.json(result);
+    }
+
+    if (model === "fal-ai/minimax/video-01-subject-reference") {
+      if (!subject_reference_image_url) {
+        return NextResponse.json(
+          { error: "Subject reference image is required" },
+          { status: 400 }
+        );
+      }
+
+      const input = {
+        prompt: enhancedPrompt,
+        subject_reference_image_url,
+        prompt_optimizer,
+        style_strength,
+        ...styleReference,
+        ...(dimensions && {
+          width: dimensions.width,
+          height: dimensions.height
+        }),
+        ...otherParams
+      };
+
+      const result = await subscribeToModel("minimax-subject", {
+        input,
+        logs: true,
+        onQueueUpdate: (update: any) => {
+          if (update.status === "IN_PROGRESS") {
+            console.log("Generation progress:", update.logs);
+          }
+        },
+      });
+
+      return NextResponse.json(result);
+    }
+
+    return NextResponse.json(
+      { error: "Unsupported model" },
+      { status: 400 }
+    );
   } catch (error) {
     console.error("Error in video generation:", error);
     return NextResponse.json(
@@ -161,4 +180,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

@@ -1,14 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ImageVariantGrid, ImageVariant } from "@/components/image-variant-grid";
+import {
+  ImageVariantGrid,
+  ImageVariant,
+} from "@/components/image-variant-grid";
 
 interface ApiInfo {
   id: string;
@@ -36,10 +45,13 @@ const validSafetyTolerances = ["low", "medium", "high"];
 const validOutputFormats = ["png", "jpg"];
 const validAspectRatios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 
-export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ modelInfo, onSubmit }) => {
+export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({
+  modelInfo,
+  onSubmit,
+}) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<PhotonModelInput>({
     prompt: "",
     negative_prompt: "",
@@ -60,7 +72,10 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
       return false;
     }
 
-    if (formData.num_images && (formData.num_images < 1 || formData.num_images > 4)) {
+    if (
+      formData.num_images &&
+      (formData.num_images < 1 || formData.num_images > 4)
+    ) {
       toast({
         title: "Error",
         description: "Number of images must be between 1 and 4",
@@ -108,7 +123,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
         <Textarea
           id="negative_prompt"
           value={formData.negative_prompt}
-          onChange={(e) => setFormData({ ...formData, negative_prompt: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, negative_prompt: e.target.value })
+          }
           placeholder="Enter negative prompt (optional)..."
         />
       </div>
@@ -121,7 +138,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
           min={1}
           max={4}
           value={formData.num_images}
-          onChange={(e) => setFormData({ ...formData, num_images: parseInt(e.target.value) })}
+          onChange={(e) =>
+            setFormData({ ...formData, num_images: parseInt(e.target.value) })
+          }
         />
       </div>
 
@@ -129,7 +148,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
         <Switch
           id="enable_safety_checker"
           checked={formData.enable_safety_checker}
-          onCheckedChange={(checked) => setFormData({ ...formData, enable_safety_checker: checked })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, enable_safety_checker: checked })
+          }
         />
         <Label htmlFor="enable_safety_checker">Enable Safety Checker</Label>
       </div>
@@ -138,7 +159,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
         <Label htmlFor="safety_tolerance">Safety Tolerance</Label>
         <Select
           value={formData.safety_tolerance}
-          onValueChange={(value) => setFormData({ ...formData, safety_tolerance: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, safety_tolerance: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select safety tolerance" />
@@ -157,7 +180,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
         <Label htmlFor="output_format">Output Format</Label>
         <Select
           value={formData.output_format}
-          onValueChange={(value) => setFormData({ ...formData, output_format: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, output_format: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select output format" />
@@ -176,7 +201,9 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
         <Label htmlFor="aspect_ratio">Aspect Ratio</Label>
         <Select
           value={formData.aspect_ratio}
-          onValueChange={(value) => setFormData({ ...formData, aspect_ratio: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, aspect_ratio: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select aspect ratio" />
@@ -198,4 +225,4 @@ export const PhotonModelInterface: React.FC<PhotonModelInterfaceProps> = ({ mode
   );
 };
 
-export default PhotonModelInterface; 
+export default PhotonModelInterface;

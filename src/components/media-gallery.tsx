@@ -1,3 +1,5 @@
+'use client';
+
 import {
   ComponentProps,
   HTMLAttributes,
@@ -30,7 +32,7 @@ import {
   MusicIcon,
   TrashIcon,
 } from "lucide-react";
-import { Button } from "./ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Separator } from "./ui/separator";
 import { formatDuration } from "date-fns";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -201,8 +203,14 @@ export function MediaGallerySheet({
                   draggable
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "copy";
-                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
-                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData(
+                      "application/json",
+                      JSON.stringify(selectedMedia),
+                    );
+                    event.dataTransfer.setData(
+                      "job",
+                      JSON.stringify(selectedMedia),
+                    );
                   }}
                 />
               )}
@@ -215,8 +223,14 @@ export function MediaGallerySheet({
                   draggable
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "copy";
-                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
-                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData(
+                      "application/json",
+                      JSON.stringify(selectedMedia),
+                    );
+                    event.dataTransfer.setData(
+                      "job",
+                      JSON.stringify(selectedMedia),
+                    );
                   }}
                 />
               )}
@@ -227,8 +241,14 @@ export function MediaGallerySheet({
                   className="cursor-grab"
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "copy";
-                    event.dataTransfer.setData("application/json", JSON.stringify(selectedMedia));
-                    event.dataTransfer.setData("job", JSON.stringify(selectedMedia));
+                    event.dataTransfer.setData(
+                      "application/json",
+                      JSON.stringify(selectedMedia),
+                    );
+                    event.dataTransfer.setData(
+                      "job",
+                      JSON.stringify(selectedMedia),
+                    );
                   }}
                 >
                   <AudioPlayer media={selectedMedia} />

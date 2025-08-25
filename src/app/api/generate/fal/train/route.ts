@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { fal } from "@fal-ai/client";
+import { createFalClient } from "@fal-ai/client";
 
 if (!process.env.FAL_KEY) {
   throw new Error("FAL_KEY environment variable is not set");
 }
 
-fal.config({
+const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 });
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     if (model !== "fal-ai/flux-lora-training") {
       return NextResponse.json(
         { error: "Unsupported model for this endpoint" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     console.error("Error in FLUX LoRA training:", error);
     return NextResponse.json(
       { error: "Failed to process FLUX LoRA training request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

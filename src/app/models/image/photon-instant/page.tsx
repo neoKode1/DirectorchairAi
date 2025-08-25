@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { PhotonInstantModelInterface, PhotonInstantModelInput } from "@/components/model-inputs/photon-instant-model-interface";
+import {
+  PhotonInstantModelInterface,
+  PhotonInstantModelInput,
+} from "@/components/model-inputs/photon-instant-model-interface";
 import { ImageVariantGrid } from "@/components/image-variant-grid";
 import { Loader2 } from "lucide-react";
 
 const modelInfo = {
   id: "photon-instant",
-  name: "Nano • Photon Instant",
+      name: "DirectorchairAI • Photon Instant",
   description: "Image generation model",
   category: "image",
 };
@@ -19,7 +22,9 @@ export default function PhotonInstantPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<{ url: string }[]>([]);
 
-  const handleSubmit = async (input: PhotonInstantModelInput): Promise<{ images: { url: string }[] }> => {
+  const handleSubmit = async (
+    input: PhotonInstantModelInput,
+  ): Promise<{ images: { url: string }[] }> => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/generate/photon-instant", {
@@ -58,8 +63,13 @@ export default function PhotonInstantPage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Image Generation Settings</h2>
-          <PhotonInstantModelInterface modelInfo={modelInfo} onSubmit={handleSubmit} />
+          <h2 className="text-2xl font-semibold mb-4">
+            Image Generation Settings
+          </h2>
+          <PhotonInstantModelInterface
+            modelInfo={modelInfo}
+            onSubmit={handleSubmit}
+          />
         </CardContent>
       </Card>
 
@@ -72,14 +82,14 @@ export default function PhotonInstantPage() {
       {images.length > 0 && (
         <div className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Generated Images</h2>
-          <ImageVariantGrid 
-            variants={images} 
-            onSelect={() => {}} 
-            onUpscale={() => {}} 
+          <ImageVariantGrid
+            variants={images}
+            onSelect={() => {}}
+            onUpscale={() => {}}
             onRegenerate={() => {}}
           />
         </div>
       )}
     </div>
   );
-} 
+}

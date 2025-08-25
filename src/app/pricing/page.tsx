@@ -1,4 +1,6 @@
-import { Button } from "@/components/ui/button";
+'use client';
+
+import { button as Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -45,6 +47,29 @@ const pricingPlans = [
 ];
 
 export default function PricingPage() {
+  const handleSubscription = async (priceId: string) => {
+    try {
+      const response = await fetch("/api/stripe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ priceId }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+      );
+
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-12">
@@ -104,24 +129,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-async function handleSubscription(priceId: string) {
-  try {
-    const response = await fetch("/api/stripe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ priceId }),
-    });
-
-    const { sessionId } = await response.json();
-    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-    
-    if (stripe) {
-      await stripe.redirectToCheckout({ sessionId });
-    }
-  } catch (error) {
-    console.error("Error:", error);
-  }
-} 

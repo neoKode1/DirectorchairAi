@@ -1,26 +1,25 @@
+import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  // Allow UploadThing API route
-  if (request.nextUrl.pathname.startsWith("/api/uploadthing")) {
+// In development mode, skip middleware entirely
+export default function middleware(req: any) {
+  if (process.env.NODE_ENV === "development") {
     return NextResponse.next();
   }
-
-  // Your other middleware logic...
-  return NextResponse.next();
+  
+  return withAuth(req, {
+    callbacks: {
+      authorized({ req, token }) {
+        return !!token;
+      },
+    },
+  });
 }
 
 export const config = {
+  // Protect all routes under /api/auth
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - uploadthing API routes
-     */
-    "/((?!_next/static|_next/image|favicon.ico|public|api/uploadthing).*)",
+    "/api/auth/:path*",
+    // Add other protected routes here
   ],
 };

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { LumaAI } from "lumaai";
 
 if (!process.env.LUMAAI_API_KEY) {
@@ -8,16 +8,22 @@ if (!process.env.LUMAAI_API_KEY) {
 // Initialize Luma client
 const client = new LumaAI({ authToken: process.env.LUMAAI_API_KEY });
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
+type Context = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function GET(req: NextRequest, { params }: Context) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json(
         { error: "Generation ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +33,7 @@ export async function GET(
     console.error("Error fetching Luma generation:", error);
     return NextResponse.json(
       { error: error.message || "Failed to fetch generation status" },
-      { status: error.status || 500 }
+      { status: error.status || 500 },
     );
   }
-} 
+}

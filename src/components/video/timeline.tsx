@@ -66,8 +66,9 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
   const addToTrack = useMutation({
     mutationFn: async (media: MediaItem) => {
       // Find or create appropriate track based on media type
-      let track = tracks.find(t => {
-        if (media.mediaType === "video" || media.mediaType === "image") return t.type === "video";
+      let track = tracks.find((t) => {
+        if (media.mediaType === "video" || media.mediaType === "image")
+          return t.type === "video";
         if (media.mediaType === "music") return t.type === "music";
         if (media.mediaType === "voiceover") return t.type === "voiceover";
         return false;
@@ -83,12 +84,12 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
         } else {
           trackType = "voiceover";
         }
-        
+
         const newTrack = await db.tracks.create({
           type: trackType,
           label: trackType.charAt(0).toUpperCase() + trackType.slice(1),
           projectId: projectId,
-          locked: false
+          locked: false,
         });
 
         track = await db.tracks.find(newTrack.toString());
@@ -98,16 +99,16 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
       // Get existing keyframes to determine insertion point
       const existingKeyframes = await db.keyFrames.keyFramesByTrack(track.id);
       const lastKeyframe = existingKeyframes[existingKeyframes.length - 1];
-      
+
       // Calculate new keyframe timestamp (place after last keyframe or at start)
-      const timestamp = lastKeyframe 
-        ? lastKeyframe.timestamp + lastKeyframe.duration 
+      const timestamp = lastKeyframe
+        ? lastKeyframe.timestamp + lastKeyframe.duration
         : 0;
 
       // Create keyframe data based on media type
       const baseData = {
         mediaId: media.id,
-        prompt: media.input?.prompt || media.metadata?.title || ""
+        prompt: media.input?.prompt || media.metadata?.title || "",
       };
 
       let keyframeData;
@@ -115,12 +116,12 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
         keyframeData = {
           ...baseData,
           type: "video" as const,
-          url: media.input?.image_url || ""
+          url: media.input?.image_url || "",
         };
       } else {
         keyframeData = {
           ...baseData,
-          type: "prompt" as const
+          type: "prompt" as const,
         };
       }
 
@@ -128,14 +129,14 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
         trackId: track.id,
         timestamp: timestamp,
         duration: media.metadata?.duration ?? 5000,
-        data: keyframeData
+        data: keyframeData,
       });
 
       return keyframe;
     },
     onSuccess: () => {
       refreshVideoCache(queryClient, projectId);
-    },
+    }
   });
 
   const handleCursorChange = (position: number) => {
@@ -162,7 +163,7 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX;
     const y = event.clientY;
-    
+
     if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
       setDragOverTracks(false);
     }
@@ -172,7 +173,7 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
     event.preventDefault();
     event.stopPropagation();
     setDragOverTracks(false);
-    
+
     let jobPayload = event.dataTransfer.getData("job");
     if (!jobPayload) {
       // Try alternate format
@@ -182,7 +183,7 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
       console.warn("No valid data found in drop event");
       return;
     }
-    
+
     try {
       const job: MediaItem = JSON.parse(jobPayload);
       console.log("Dropped media item:", job);
@@ -197,8 +198,8 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
   const handleVerticalScroll = (value: number | number[]) => {
     const scrollValue = Array.isArray(value) ? value[0] : value;
     setVerticalScroll(scrollValue);
-    
-    const container = document.querySelector('.timeline-tracks-container');
+
+    const container = document.querySelector(".timeline-tracks-container");
     if (container) {
       const maxScroll = container.scrollHeight - container.clientHeight;
       container.scrollTop = (scrollValue / 100) * maxScroll;
@@ -206,13 +207,13 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
   };
 
   return (
-    <div 
+    <div
       className={cn(
         "relative w-full h-full timeline-container select-none",
         "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
         dragOverTracks && "bg-white/5 ring-2 ring-purple-500/50",
-        className
-      )} 
+        className,
+      )}
       {...props}
     >
       <div className="relative w-full h-full flex">
@@ -222,7 +223,7 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
           <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm">
             <div className="flex items-center justify-between px-4 h-8 border-b border-border/40">
               <TimelineRuler className="flex-1" />
-              
+
               {/* Zoom Controls */}
               <div className="flex items-center gap-2 px-4">
                 <ZoomOutIcon className="w-4 h-4 text-muted-foreground" />
@@ -240,7 +241,7 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
                     track: "bg-white/10",
                     filler: "bg-purple-500",
                     thumb: "bg-purple-500 shadow-lg border-2 border-white",
-                    label: "text-white"
+                    label: "text-white",
                   }}
                 />
                 <ZoomInIcon className="w-4 h-4 text-muted-foreground" />
@@ -250,12 +251,12 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
               </div>
             </div>
           </div>
-          
+
           {/* Main content area - This is the drop zone */}
-          <div 
+          <div
             className={cn(
               "relative w-full h-[calc(100%-2rem)] flex",
-              dragOverTracks && "bg-purple-500/10"
+              dragOverTracks && "bg-purple-500/10",
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -264,13 +265,13 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
           >
             {/* Tracks Container */}
             <div className="flex-1 relative">
-              <div 
+              <div
                 className="timeline-tracks-container relative w-full h-full z-10 flex flex-col gap-1 p-1 overflow-y-auto"
                 style={{
                   transform: `scaleX(${zoomLevel / 100})`,
-                  transformOrigin: 'left',
+                  transformOrigin: "left",
                   width: `${10000 / zoomLevel}%`,
-                  minWidth: '100%'
+                  minWidth: "100%",
                 }}
               >
                 {tracks.map((track) => (
@@ -279,9 +280,12 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
               </div>
 
               {/* Cursor - Make sure it doesn't interfere with drops */}
-              <div className="absolute inset-0" style={{ zIndex: 50, pointerEvents: 'none' }}>
-                <TimelineCursor 
-                  className="h-full pointer-events-none" 
+              <div
+                className="absolute inset-0"
+                style={{ zIndex: 50, pointerEvents: "none" }}
+              >
+                <TimelineCursor
+                  className="h-full pointer-events-none"
                   onPositionChange={handleCursorChange}
                   scale={zoomLevel / 100}
                 />
@@ -306,8 +310,9 @@ export function Timeline({ tracks, className, ...props }: TimelineProps) {
                     base: "max-h-full gap-3",
                     track: "bg-white/10",
                     filler: "bg-purple-500",
-                    thumb: "bg-purple-500 shadow-lg border-2 border-white hover:bg-purple-600 hover:border-white/80",
-                    label: "text-white"
+                    thumb:
+                      "bg-purple-500 shadow-lg border-2 border-white hover:bg-purple-600 hover:border-white/80",
+                    label: "text-white",
                   }}
                 />
               </div>

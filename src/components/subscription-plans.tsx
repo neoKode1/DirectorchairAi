@@ -1,82 +1,92 @@
-import { useState } from 'react';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { loadStripe } from '@stripe/stripe-js';
+'use client';
+
+import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { button as Button } from "@/components/ui/button";
+import { loadStripe } from "@stripe/stripe-js";
 
 const SUBSCRIPTION_TIERS = {
   BASIC: {
-    name: 'Basic Plan',
+    name: "Basic Plan",
     price: 1.99,
     credits: 50,
     priceId: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID,
     features: [
-      '50 credits per month',
-      'Basic AI image generation',
-      'Standard video quality',
-      'Email support'
-    ]
+      "50 credits per month",
+      "Basic AI image generation",
+      "Standard video quality",
+      "Email support",
+    ],
   },
   PRO: {
-    name: 'Pro Plan',
+    name: "Pro Plan",
     price: 5.99,
     credits: 150,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
     features: [
-      '150 credits per month',
-      'Advanced AI generation',
-      'HD video quality',
-      'Priority support',
-      'Custom presets'
-    ]
+      "150 credits per month",
+      "Advanced AI generation",
+      "HD video quality",
+      "Priority support",
+      "Custom presets",
+    ],
   },
   PREMIUM: {
-    name: 'Premium Plan',
+    name: "Premium Plan",
     price: 10.99,
     credits: 400,
     priceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID,
     features: [
-      '400 credits per month',
-      'Premium AI generation',
-      '4K video quality',
-      '24/7 Priority support',
-      'Custom presets',
-      'API access'
-    ]
-  }
+      "400 credits per month",
+      "Premium AI generation",
+      "4K video quality",
+      "24/7 Priority support",
+      "Custom presets",
+      "API access",
+    ],
+  },
 };
 
 export default function SubscriptionPlans() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const handleSubscribe = async (planKey: string) => {
     try {
       setIsLoading(true);
       setSelectedPlan(planKey);
-      
-      const plan = SUBSCRIPTION_TIERS[planKey as keyof typeof SUBSCRIPTION_TIERS];
-      const response = await fetch('/api/stripe', {
-        method: 'POST',
+
+      const plan =
+        SUBSCRIPTION_TIERS[planKey as keyof typeof SUBSCRIPTION_TIERS];
+      const response = await fetch("/api/stripe", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           priceId: plan.priceId,
         }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        throw new Error("Failed to create checkout session");
       }
-      
+
       const { sessionId } = await response.json();
-      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      
+      const stripe = await loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+      );
+
       if (stripe) {
         await stripe.redirectToCheckout({ sessionId });
       }
     } catch (error) {
-      console.error('Error creating subscription:', error);
+      console.error("Error creating subscription:", error);
     } finally {
       setIsLoading(false);
     }
@@ -99,16 +109,16 @@ export default function SubscriptionPlans() {
               <ul className="space-y-3">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-center">
-                    <svg 
-                      className="w-5 h-5 text-green-500 mr-2" 
-                      fill="none" 
-                      stroke="currentColor" 
+                    <svg
+                      className="w-5 h-5 text-green-500 mr-2"
+                      fill="none"
+                      stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        strokeWidth="2" 
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
                         d="M5 13l4 4L19 7"
                       />
                     </svg>
@@ -118,13 +128,15 @@ export default function SubscriptionPlans() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 onClick={() => handleSubscribe(key)}
-                variant={key === 'PRO' ? 'default' : 'outline'}
+                variant={key === "PRO" ? "default" : "outline"}
                 disabled={isLoading && selectedPlan === key}
               >
-                {isLoading && selectedPlan === key ? 'Processing...' : 'Subscribe Now'}
+                {isLoading && selectedPlan === key
+                  ? "Processing..."
+                  : "Subscribe Now"}
               </Button>
             </CardFooter>
           </Card>
@@ -132,4 +144,4 @@ export default function SubscriptionPlans() {
       </div>
     </div>
   );
-} 
+}

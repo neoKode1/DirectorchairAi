@@ -1,51 +1,37 @@
-import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
-
-fal.config({
-  credentials: process.env.FAL_KEY,
-});
+import { NextRequest, NextResponse } from "next/server";
+import { falClient } from "@/lib/fal.client";
+import { FAL_ENDPOINTS } from "@/lib/fal.server";
 
 export const runtime = "edge";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      prompt,
-      model,
-      video_url,
-      num_steps,
-      duration,
-      cfg_strength,
-    } = body;
+    const { prompt, model, video_url, num_steps, duration, cfg_strength } = body;
 
-    if (model === "fal-ai/mmaudio-v2/video-to-video" || model === "fal-ai/mmaudio-v2/text-to-video") {
-      const input: any = {
+    if (model === "mmaudio") {
+      const input = {
         prompt,
-        num_steps,
-        duration,
-        cfg_strength,
+        num_steps: num_steps || 50,
+        duration: duration || 5,
+        cfg_strength: cfg_strength || 7.5,
+        ...(video_url && { video_url })
       };
 
-      // Only include video_url for video-to-video variant
-      if (model === "fal-ai/mmaudio-v2/video-to-video") {
-        input.video_url = video_url;
-      }
-
-      const result = await fal.subscribe(model, {
+      const result = await falClient.subscribe(FAL_ENDPOINTS["mmaudio-v2"], {
         input,
-        logs: true,
+        logs: true
       });
 
       return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: "Unsupported model" }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in audio generation:", error);
     return NextResponse.json(
-      { error: "Failed to generate audio" },
-      { status: 500 }
+      { error: error.message || "Failed to generate audio" },
+      { status: error.status || 500 },
     );
   }
-} 
+}

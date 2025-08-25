@@ -1,7 +1,18 @@
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { button as Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
+import VideoModelInterface from "@/components/model-inputs/video-model-interface";
+import { AudioModelInterface } from "@/components/model-inputs/audio-model-interface";
 
 interface TextInputProps {
   label: string;
@@ -11,7 +22,13 @@ interface TextInputProps {
   description?: string;
 }
 
-export function TextInput({ label, value, onChange, placeholder, description }: TextInputProps) {
+export function TextInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  description,
+}: TextInputProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -33,7 +50,13 @@ interface TextAreaInputProps {
   description?: string;
 }
 
-export function TextAreaInput({ label, value, onChange, placeholder, description }: TextAreaInputProps) {
+export function TextAreaInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  description,
+}: TextAreaInputProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -55,7 +78,13 @@ interface SelectInputProps {
   description?: string;
 }
 
-export function SelectInput({ label, value, onChange, options, description }: SelectInputProps) {
+export function SelectInput({
+  label,
+  value,
+  onChange,
+  options,
+  description,
+}: SelectInputProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -83,7 +112,12 @@ interface FileUploadProps {
   description?: string;
 }
 
-export function FileUpload({ label, onFileSelect, accept, description }: FileUploadProps) {
+export function FileUpload({
+  label,
+  onFileSelect,
+  accept,
+  description,
+}: FileUploadProps) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -100,4 +134,4 @@ export function FileUpload({ label, onFileSelect, accept, description }: FileUpl
       {description && <p className="text-xs text-gray-500">{description}</p>}
     </div>
   );
-} 
+}

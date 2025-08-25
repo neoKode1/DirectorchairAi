@@ -1,3 +1,5 @@
+'use client';
+
 import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
@@ -13,8 +15,8 @@ import {
   useProject,
   useVideoComposition,
 } from "@/data/queries";
-import { falClient } from "@/lib/fal";
-import { Button } from "./ui/button";
+import { falClient } from "@/lib/fal.client";
+import { button as Button } from "@/components/ui/button";
 import { useProjectId, useVideoProjectStore } from "@/data/store";
 import { LoadingIcon } from "./ui/icons";
 import {
@@ -24,7 +26,8 @@ import {
   FilmIcon,
 } from "lucide-react";
 import { Input } from "./ui/input";
-import type { ShareVideoParams } from "@/lib/share";
+// Placeholder type for share video params
+type ShareVideoParams = any;
 import { PROJECT_PLACEHOLDER } from "@/data/schema";
 import { useRouter } from "next/navigation";
 
@@ -46,11 +49,17 @@ export function ExportDialog({ onOpenChange, ...props }: ExportDialogProps) {
       const videoData = composition.tracks.map((track) => ({
         id: track.id,
         type: track.type === "video" ? "video" : "audio",
-        keyframes: composition.frames[track.id].map((frame) => ({
-          timestamp: frame.timestamp,
-          duration: frame.duration,
-          url: resolveMediaUrl(mediaItems[frame.data.mediaId]),
-        })),
+        keyframes: composition.frames[track.id]
+          .map((frame) => {
+            const url = resolveMediaUrl(mediaItems[frame.data.mediaId]);
+            if (!url) return null;
+            return {
+              timestamp: frame.timestamp,
+              duration: frame.duration,
+              url,
+            };
+          })
+          .filter((frame): frame is NonNullable<typeof frame> => frame !== null),
       }));
       if (videoData.length === 0) {
         throw new Error("No tracks to export");

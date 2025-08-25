@@ -64,6 +64,11 @@ export type KeyFrameData = {
       prompt: string;
       url: string;
     }
+  | {
+      type: "voiceover" | "music";
+      prompt: string;
+      url: string;
+    }
 );
 
 export type MediaItem = {

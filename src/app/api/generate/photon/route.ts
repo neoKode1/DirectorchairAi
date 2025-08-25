@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 interface PhotonRequestBody {
   prompt: string;
@@ -12,18 +12,31 @@ interface PhotonRequestBody {
   image_url?: string;
 }
 
-export async function POST(request: Request) {
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
+type Context = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as PhotonRequestBody;
+    const body = (await request.json()) as PhotonRequestBody;
     console.log("[PHOTON] Received request:", body);
 
     // Validate required fields
     if (!body.prompt) {
-      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Prompt is required" },
+        { status: 400 },
+      );
     }
 
     // Normalize model value
-    const model = (body.model === "photon" || !body.model) ? "photon-1" : body.model;
+    const model =
+      body.model === "photon" || !body.model ? "photon-1" : body.model;
 
     // Construct the payload for Luma API
     const payload = {
@@ -39,7 +52,7 @@ export async function POST(request: Request) {
     };
 
     // Remove undefined values
-    Object.keys(payload).forEach(key => {
+    Object.keys(payload).forEach((key) => {
       if (payload[key as keyof typeof payload] === undefined) {
         delete payload[key as keyof typeof payload];
       }
@@ -48,22 +61,25 @@ export async function POST(request: Request) {
     console.log("[PHOTON] Sending to Luma API:", payload);
 
     // Make request to Luma API
-    const response = await fetch("https://api.lumalabs.ai/dream-machine/v1/generations/image", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": `Bearer ${process.env.LUMA_API_KEY}`,
+    const response = await fetch(
+      "https://api.lumalabs.ai/dream-machine/v1/generations/image",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${process.env.LUMA_API_KEY}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
     if (!response.ok) {
       const error = await response.json();
       console.error("[PHOTON] Luma API error:", error);
       return NextResponse.json(
         { error: error.error || "Failed to generate image" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -75,36 +91,36 @@ export async function POST(request: Request) {
     console.error("[PHOTON] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: Context) {
   try {
-    const id = params.id;
+    const { id } = await params;
     if (!id) {
-      return NextResponse.json({ error: "Generation ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Generation ID is required" },
+        { status: 400 },
+      );
     }
 
     const response = await fetch(
       `https://api.lumalabs.ai/dream-machine/v1/generations/${id}`,
       {
         headers: {
-          "Accept": "application/json",
-          "Authorization": `Bearer ${process.env.LUMA_API_KEY}`,
+          Accept: "application/json",
+          Authorization: `Bearer ${process.env.LUMA_API_KEY}`,
         },
-      }
+      },
     );
 
     if (!response.ok) {
       const error = await response.json();
       return NextResponse.json(
         { error: error.error || "Failed to fetch generation status" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -114,7 +130,7 @@ export async function GET(
     console.error("[PHOTON] Error fetching generation:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

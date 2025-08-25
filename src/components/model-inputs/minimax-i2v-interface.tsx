@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -23,7 +23,11 @@ interface MinimaxI2VInterfaceProps {
   modelInfo?: ApiInfo;
 }
 
-export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI2VInterfaceProps) {
+export function MinimaxI2VInterface({
+  onSubmit,
+  className,
+  modelInfo,
+}: MinimaxI2VInterfaceProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState({
@@ -33,7 +37,7 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
   });
 
   const handleFileSelect = async (file: File) => {
-    if (!file || !file.type.startsWith('image/')) {
+    if (!file || !file.type.startsWith("image/")) {
       toast({
         title: "Invalid file",
         description: "Please upload an image file (PNG, JPG, JPEG, etc.)",
@@ -44,28 +48,28 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
 
     try {
       console.log(`[VIDEO] Uploading image:`, file.name);
-      
+
       // First upload to uploadthing to get a URL
       const formData = new FormData();
       formData.append("file", file);
-      
+
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      
+
       if (!uploadResponse.ok) {
         throw new Error("Failed to upload file");
       }
-      
+
       const { url } = await uploadResponse.json();
-      
+
       // Store the URL in state
-      setInput(prev => ({
+      setInput((prev) => ({
         ...prev,
         image_url: url,
       }));
-      
+
       console.log(`[VIDEO] Image uploaded successfully:`, url);
       toast({
         title: "File uploaded",
@@ -78,7 +82,7 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
         description: "Failed to upload the image. Please try again.",
         variant: "destructive",
       });
-      setInput(prev => ({
+      setInput((prev) => ({
         ...prev,
         image_url: "",
       }));
@@ -115,7 +119,8 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
       console.error("Error generating video:", error);
       toast({
         title: "Generation failed",
-        description: error instanceof Error ? error.message : "Failed to generate video",
+        description:
+          error instanceof Error ? error.message : "Failed to generate video",
         variant: "destructive",
       });
     } finally {
@@ -152,7 +157,9 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
         <Textarea
           placeholder="Describe how you want the image to be animated..."
           value={input.prompt}
-          onChange={(e) => setInput((prev) => ({ ...prev, prompt: e.target.value }))}
+          onChange={(e) =>
+            setInput((prev) => ({ ...prev, prompt: e.target.value }))
+          }
         />
       </div>
 
@@ -160,14 +167,16 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
         <Switch
           id="prompt-optimizer"
           checked={input.prompt_optimizer}
-          onCheckedChange={(checked) => setInput((prev) => ({ ...prev, prompt_optimizer: checked }))}
+          onCheckedChange={(checked) =>
+            setInput((prev) => ({ ...prev, prompt_optimizer: checked }))
+          }
         />
         <Label htmlFor="prompt-optimizer">Use prompt optimizer</Label>
       </div>
 
-      <Button 
-        className="w-full" 
-        onClick={handleSubmit} 
+      <Button
+        className="w-full"
+        onClick={handleSubmit}
         disabled={isLoading || !input.image_url}
       >
         {isLoading ? "Generating..." : "Generate Video"}
@@ -178,4 +187,4 @@ export function MinimaxI2VInterface({ onSubmit, className, modelInfo }: MinimaxI
       </p>
     </div>
   );
-} 
+}

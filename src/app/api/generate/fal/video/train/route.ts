@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import * as fal from "@fal-ai/serverless-client";
-
-fal.config({
-  credentials: process.env.FAL_KEY,
-});
+import { subscribeToModel } from "@/lib/fal.server";
 
 export const runtime = "edge";
 
@@ -19,8 +15,8 @@ export async function POST(request: Request) {
       model,
     } = body;
 
-    if (model === "fal-ai/hunyuan-video-lora-training") {
-      const result = await fal.subscribe("fal-ai/hunyuan-video-lora-training", {
+    if (model === "hunyuan-lora") {
+      const result = await subscribeToModel("hunyuan-lora", {
         input: {
           images_data_url,
           steps,
@@ -39,7 +35,7 @@ export async function POST(request: Request) {
     console.error("Error in LoRA training:", error);
     return NextResponse.json(
       { error: "Failed to train LoRA model" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

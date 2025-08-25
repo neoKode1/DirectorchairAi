@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { StableDiffusion35LargeModelInterface, StableDiffusion35LargeModelInput } from "@/components/model-inputs/stable-diffusion-3.5-large-model-interface";
+import {
+  StableDiffusion35LargeModelInterface,
+  StableDiffusion35LargeModelInput,
+} from "@/components/model-inputs/stable-diffusion-3.5-large-model-interface";
 import { ImageVariantGrid } from "@/components/image-variant-grid";
 import { Loader2 } from "lucide-react";
 
 const modelInfo = {
   id: "stable-diffusion-3.5-large",
-  name: "Nano • Stable Diffusion 3.5 Large",
+      name: "DirectorchairAI • Stable Diffusion 3.5 Large",
   description: "Image generation model",
   category: "image",
 };
@@ -19,7 +22,9 @@ export default function StableDiffusion35LargePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<{ url: string }[]>([]);
 
-  const handleSubmit = async (input: StableDiffusion35LargeModelInput): Promise<{ images: { url: string }[] }> => {
+  const handleSubmit = async (
+    input: StableDiffusion35LargeModelInput,
+  ): Promise<{ images: { url: string }[] }> => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/generate/stable-diffusion-3.5-large", {
@@ -58,8 +63,13 @@ export default function StableDiffusion35LargePage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Image Generation Settings</h2>
-          <StableDiffusion35LargeModelInterface modelInfo={modelInfo} onSubmit={handleSubmit} />
+          <h2 className="text-2xl font-semibold mb-4">
+            Image Generation Settings
+          </h2>
+          <StableDiffusion35LargeModelInterface
+            modelInfo={modelInfo}
+            onSubmit={handleSubmit}
+          />
         </CardContent>
       </Card>
 
@@ -72,14 +82,14 @@ export default function StableDiffusion35LargePage() {
       {images.length > 0 && (
         <div className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Generated Images</h2>
-          <ImageVariantGrid 
-            variants={images} 
-            onSelect={() => {}} 
-            onUpscale={() => {}} 
+          <ImageVariantGrid
+            variants={images}
+            onSelect={() => {}}
+            onUpscale={() => {}}
             onRegenerate={() => {}}
           />
         </div>
       )}
     </div>
   );
-} 
+}

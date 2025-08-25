@@ -1,23 +1,9 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import { authOptions } from "../auth.config";
 
-const handler = NextAuth({
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  pages: {
-    signIn: "/",
-    signOut: "/",
-  },
-  callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Redirect to /app after successful sign in
-      return `${baseUrl}/app`;
-    },
-  },
-});
+// Specify Node.js runtime
+export const runtime = "nodejs";
 
-export { handler as GET, handler as POST }; 
+// Create and export the auth handler
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };

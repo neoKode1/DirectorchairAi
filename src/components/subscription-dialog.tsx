@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Dialog,
   DialogContent,
@@ -12,18 +14,22 @@ interface SubscriptionDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function SubscriptionDialog({ open, onOpenChange }: SubscriptionDialogProps) {
+export function SubscriptionDialog({
+  open,
+  onOpenChange,
+}: SubscriptionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl">
         <DialogHeader>
           <DialogTitle>Upgrade Your Account</DialogTitle>
           <DialogDescription>
-            You've reached the limit of your free credits. Choose a plan to continue creating amazing videos.
+            You've reached the limit of your free credits. Choose a plan to
+            continue creating amazing videos.
           </DialogDescription>
         </DialogHeader>
         <SubscriptionPlans />
       </DialogContent>
     </Dialog>
   );
-} 
+}

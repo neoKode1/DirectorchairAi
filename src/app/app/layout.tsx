@@ -3,8 +3,8 @@ import { Analytics } from "@vercel/analytics/react";
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "Nano - AI Video Studio",
-  description: "AI-powered video creation studio by Deeptech AI",
+  title: "DirectorchairAI - AI Video Studio",
+  description: "Create stunning videos with AI",
 };
 
 export default function RootLayout({

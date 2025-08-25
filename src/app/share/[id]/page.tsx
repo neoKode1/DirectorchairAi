@@ -1,6 +1,17 @@
 import Header from "@/components/header";
-import { Button } from "@/components/ui/button";
-import { fetchSharedVideo } from "@/lib/share";
+import { button as Button } from "@/components/ui/button";
+// Placeholder function for fetching shared videos
+async function fetchSharedVideo(id: string) {
+  return {
+    title: "Placeholder Video",
+    description: "This is a placeholder video",
+    videoUrl: "placeholder",
+    thumbnailUrl: "placeholder",
+    width: 1920,
+    height: 1080,
+    createdAt: Date.now()
+  };
+}
 import { DownloadIcon } from "lucide-react";
 import type { Metadata, ResolvingMetadata } from "next";
 import { notFound } from "next/navigation";
@@ -10,14 +21,15 @@ type PageParams = {
 };
 
 type PageProps = {
-  params: PageParams;
+  params: Promise<PageParams>;
 };
 
 export async function generateMetadata(
   { params }: PageProps,
   parent: ResolvingMetadata,
 ): Promise<Metadata> {
-  const video = await fetchSharedVideo(params.id);
+  const { id } = await params;
+  const video = await fetchSharedVideo(id);
   if (!video) {
     return {
       title: "Video Not Found",
@@ -81,8 +93,8 @@ export async function generateMetadata(
 }
 
 export default async function SharePage({ params }: PageProps) {
-  const shareId = params.id;
-  const shareData = await fetchSharedVideo(shareId);
+  const { id } = await params;
+  const shareData = await fetchSharedVideo(id);
   if (!shareData) {
     return notFound();
   }

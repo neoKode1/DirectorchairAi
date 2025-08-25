@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function SuccessPage() {
@@ -20,10 +20,11 @@ export default function SuccessPage() {
             />
           </svg>
         </div>
-        
+
         <h1 className="text-4xl font-bold mb-4">Payment Successful!</h1>
         <p className="text-xl text-muted-foreground mb-8">
-          Thank you for your subscription. Your account has been upgraded and your credits have been added.
+          Thank you for your subscription. Your account has been upgraded and
+          your credits have been added.
         </p>
 
         <div className="space-y-4">
@@ -41,4 +42,4 @@ export default function SuccessPage() {
       </div>
     </div>
   );
-} 
+}

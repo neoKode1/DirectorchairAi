@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
+      Connection: "keep-alive",
     },
   });
 }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       // Convert the data to a UTF-8 encoded Uint8Array
       const encoder = new TextEncoder();
       const sseData = encoder.encode(`data: ${JSON.stringify(data)}\n\n`);
-      
+
       // Send the update to the client
       controller.enqueue(sseData);
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     console.error("[Callback] Error:", error);
     return new NextResponse(
       JSON.stringify({ error: "Failed to process callback" }),
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

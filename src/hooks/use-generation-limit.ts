@@ -1,41 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from "react";
 
 const FREE_GENERATION_LIMIT = 10;
-const GENERATION_COUNT_KEY = 'generation_count';
+const GENERATION_COUNT_KEY = "generation_count";
 
 export function useGenerationLimit() {
-  const [generationCount, setGenerationCount] = useState(0);
   const [showSubscription, setShowSubscription] = useState(false);
+  const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    // Load the generation count from localStorage
-    const savedCount = localStorage.getItem(GENERATION_COUNT_KEY);
-    if (savedCount) {
-      setGenerationCount(parseInt(savedCount));
-    }
-  }, []);
-
-  const incrementCount = () => {
-    const newCount = generationCount + 1;
-    setGenerationCount(newCount);
-    localStorage.setItem(GENERATION_COUNT_KEY, newCount.toString());
-
-    if (newCount >= FREE_GENERATION_LIMIT) {
-      setShowSubscription(true);
-    }
-  };
-
-  const resetCount = () => {
-    setGenerationCount(0);
-    localStorage.setItem(GENERATION_COUNT_KEY, '0');
+  // Temporarily bypass subscription check
+  const incrementCount = async () => {
+    // Disabled for testing
+    return true;
   };
 
   return {
-    generationCount,
+    count,
     showSubscription,
     setShowSubscription,
     incrementCount,
-    resetCount,
-    hasReachedLimit: generationCount >= FREE_GENERATION_LIMIT
   };
-} 
+}

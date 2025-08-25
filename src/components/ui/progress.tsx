@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 
@@ -10,7 +12,7 @@ const Progress = React.forwardRef<
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
-      "relative h-2 w-full overflow-hidden rounded-full bg-secondary",
+      "relative h-2 w-full overflow-hidden rounded-full bg-muted",
       className
     )}
     {...props}
@@ -21,6 +23,7 @@ const Progress = React.forwardRef<
     />
   </ProgressPrimitive.Root>
 ));
+
 Progress.displayName = ProgressPrimitive.Root.displayName;
 
-export { Progress }; 
+export { Progress };

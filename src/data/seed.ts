@@ -207,7 +207,7 @@ const TEMPLATE_PROJECT_SEED: ProjectSeed = {
       createdAt: 1737486511674,
       mediaType: "image",
       kind: "generated",
-      endpointId: "fal-ai/flux/dev",
+      endpointId: "fal-ai/flux-pro/v1.1-ultra",
       requestId: "69ee44e4-b55f-475c-8691-fd88ed8af293",
       status: "completed",
       input: {
@@ -238,7 +238,7 @@ const TEMPLATE_PROJECT_SEED: ProjectSeed = {
       createdAt: 1737486437745,
       mediaType: "image",
       kind: "generated",
-      endpointId: "fal-ai/flux/dev",
+      endpointId: "fal-ai/flux-pro/v1.1-ultra",
       requestId: "e62ee21f-270f-4260-a1d0-139494a8e3f3",
       status: "completed",
       input: {
@@ -327,7 +327,7 @@ const TEMPLATE_PROJECT_SEED: ProjectSeed = {
       createdAt: 1737486358044,
       mediaType: "image",
       kind: "generated",
-      endpointId: "fal-ai/flux/dev",
+      endpointId: "fal-ai/flux-pro/v1.1-ultra",
       requestId: "a1adf628-cc0a-4700-ba06-0aa8a96cb5e8",
       status: "completed",
       input: {

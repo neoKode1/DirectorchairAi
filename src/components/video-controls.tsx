@@ -1,3 +1,5 @@
+'use client';
+
 import { useVideoProjectStore } from "@/data/store";
 import { useHotkeys } from "react-hotkeys-hook";
 
@@ -9,7 +11,7 @@ import {
   PauseIcon,
   PlayIcon,
 } from "lucide-react";
-import { Button } from "./ui/button";
+import { button as Button } from "@/components/ui/button";
 
 const FPS = 30;
 

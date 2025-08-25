@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { RefreshCcw, ArrowUpToLine } from "lucide-react";
 import Image from "next/image";
 
@@ -51,7 +51,9 @@ export function ImageVariantGrid({
           <div className="absolute top-2 left-2">
             <Checkbox
               checked={selectedIndices.includes(index)}
-              onCheckedChange={(checked: boolean | "indeterminate") => handleSelect(index, checked as boolean)}
+              onCheckedChange={(checked: boolean | "indeterminate") =>
+                handleSelect(index, checked as boolean)
+              }
             />
           </div>
           <div className="absolute top-2 right-2 space-x-1">
@@ -76,4 +78,4 @@ export function ImageVariantGrid({
       ))}
     </div>
   );
-} 
+}

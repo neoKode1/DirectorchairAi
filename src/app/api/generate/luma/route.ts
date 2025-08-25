@@ -1,87 +1,119 @@
-import { NextResponse } from "next/server";
-import { LumaAI } from "lumaai";
-import { LUMA_MODELS, validateLumaParams, type LumaModelParams } from "@/lib/lumaai";
+import { NextRequest, NextResponse } from 'next/server';
+import { fal } from '@fal-ai/client';
 
-if (!process.env.LUMAAI_API_KEY) {
-  throw new Error("LUMAAI_API_KEY environment variable is not set");
-}
-
-// Initialize Luma client
-const client = new LumaAI({ authToken: process.env.LUMAAI_API_KEY });
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    // Destructure the model (default is "ray2") and the remaining parameters
-    const { model = "ray2", ...params } = body;
-
-    // Normalize the model identifier:
-    // For "ray2" we need to send "ray-2". For other values (e.g. "ray1.6") we pass them as-is.
-    const lumamodel = model === "ray2" ? "ray-2" : model;
-
-    // Get the model configuration based on the normalized model
-    const modelConfig = lumamodel === "ray-2" ? LUMA_MODELS.RAY2 : LUMA_MODELS.RAY1_6;
-
-    // Validate parameters
-    const validationError = validateLumaParams(params as LumaModelParams, modelConfig);
-    if (validationError) {
+    console.log('🎬 [Luma API] Request received');
+    
+    // Check if FAL_KEY is available
+    if (!process.env.FAL_KEY) {
+      console.error('❌ [Luma API] FAL_KEY environment variable is not set');
       return NextResponse.json(
-        { error: validationError },
+        { error: 'FAL_KEY environment variable is not configured' },
+        { status: 500 }
+      );
+    }
+    
+    const body = await request.json();
+    console.log('📝 [Luma API] Request body:', body);
+
+    const {
+      model,
+      prompt,
+      negative_prompt,
+      image_url,
+      aspect_ratio = "16:9",
+      duration = "5",
+      resolution = "720p",
+      loop = false,
+      seed,
+    } = body;
+
+    if (!prompt) {
+      console.log('❌ [Luma API] Missing prompt');
+      return NextResponse.json(
+        { error: 'Prompt is required' },
         { status: 400 }
       );
     }
 
-    // Prepare keyframes if they exist and have valid URLs
-    const keyframes: any = {};
-    if (params.keyframes?.frame0?.url) {
-      keyframes.frame0 = {
-        type: "image",
-        url: params.keyframes.frame0.url
-      };
-    }
-    if (params.keyframes?.frame1?.url) {
-      keyframes.frame1 = {
-        type: "image",
-        url: params.keyframes.frame1.url
-      };
+    // Determine the correct Luma endpoint based on the model
+    let lumaEndpoint = "fal-ai/luma-dream-machine/ray-2";
+    
+    if (model?.includes('ray-2-flash')) {
+      lumaEndpoint = "fal-ai/luma-dream-machine/ray-2-flash/image-to-video";
+    } else if (model?.includes('ray-2')) {
+      lumaEndpoint = "fal-ai/luma-dream-machine/ray-2";
     }
 
-    // Create generation with core parameters using the normalized model
-    const generation = await client.generations.create({
-      prompt: params.prompt,
-      model: lumamodel,
-      aspect_ratio: params.aspect_ratio,
-      loop: params.loop,
-      ...(Object.keys(keyframes).length > 0 ? { keyframes } : {})
+    // Prepare the input for Luma
+    const input: any = {
+      prompt: prompt.trim(),
+      aspect_ratio,
+      duration,
+      resolution,
+      loop,
+    };
+
+    // Add image URL if provided
+    if (image_url?.trim()) {
+      input.image_url = image_url.trim();
+    }
+
+    // Add optional parameters
+    if (negative_prompt?.trim()) {
+      input.negative_prompt = negative_prompt.trim();
+    }
+    
+    if (seed !== undefined && seed !== null) {
+      input.seed = seed;
+    }
+
+    console.log('🚀 [Luma API] Calling fal.ai with input:', input);
+    console.log('🔑 [Luma API] FAL_KEY available:', !!process.env.FAL_KEY);
+    console.log('🎬 [Luma API] Using Luma endpoint:', lumaEndpoint);
+
+    // Call the Luma API
+    const result = await fal.subscribe(lumaEndpoint, {
+      input,
+      logs: true,
+      onQueueUpdate: (update: any) => {
+        console.log('📊 [Luma API] Queue update:', update.status);
+        if (update.status === "IN_PROGRESS") {
+          update.logs?.map((log: any) => log.message).forEach(console.log);
+        }
+      },
+    }).catch((error: any) => {
+      console.error('❌ [Luma API] FAL subscribe error:', error);
+      console.error('❌ [Luma API] Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      });
+      throw error;
     });
 
-    // Poll for completion
-    let completed = false;
-    let finalGeneration = generation;
+    console.log('✅ [Luma API] Generation completed');
+    console.log('📦 [Luma API] Result:', result.data);
 
-    while (!completed) {
-      if (!finalGeneration.id) {
-        throw new Error("No generation ID received");
-      }
+    return NextResponse.json({
+      success: true,
+      data: result.data,
+      requestId: result.requestId,
+      model: 'Luma Ray 2',
+      parameters: input,
+    });
 
-      finalGeneration = await client.generations.get(finalGeneration.id);
-
-      if (finalGeneration.state === "completed") {
-        completed = true;
-      } else if (finalGeneration.state === "failed") {
-        throw new Error(`Generation failed: ${finalGeneration.failure_reason}`);
-      } else {
-        // Wait 5 seconds before polling again
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      }
-    }
-
-    return NextResponse.json(finalGeneration);
   } catch (error: any) {
-    console.error("Error in Luma video generation:", error);
+    console.error('❌ [Luma API] Error:', error);
+    
     return NextResponse.json(
-      { error: error.message || "Failed to generate video" },
-      { status: error.status || 500 }
+      { 
+        error: 'Failed to generate video',
+        details: error.message || 'Unknown error occurred',
+        model: 'Luma Ray 2'
+      },
+      { status: 500 }
     );
   }
 }
@@ -104,6 +136,6 @@ export async function GET() {
         },
       ],
     },
-    { status: 200 }
+    { status: 200 },
   );
-} 
+}

@@ -5,13 +5,13 @@ import { queryKeys, useProjects } from "@/data/queries";
 import type { AspectRatio, VideoProject } from "@/data/schema";
 import { useVideoProjectStore } from "@/data/store";
 import { useToast } from "@/hooks/use-toast";
-import { createProjectSuggestion } from "@/lib/project";
+
 import { cn, rememberLastProjectId } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileVideoIcon, FolderOpenIcon, WandSparklesIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Logo } from "./logo";
-import { Button } from "./ui/button";
+import { button as Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -53,23 +53,7 @@ export function ProjectDialog({ onOpenChange, ...props }: ProjectDialogProps) {
   const setProjectId = useVideoProjectStore((s) => s.setProjectId);
   const createProject = useProjectCreator();
 
-  const suggestProject = useMutation({
-    mutationFn: async () => {
-      return createProjectSuggestion();
-    },
-    onSuccess: (suggestion) => {
-      setTitle(suggestion.title);
-      setDescription(suggestion.description);
-    },
-    onError: (error) => {
-      console.warn("Failed to create suggestion", error);
-      toast({
-        title: "Failed to create suggestion",
-        description:
-          "There was an unexpected error while generating a suggestion. Try again.",
-      });
-    },
-  });
+
 
   const setProjectDialogOpen = useVideoProjectStore(
     (s) => s.setProjectDialogOpen,
@@ -149,20 +133,7 @@ export function ProjectDialog({ onOpenChange, ...props }: ProjectDialogProps) {
               </div>
             </div>
             <div className="flex-1 flex flex-row items-end justify-start gap-2">
-              <WithTooltip tooltip="Out of ideas? Generate a new random project.">
-                <Button
-                  variant="secondary"
-                  disabled={suggestProject.isPending}
-                  onClick={() => suggestProject.mutate()}
-                >
-                  {suggestProject.isPending ? (
-                    <LoadingIcon />
-                  ) : (
-                    <WandSparklesIcon className="opacity-50" />
-                  )}
-                  Generate
-                </Button>
-              </WithTooltip>
+
               <Button
                 onClick={() =>
                   createProject.mutate(

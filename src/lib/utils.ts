@@ -79,18 +79,19 @@ export function resolveDuration(item: MediaItem): number | null {
 export function resolveMediaUrl(item: MediaItem | undefined): string | null {
   if (!item) return null;
 
-  if (item.kind === "uploaded") {
+  // For uploaded files, return the URL directly
+  if (item.kind === "uploaded" && item.url) {
     return item.url;
   }
+
+  // For generated files, check the output data
   const data = item.output;
   if (!data) return null;
-  if (
-    "images" in data &&
-    Array.isArray(data.images) &&
-    data.images.length > 0
-  ) {
+
+  if ("images" in data && Array.isArray(data.images) && data.images.length > 0) {
     return data.images[0].url;
   }
+
   const fileProperties = {
     image: 1,
     video: 1,
@@ -98,12 +99,15 @@ export function resolveMediaUrl(item: MediaItem | undefined): string | null {
     audio_file: 1,
     audio_url: 1,
   };
+
   const property = Object.keys(data).find(
     (key) => key in fileProperties && "url" in data[key],
   );
+
   if (property) {
     return data[property].url;
   }
+
   return null;
 }
 
@@ -121,4 +125,34 @@ export function getAssetKey(asset: InputAsset): string {
   return typeof asset === "string"
     ? assetKeyMap[asset]
     : asset.key || assetKeyMap[asset.type];
+}
+
+export type AspectRatioMapping = {
+  "16:9": { width: number; height: number };
+  "9:16": { width: number; height: number };
+  "1:1": { width: number; height: number };
+};
+
+export const ASPECT_RATIO_DIMENSIONS: AspectRatioMapping = {
+  "16:9": { width: 1024, height: 576 },
+  "9:16": { width: 576, height: 1024 },
+  "1:1": { width: 512, height: 512 },
+};
+
+export const MODEL_SUPPORTED_RATIOS = {
+  "fal-ai/hunyuan-video": ["16:9", "9:16"],
+  "fal-ai/pixverse-video": ["16:9", "9:16", "1:1"],
+  // Add other models as needed
+} as const;
+
+export function getAspectRatioDimensions(ratio: string): { width: number; height: number } | null {
+  return ASPECT_RATIO_DIMENSIONS[ratio as keyof AspectRatioMapping] || null;
+}
+
+export function isAspectRatioSupported(
+  modelId: string,
+  ratio: "16:9" | "9:16"
+): boolean {
+  const supportedRatios = MODEL_SUPPORTED_RATIOS[modelId as keyof typeof MODEL_SUPPORTED_RATIOS];
+  return supportedRatios ? supportedRatios.includes(ratio) : true;
 }

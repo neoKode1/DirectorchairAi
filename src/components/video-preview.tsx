@@ -1,8 +1,11 @@
+'use client';
+
 import { db } from "@/data/db";
 import {
   EMPTY_VIDEO_COMPOSITION,
   useProject,
   useVideoComposition,
+  useProjectMediaItems,
 } from "@/data/queries";
 import {
   type MediaItem,
@@ -16,7 +19,7 @@ import { useProjectId, useVideoProjectStore } from "@/data/store";
 import { cn, resolveDuration, resolveMediaUrl } from "@/lib/utils";
 import { Player, type PlayerRef } from "@remotion/player";
 import { preloadVideo, preloadAudio } from "@remotion/preload";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AbsoluteFill,
   Audio,
@@ -26,8 +29,9 @@ import {
   Video,
 } from "remotion";
 import { throttle } from "throttle-debounce";
-import { Button } from "./ui/button";
-import { DownloadIcon } from "lucide-react";
+import { button as Button } from "@/components/ui/button";
+import { DownloadIcon, VideoIcon } from "lucide-react";
+import { MusicIcon, MicIcon } from "lucide-react";
 
 interface VideoCompositionProps {
   project: VideoProject;
@@ -134,8 +138,14 @@ const VideoTrackSequence: React.FC<TrackSequenceProps> = ({
         const mediaUrl = resolveMediaUrl(media);
         if (!mediaUrl) return null;
 
-        const duration = Math.max(frame.duration || resolveDuration(media) || 5000, 1000);
-        const durationInFrames = Math.max(1, Math.floor(duration / (1000 / FPS)));
+        const duration = Math.max(
+          frame.duration || resolveDuration(media) || 5000,
+          1000,
+        );
+        const durationInFrames = Math.max(
+          1,
+          Math.floor(duration / (1000 / FPS)),
+        );
 
         return (
           <Sequence
@@ -145,10 +155,10 @@ const VideoTrackSequence: React.FC<TrackSequenceProps> = ({
             premountFor={3000}
           >
             {media.mediaType === "video" && (
-              <Video 
+              <Video
                 src={mediaUrl}
                 onError={(e) => {
-                  console.error('Video playback error:', e);
+                  console.error("Video playback error:", e);
                 }}
               />
             )}
@@ -195,164 +205,82 @@ const AudioTrackSequence: React.FC<TrackSequenceProps> = ({
 
 const getDurationInFrames = (durationMs: number | undefined): number => {
   const defaultDurationMs = 5000; // Ensure we have at least 5 seconds
-  const validatedDurationMs = durationMs && durationMs > 0 ? durationMs : defaultDurationMs;
+  const validatedDurationMs =
+    durationMs && durationMs > 0 ? durationMs : defaultDurationMs;
   return Math.max(1, Math.floor(validatedDurationMs / (1000 / FPS)));
 };
 
 export default function VideoPreview() {
-  const projectId = useProjectId();
-  const setPlayer = useVideoProjectStore((s) => s.setPlayer);
-  const setPlayerState = useVideoProjectStore((s) => s.setPlayerState);
-  const playerRef = useRef<PlayerRef>(null);
-
-  const { data: project = PROJECT_PLACEHOLDER } = useProject(projectId);
-  const {
-    data: composition = EMPTY_VIDEO_COMPOSITION,
-    isLoading: isCompositionLoading,
-  } = useVideoComposition(projectId);
-  const { tracks = [], frames = {}, mediaItems = {} } = composition;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const currentVideo = useVideoProjectStore((s) => s.currentVideo);
+  const isPlaying = useVideoProjectStore((s) => s.isPlaying);
+  const setIsPlaying = useVideoProjectStore((s) => s.setIsPlaying);
+  const currentTime = useVideoProjectStore((s) => s.currentTime);
+  const setCurrentTime = useVideoProjectStore((s) => s.setCurrentTime);
 
   useEffect(() => {
-    const mediaIds = Object.values(frames)
-      .flat()
-      .flatMap((f) => f.data.mediaId);
-    for (const media of Object.values(mediaItems)) {
-      if (media.status === "completed" && mediaIds.includes(media.id)) {
-        const mediaUrl = resolveMediaUrl(media);
-        if (!mediaUrl) continue;
-        if (media.mediaType === "video") {
-          preloadVideo(mediaUrl);
-        }
-        if (
-          mediaUrl.indexOf("v2.") === -1 &&
-          (media.mediaType === "music" || media.mediaType === "voiceover")
-        ) {
-          preloadAudio(mediaUrl);
-        }
-      }
-    }
-  }, [frames, mediaItems]);
-
-  // Calculate the effective duration based on the latest keyframe
-  const calculateDuration = useCallback(() => {
-    let maxDuration = DEFAULT_DURATION * 1000; // Convert to milliseconds
-    for (const trackFrames of Object.values(frames)) {
-      for (const frame of trackFrames) {
-        const frameEnd = frame.timestamp + (frame.duration || 5000);
-        maxDuration = Math.max(maxDuration, frameEnd);
-      }
-    }
-    // Add 5 seconds padding after the last frame and convert to seconds
-    return Math.max(DEFAULT_DURATION, Math.ceil(maxDuration / 1000) + 5);
-  }, [frames]);
-
-  const duration = calculateDuration();
-
-  const setPlayerCurrentTimestamp = useVideoProjectStore(
-    (s) => s.setPlayerCurrentTimestamp,
-  );
-
-  // Frame updates are super frequent, so we throttle the updates to the timestamp
-  const updatePlayerCurrentTimestamp = useCallback(
-    throttle(64, setPlayerCurrentTimestamp),
-    [],
-  );
-
-  // Register events on the player
-  const updatePlayerRef = useCallback(
-    (player: PlayerRef) => {
-      if (!player) return;
-      setPlayer(player);
-      player.addEventListener("play", () => {
-        setPlayerState("playing");
-      });
-      player.addEventListener("pause", () => {
-        setPlayerState("paused");
-      });
-      player.addEventListener("seeked", (e) => {
-        const currentFrame = e.detail.frame;
-        updatePlayerCurrentTimestamp(currentFrame / FPS);
-      });
-      player.addEventListener("frameupdate", (e) => {
-        const currentFrame = e.detail.frame;
-        updatePlayerCurrentTimestamp(currentFrame / FPS);
-      });
-    },
-    [setPlayer, setPlayerState, updatePlayerCurrentTimestamp],
-  );
-
-  const setExportDialogOpen = useVideoProjectStore(
-    (s) => s.setExportDialogOpen,
-  );
-
-  let width = VIDEO_WIDTH;
-  let height = VIDEO_HEIGHT;
-
-  if (project.aspectRatio) {
-    const size = videoSizeMap[project.aspectRatio];
-    if (size) {
-      width = size.width;
-      height = size.height;
-    }
-  }
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    const player = playerRef.current;
-    if (player) {
-      setPlayer(player);
-      player.addEventListener("play", () => {
-        setPlayerState("playing");
+    if (!videoRef.current || !mounted) return;
+
+    const video = videoRef.current;
+
+    if (isPlaying) {
+      video.play().catch(() => {
+        setIsPlaying(false);
       });
-      player.addEventListener("pause", () => {
-        setPlayerState("paused");
-      });
+    } else {
+      video.pause();
     }
-  }, [playerRef, setPlayer, setPlayerState]);
+  }, [isPlaying, mounted, setIsPlaying]);
+
+  useEffect(() => {
+    if (!videoRef.current || !mounted) return;
+
+    const video = videoRef.current;
+    video.currentTime = currentTime;
+  }, [currentTime, mounted]);
+
+  const handleTimeUpdate = () => {
+    if (!videoRef.current || !mounted) return;
+    setCurrentTime(videoRef.current.currentTime);
+  };
+
+  const handleEnded = () => {
+    if (!mounted) return;
+    setIsPlaying(false);
+    setCurrentTime(0);
+  };
 
   return (
-    <div className="flex-grow flex-1 h-full flex items-center justify-center bg-background-dark dark:bg-background-light relative">
-      <Button
-        className="absolute top-4 right-4 z-40"
-        variant="default"
-        onClick={() => setExportDialogOpen(true)}
-        disabled={isCompositionLoading || tracks.length === 0}
-      >
-        <DownloadIcon className="w-4 h-4" />
-        Export
-      </Button>
-      <div className="w-full h-full flex items-center justify-center mx-6  max-h-[calc(100vh-25rem)]">
-        <Player
+    <div className="relative flex-1 bg-black/20 backdrop-blur-sm rounded-lg m-4 border border-border/20">
+      {mounted && currentVideo ? (
+        <video
+          ref={videoRef}
+          src={currentVideo.url}
           className={cn(
-            "[&_video]:shadow-2xl inline-flex items-center justify-center mx-auto w-full h-full max-h-[500px] 3xl:max-h-[800px]",
-            {
-              "aspect-[16/9]": project.aspectRatio === "16:9",
-              "aspect-[9/16]": project.aspectRatio === "9:16",
-              "aspect-[1/1]": project.aspectRatio === "1:1",
-            },
+            "absolute inset-0 w-full h-full object-contain rounded-lg",
+            !isPlaying && "cursor-pointer"
           )}
-          ref={playerRef}
-          component={MainComposition}
-          inputProps={{
-            project,
-            tracks,
-            frames,
-            mediaItems,
-          }}
-          durationInFrames={duration * FPS}
-          fps={FPS}
-          compositionWidth={width}
-          compositionHeight={height}
-          style={{
-            width: "100%",
-            height: "100%",
-          }}
-          clickToPlay={true}
-          showPosterWhenPaused={false}
-          autoPlay={false}
-          loop={false}
-          controls={false}
+          onClick={() => setIsPlaying(!isPlaying)}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          playsInline
         />
-      </div>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center">
+              <VideoIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground font-medium">No video selected</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">Upload or generate a video to get started</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

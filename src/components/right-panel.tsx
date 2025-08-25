@@ -23,13 +23,11 @@ import {
   XIcon,
 } from "lucide-react";
 import { MediaItemRow } from "./media-panel";
-import { Button } from "./ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 
 import { useEffect, useMemo, useState } from "react";
-import { useUploadThing } from "@/lib/uploadthing";
-import type { ClientUploadedFileData } from "uploadthing/types";
 import { db } from "@/data/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -48,20 +46,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { enhancePrompt } from "@/lib/prompt";
+
 import { WithTooltip } from "./ui/tooltip";
 import { Label } from "./ui/label";
 import { VoiceSelector } from "./playht/voice-selector";
 import { LoadingIcon } from "./ui/icons";
-import { getMediaMetadata } from "@/lib/ffmpeg";
+
+
+import { AspectRatioSelector, type AspectRatioOption } from "./aspect-ratio";
 
 type ModelEndpointPickerProps = {
-  mediaType: string;
-  onValueChange: (value: MediaType) => void;
-} & Parameters<typeof Select>[0];
+  mediaType: MediaType;
+  value: string;
+  onValueChange: (value: string) => void;
+};
 
 function ModelEndpointPicker({
   mediaType,
+  value,
+  onValueChange,
   ...props
 }: ModelEndpointPickerProps) {
   const endpoints = useMemo(
@@ -69,16 +72,33 @@ function ModelEndpointPicker({
       AVAILABLE_ENDPOINTS.filter((endpoint) => endpoint.category === mediaType),
     [mediaType],
   );
+
+  if (endpoints.length === 0) {
+    return null;
+  }
+
   return (
-    <Select {...props}>
+    <Select value={value} onValueChange={onValueChange}>
       <SelectTrigger className="text-base w-full minw-56 font-semibold">
-        <SelectValue />
+        <SelectValue placeholder="Select a model">
+          {endpoints.find(e => e.endpointId === value)?.label || "Select a model"}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {endpoints.map((endpoint) => (
-          <SelectItem key={endpoint.endpointId} value={endpoint.endpointId}>
-            <div className="flex flex-row gap-2 items-center">
-              <span>{endpoint.label}</span>
+          <SelectItem 
+            key={endpoint.endpointId} 
+            value={endpoint.endpointId}
+          >
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-row gap-2 items-center">
+                <span className="font-medium">{endpoint.label}</span>
+              </div>
+              {endpoint.description && (
+                <span className="text-sm text-muted-foreground">
+                  {endpoint.description}
+                </span>
+              )}
             </div>
           </SelectItem>
         ))}
@@ -96,6 +116,7 @@ interface RightPanelProps {
 export default function RightPanel({
   className,
   onOpenChange,
+  onGenerate,
   ...props
 }: RightPanelProps) {
   const projectId = useProjectId();
@@ -103,19 +124,112 @@ export default function RightPanel({
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const { data: project } = useProject(projectId);
-  const {
-    generateData,
-    setGenerateData,
-    resetGenerateData,
-    endpointId,
-  } = useVideoProjectStore();
+  const { generateData, setGenerateData, resetGenerateData } = useVideoProjectStore();
 
   const mediaType = useVideoProjectStore((s) => s.generateMediaType);
   const setMediaType = useVideoProjectStore((s) => s.setGenerateMediaType);
+  const endpointId = useVideoProjectStore((s) => s.endpointId);
+  const setEndpointId = useVideoProjectStore((s) => s.setEndpointId);
+  
   const endpoint = useMemo(
     () => AVAILABLE_ENDPOINTS.find((e) => e.endpointId === endpointId),
-    [endpointId]
+    [endpointId],
   );
+
+  // Set default endpoint when media type changes
+  useEffect(() => {
+    if (mediaType) {
+      const availableEndpoints = AVAILABLE_ENDPOINTS.filter(
+        (e) => e.category === mediaType
+      );
+      if (availableEndpoints.length > 0) {
+        // Only set if current endpointId is not valid for this media type
+        if (!availableEndpoints.find(e => e.endpointId === endpointId)) {
+          setEndpointId(availableEndpoints[0].endpointId);
+          resetGenerateData();
+        }
+      }
+    }
+  }, [mediaType, endpointId, setEndpointId, resetGenerateData]);
+
+  const handleModelChange = (value: string) => {
+    if (value === endpointId) return;
+    
+    setEndpointId(value);
+    const newEndpoint = AVAILABLE_ENDPOINTS.find(e => e.endpointId === value);
+    if (newEndpoint) {
+      // Reset generate data but preserve the prompt
+      const currentPrompt = generateData.prompt;
+      resetGenerateData();
+      setGenerateData({ 
+        prompt: currentPrompt,
+        ...newEndpoint.initialInput 
+      });
+    }
+  };
+
+  // Add aspect ratio to dimensions mapping
+  const getAspectRatioDimensions = (ratio: AspectRatioOption): { width: number; height: number } => {
+    switch (ratio) {
+      case "16:9":
+        return { width: 1024, height: 576 };
+      case "9:16":
+        return { width: 576, height: 1024 };
+      case "1:1":
+        return { width: 512, height: 512 };
+      default:
+        return { width: 1024, height: 576 }; // Default to 16:9
+    }
+  };
+
+  const handleAspectRatioChange = (ratio: AspectRatioOption | null) => {
+    if (!ratio) return;
+    
+    // Models that expect string aspect ratios (e.g., Hunyuan)
+    const stringAspectRatioModels = ['fal-ai/hunyuan-video', 'fal-ai/pixverse_I2v_3.5fast'];
+    
+    if (stringAspectRatioModels.includes(generateData.model)) {
+      setGenerateData({ 
+        ...generateData,
+        aspect_ratio: ratio,
+        // Remove width/height if they exist
+        width: undefined,
+        height: undefined
+      });
+    } else {
+      // Models that expect width/height dimensions
+      const dimensions = getAspectRatioDimensions(ratio);
+      setGenerateData({ 
+        ...generateData,
+        width: dimensions.width,
+        height: dimensions.height,
+        // Remove aspect_ratio if it exists
+        aspect_ratio: undefined
+      });
+    }
+  };
+
+  const handleMediaTypeChange = (type: MediaType) => {
+    if (type === mediaType) return;
+    
+    setMediaType(type);
+    const availableEndpoints = AVAILABLE_ENDPOINTS.filter(
+      (e) => e.category === type
+    );
+    
+    if (availableEndpoints.length > 0) {
+      const firstEndpoint = availableEndpoints[0];
+      setEndpointId(firstEndpoint.endpointId);
+      
+      // Reset generate data but preserve the prompt
+      const currentPrompt = generateData.prompt;
+      resetGenerateData();
+      setGenerateData({ 
+        prompt: currentPrompt,
+        ...firstEndpoint.initialInput 
+      });
+    }
+  };
 
   const [tab, setTab] = useState<string>("generation");
   const [assetMediaType, setAssetMediaType] = useState("all");
@@ -131,175 +245,13 @@ export default function RightPanel({
       resetGenerateData();
       return;
     }
-    props.onGenerate?.();
+    onGenerate?.();
     openGenerateDialog();
   };
 
-  const enhancePromptMutation = useMutation({
-    mutationFn: async () => {
-      if (!mediaType) {
-        throw new Error("Media type is required");
-      }
-      return enhancePrompt(generateData.prompt, {
-        type: mediaType,
-        project,
-      });
-    },
-    onSuccess: (data) => {
-      setGenerateData({ prompt: data });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to enhance prompt",
-        description: error.message || "There was an error enhancing the prompt",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const { data: mediaItems = [] } = useProjectMediaItems(projectId);
-
-  const handleMediaTypeChange = (mediaType: MediaType) => {
-    setMediaType(mediaType);
-    const endpoint = AVAILABLE_ENDPOINTS.find(
-      (endpoint) => endpoint.category === mediaType,
-    );
-
-    const initialInput = endpoint?.initialInput || {};
-
-    if (
-      (mediaType === "video" &&
-        endpoint?.endpointId === "fal-ai/hunyuan-video") ||
-      mediaType !== "video"
-    ) {
-      setGenerateData({ image: null, ...initialInput });
-    } else {
-      setGenerateData({ ...initialInput });
-    }
-
-    resetGenerateData();
-  };
-  // TODO improve model-specific parameters
-  type InputType = {
-    prompt: string;
-    image_url?: File | string | null;
-    video_url?: File | string | null;
-    audio_url?: File | string | null;
-    image_size?: { width: number; height: number } | string;
-    aspect_ratio?: string;
-    seconds_total?: number;
-    voice?: string;
-    input?: string;
-    reference_audio_url?: File | string | null;
-  };
-
-  const aspectRatioMap = {
-    "16:9": { image: "landscape_16_9", video: "16:9" },
-    "9:16": { image: "portrait_16_9", video: "9:16" },
-    "1:1": { image: "square_1_1", video: "1:1" },
-  };
-
-  let imageAspectRatio: string | { width: number; height: number } | undefined;
-  let videoAspectRatio: string | undefined;
-
-  if (project?.aspectRatio) {
-    imageAspectRatio = aspectRatioMap[project.aspectRatio].image;
-    videoAspectRatio = aspectRatioMap[project.aspectRatio].video;
-  }
-
-  const input: InputType = {
-    prompt: generateData.prompt,
-    image_url: undefined,
-    image_size: imageAspectRatio,
-    aspect_ratio: videoAspectRatio,
-    seconds_total: generateData.duration ?? undefined,
-    voice:
-      endpointId === "fal-ai/playht/tts/v3" ? generateData.voice : undefined,
-    input:
-      endpointId === "fal-ai/playht/tts/v3" ? generateData.prompt : undefined,
-  };
-
-  if (generateData.image) {
-    input.image_url = generateData.image;
-  }
-  if (generateData.video_url) {
-    input.video_url = generateData.video_url;
-  }
-  if (generateData.audio_url) {
-    input.audio_url = generateData.audio_url;
-  }
-  if (generateData.reference_audio_url) {
-    input.reference_audio_url = generateData.reference_audio_url;
-  }
-
-  const extraInput =
-    endpointId === "fal-ai/f5-tts"
-      ? {
-          gen_text: generateData.prompt,
-          ref_audio_url:
-            "https://github.com/SWivid/F5-TTS/raw/21900ba97d5020a5a70bcc9a0575dc7dec5021cb/tests/ref_audio/test_en_1_ref_short.wav",
-          ref_text: "Some call me nature, others call me mother nature.",
-          model_type: "F5-TTS",
-          remove_silence: true,
-        }
-      : {};
-  const createJob = useJobCreator({
-    projectId: projectId!,
-    endpointId: endpoint?.endpointId!,
-    mediaType: mediaType!,
-    input: generateData,
-  });
-
-  const handleGenerate = async () => {
-    if (!mediaType || !project || !endpoint) {
-      toast({
-        title: "Invalid input",
-        description: "Media type, project and endpoint are required.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const result = await createJob.mutateAsync();
-
-      // Create a new media item for the job
-      const mediaItem: Omit<MediaItem, "id"> = {
-        projectId,
-        kind: "generated",
-        createdAt: Date.now(),
-        mediaType,
-        status: "pending",
-        endpointId: endpoint.endpointId,
-        requestId: result.request_id,
-        input: generateData,
-      };
-
-      // Add the job to the database
-      await db.media.create(mediaItem);
-
-      // Invalidate the media items query to refresh the list
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.projectMediaItems(projectId),
-      });
-
-      toast({
-        title: "Generation started",
-        description: "Your media is being generated. You can continue working while it processes.",
-      });
-    } catch (error) {
-      console.error("Failed to create job", error);
-      toast({
-        title: "Failed to create job",
-        description: "There was an unexpected error. Try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    useVideoProjectStore.getState().onGenerate = handleGenerate;
-  }, [handleGenerate]);
 
   const handleSelectMedia = (media: MediaItem) => {
     const asset = endpoint?.inputAsset?.find((item) => {
@@ -323,35 +275,20 @@ export default function RightPanel({
     setTab("generation");
   };
 
-  const { startUpload, isUploading } = useUploadThing("fileUploader");
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
+    setIsUploading(true);
     try {
-      const uploadedFiles = await startUpload(Array.from(files));
-      if (uploadedFiles) {
-        await handleUploadComplete(uploadedFiles);
-      }
-    } catch (err) {
-      console.warn(`ERROR! ${err}`);
-      toast({
-        title: "Failed to upload file",
-        description: "Please try again",
-      });
-    }
-  };
+      const file = files[0]; // Handle one file at a time
+      const fileType = file.type.split("/")[0];
+      const outputType = fileType === "audio" ? "music" : fileType;
 
-  const handleUploadComplete = async (
-    files: ClientUploadedFileData<{
-      uploadedBy: string;
-    }>[],
-  ) => {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const mediaType = file.type.split("/")[0];
-      const outputType = mediaType === "audio" ? "music" : mediaType;
+      // Create a local URL for the file
+      const localUrl = URL.createObjectURL(file);
 
       const data: Omit<MediaItem, "id"> = {
         projectId,
@@ -359,24 +296,17 @@ export default function RightPanel({
         createdAt: Date.now(),
         mediaType: outputType as MediaType,
         status: "completed",
-        url: file.url,
+        url: localUrl,
       };
-
-      setGenerateData({
-        ...generateData,
-        [assetKeyMap[outputType as keyof typeof assetKeyMap]]: file.url,
-      });
 
       const mediaId = await db.media.create(data);
       const media = await db.media.find(mediaId as string);
 
       if (media && media.mediaType !== "image") {
-        const mediaMetadata = await getMediaMetadata(media as MediaItem);
-
         await db.media
           .update(media.id, {
             ...media,
-            metadata: mediaMetadata?.media || {},
+            metadata: {},
           })
           .finally(() => {
             queryClient.invalidateQueries({
@@ -384,19 +314,117 @@ export default function RightPanel({
             });
           });
       }
+
+      setGenerateData({
+        ...generateData,
+        [assetKeyMap[outputType as keyof typeof assetKeyMap]]: localUrl,
+      });
+    } catch (err) {
+      console.warn(`ERROR! ${err}`);
+      toast({
+        title: "Failed to upload file",
+        description: "Please try again",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const jobCreator = useJobCreator({
+    projectId,
+    endpointId,
+    mediaType,
+    input: generateData,
+  });
+
+  const handleGenerate = async () => {
+    if (!generateData.prompt) {
+      toast({
+        title: "Prompt is required",
+        description: "Please enter a prompt to generate media",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let promptHistoryId: string | undefined;
+
+    try {
+      setIsGenerating(true);
+      await onGenerate?.();
+      
+      // Add to prompt history
+      const addPromptToHistory = useVideoProjectStore.getState().addPromptToHistory;
+      promptHistoryId = addPromptToHistory({
+        mediaType,
+        prompt: generateData.prompt,
+        status: 'pending' as const,
+        enhancedPrompt: generateData.prompt // Store the original prompt if no enhancement
+      });
+      
+      // Map input keys if needed
+      const input = endpoint?.inputMap
+        ? mapInputKey(generateData, endpoint.inputMap)
+        : generateData;
+
+      const result = await jobCreator.mutateAsync();
+      
+      // Update prompt history with result
+      if (promptHistoryId) {
+        const updatePromptInHistory = useVideoProjectStore.getState().updatePromptInHistory;
+        
+        let mediaUrl: string | undefined = undefined;
+        
+        if (typeof result === 'object' && result !== null) {
+          const falResult = result as { output?: { images?: { url: string }[]; url?: string } };
+          if (falResult.output) {
+            if (falResult.output.images?.length) {
+              mediaUrl = falResult.output.images[0].url;
+            } else if (falResult.output.url) {
+              mediaUrl = falResult.output.url;
+            }
+          }
+        }
+          
+        updatePromptInHistory(promptHistoryId, {
+          status: 'completed' as const,
+          mediaUrl
+        });
+      }
+      
+      // Reset the form
+      resetGenerateData();
+      closeGenerateDialog();
+      
+      toast({
+        title: "Generation started",
+        description: "Your media is being generated. Check the gallery for results.",
+      });
+    } catch (error) {
+      console.error("Generation error:", error);
+      
+      // Update prompt history with error
+      if (promptHistoryId) {
+        const updatePromptInHistory = useVideoProjectStore.getState().updatePromptInHistory;
+        updatePromptInHistory(promptHistoryId, {
+          status: 'failed' as const
+        });
+      }
+      
+      toast({
+        title: "Generation failed",
+        description: error instanceof Error ? error.message : "Failed to start generation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   return (
-    <div
-      className={cn(
-        "flex flex-col border-l border-border w-96 z-50 transition-all duration-300 absolute top-0 h-full bg-background",
-        generateDialogOpen ? "right-0" : "-right-96",
-        className
-      )}
-    >
+    <div className={cn("w-96 border-l border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)} {...props}>
       <div className="flex flex-col h-full">
-        <div className="flex-none p-4 border-b border-border">
+        <div className="flex-none p-6 border-b border-border/40">
           <div className="flex flex-row items-center justify-between">
             <h2 className="text-sm text-muted-foreground font-semibold flex-1">
               Generate Media
@@ -411,7 +439,7 @@ export default function RightPanel({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-col gap-4">
             <div className="flex w-full gap-2">
               <Button
@@ -464,131 +492,143 @@ export default function RightPanel({
               <div className="text-muted-foreground">Using</div>
               <ModelEndpointPicker
                 mediaType={mediaType}
-                value={endpointId || ""}
-                onValueChange={(endpointId) => {
-                  resetGenerateData();
-                  if (mediaType) {
-                    setMediaType(mediaType);
-                  }
-                  setGenerateData({});
-                }}
+                value={endpointId}
+                onValueChange={handleModelChange}
               />
+              {endpoint?.description && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {endpoint.description}
+                </p>
+              )}
             </div>
 
-            {endpoint?.inputAsset?.map((asset) => (
-              <div key={getAssetType(asset)} className="flex w-full">
-                <div className="flex flex-col w-full" key={getAssetType(asset)}>
-                  <div className="flex justify-between">
-                    <h4 className="capitalize text-muted-foreground mb-2">
-                      {getAssetType(asset)} Reference
-                    </h4>
-                    {tab === `asset-${getAssetType(asset)}` && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setTab("generation")}
-                        size="sm"
-                      >
-                        <ArrowLeft /> Back
-                      </Button>
+            {(mediaType === "image" || mediaType === "video") && (
+              <div className="flex flex-col gap-2">
+                <div className="text-muted-foreground">Aspect Ratio</div>
+                <AspectRatioSelector
+                  value={generateData.aspect_ratio as AspectRatioOption}
+                  onValueChange={handleAspectRatioChange}
+                />
+              </div>
+            )}
+
+            {endpoint?.inputAsset?.map((asset) => {
+              const assetType = getAssetType(asset);
+              return (
+                <div key={assetType} className="flex w-full">
+                  <div className="flex flex-col w-full">
+                    <div className="flex justify-between">
+                      <h4 className="capitalize text-muted-foreground mb-2">
+                        {assetType} Reference
+                      </h4>
+                      {tab === `asset-${assetType}` && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => setTab("generation")}
+                          size="sm"
+                        >
+                          <ArrowLeft /> Back
+                        </Button>
+                      )}
+                    </div>
+                    {(tab === "generation" ||
+                      tab !== `asset-${assetType}`) && (
+                      <>
+                        {!generateData[getAssetKey(asset)] && (
+                          <div className="flex flex-col gap-2 justify-between">
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setTab(`asset-${assetType}`);
+                                setAssetMediaType(assetType ?? "all");
+                              }}
+                              className="cursor-pointer min-h-[30px] flex flex-col items-center justify-center border border-dashed border-border rounded-md px-4"
+                            >
+                              <span className="text-muted-foreground text-xs text-center text-nowrap">
+                                Select
+                              </span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isUploading}
+                              className="cursor-pointer min-h-[30px] flex flex-col items-center justify-center border border-dashed border-border rounded-md px-4"
+                              asChild
+                            >
+                              <label htmlFor="assetUploadButton">
+                                <Input
+                                  id="assetUploadButton"
+                                  type="file"
+                                  className="hidden"
+                                  onChange={handleFileUpload}
+                                  multiple={false}
+                                  disabled={isUploading}
+                                  accept="image/*,audio/*,video/*"
+                                />
+                                {isUploading ? (
+                                  <LoaderCircleIcon className="w-4 h-4 opacity-50 animate-spin" />
+                                ) : (
+                                  <span className="text-muted-foreground text-xs text-center text-nowrap">
+                                    Upload
+                                  </span>
+                                )}
+                              </label>
+                            </Button>
+                          </div>
+                        )}
+                        {generateData[getAssetKey(asset)] && (
+                          <div className="cursor-pointer overflow-hidden relative w-full flex flex-col items-center justify-center border border-dashed border-border rounded-md">
+                            <WithTooltip tooltip="Remove media">
+                              <button
+                                type="button"
+                                className="p-1 rounded hover:bg-black/50 absolute top-1 z-50 bg-black/80 right-1 group-hover:text-white"
+                                onClick={() =>
+                                  setGenerateData({
+                                    [getAssetKey(asset)]: undefined,
+                                  })
+                                }
+                              >
+                                <TrashIcon className="w-3 h-3 stroke-2" />
+                              </button>
+                            </WithTooltip>
+                            {generateData[getAssetKey(asset)] && (
+                              <SelectedAssetPreview
+                                asset={asset}
+                                data={generateData}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {tab === `asset-${assetType}` && (
+                      <div className="flex items-center gap-2 flex-wrap overflow-y-auto max-h-80 divide-y divide-border">
+                        {mediaItems
+                          .filter((media) => {
+                            if (assetMediaType === "all") return true;
+                            if (
+                              assetMediaType === "audio" &&
+                              (media.mediaType === "voiceover" ||
+                                media.mediaType === "music")
+                            )
+                              return true;
+                            return media.mediaType === assetMediaType;
+                          })
+                          .map((job) => (
+                            <MediaItemRow
+                              draggable={false}
+                              key={job.id}
+                              data={job}
+                              onOpen={handleSelectMedia}
+                              className="cursor-pointer"
+                            />
+                          ))}
+                      </div>
                     )}
                   </div>
-                  {(tab === "generation" ||
-                    tab !== `asset-${getAssetType(asset)}`) && (
-                    <>
-                      {!generateData[getAssetKey(asset)] && (
-                        <div className="flex flex-col gap-2 justify-between">
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setTab(`asset-${getAssetType(asset)}`);
-                              setAssetMediaType(getAssetType(asset) ?? "all");
-                            }}
-                            className="cursor-pointer min-h-[30px] flex flex-col items-center justify-center border border-dashed border-border rounded-md px-4"
-                          >
-                            <span className="text-muted-foreground text-xs text-center text-nowrap">
-                              Select
-                            </span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={isUploading}
-                            className="cursor-pointer min-h-[30px] flex flex-col items-center justify-center border border-dashed border-border rounded-md px-4"
-                            asChild
-                          >
-                            <label htmlFor="assetUploadButton">
-                              <Input
-                                id="assetUploadButton"
-                                type="file"
-                                className="hidden"
-                                onChange={handleFileUpload}
-                                multiple={false}
-                                disabled={isUploading}
-                                accept="image/*,audio/*,video/*"
-                              />
-                              {isUploading ? (
-                                <LoaderCircleIcon className="w-4 h-4 opacity-50 animate-spin" />
-                              ) : (
-                                <span className="text-muted-foreground text-xs text-center text-nowrap">
-                                  Upload
-                                </span>
-                              )}
-                            </label>
-                          </Button>
-                        </div>
-                      )}
-                      {generateData[getAssetKey(asset)] && (
-                        <div className="cursor-pointer overflow-hidden relative w-full flex flex-col items-center justify-center border border-dashed border-border rounded-md">
-                          <WithTooltip tooltip="Remove media">
-                            <button
-                              type="button"
-                              className="p-1 rounded hover:bg-black/50 absolute top-1 z-50 bg-black/80 right-1 group-hover:text-white"
-                              onClick={() =>
-                                setGenerateData({
-                                  [getAssetKey(asset)]: undefined,
-                                })
-                              }
-                            >
-                              <TrashIcon className="w-3 h-3 stroke-2" />
-                            </button>
-                          </WithTooltip>
-                          {generateData[getAssetKey(asset)] && (
-                            <SelectedAssetPreview
-                              asset={asset}
-                              data={generateData}
-                            />
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {tab === `asset-${getAssetType(asset)}` && (
-                    <div className="flex items-center gap-2 flex-wrap overflow-y-auto max-h-80 divide-y divide-border">
-                      {mediaItems
-                        .filter((media) => {
-                          if (assetMediaType === "all") return true;
-                          if (
-                            assetMediaType === "audio" &&
-                            (media.mediaType === "voiceover" ||
-                              media.mediaType === "music")
-                          )
-                            return true;
-                          return media.mediaType === assetMediaType;
-                        })
-                        .map((job) => (
-                          <MediaItemRow
-                            draggable={false}
-                            key={job.id}
-                            data={job}
-                            onOpen={handleSelectMedia}
-                            className="cursor-pointer"
-                          />
-                        ))}
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="relative">
               <Textarea
@@ -598,23 +638,7 @@ export default function RightPanel({
                 rows={3}
                 onChange={(e) => setGenerateData({ prompt: e.target.value })}
               />
-              <WithTooltip tooltip="Enhance your prompt with AI-powered suggestions.">
-                <div className="absolute bottom-2 right-2">
-                  <Button
-                    variant="secondary"
-                    disabled={enhancePromptMutation.isPending}
-                    className="bg-purple-400/10 text-purple-400 text-xs rounded-full h-6 px-3"
-                    onClick={() => enhancePromptMutation.mutate()}
-                  >
-                    {enhancePromptMutation.isPending ? (
-                      <LoadingIcon />
-                    ) : (
-                      <WandSparklesIcon className="opacity-50" />
-                    )}
-                    Enhance Prompt
-                  </Button>
-                </div>
-              </WithTooltip>
+
             </div>
           </div>
         </div>
@@ -654,10 +678,17 @@ export default function RightPanel({
             )}
             <Button
               className="w-full"
-              disabled={enhancePromptMutation.isPending || createJob.isPending}
+              disabled={isGenerating || !generateData.prompt}
               onClick={handleGenerate}
             >
-              Generate
+              {isGenerating ? (
+                <>
+                  <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                "Generate"
+              )}
             </Button>
           </div>
         )}

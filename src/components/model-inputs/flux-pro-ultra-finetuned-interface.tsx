@@ -1,15 +1,24 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { ImageVariantGrid, ImageVariant } from "@/components/image-variant-grid";
+import {
+  ImageVariantGrid,
+  ImageVariant,
+} from "@/components/image-variant-grid";
 
 interface ApiInfo {
   id: string;
@@ -39,10 +48,12 @@ const validSafetyTolerances = ["low", "medium", "high"];
 const validOutputFormats = ["png", "jpg"];
 const validAspectRatios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 
-export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInterfaceProps> = ({ modelInfo, onSubmit }) => {
+export const FluxProUltraFinetunedInterface: React.FC<
+  FluxProUltraFinetunedInterfaceProps
+> = ({ modelInfo, onSubmit }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<FluxProUltraFinetunedInput>({
     prompt: "",
     negative_prompt: "",
@@ -77,13 +88,17 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
     if (!formData.finetune_id.match(/^[a-zA-Z0-9-]+$/)) {
       toast({
         title: "Error",
-        description: "Finetune ID must contain only letters, numbers, and hyphens",
+        description:
+          "Finetune ID must contain only letters, numbers, and hyphens",
         variant: "destructive",
       });
       return false;
     }
 
-    if (formData.num_images && (formData.num_images < 1 || formData.num_images > 4)) {
+    if (
+      formData.num_images &&
+      (formData.num_images < 1 || formData.num_images > 4)
+    ) {
       toast({
         title: "Error",
         description: "Number of images must be between 1 and 4",
@@ -92,7 +107,10 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
       return false;
     }
 
-    if (formData.finetune_strength && (formData.finetune_strength < 0 || formData.finetune_strength > 1)) {
+    if (
+      formData.finetune_strength &&
+      (formData.finetune_strength < 0 || formData.finetune_strength > 1)
+    ) {
       toast({
         title: "Error",
         description: "Finetune strength must be between 0 and 1",
@@ -140,7 +158,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Textarea
           id="negative_prompt"
           value={formData.negative_prompt}
-          onChange={(e) => setFormData({ ...formData, negative_prompt: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, negative_prompt: e.target.value })
+          }
           placeholder="Enter negative prompt (optional)..."
         />
       </div>
@@ -150,7 +170,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Input
           id="finetune_id"
           value={formData.finetune_id}
-          onChange={(e) => setFormData({ ...formData, finetune_id: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, finetune_id: e.target.value })
+          }
           placeholder="Enter finetune ID..."
           required
           pattern="[a-zA-Z0-9-]+"
@@ -166,7 +188,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
           min={1}
           max={4}
           value={formData.num_images}
-          onChange={(e) => setFormData({ ...formData, num_images: parseInt(e.target.value) })}
+          onChange={(e) =>
+            setFormData({ ...formData, num_images: parseInt(e.target.value) })
+          }
         />
       </div>
 
@@ -174,7 +198,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Switch
           id="enable_safety_checker"
           checked={formData.enable_safety_checker}
-          onCheckedChange={(checked) => setFormData({ ...formData, enable_safety_checker: checked })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, enable_safety_checker: checked })
+          }
         />
         <Label htmlFor="enable_safety_checker">Enable Safety Checker</Label>
       </div>
@@ -183,7 +209,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Label htmlFor="safety_tolerance">Safety Tolerance</Label>
         <Select
           value={formData.safety_tolerance}
-          onValueChange={(value) => setFormData({ ...formData, safety_tolerance: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, safety_tolerance: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select safety tolerance" />
@@ -202,7 +230,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Label htmlFor="output_format">Output Format</Label>
         <Select
           value={formData.output_format}
-          onValueChange={(value) => setFormData({ ...formData, output_format: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, output_format: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select output format" />
@@ -221,7 +251,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
         <Label htmlFor="aspect_ratio">Aspect Ratio</Label>
         <Select
           value={formData.aspect_ratio}
-          onValueChange={(value) => setFormData({ ...formData, aspect_ratio: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, aspect_ratio: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select aspect ratio" />
@@ -244,7 +276,9 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
           max={1}
           step={0.1}
           value={[formData.finetune_strength || 0.5]}
-          onValueChange={([value]) => setFormData({ ...formData, finetune_strength: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, finetune_strength: value })
+          }
         />
       </div>
 
@@ -255,4 +289,4 @@ export const FluxProUltraFinetunedInterface: React.FC<FluxProUltraFinetunedInter
   );
 };
 
-export default FluxProUltraFinetunedInterface; 
+export default FluxProUltraFinetunedInterface;

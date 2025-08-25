@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-import { PhotonModelInterface, PhotonModelInput } from "@/components/model-inputs/photon-model-interface";
+import {
+  PhotonModelInterface,
+  PhotonModelInput,
+} from "@/components/model-inputs/photon-model-interface";
 import { ImageVariantGrid } from "@/components/image-variant-grid";
 import { Loader2 } from "lucide-react";
 
 const modelInfo = {
   id: "photon",
-  name: "Nano • Photon",
+      name: "DirectorchairAI • Photon",
   description: "Image generation model",
   category: "image",
 };
@@ -19,7 +22,9 @@ export default function PhotonPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState<{ url: string }[]>([]);
 
-  const handleSubmit = async (input: PhotonModelInput): Promise<{ images: { url: string }[] }> => {
+  const handleSubmit = async (
+    input: PhotonModelInput,
+  ): Promise<{ images: { url: string }[] }> => {
     try {
       setIsLoading(true);
       const response = await fetch("/api/generate/photon", {
@@ -58,7 +63,9 @@ export default function PhotonPage() {
 
       <Card>
         <CardContent className="p-6">
-          <h2 className="text-2xl font-semibold mb-4">Image Generation Settings</h2>
+          <h2 className="text-2xl font-semibold mb-4">
+            Image Generation Settings
+          </h2>
           <PhotonModelInterface modelInfo={modelInfo} onSubmit={handleSubmit} />
         </CardContent>
       </Card>
@@ -72,14 +79,14 @@ export default function PhotonPage() {
       {images.length > 0 && (
         <div className="mt-8">
           <h2 className="text-2xl font-semibold mb-4">Generated Images</h2>
-          <ImageVariantGrid 
-            variants={images} 
-            onSelect={() => {}} 
-            onUpscale={() => {}} 
+          <ImageVariantGrid
+            variants={images}
+            onSelect={() => {}}
+            onUpscale={() => {}}
             onRegenerate={() => {}}
           />
         </div>
       )}
     </div>
   );
-} 
+}

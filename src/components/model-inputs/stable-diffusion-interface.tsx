@@ -2,14 +2,23 @@
 
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { ImageVariantGrid, ImageVariant } from "@/components/image-variant-grid";
+import {
+  ImageVariantGrid,
+  ImageVariant,
+} from "@/components/image-variant-grid";
 
 interface ApiInfo {
   id: string;
@@ -39,14 +48,22 @@ interface StableDiffusionInterfaceProps {
   onSubmit: (result: StableDiffusionInput) => void;
 }
 
-const validSchedulers = ["ddim", "dpm-solver", "euler-ancestral", "euler", "lms"];
+const validSchedulers = [
+  "ddim",
+  "dpm-solver",
+  "euler-ancestral",
+  "euler",
+  "lms",
+];
 const validImageFormats = ["jpeg", "png"];
 const validDimensions = [256, 512, 768, 1024];
 
-export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> = ({ modelInfo, onSubmit }) => {
+export const StableDiffusionInterface: React.FC<
+  StableDiffusionInterfaceProps
+> = ({ modelInfo, onSubmit }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<StableDiffusionInput>({
     prompt: "",
     negative_prompt: "",
@@ -73,7 +90,10 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
       return false;
     }
 
-    if (formData.num_images && (formData.num_images < 1 || formData.num_images > 4)) {
+    if (
+      formData.num_images &&
+      (formData.num_images < 1 || formData.num_images > 4)
+    ) {
       toast({
         title: "Error",
         description: "Number of images must be between 1 and 4",
@@ -91,7 +111,10 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
       return false;
     }
 
-    if (formData.num_inference_steps && (formData.num_inference_steps < 1 || formData.num_inference_steps > 100)) {
+    if (
+      formData.num_inference_steps &&
+      (formData.num_inference_steps < 1 || formData.num_inference_steps > 100)
+    ) {
       toast({
         title: "Error",
         description: "Number of inference steps must be between 1 and 100",
@@ -100,7 +123,10 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
       return false;
     }
 
-    if (formData.guidance_scale && (formData.guidance_scale < 1 || formData.guidance_scale > 20)) {
+    if (
+      formData.guidance_scale &&
+      (formData.guidance_scale < 1 || formData.guidance_scale > 20)
+    ) {
       toast({
         title: "Error",
         description: "Guidance scale must be between 1 and 20",
@@ -109,25 +135,40 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
       return false;
     }
 
-    if (formData.width && (formData.width < 256 || formData.width > 1024 || formData.width % 8 !== 0)) {
+    if (
+      formData.width &&
+      (formData.width < 256 ||
+        formData.width > 1024 ||
+        formData.width % 8 !== 0)
+    ) {
       toast({
         title: "Error",
-        description: "Width must be between 256 and 1024 and be a multiple of 8",
+        description:
+          "Width must be between 256 and 1024 and be a multiple of 8",
         variant: "destructive",
       });
       return false;
     }
 
-    if (formData.height && (formData.height < 256 || formData.height > 1024 || formData.height % 8 !== 0)) {
+    if (
+      formData.height &&
+      (formData.height < 256 ||
+        formData.height > 1024 ||
+        formData.height % 8 !== 0)
+    ) {
       toast({
         title: "Error",
-        description: "Height must be between 256 and 1024 and be a multiple of 8",
+        description:
+          "Height must be between 256 and 1024 and be a multiple of 8",
         variant: "destructive",
       });
       return false;
     }
 
-    if (formData.clip_skip && (formData.clip_skip < 1 || formData.clip_skip > 4)) {
+    if (
+      formData.clip_skip &&
+      (formData.clip_skip < 1 || formData.clip_skip > 4)
+    ) {
       toast({
         title: "Error",
         description: "CLIP skip must be between 1 and 4",
@@ -184,7 +225,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Textarea
           id="negative_prompt"
           value={formData.negative_prompt}
-          onChange={(e) => setFormData({ ...formData, negative_prompt: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, negative_prompt: e.target.value })
+          }
           placeholder="Enter negative prompt (optional)..."
         />
       </div>
@@ -197,7 +240,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           min={1}
           max={4}
           value={formData.num_images}
-          onChange={(e) => setFormData({ ...formData, num_images: parseInt(e.target.value) })}
+          onChange={(e) =>
+            setFormData({ ...formData, num_images: parseInt(e.target.value) })
+          }
         />
       </div>
 
@@ -205,8 +250,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Label htmlFor="scheduler">Scheduler</Label>
         <Select
           value={formData.scheduler}
-          onValueChange={(value: "ddim" | "dpm-solver" | "euler-ancestral" | "euler" | "lms") => 
-            setFormData({ ...formData, scheduler: value })}
+          onValueChange={(
+            value: "ddim" | "dpm-solver" | "euler-ancestral" | "euler" | "lms",
+          ) => setFormData({ ...formData, scheduler: value })}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select scheduler" />
@@ -229,7 +275,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           max={100}
           step={1}
           value={[formData.num_inference_steps || 30]}
-          onValueChange={([value]) => setFormData({ ...formData, num_inference_steps: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, num_inference_steps: value })
+          }
         />
       </div>
 
@@ -241,7 +289,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           max={20}
           step={0.5}
           value={[formData.guidance_scale || 7.5]}
-          onValueChange={([value]) => setFormData({ ...formData, guidance_scale: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, guidance_scale: value })
+          }
         />
       </div>
 
@@ -249,7 +299,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Label htmlFor="width">Width</Label>
         <Select
           value={formData.width?.toString()}
-          onValueChange={(value) => setFormData({ ...formData, width: parseInt(value) })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, width: parseInt(value) })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select width" />
@@ -268,7 +320,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Label htmlFor="height">Height</Label>
         <Select
           value={formData.height?.toString()}
-          onValueChange={(value) => setFormData({ ...formData, height: parseInt(value) })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, height: parseInt(value) })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select height" />
@@ -289,7 +343,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           id="seed"
           type="number"
           value={formData.seed}
-          onChange={(e) => setFormData({ ...formData, seed: parseInt(e.target.value) })}
+          onChange={(e) =>
+            setFormData({ ...formData, seed: parseInt(e.target.value) })
+          }
           placeholder="Enter seed number..."
         />
       </div>
@@ -298,7 +354,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Switch
           id="enable_safety_checker"
           checked={formData.enable_safety_checker}
-          onCheckedChange={(checked) => setFormData({ ...formData, enable_safety_checker: checked })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, enable_safety_checker: checked })
+          }
         />
         <Label htmlFor="enable_safety_checker">Enable Safety Checker</Label>
       </div>
@@ -311,7 +369,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           max={4}
           step={1}
           value={[formData.clip_skip || 1]}
-          onValueChange={([value]) => setFormData({ ...formData, clip_skip: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, clip_skip: value })
+          }
         />
       </div>
 
@@ -319,7 +379,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
         <Label htmlFor="image_format">Image Format</Label>
         <Select
           value={formData.image_format}
-          onValueChange={(value: "jpeg" | "png") => setFormData({ ...formData, image_format: value })}
+          onValueChange={(value: "jpeg" | "png") =>
+            setFormData({ ...formData, image_format: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select image format" />
@@ -342,7 +404,9 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
           max={100}
           step={1}
           value={[formData.quality || 95]}
-          onValueChange={([value]) => setFormData({ ...formData, quality: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, quality: value })
+          }
         />
       </div>
 
@@ -353,4 +417,4 @@ export const StableDiffusionInterface: React.FC<StableDiffusionInterfaceProps> =
   );
 };
 
-export default StableDiffusionInterface; 
+export default StableDiffusionInterface;

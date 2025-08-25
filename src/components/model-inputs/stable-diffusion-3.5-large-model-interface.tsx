@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -34,17 +40,21 @@ export interface StableDiffusion35LargeModelInput {
 
 interface StableDiffusion35LargeModelInterfaceProps {
   modelInfo: ApiInfo;
-  onSubmit: (input: StableDiffusion35LargeModelInput) => Promise<{ images: { url: string }[] }>;
+  onSubmit: (
+    input: StableDiffusion35LargeModelInput,
+  ) => Promise<{ images: { url: string }[] }>;
 }
 
 const validSafetyTolerances = ["low", "medium", "high"];
 const validOutputFormats = ["png", "jpg"];
 const validAspectRatios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
 
-export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35LargeModelInterfaceProps> = ({ modelInfo, onSubmit }) => {
+export const StableDiffusion35LargeModelInterface: React.FC<
+  StableDiffusion35LargeModelInterfaceProps
+> = ({ modelInfo, onSubmit }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<StableDiffusion35LargeModelInput>({
     prompt: "",
     negative_prompt: "",
@@ -69,7 +79,10 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
       return false;
     }
 
-    if (formData.num_images && (formData.num_images < 1 || formData.num_images > 4)) {
+    if (
+      formData.num_images &&
+      (formData.num_images < 1 || formData.num_images > 4)
+    ) {
       toast({
         title: "Error",
         description: "Number of images must be between 1 and 4",
@@ -78,7 +91,10 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
       return false;
     }
 
-    if (formData.guidance_scale && (formData.guidance_scale < 1 || formData.guidance_scale > 20)) {
+    if (
+      formData.guidance_scale &&
+      (formData.guidance_scale < 1 || formData.guidance_scale > 20)
+    ) {
       toast({
         title: "Error",
         description: "Guidance scale must be between 1 and 20",
@@ -87,7 +103,10 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
       return false;
     }
 
-    if (formData.num_inference_steps && (formData.num_inference_steps < 20 || formData.num_inference_steps > 100)) {
+    if (
+      formData.num_inference_steps &&
+      (formData.num_inference_steps < 20 || formData.num_inference_steps > 100)
+    ) {
       toast({
         title: "Error",
         description: "Number of inference steps must be between 20 and 100",
@@ -96,7 +115,10 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
       return false;
     }
 
-    if (formData.use_seed && ((formData.seed ?? 0) < 0 || (formData.seed ?? 0) > 2147483647)) {
+    if (
+      formData.use_seed &&
+      ((formData.seed ?? 0) < 0 || (formData.seed ?? 0) > 2147483647)
+    ) {
       toast({
         title: "Error",
         description: "Seed must be between 0 and 2147483647",
@@ -144,7 +166,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Textarea
           id="negative_prompt"
           value={formData.negative_prompt}
-          onChange={(e) => setFormData({ ...formData, negative_prompt: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, negative_prompt: e.target.value })
+          }
           placeholder="Enter negative prompt (optional)..."
         />
       </div>
@@ -157,7 +181,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
           min={1}
           max={4}
           value={formData.num_images}
-          onChange={(e) => setFormData({ ...formData, num_images: parseInt(e.target.value) })}
+          onChange={(e) =>
+            setFormData({ ...formData, num_images: parseInt(e.target.value) })
+          }
         />
       </div>
 
@@ -165,7 +191,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Switch
           id="enable_safety_checker"
           checked={formData.enable_safety_checker}
-          onCheckedChange={(checked) => setFormData({ ...formData, enable_safety_checker: checked })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, enable_safety_checker: checked })
+          }
         />
         <Label htmlFor="enable_safety_checker">Enable Safety Checker</Label>
       </div>
@@ -174,7 +202,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Label htmlFor="safety_tolerance">Safety Tolerance</Label>
         <Select
           value={formData.safety_tolerance}
-          onValueChange={(value) => setFormData({ ...formData, safety_tolerance: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, safety_tolerance: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select safety tolerance" />
@@ -193,7 +223,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Label htmlFor="output_format">Output Format</Label>
         <Select
           value={formData.output_format}
-          onValueChange={(value) => setFormData({ ...formData, output_format: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, output_format: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select output format" />
@@ -212,7 +244,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Label htmlFor="aspect_ratio">Aspect Ratio</Label>
         <Select
           value={formData.aspect_ratio}
-          onValueChange={(value) => setFormData({ ...formData, aspect_ratio: value })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, aspect_ratio: value })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Select aspect ratio" />
@@ -235,7 +269,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
           max={20}
           step={0.5}
           value={[formData.guidance_scale || 7.5]}
-          onValueChange={([value]) => setFormData({ ...formData, guidance_scale: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, guidance_scale: value })
+          }
         />
       </div>
 
@@ -247,7 +283,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
           max={100}
           step={1}
           value={[formData.num_inference_steps || 50]}
-          onValueChange={([value]) => setFormData({ ...formData, num_inference_steps: value })}
+          onValueChange={([value]) =>
+            setFormData({ ...formData, num_inference_steps: value })
+          }
         />
       </div>
 
@@ -255,7 +293,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
         <Switch
           id="use_seed"
           checked={formData.use_seed}
-          onCheckedChange={(checked) => setFormData({ ...formData, use_seed: checked })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, use_seed: checked })
+          }
         />
         <Label htmlFor="use_seed">Use Custom Seed</Label>
       </div>
@@ -269,7 +309,9 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
             min={0}
             max={2147483647}
             value={formData.seed}
-            onChange={(e) => setFormData({ ...formData, seed: parseInt(e.target.value) })}
+            onChange={(e) =>
+              setFormData({ ...formData, seed: parseInt(e.target.value) })
+            }
           />
         </div>
       )}
@@ -281,4 +323,4 @@ export const StableDiffusion35LargeModelInterface: React.FC<StableDiffusion35Lar
   );
 };
 
-export default StableDiffusion35LargeModelInterface; 
+export default StableDiffusion35LargeModelInterface;

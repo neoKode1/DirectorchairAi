@@ -5,6 +5,7 @@ import type {
   VideoProject,
   VideoTrack,
 } from "./schema";
+import { generateUUID } from "@/lib/uuid-polyfill";
 
 function open() {
   return openDB("ai-vstudio-db-v2", 1, {
@@ -41,7 +42,7 @@ export const db = {
       const db = await open();
       const tx = db.transaction("projects", "readwrite");
       const result = await tx.store.put({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         ...project,
       });
       await tx.done;
@@ -71,7 +72,7 @@ export const db = {
     async create(track: Omit<VideoTrack, "id">) {
       const db = await open();
       return db.put("tracks", {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         ...track,
       });
     },
@@ -94,7 +95,7 @@ export const db = {
     async create(keyFrame: Omit<VideoKeyFrame, "id">) {
       const db = await open();
       return db.put("keyFrames", {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         ...keyFrame,
       });
     },
@@ -133,7 +134,18 @@ export const db = {
     async create(media: Omit<MediaItem, "id">) {
       const db = await open();
       const tx = db.transaction("media_items", "readwrite");
-      const id = crypto.randomUUID().toString();
+      const id = generateUUID();
+
+      // Ensure status is set for uploaded files
+      if (media.kind === "uploaded" && !media.status) {
+        media.status = "completed";
+      }
+
+      // Initialize empty metadata if not provided
+      if (!media.metadata) {
+        media.metadata = {};
+      }
+
       const result = await tx.store.put({
         id,
         ...media,
@@ -145,6 +157,12 @@ export const db = {
       const db = await open();
       const existing = await db.get("media_items", id);
       if (!existing) return;
+
+      // Ensure status is maintained for uploaded files
+      if (existing.kind === "uploaded" && media.status === undefined) {
+        media.status = "completed";
+      }
+
       const tx = db.transaction("media_items", "readwrite");
       const result = await tx.store.put({
         ...existing,

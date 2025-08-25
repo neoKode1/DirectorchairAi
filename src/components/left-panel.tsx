@@ -23,7 +23,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { MediaItemPanel } from "./media-panel";
-import { Button } from "./ui/button";
+import { button as Button } from "@/components/ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import {
@@ -33,12 +33,10 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useState } from "react";
-import { useUploadThing } from "@/lib/uploadthing";
-import type { ClientUploadedFileData } from "uploadthing/types";
 import { db } from "@/data/db";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/hooks/use-toast";
-import { getMediaMetadata } from "@/lib/ffmpeg";
+import { useToast } from "@/hooks/use-toast";
+
 import {
   Accordion,
   AccordionContent,
@@ -46,13 +44,16 @@ import {
   AccordionTrigger,
 } from "./ui/accordion";
 import { UserIcon } from "./icons";
+import { useMutation } from "@tanstack/react-query";
 
 export default function LeftPanel() {
   const projectId = useProjectId();
   const { data: project = PROJECT_PLACEHOLDER } = useProject(projectId);
   const projectUpdate = useProjectUpdater(projectId);
   const [mediaType, setMediaType] = useState("all");
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: mediaItems = [], isLoading } = useProjectMediaItems(projectId);
   const setProjectDialogOpen = useVideoProjectStore(
@@ -60,35 +61,18 @@ export default function LeftPanel() {
   );
   const openGenerateDialog = useVideoProjectStore((s) => s.openGenerateDialog);
 
-  const { startUpload, isUploading } = useUploadThing("fileUploader");
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
+    setIsUploading(true);
     try {
-      const uploadedFiles = await startUpload(Array.from(files));
-      if (uploadedFiles) {
-        await handleUploadComplete(uploadedFiles);
-      }
-    } catch (err) {
-      console.warn(`ERROR! ${err}`);
-      toast({
-        title: "Failed to upload file",
-        description: "Please try again",
-      });
-    }
-  };
+      const file = files[0]; // Handle one file at a time
+      const fileType = file.type.split("/")[0];
+      const outputType = fileType === "audio" ? "music" : fileType;
 
-  const handleUploadComplete = async (
-    files: ClientUploadedFileData<{
-      uploadedBy: string;
-    }>[],
-  ) => {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const mediaType = file.type.split("/")[0];
-      const outputType = mediaType === "audio" ? "music" : mediaType;
+      // Create a local URL for the file
+      const localUrl = URL.createObjectURL(file);
 
       const data: Omit<MediaItem, "id"> = {
         projectId,
@@ -96,19 +80,17 @@ export default function LeftPanel() {
         createdAt: Date.now(),
         mediaType: outputType as MediaType,
         status: "completed",
-        url: file.url,
+        url: localUrl,
       };
 
       const mediaId = await db.media.create(data);
       const media = await db.media.find(mediaId as string);
 
-      if (media) {
-        const mediaMetadata = await getMediaMetadata(media as MediaItem);
-
+      if (media && media.mediaType !== "image") {
         await db.media
           .update(media.id, {
             ...media,
-            metadata: mediaMetadata?.media || {},
+            metadata: {},
           })
           .finally(() => {
             queryClient.invalidateQueries({
@@ -116,12 +98,22 @@ export default function LeftPanel() {
             });
           });
       }
+    } catch (err) {
+      console.warn(`ERROR! ${err}`);
+      toast({
+        title: "Failed to upload file",
+        description: "Please try again",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
+
+
   return (
-    <div className="flex flex-col border-r border-border w-96">
-      <div className="p-4 flex items-center gap-4 border-b border-border">
+    <div className="flex flex-col border-r border-border/40 w-96 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="p-6 flex items-center gap-4 border-b border-border/40">
         <div className="flex w-full">
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1" className="border-b-0">
@@ -147,22 +139,25 @@ export default function LeftPanel() {
                     }
                   />
 
-                  <Textarea
-                    id="projectDescription"
-                    name="description"
-                    placeholder="Describe your video"
-                    className="resize-none"
-                    value={project.description}
-                    rows={6}
-                    onChange={(e) =>
-                      projectUpdate.mutate({ description: e.target.value })
-                    }
-                    onBlur={(e) =>
-                      projectUpdate.mutate({
-                        description: e.target.value.trim(),
-                      })
-                    }
-                  />
+                  <div className="relative">
+                    <Textarea
+                      id="projectDescription"
+                      name="description"
+                      placeholder="Describe your video"
+                      className="resize-none pr-24"
+                      value={project.description}
+                      rows={6}
+                      onChange={(e) =>
+                        projectUpdate.mutate({ description: e.target.value })
+                      }
+                      onBlur={(e) =>
+                        projectUpdate.mutate({
+                          description: e.target.value.trim(),
+                        })
+                      }
+                    />
+
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -179,8 +174,8 @@ export default function LeftPanel() {
           </Button>
         </div>
       </div>
-      <div className="flex-1 py-4 flex flex-col gap-4 border-b border-border h-full overflow-hidden relative">
-        <div className="flex flex-row items-center gap-2 px-4">
+      <div className="flex-1 py-6 flex flex-col gap-4 border-b border-border/40 h-full overflow-hidden relative">
+        <div className="flex flex-row items-center gap-2 px-6">
           <h2 className="text-sm text-muted-foreground font-semibold flex-1">
             Gallery
           </h2>
@@ -234,7 +229,6 @@ export default function LeftPanel() {
             <Button
               variant="secondary"
               size="sm"
-              disabled={isUploading}
               className="cursor-pointer disabled:cursor-default disabled:opacity-50"
               asChild
             >
@@ -245,16 +239,13 @@ export default function LeftPanel() {
                   className="hidden"
                   onChange={handleFileUpload}
                   multiple={false}
-                  disabled={isUploading}
                   accept="image/*,audio/*,video/*"
                 />
-                {isUploading ? (
-                  <LoaderCircleIcon className="w-4 h-4 opacity-50 animate-spin" />
-                ) : (
-                  <CloudUploadIcon className="w-4 h-4 opacity-50" />
-                )}
+                <CloudUploadIcon className="w-4 h-4 opacity-50" />
               </label>
             </Button>
+          </div>
+          {mediaItems.length > 0 && (
             <Button
               variant="secondary"
               size="sm"
@@ -264,14 +255,23 @@ export default function LeftPanel() {
               <UserIcon className="w-4 h-4 text-current" />
               Generate...
             </Button>
-          </div>
+          )}
         </div>
         {!isLoading && mediaItems.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center gap-4 px-4">
+          <div className="h-full flex flex-col items-center justify-center gap-4 px-6">
             <p className="text-sm text-center">
               Create your image, audio and voiceover collection to compose your
               videos
             </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openGenerateDialog()}
+              className="bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+            >
+              <ImagePlusIcon className="w-4 h-4 opacity-50" />
+              Generate...
+            </Button>
           </div>
         )}
 

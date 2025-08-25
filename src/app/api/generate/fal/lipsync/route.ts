@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { fal } from "@fal-ai/client";
+import { createFalClient } from "@fal-ai/client";
 
 if (!process.env.FAL_KEY) {
   throw new Error("FAL_KEY environment variable is not set");
 }
 
-fal.config({
+const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 });
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     if (model !== "fal-ai/wav2lip") {
       return NextResponse.json(
         { error: "Unsupported model for this endpoint" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     console.error("Error in wav2lip:", error);
     return NextResponse.json(
       { error: "Failed to process wav2lip request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

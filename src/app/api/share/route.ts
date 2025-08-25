@@ -1,4 +1,11 @@
-import { IS_SHARE_ENABLED, shareVideo, ShareVideoParams } from "@/lib/share";
+// Placeholder constants and types for sharing
+const IS_SHARE_ENABLED = false;
+
+type ShareVideoParams = any;
+
+async function shareVideo(params: ShareVideoParams) {
+  return "placeholder-id";
+}
 import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {

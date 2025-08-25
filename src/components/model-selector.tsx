@@ -1,5 +1,11 @@
 import { AVAILABLE_ENDPOINTS, type ApiInfo } from "@/lib/fal";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -7,15 +13,21 @@ interface ModelSelectorProps {
   category?: "video" | "image" | "music" | "voiceover";
 }
 
-export function ModelSelector({ selectedModel, onModelChange, category }: ModelSelectorProps) {
+export function ModelSelector({
+  selectedModel,
+  onModelChange,
+  category,
+}: ModelSelectorProps) {
   // Filter endpoints based on category if provided
-  const availableModels = category 
-    ? AVAILABLE_ENDPOINTS.filter(endpoint => endpoint.category === category)
+  const availableModels = category
+    ? AVAILABLE_ENDPOINTS.filter((endpoint) => endpoint.category === category)
     : AVAILABLE_ENDPOINTS;
 
   return (
     <div className="w-full space-y-2">
-      <label className="text-sm font-medium text-gray-700">Model Selection</label>
+      <label className="text-sm font-medium text-gray-700">
+        Model Selection
+      </label>
       <Select value={selectedModel} onValueChange={onModelChange}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select a model" />
@@ -25,7 +37,9 @@ export function ModelSelector({ selectedModel, onModelChange, category }: ModelS
             <SelectItem key={model.endpointId} value={model.endpointId}>
               <div className="flex flex-col">
                 <span className="font-medium">{model.label}</span>
-                <span className="text-xs text-gray-500">{model.description}</span>
+                <span className="text-xs text-gray-500">
+                  {model.description}
+                </span>
               </div>
             </SelectItem>
           ))}
@@ -33,9 +47,12 @@ export function ModelSelector({ selectedModel, onModelChange, category }: ModelS
       </Select>
       {selectedModel && (
         <div className="text-xs text-gray-500">
-          {availableModels.find(m => m.endpointId === selectedModel)?.description}
+          {
+            availableModels.find((m) => m.endpointId === selectedModel)
+              ?.description
+          }
         </div>
       )}
     </div>
   );
-} 
+}

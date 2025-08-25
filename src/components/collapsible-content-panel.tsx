@@ -25,6 +25,14 @@ export function CollapsibleContentPanel({
     return defaultExpanded;
   });
 
+  // Dispatch custom event when panel state changes
+  useEffect(() => {
+    const event = new CustomEvent('contentPanelStateChange', {
+      detail: { isExpanded, panelWidth }
+    });
+    window.dispatchEvent(event);
+  }, [isExpanded, panelWidth]);
+
   useEffect(() => {
     localStorage.setItem('content-panel-expanded', JSON.stringify(isExpanded));
   }, [isExpanded]);

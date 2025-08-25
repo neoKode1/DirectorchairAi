@@ -86,6 +86,8 @@ function TimelineContent() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'gallery' | 'storage' | 'sessions'>('content');
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
+  const [contentPanelExpanded, setContentPanelExpanded] = useState(false);
+  const [contentPanelWidth, setContentPanelWidth] = useState("400px");
   const selectedMediaId = useVideoProjectStore((s) => s.selectedMediaId);
   const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
   const keyDialogOpen = useVideoProjectStore((s) => s.keyDialogOpen);
@@ -94,6 +96,20 @@ function TimelineContent() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Listen for content panel state changes
+  useEffect(() => {
+    const handleContentPanelChange = (event: CustomEvent) => {
+      setContentPanelExpanded(event.detail.isExpanded);
+      setContentPanelWidth(event.detail.panelWidth);
+    };
+
+    window.addEventListener('contentPanelStateChange', handleContentPanelChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('contentPanelStateChange', handleContentPanelChange as EventListener);
+    };
   }, []);
 
   // Handle URL parameters for tab switching
@@ -183,7 +199,12 @@ function TimelineContent() {
       {/* Content Container */}
       <div className="relative z-20 mobile-timeline">
         {/* Left Panel - Chat Interface */}
-        <div className="mobile-timeline-chat">
+        <div 
+          className="mobile-timeline-chat transition-all duration-300 ease-in-out"
+          style={{
+            width: contentPanelExpanded ? `calc(100% - ${contentPanelWidth})` : '100%'
+          }}
+        >
           <IntelligentChatInterface 
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}

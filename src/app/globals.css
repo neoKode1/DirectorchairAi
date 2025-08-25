@@ -221,11 +221,11 @@ body {
   
   /* Mobile-optimized timeline */
   .mobile-timeline {
-    @apply flex flex-col lg:flex-row h-full;
+    @apply flex h-full;
   }
   
   .mobile-timeline-chat {
-    @apply w-full lg:w-full h-full;
+    @apply w-full h-full;
   }
   
   .mobile-timeline-content {

@@ -45,7 +45,6 @@ import { AVAILABLE_ENDPOINTS, type ApiInfo } from '@/lib/fal';
 import { smartControlsAgent } from '@/lib/smart-controls-agent';
 
 import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ChatMessage {
   id: string;
@@ -886,8 +885,7 @@ export function IntelligentChatInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Add state for model delegation override
-  const [delegationOverride, setDelegationOverride] = useState<string | null>(null);
+  // Removed delegation override state - no longer needed with intent-driven workflow
   
   // Add state for content type selection
   const [contentType, setContentType] = useState<'image' | 'video'>('image');
@@ -2121,51 +2119,6 @@ Starting workflow execution...`,
     // Start generation state tracking
     startGeneration('image', 'Regular generation process');
     
-    // 🧠 SMART CONTROLS OPTIMIZATION - Automatically optimize settings in background
-    // Temporarily disabled to debug FAL API issues
-    /*
-    try {
-      console.log('🧠 [SmartControls] Starting automatic optimization...');
-      const hasUploadedImage = hasStyleImageUploaded || !!uploadedImage;
-      
-      const optimizationResult = await smartControlsAgent.analyzeAndOptimize(userInput, hasUploadedImage);
-      console.log('✅ [SmartControls] Optimization result:', optimizationResult);
-      
-      // Apply optimized settings automatically (unless user recently selected them)
-      if (optimizationResult.appliedOptimizations.length > 0) {
-        console.log('🎯 [SmartControls] Applying optimizations:', optimizationResult.appliedOptimizations);
-        
-        // Update aspect ratio if optimized
-        if (optimizationResult.appliedOptimizations.some(opt => opt.includes('Aspect ratio'))) {
-          setSelectedAspectRatio(optimizationResult.recommendedAspectRatio);
-          console.log('🎯 [SmartControls] Auto-updated aspect ratio to:', optimizationResult.recommendedAspectRatio);
-        }
-        
-        // Update content type if optimized
-        if (optimizationResult.appliedOptimizations.some(opt => opt.includes('Content type'))) {
-          setContentType(optimizationResult.recommendedContentType);
-          console.log('🎯 [SmartControls] Auto-updated content type to:', optimizationResult.recommendedContentType);
-        }
-        
-        // Add optimization feedback message
-        const optimizationMessage: ChatMessage = {
-          id: `optimization-${Date.now()}`,
-          type: 'assistant',
-          content: `🧠 **Smart Controls Applied**: ${optimizationResult.appliedOptimizations.join(', ')}`,
-          timestamp: new Date(),
-          status: 'completed',
-        };
-        setMessages(prev => [...prev, optimizationMessage]);
-      } else {
-        console.log('ℹ️ [SmartControls] No optimizations applied - respecting user selections');
-      }
-    } catch (error) {
-      console.error('❌ [SmartControls] Optimization failed:', error);
-      // Continue with generation even if optimization fails
-    }
-    */
-    console.log('🧠 [SmartControls] Optimization temporarily disabled for debugging');
-    
     // Sync video model with user preferences before generation
     const syncedVideoModel = syncVideoModelWithPreferences();
     console.log('🎬 [IntelligentChatInterface] Using synced video model for generation:', syncedVideoModel);
@@ -2187,9 +2140,6 @@ Starting workflow execution...`,
         }
 
         const preferences = JSON.parse(saved);
-        
-        // Determine the intent based on the selected intent (this should be set during intent selection)
-        // For now, we'll use the existing logic but with better model selection
         
         // Check if this is an image editing request
         if (userInput.toLowerCase().includes('edit') || userInput.toLowerCase().includes('modify') || 
@@ -2339,60 +2289,6 @@ Starting workflow execution...`,
           
           setMessages(prev => [...prev, delegationMessage]);
           return; // Don't proceed with generation yet
-        }
-      }
-      
-      // Check if there's an uploaded image for editing and user provided a prompt
-      if (uploadedImage && userInput.trim()) {
-        console.log('✏️ [IntelligentChatInterface] Uploaded image detected with user prompt for editing');
-        
-        // Create a context that includes the uploaded image and user prompt
-        const editContext = `[Image uploaded: ${uploadedImage} - requesting image-to-image editing] ${userInput}`;
-        
-        // Get delegation from intelligence core for image editing
-        const intent = await intelligenceCore.analyzeUserIntent(editContext, 'image', true);
-        const delegation = await intelligenceCore.selectOptimalModel(intent);
-        
-        if (delegation) {
-          // Override the model to use nano-banana/edit
-          delegation.modelId = 'fal-ai/nano-banana/edit';
-          delegation.reason = 'Image-to-image editing with user prompt';
-          
-          // Add the image_urls parameter for nano-banana/edit
-          delegation.parameters = {
-            ...delegation.parameters,
-            image_urls: [uploadedImage],
-            prompt: userInput.trim()
-          };
-          console.log('✏️ [IntelligentChatInterface] Added image_urls and prompt to edit delegation:', {
-            image_urls: [uploadedImage],
-            prompt: userInput.trim()
-          });
-          
-          // Set the pending delegation
-          setPendingDelegation(delegation);
-          startGeneration('image', 'Image-to-image editing');
-          
-          // Add delegation message
-          const delegationMessage: ChatMessage = {
-            id: `delegation-${Date.now()}`,
-            type: 'assistant',
-            content: `✏️ **Edit Ready**: Your image is ready to be edited using Nano Banana Edit`,
-            timestamp: new Date(),
-            intent: intent,
-            delegation: delegation,
-            status: 'pending',
-          };
-          setMessages(prev => [...prev, delegationMessage]);
-          
-          // Clear the uploaded image after setting up the delegation
-          setUploadedImage(null);
-          setImagePreview(null);
-          
-          // Continue with the generation process
-          currentDelegation = delegation;
-        } else {
-          throw new Error('No suitable image editing model found. Please check your model preferences.');
         }
       }
       
@@ -3039,23 +2935,7 @@ Starting workflow execution...`,
     console.log('📋 [IntelligentChatInterface] Model preferences updated successfully');
   }, [intelligenceCore, modelPreferences]);
 
-  // Handle model delegation override
-  const handleDelegationModelChange = useCallback((newModelId: string) => {
-    console.log('🔄 [IntelligentChatInterface] Model delegation override:', newModelId);
-    setDelegationOverride(newModelId);
-    
-    if (pendingDelegation) {
-      // Update the pending delegation with the new model
-      const updatedDelegation = {
-        ...pendingDelegation,
-        modelId: newModelId,
-        reason: `User selected ${newModelId} instead of AI recommendation`,
-        confidence: 0.9, // High confidence for user selection
-      };
-      setPendingDelegation(updatedDelegation);
-      console.log('✅ [IntelligentChatInterface] Delegation updated with new model:', updatedDelegation);
-    }
-  }, [pendingDelegation]);
+  // Removed delegation override functionality - no longer needed with intent-driven workflow
 
   // Drag and Drop Handlers
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -4131,60 +4011,7 @@ Available commands:
                 <span>Est. {message.delegation.estimatedTime}</span>
               </div>
 
-              {/* Model Selection Override */}
-              {message.status === 'pending' && (
-                <div className="pt-2 space-y-2">
-                  {/* Model Change Dropdown */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Change Model:</span>
-                    <Select value={delegationOverride || message.delegation.modelId} onValueChange={handleDelegationModelChange}>
-                      <SelectTrigger className="w-48 h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {message.delegation.intent === 'image' ? (
-                          <>
-                            <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra</SelectItem>
-                            <SelectItem value="fal-ai/flux-pro/kontext">Flux Pro Kontext</SelectItem>
-                            <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA Image-to-Image</SelectItem>
-                          </>
-                        ) : message.delegation.intent === 'video' ? (
-                          <>
-                            <SelectItem value="fal-ai/veo3/fast">Google Veo3 Fast</SelectItem>
-                            <SelectItem value="fal-ai/veo3/standard">Google Veo3 Standard</SelectItem>
-                            <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/kling-video/v2.1/master/text-to-video">Kling v2.1 Master (T2V)</SelectItem>
-                            <SelectItem value="fal-ai/luma-dream-machine/ray-2">Luma Ray 2</SelectItem>
-                            <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Ray 2 Flash (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/minimax/hailuo-02/standard/text-to-video">Minimax Hailuo 02 (T2V)</SelectItem>
-                          </>
-                        ) : (
-                          <>
-                            <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra</SelectItem>
-                            <SelectItem value="fal-ai/flux-pro/kontext">Flux Pro Kontext</SelectItem>
-                            <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA Image-to-Image</SelectItem>
-                            <SelectItem value="fal-ai/veo3/fast">Google Veo3 Fast</SelectItem>
-                            <SelectItem value="fal-ai/veo3/standard">Google Veo3 Standard</SelectItem>
-                            <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/kling-video/v2.1/master/text-to-video">Kling v2.1 Master (T2V)</SelectItem>
-                            <SelectItem value="fal-ai/luma-dream-machine/ray-2">Luma Ray 2</SelectItem>
-                            <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Ray 2 Flash (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (I2V)</SelectItem>
-                            <SelectItem value="fal-ai/minimax/hailuo-02/standard/text-to-video">Minimax Hailuo 02 (T2V)</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {delegationOverride && delegationOverride !== message.delegation.modelId && (
-                    <div className="text-xs text-blue-400 bg-blue-50 p-2 rounded">
-                      ✓ Model changed to: {delegationOverride}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Model selection is now handled by intent-driven workflow - no override needed */}
 
               {/* Cost Estimator - Show when delegation is ready */}
               {message.status === 'pending' && pendingDelegation && (

@@ -129,13 +129,31 @@ function TimelineContent() {
     const handleGenerate = async (generationData: any): Promise<any> => {
     try {
       console.log('🚀 [Timeline] Generation data received:', generationData);
+      console.log('📊 [Timeline] Generation data type:', typeof generationData);
+      console.log('📊 [Timeline] Generation data keys:', generationData ? Object.keys(generationData) : 'null/undefined');
       console.log('📊 [Timeline] Generation data details:', {
-        endpointId: generationData.endpointId,
+        model: generationData?.model,
+        endpointId: generationData?.endpointId,
         parameters: generationData,
         timestamp: new Date().toISOString()
       });
-      console.log('📦 [Timeline] Enhanced prompt in generation data:', generationData.prompt);
-      console.log('📦 [Timeline] Structured prompt for display:', generationData.structuredPromptForDisplay);
+      console.log('📦 [Timeline] Enhanced prompt in generation data:', generationData?.prompt);
+      console.log('📦 [Timeline] Structured prompt for display:', generationData?.structuredPromptForDisplay);
+      
+      // Validate that generationData is not empty or null
+      if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {
+        console.error('❌ [Timeline] Empty or invalid generation data received:', generationData);
+        throw new Error('Empty or invalid generation data received. Please try again.');
+      }
+      
+      // Validate generation data before sending
+      if (!generationData.model && !generationData.endpointId) {
+        throw new Error('Missing model or endpointId in generation data');
+      }
+      
+      if (!generationData.prompt && !generationData.image_url) {
+        throw new Error('Missing prompt or image_url in generation data');
+      }
       
       // Increment generation count
       await incrementCount();
@@ -144,21 +162,38 @@ function TimelineContent() {
       // Use the unified generation API for all FAL models
       const apiEndpoint = '/api/generate';
       
+      // Clean up the generation data to ensure it has the required fields
+      const cleanGenerationData = {
+        model: generationData.model || generationData.endpointId,
+        prompt: generationData.prompt,
+        image_url: generationData.image_url,
+        aspect_ratio: generationData.aspect_ratio,
+        duration: generationData.duration,
+        resolution: generationData.resolution,
+        ...generationData // Include any other parameters
+      };
+      
       console.log('🔧 [Timeline] Calling unified API:', {
         url: apiEndpoint,
         method: 'POST',
-        data: generationData
+        data: cleanGenerationData
       });
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(generationData)
+        body: JSON.stringify(cleanGenerationData)
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API call failed with status ${response.status}`);
+        let errorMessage = `API call failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('❌ [Timeline] Failed to parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
       
       const result = await response.json();
@@ -172,6 +207,7 @@ function TimelineContent() {
 
     } catch (error) {
       console.error('❌ [Timeline] Generation error:', error);
+      console.error('❌ [Timeline] Generation data that caused error:', generationData);
       // The error will be handled by the calling component
       throw error;
     }

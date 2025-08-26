@@ -263,7 +263,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with realistic motion",
-      duration: "5",
+      duration: "5s",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },
@@ -275,7 +275,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "video",
     initialInput: {
       prompt: "A cinematic scene with professional quality",
-      duration: "5",
+      duration: "5s",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },
@@ -290,7 +290,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "A cinematic scene with professional quality",
       aspect_ratio: "16:9",
-      duration: "5",
+      duration: "5s",
       loop: false,
     },
   },
@@ -303,7 +303,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "Animate this image with smooth motion",
       aspect_ratio: "16:9",
-      duration: "5",
+      duration: "5s",
       resolution: "540p",
       loop: false,
     },
@@ -316,7 +316,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with cinematic motion",
-      duration: "6",
+      duration: "6s",
       prompt_optimizer: true,
       resolution: "768P",
     },
@@ -328,7 +328,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "video",
     initialInput: {
       prompt: "A cinematic scene with professional quality",
-      duration: "6",
+      duration: "6s",
       prompt_optimizer: true,
       resolution: "768P",
     },
@@ -342,7 +342,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "Animate this image with cinematic motion and multiple camera angles",
       resolution: "1080p",
-      duration: "5",
+      duration: "5s",
       camera_fixed: false,
       enable_safety_checker: true,
     },

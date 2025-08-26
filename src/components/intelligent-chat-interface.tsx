@@ -41,6 +41,8 @@ import { ModelIcon } from '@/components/model-icons';
 import { CostEstimator } from '@/components/cost-estimator';
 import { AuteurEngineSelector } from '@/components/auteur-engine-selector';
 import { type Movie } from '@/lib/movies-database';
+import { AVAILABLE_ENDPOINTS, type ApiInfo } from '@/lib/fal';
+import { smartControlsAgent } from '@/lib/smart-controls-agent';
 
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -97,14 +99,25 @@ export function IntelligentChatInterface({
 }: IntelligentChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [userInput, setUserInput] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  // Unified generation state management
+  const [generationState, setGenerationState] = useState<{
+    isActive: boolean;
+    type: 'image' | 'video' | 'style' | 'workflow' | null;
+    startTime: Date | null;
+    currentTask: string | null;
+  }>({
+    isActive: false,
+    type: null,
+    startTime: null,
+    currentTask: null
+  });
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingDelegation, setPendingDelegation] = useState<TaskDelegation | null>(null);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [lastGeneratedImagePrompt, setLastGeneratedImagePrompt] = useState<string | null>(null);
   const [showSmartControls, setShowSmartControls] = useState(true);
   const [videoProgress, setVideoProgress] = useState(0);
-  const [isVideoGenerating, setIsVideoGenerating] = useState(false);
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
   const [currentDelegation, setCurrentDelegation] = useState<TaskDelegation | null>(null);
   const [currentIntent, setCurrentIntent] = useState<UserIntent | null>(null);
@@ -114,8 +127,176 @@ export function IntelligentChatInterface({
   const [voiceInputAvailable, setVoiceInputAvailable] = useState<boolean | null>(null);
   const [chatMode, setChatMode] = useState<'chat' | 'gen'>('gen'); // Add chat mode state
   const [hasStyleImageUploaded, setHasStyleImageUploaded] = useState(false); // Track if style image is uploaded
-  const [pendingStyleGeneration, setPendingStyleGeneration] = useState(false); // Track pending style generation
   const [isListening, setIsListening] = useState(false); // Voice input state
+  const [currentVideoModel, setCurrentVideoModel] = useState<string>('fal-ai/kling-video/v2.1/master/image-to-video'); // Current video model for processing
+  const [fullscreenImage, setFullscreenImage] = useState<{
+    url: string;
+    title: string;
+    prompt?: string;
+    timestamp: Date;
+  } | null>(null); // Fullscreen image state for chat images
+
+  // Generation state helper functions
+  const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow', task: string) => {
+    console.log(`🚀 [Generation State] Starting ${type} generation: ${task}`);
+    setGenerationState({
+      isActive: true,
+      type,
+      startTime: new Date(),
+      currentTask: task
+    });
+  };
+
+  const stopGeneration = () => {
+    console.log('🛑 [Generation State] Stopping generation');
+    setGenerationState({
+      isActive: false,
+      type: null,
+      startTime: null,
+      currentTask: null
+    });
+  };
+
+  const isGenerating = () => generationState.isActive;
+  const isVideoGenerating = () => generationState.isActive && generationState.type === 'video';
+  const isPendingStyleGeneration = () => generationState.isActive && generationState.type === 'style';
+
+  // Handle fullscreen image display
+  const handleOpenFullscreen = (imageData: {
+    url: string;
+    title: string;
+    prompt?: string;
+    timestamp: Date;
+  }) => {
+    console.log('🔍 [IntelligentChatInterface] Opening fullscreen for image:', imageData);
+    setFullscreenImage(imageData);
+  };
+
+  const handleCloseFullscreen = () => {
+    console.log('🔍 [IntelligentChatInterface] Closing fullscreen');
+    setFullscreenImage(null);
+  };
+
+  // Keyboard shortcuts for fullscreen
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Press 'Escape' to close fullscreen
+      if (event.key === 'Escape' && fullscreenImage) {
+        event.preventDefault();
+        handleCloseFullscreen();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fullscreenImage]);
+
+  // Listen for model preference changes
+  useEffect(() => {
+    const handleModelPreferencesChanged = (event: CustomEvent) => {
+      console.log('📡 [IntelligentChatInterface] Received model-preferences-changed event:', event.detail);
+      
+      const { preferences } = event.detail;
+      
+      // Update current video model if video preference changed
+      if (preferences.video && preferences.video !== 'none' && preferences.video !== currentVideoModel) {
+        console.log('🎬 [IntelligentChatInterface] Video preference changed from', currentVideoModel, 'to', preferences.video);
+        setCurrentVideoModel(preferences.video);
+        
+        // Update model preferences state
+        setModelPreferences(preferences);
+        
+        // Update intelligence core with new preferences
+        intelligenceCore.setModelPreferences(preferences);
+        
+        console.log('✅ [IntelligentChatInterface] Updated currentVideoModel and model preferences');
+      }
+    };
+
+    window.addEventListener('model-preferences-changed', handleModelPreferencesChanged as EventListener);
+    
+    return () => {
+      window.removeEventListener('model-preferences-changed', handleModelPreferencesChanged as EventListener);
+    };
+  }, [currentVideoModel, intelligenceCore]);
+
+  // Function to sync current video model with user preferences
+  const syncVideoModelWithPreferences = useCallback(() => {
+    console.log('🔄 [IntelligentChatInterface] Starting video model sync...');
+    console.log('🔄 [IntelligentChatInterface] Current video model:', currentVideoModel);
+    
+    const saved = localStorage.getItem('narrative-model-preferences');
+    console.log('🔄 [IntelligentChatInterface] Saved preferences from localStorage:', saved);
+    
+    if (saved) {
+      try {
+        const preferences = JSON.parse(saved);
+        console.log('🔄 [IntelligentChatInterface] Parsed preferences:', preferences);
+        console.log('🔄 [IntelligentChatInterface] Video preference:', preferences.video);
+        
+        if (preferences.video && preferences.video !== 'none' && preferences.video !== currentVideoModel) {
+          console.log('🔄 [IntelligentChatInterface] Syncing video model with preferences:', preferences.video);
+          setCurrentVideoModel(preferences.video);
+          return preferences.video;
+        } else {
+          console.log('🔄 [IntelligentChatInterface] No sync needed - video preference:', preferences.video, 'current model:', currentVideoModel);
+        }
+      } catch (error) {
+        console.error('❌ [IntelligentChatInterface] Failed to sync video model with preferences:', error);
+      }
+    } else {
+      console.log('🔄 [IntelligentChatInterface] No saved preferences found in localStorage');
+    }
+    
+    console.log('🔄 [IntelligentChatInterface] Returning current video model:', currentVideoModel);
+    return currentVideoModel;
+  }, [currentVideoModel]);
+
+  // Handle video model change during processing
+  const handleVideoModelChange = (newModelId: string) => {
+    try {
+      console.log('🔄 [Video Model Change] Changing from', currentVideoModel, 'to', newModelId);
+      
+      // Validate the new model ID
+      if (!newModelId || typeof newModelId !== 'string') {
+        console.error('❌ [Video Model Change] Invalid model ID:', newModelId);
+        return;
+      }
+      
+      // Check if the model exists in available endpoints
+      const videoModels = AVAILABLE_ENDPOINTS.filter((model: ApiInfo) => model.category === 'video');
+      const modelExists = videoModels.some((model: ApiInfo) => model.endpointId === newModelId);
+      
+      if (!modelExists) {
+        console.error('❌ [Video Model Change] Model not found in available endpoints:', newModelId);
+        return;
+      }
+      
+      setCurrentVideoModel(newModelId);
+      
+      // Update the generation progress with the new model
+      if (generationProgress) {
+        setGenerationProgress(prev => prev ? {
+          ...prev,
+          modelId: newModelId
+        } : null);
+      }
+      
+      // Update the current delegation with the new model
+      if (currentDelegation) {
+        setCurrentDelegation(prev => prev ? {
+          ...prev,
+          endpointId: newModelId
+        } : null);
+      }
+      
+      console.log('✅ [Video Model Change] Successfully changed to:', newModelId);
+    } catch (error) {
+      console.error('❌ [Video Model Change] Error changing model:', error);
+    }
+  };
 
   // Handle paste functionality
   const handlePaste = async () => {
@@ -609,8 +790,8 @@ I've set up **Flux Pro 1.1 Ultra** as your preferred image generation model. Thi
 I'm ready to help you create amazing videos! I have access to several top-tier video generation models:
 
 **Available Models:**
+• **Kling v2.1 Master** - Enhanced motion realism (Default)
 • **Google Veo3** - Exceptional quality and realism
-• **Kling v2.1 Master** - Enhanced motion realism
 • **Luma Dream Machine** - Natural motion and smooth camera work
 • **Minimax Hailuo 02** - High-quality cinematic generation
 
@@ -1167,6 +1348,13 @@ Click any of these options to continue the workflow, or start a new request.`,
     
     setModelPreferences(preferences);
     intelligenceCore.setModelPreferences(preferences);
+    
+    // Update currentVideoModel with user's video preference
+    if (preferences.video && preferences.video !== 'none') {
+      setCurrentVideoModel(preferences.video);
+      console.log('🎬 [IntelligentChatInterface] Updated currentVideoModel to user preference:', preferences.video);
+    }
+    
     console.log('✅ [IntelligentChatInterface] Model preferences loaded and set successfully');
   }, []);
 
@@ -1277,63 +1465,164 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     };
   }, []);
 
+  // Helper function to compress image to fit within API limits
+  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        }
+        
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress the image
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to base64 with compression
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        console.log('🖼️ [Image Compression] Original size:', file.size, 'bytes');
+        console.log('🖼️ [Image Compression] Compressed dimensions:', width, 'x', height);
+        console.log('🖼️ [Image Compression] Compressed data URL length:', compressedDataUrl.length);
+        
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image for compression'));
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   // Handle animation requests from dedicated animate buttons
   const handleAnimationFromButton = async (imageUrl: string, imageTitle: string, prompt?: string) => {
     console.log('🎬 [IntelligentChatInterface] Processing animation from button:', { imageUrl, imageTitle, prompt });
     setIsProcessing(true);
 
     try {
-      // Create an enhanced input for animation with forced video content type
-      const enhancedInput = `animate this image [Content type: video] [Image URL: ${imageUrl} - requesting image-to-video animation]`;
-      console.log('🎬 [IntelligentChatInterface] Enhanced input for animation:', enhancedInput);
+            // Check if the image URL is a FAL media URL that might be too large
+      if (imageUrl.includes('fal.media')) {
+        console.log('🖼️ [IntelligentChatInterface] Detected FAL media URL, checking if compression is needed');
+        
+        // For FAL media URLs, we need to fetch and compress the image
+        try {
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+          
+          console.log('🖼️ [IntelligentChatInterface] Fetched image from FAL media, compressing for animation');
+          const compressedImageUrl = await compressImage(file, 1920, 1920, 0.8);
+          
+          console.log('✅ [IntelligentChatInterface] Image compressed for animation, using compressed URL');
+          imageUrl = compressedImageUrl; // Use the compressed version
+        } catch (compressionError) {
+          console.error('❌ [IntelligentChatInterface] Failed to compress FAL media image:', compressionError);
+          console.log('⚠️ [IntelligentChatInterface] Continuing with original URL (may cause size issues)');
+        }
+      }
+      // Get user's preferred video model from preferences
+      const saved = localStorage.getItem('narrative-model-preferences');
+      let userVideoModel = 'fal-ai/kling-video/v2.1/master/image-to-video'; // Default fallback
       
-      // Process through intelligence core
-      if (!intelligenceCore) {
-        console.error('❌ [IntelligentChatInterface] Intelligence core not initialized');
-        throw new Error('Intelligence core not initialized');
+      if (saved) {
+        try {
+          const preferences = JSON.parse(saved);
+          if (preferences.video && preferences.video !== 'none') {
+            userVideoModel = preferences.video;
+            console.log('🎬 [IntelligentChatInterface] Using user\'s preferred video model:', userVideoModel);
+          } else {
+            console.log('🎬 [IntelligentChatInterface] No video preference set, using default:', userVideoModel);
+          }
+        } catch (error) {
+          console.error('❌ [IntelligentChatInterface] Failed to parse video preferences:', error);
+        }
       }
       
-      console.log('🔍 [IntelligentChatInterface] Calling intelligenceCore.processUserInput for animation with forced video content type');
-      const result = await intelligenceCore.processUserInput(enhancedInput);
-      console.log('📊 [IntelligentChatInterface] Animation result:', result);
+      // Validate that the user's preferred model exists in available endpoints
+      const videoModels = AVAILABLE_ENDPOINTS.filter((model: ApiInfo) => model.category === 'video');
+      const modelExists = videoModels.some((model: ApiInfo) => model.endpointId === userVideoModel);
       
-      if (result.delegation) {
-        console.log('🎯 [IntelligentChatInterface] Animation delegation found, setting up for generation');
-        setPendingDelegation(result.delegation);
-        const intent = await intelligenceCore.analyzeUserIntent(enhancedInput);
-        setCurrentIntent(intent);
-        
-        // Add assistant message showing animation is ready
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: `🎬 **Animation Ready**: Your image is ready to be animated using ${result.delegation.modelId}`,
-          timestamp: new Date(),
-          intent: intent,
-          delegation: result.delegation,
-          status: 'pending',
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        console.log('✅ [IntelligentChatInterface] Animation setup complete, waiting for user to click Generate Now');
-      } else {
-        console.log('❌ [IntelligentChatInterface] No delegation found for animation request');
-        const errorMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: '❌ **Error**: Could not process animation request. Please try again.',
-          timestamp: new Date(),
-          status: 'error',
-        };
-        setMessages(prev => [...prev, errorMessage]);
+      if (!modelExists) {
+        console.error('❌ [IntelligentChatInterface] User\'s preferred video model not found:', userVideoModel);
+        userVideoModel = 'fal-ai/kling-video/v2.1/master/image-to-video'; // Fallback to default
+        console.log('🎬 [IntelligentChatInterface] Falling back to default model:', userVideoModel);
       }
+      
+      // Create a direct delegation using the user's preferred model
+      const directDelegation: TaskDelegation = {
+        modelId: userVideoModel,
+        intent: 'video',
+        reason: 'Direct animation request using user\'s preferred model',
+        confidence: 1.0,
+        estimatedTime: '2-5 minutes',
+        parameters: {
+          prompt: prompt || `Animate ${imageTitle}`,
+          image_url: imageUrl,
+          aspect_ratio: '16:9',
+          duration: '5s'
+        }
+      };
+      
+      console.log('🎯 [IntelligentChatInterface] Created direct delegation for animation:', directDelegation);
+      
+      // Set up the delegation for immediate generation
+      setPendingDelegation(directDelegation);
+      setCurrentIntent({ 
+        type: 'video', 
+        confidence: 1.0,
+        keywords: ['animate', 'video'],
+        context: 'image-to-video animation',
+        requiresGeneration: true
+      });
+      
+      // Add assistant message showing animation is ready with user's preferred model
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `🎬 **Animation Ready**: Your image is ready to be animated using ${userVideoModel}`,
+        timestamp: new Date(),
+        intent: { 
+          type: 'video', 
+          confidence: 1.0,
+          keywords: ['animate', 'video'],
+          context: 'image-to-video animation',
+          requiresGeneration: true
+        },
+        delegation: directDelegation,
+        status: 'pending',
+      };
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      console.log('✅ [IntelligentChatInterface] Animation setup complete with user\'s preferred model');
+      
+      // Automatically start generation after a short delay
+      setTimeout(async () => {
+        try {
+          console.log('🚀 [IntelligentChatInterface] Auto-starting animation generation');
+          await handleGenerateNow();
+        } catch (error) {
+          console.error('❌ [IntelligentChatInterface] Auto-generation failed:', error);
+        }
+      }, 1000);
+      
     } catch (error) {
-      console.error('❌ [IntelligentChatInterface] Error processing animation request:', error);
-      
+      console.error('❌ [IntelligentChatInterface] Error in handleAnimationFromButton:', error);
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: '❌ **Error**: Failed to process animation request. Please try again.',
+        content: '❌ **Error**: Could not process animation request. Please try again.',
         timestamp: new Date(),
         status: 'error',
       };
@@ -1362,6 +1651,17 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     
     if (!userInput.trim() || isProcessing) {
       console.log('🚀 [Submit Debug] Early return - empty input or already processing');
+      return;
+    }
+
+    // Check if another generation is already in progress
+    if (isGenerating()) {
+      console.log('❌ [IntelligentChatInterface] Submit blocked - generation already in progress');
+      toast({
+        title: "Generation in Progress",
+        description: `Please wait for the current ${generationState.type} generation to complete.`,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -1403,15 +1703,23 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
                   if (chatMode === 'chat') {
               console.log('💬 [Chat Mode] Processing as conversational message:', inputText);
               
-              // Generate conversation history for context (expanded for better memory)
+              // Generate conversation history for context (improved for better memory)
               const conversationHistory = messages
                 .filter(msg => msg.type === 'user' || msg.type === 'assistant')
-                .filter(msg => msg.content.length < 500) // Skip very long messages like welcome messages
-                .filter(msg => !msg.isWelcomeMessage && !msg.isShotSuggestion) // Skip system messages
-                .map(msg => `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-                .slice(-10); // Keep last 10 messages for better context
+                .filter(msg => !msg.isWelcomeMessage && !msg.isShotSuggestion && !msg.isProgressMessage) // Skip system messages
+                .map(msg => {
+                  // Truncate very long messages but keep more context
+                  const maxLength = msg.type === 'assistant' ? 800 : 200; // Allow longer assistant messages
+                  const content = msg.content.length > maxLength 
+                    ? msg.content.substring(0, maxLength) + '...' 
+                    : msg.content;
+                  return `${msg.type === 'user' ? 'User' : 'Assistant'}: ${content}`;
+                })
+                .slice(-12); // Keep last 12 messages for better context
               
               console.log('💬 [Chat Mode] Conversation history for context:', conversationHistory);
+              console.log('💬 [Chat Mode] Total messages in history:', messages.length);
+              console.log('💬 [Chat Mode] Filtered conversation history length:', conversationHistory.length);
               
               // Generate Claude AI-powered conversational response
               let responseContent: string = '';
@@ -1569,13 +1877,66 @@ Starting workflow execution...`,
     console.log('🎨 [IntelligentChatInterface] Style image uploaded:', hasStyleImageUploaded);
     console.log('🎨 [IntelligentChatInterface] Style reference image:', styleReferenceImage);
     
+    // Start generation state tracking
+    startGeneration('image', 'Regular generation process');
+    
+    // 🧠 SMART CONTROLS OPTIMIZATION - Automatically optimize settings in background
+    // Temporarily disabled to debug FAL API issues
+    /*
+    try {
+      console.log('🧠 [SmartControls] Starting automatic optimization...');
+      const hasUploadedImage = hasStyleImageUploaded || !!uploadedImage;
+      
+      const optimizationResult = await smartControlsAgent.analyzeAndOptimize(userInput, hasUploadedImage);
+      console.log('✅ [SmartControls] Optimization result:', optimizationResult);
+      
+      // Apply optimized settings automatically (unless user recently selected them)
+      if (optimizationResult.appliedOptimizations.length > 0) {
+        console.log('🎯 [SmartControls] Applying optimizations:', optimizationResult.appliedOptimizations);
+        
+        // Update aspect ratio if optimized
+        if (optimizationResult.appliedOptimizations.some(opt => opt.includes('Aspect ratio'))) {
+          setSelectedAspectRatio(optimizationResult.recommendedAspectRatio);
+          console.log('🎯 [SmartControls] Auto-updated aspect ratio to:', optimizationResult.recommendedAspectRatio);
+        }
+        
+        // Update content type if optimized
+        if (optimizationResult.appliedOptimizations.some(opt => opt.includes('Content type'))) {
+          setContentType(optimizationResult.recommendedContentType);
+          console.log('🎯 [SmartControls] Auto-updated content type to:', optimizationResult.recommendedContentType);
+        }
+        
+        // Add optimization feedback message
+        const optimizationMessage: ChatMessage = {
+          id: `optimization-${Date.now()}`,
+          type: 'assistant',
+          content: `🧠 **Smart Controls Applied**: ${optimizationResult.appliedOptimizations.join(', ')}`,
+          timestamp: new Date(),
+          status: 'completed',
+        };
+        setMessages(prev => [...prev, optimizationMessage]);
+      } else {
+        console.log('ℹ️ [SmartControls] No optimizations applied - respecting user selections');
+      }
+    } catch (error) {
+      console.error('❌ [SmartControls] Optimization failed:', error);
+      // Continue with generation even if optimization fails
+    }
+    */
+    console.log('🧠 [SmartControls] Optimization temporarily disabled for debugging');
+    
+    // Sync video model with user preferences before generation
+    const syncedVideoModel = syncVideoModelWithPreferences();
+    console.log('🎬 [IntelligentChatInterface] Using synced video model for generation:', syncedVideoModel);
+    
     // Declare variables at the function level
     let progressInterval: NodeJS.Timeout | null = null;
     let currentDelegation = pendingDelegation;
+    let videoModelToUse = syncedVideoModel || currentVideoModel;
     
     try {
       // Check if a style image is uploaded and we should show the delegation selector
-      if (hasStyleImageUploaded && styleReferenceImage && !pendingStyleGeneration) {
+      if (hasStyleImageUploaded && styleReferenceImage && !isPendingStyleGeneration()) {
         console.log('🎨 [IntelligentChatInterface] Style image detected, showing delegation selector');
         
         // Create a context that includes the style reference image
@@ -1601,7 +1962,7 @@ Starting workflow execution...`,
           
           // Set the pending delegation
           setPendingDelegation(delegation);
-          setPendingStyleGeneration(true);
+          startGeneration('style', 'Style transfer generation');
           
           // Add delegation selector message
           const delegationMessage: ChatMessage = {
@@ -1659,9 +2020,37 @@ Starting workflow execution...`,
       
       // Prepare generation data
       const generationData: Record<string, any> = {
-        model: currentDelegation.modelId,
+        model: currentDelegation.intent === 'video' ? videoModelToUse : currentDelegation.modelId,
         ...currentDelegation.parameters,
       };
+      
+      // Ensure required parameters for Luma models
+      if (generationData.model?.includes('luma')) {
+        // Set default resolution if not provided
+        if (!generationData.resolution) {
+          generationData.resolution = '1080p'; // Default for Luma Ray 2 Flash
+          console.log('🎬 [Video] Setting default resolution for Luma model:', generationData.resolution);
+        }
+        
+        // Ensure duration has 's' suffix
+        if (generationData.duration && !generationData.duration.endsWith('s')) {
+          generationData.duration = generationData.duration + 's';
+          console.log('🎬 [Video] Fixed duration format for Luma model:', generationData.duration);
+        }
+        
+        // Ensure aspect_ratio is set
+        if (!generationData.aspect_ratio) {
+          generationData.aspect_ratio = '16:9'; // Default aspect ratio
+          console.log('🎬 [Video] Setting default aspect ratio for Luma model:', generationData.aspect_ratio);
+        }
+      }
+      
+      console.log('🎬 [Video] Generation data model assignment:', {
+        intent: currentDelegation.intent,
+        videoModelToUse,
+        currentDelegationModelId: currentDelegation.modelId,
+        finalModel: generationData.model
+      });
 
       console.log('📦 [IntelligentChatInterface] Prepared generation data:', generationData);
       console.log('📦 [IntelligentChatInterface] Model ID:', currentDelegation.modelId);
@@ -1683,6 +2072,27 @@ Starting workflow execution...`,
        if (currentDelegation.intent === 'video' && onContentGenerated) {
          console.log('🎬 [Video] Starting video generation with polling');
          
+         // Update generation state to video
+         startGeneration('video', 'Video generation with polling');
+         
+         // Use the synced video model for video generation
+         videoModelToUse = syncedVideoModel || currentVideoModel;
+         console.log('🎬 [Video] Using video model for generation:', videoModelToUse);
+         
+         // Validate that the video model exists in available endpoints
+         const videoModels = AVAILABLE_ENDPOINTS.filter((model: ApiInfo) => model.category === 'video');
+         const modelExists = videoModels.some((model: ApiInfo) => model.endpointId === videoModelToUse);
+         console.log('🎬 [Video] Model validation:', {
+           videoModelToUse,
+           modelExists,
+           availableVideoModels: videoModels.map(m => m.endpointId)
+         });
+         
+         if (!modelExists) {
+           console.error('❌ [Video] Video model not found in available endpoints:', videoModelToUse);
+           throw new Error(`Video model ${videoModelToUse} is not available`);
+         }
+         
          try {
            // Call the content generated callback instead of onGenerate
            const result = await onContentGenerated(generationData);
@@ -1690,13 +2100,13 @@ Starting workflow execution...`,
            
            // Start progress tracking for video generation
            const estimatedTime = currentDelegation.estimatedTime || '2-5 minutes';
-           progressInterval = startVideoProgress(currentDelegation.modelId, estimatedTime);
+           progressInterval = startVideoProgress(currentVideoModel, estimatedTime);
            
            // Add progress bar message directly to chat
            const progressMessage: ChatMessage = {
              id: (Date.now() + 1).toString(),
              type: 'assistant',
-             content: `🎬 **Generating Video**\n\nUsing ${currentDelegation.modelId}\n\n**Estimated Time:** ${estimatedTime}`,
+             content: `🎬 **Generating Video**\n\nUsing ${currentVideoModel}\n\n**Estimated Time:** ${estimatedTime}`,
              timestamp: new Date(),
              status: 'processing',
              isProgressMessage: true, // Add flag to identify progress messages
@@ -1707,10 +2117,8 @@ Starting workflow execution...`,
            setGenerationProgress(null);
            throw error;
          }
-       }
-      
-      // Handle image generation normally
-      if (onContentGenerated) {
+       } else if (onContentGenerated) {
+         // Handle image generation normally
         console.log('📞 [IntelligentChatInterface] Calling onContentGenerated callback');
           console.log('📞 [IntelligentChatInterface] Generation data being sent:', generationData);
          
@@ -1734,6 +2142,12 @@ Starting workflow execution...`,
             (result.images || result.video || result.audio) ||
             (result.data && (result.data.images || result.data.video || result.data.audio))
           );
+          
+          console.log('🔍 [IntelligentChatInterface] Content detection debug:');
+          console.log('🔍 [IntelligentChatInterface] - result exists:', !!result);
+          console.log('🔍 [IntelligentChatInterface] - result.data exists:', !!result?.data);
+          console.log('🔍 [IntelligentChatInterface] - result.data.video exists:', !!result?.data?.video);
+          console.log('🔍 [IntelligentChatInterface] - hasContent:', hasContent);
           
           if (hasContent) {
             console.log('🖼️ [IntelligentChatInterface] Displaying generated content:', result);
@@ -1796,6 +2210,7 @@ Starting workflow execution...`,
               setLastGeneratedImagePrompt(userInput);
               console.log('💾 [IntelligentChatInterface] Stored last generated image URL:', firstImage.url);
                        } else if (contentData.video) {
+              console.log('🎬 [IntelligentChatInterface] Processing video content:', contentData.video);
               const contentEvent = new CustomEvent('content-generated', {
                 detail: {
                   id: Date.now().toString(),
@@ -1809,6 +2224,7 @@ Starting workflow execution...`,
                   }
                 }
               });
+              console.log('🎬 [IntelligentChatInterface] Dispatching video content event:', contentEvent.detail);
               window.dispatchEvent(contentEvent);
             } else if (contentData.audio) {
               const contentEvent = new CustomEvent('content-generated', {
@@ -1875,14 +2291,18 @@ Starting workflow execution...`,
       setCurrentIntent(null);
       
       // Reset style generation state after successful generation
-      if (pendingStyleGeneration) {
+      if (isPendingStyleGeneration()) {
         console.log('🔄 [IntelligentChatInterface] Resetting style generation state');
-        setPendingStyleGeneration(false);
+        stopGeneration();
         setHasStyleImageUploaded(false);
         setStyleReferenceImage(null);
       }
 
       console.log('✅ [IntelligentChatInterface] Generation process completed successfully');
+      
+      // Stop generation state tracking
+      stopGeneration();
+      
       toast({
         title: "Generation Started",
         description: `Delegated to ${pendingDelegation?.modelId}. Estimated time: ${pendingDelegation?.estimatedTime}`,
@@ -1895,6 +2315,9 @@ Starting workflow execution...`,
        if (currentDelegation?.intent === 'video') {
          setGenerationProgress(null);
        }
+       
+       // Stop generation state tracking on error
+       stopGeneration();
       
       console.log('🔄 [IntelligentChatInterface] Updating message status to error');
       setMessages(prev => prev.map(msg => 
@@ -2184,6 +2607,12 @@ Starting workflow execution...`,
     // Check if video model changed
     if (preferences.video !== modelPreferences.video) {
       console.log('🎬 [IntelligentChatInterface] Video model preference changed from', modelPreferences.video, 'to', preferences.video);
+      
+      // Update currentVideoModel with the new preference
+      if (preferences.video && preferences.video !== 'none') {
+        setCurrentVideoModel(preferences.video);
+        console.log('🎬 [IntelligentChatInterface] Updated currentVideoModel to new preference:', preferences.video);
+      }
     }
     
     setModelPreferences(preferences);
@@ -2247,47 +2676,6 @@ Starting workflow execution...`,
       });
     }
   }, []);
-
-  // Helper function to compress image to fit within API limits
-  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = () => {
-        // Calculate new dimensions while maintaining aspect ratio
-        let { width, height } = img;
-        
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = Math.floor(width * ratio);
-          height = Math.floor(height * ratio);
-        }
-        
-        // Set canvas dimensions
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw and compress the image
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Convert to base64 with compression
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        console.log('🖼️ [Image Compression] Original size:', file.size, 'bytes');
-        console.log('🖼️ [Image Compression] Compressed dimensions:', width, 'x', height);
-        console.log('🖼️ [Image Compression] Compressed data URL length:', compressedDataUrl.length);
-        
-        resolve(compressedDataUrl);
-      };
-      
-      img.onerror = () => {
-        reject(new Error('Failed to load image for compression'));
-      };
-      
-      img.src = URL.createObjectURL(file);
-    });
-  };
 
   // Handle file upload with compression
   const handleImageUpload = useCallback(async (file: File) => {
@@ -2915,14 +3303,17 @@ Available commands:
     const parts = [];
     let currentIndex = 0;
     
-    // Look for quoted text that looks like prompts (longer than 20 characters)
-    const promptRegex = /"([^"]{20,})"/g;
+    // Look for quoted text that looks like prompts (longer than 10 characters and contains prompt-like content)
+    const promptRegex = /"([^"]{10,})"/g;
     let match;
     
     while ((match = promptRegex.exec(content)) !== null) {
       const prompt = match[1];
       const matchStart = match.index;
       const matchEnd = matchStart + match[0].length;
+      
+      // Check if this looks like a prompt (contains prompt-like keywords)
+      const isPrompt = /(cinematic|shot|scene|style|lighting|camera|film|movie|director|cinematography|atmospheric|dramatic|professional|quality|enhanced|beautiful|stunning|masterpiece|artistic|creative)/i.test(prompt);
       
       // Add text before the prompt
       if (matchStart > currentIndex) {
@@ -2932,11 +3323,19 @@ Available commands:
         });
       }
       
-      // Add the prompt as a copyable button
-      parts.push({
-        type: 'prompt',
-        content: prompt
-      });
+      // Add the prompt as a copyable button if it looks like a prompt
+      if (isPrompt) {
+        parts.push({
+          type: 'prompt',
+          content: prompt
+        });
+      } else {
+        // Add as regular text if it doesn't look like a prompt
+        parts.push({
+          type: 'text',
+          content: match[0]
+        });
+      }
       
       currentIndex = matchEnd;
     }
@@ -2972,7 +3371,7 @@ Available commands:
                     duration: 2000,
                   });
                 }}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-blue-800 font-mono text-sm transition-colors cursor-pointer group"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 rounded-lg text-blue-300 font-mono text-sm transition-all duration-200 cursor-pointer group hover:scale-105"
               >
                 <span className="font-medium">"{part.content}"</span>
                 <svg 
@@ -3124,7 +3523,7 @@ Available commands:
              <div dangerouslySetInnerHTML={{ __html: message.content.replace(/\n/g, '<br/>') }} />
            </div>
            
-           {/* Inline Progress Bar */}
+           {/* Inline Progress Bar with Model Selector */}
            <div className="glass-light rounded-lg p-4 border border-primary/20">
              <div className="space-y-3">
                <div className="flex justify-between text-sm text-muted-foreground">
@@ -3139,9 +3538,44 @@ Available commands:
                  />
                </div>
                
-               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                 <span>Processing with {generationProgress.modelId.split('/').pop()}</span>
+               <div className="flex items-center justify-between text-xs text-muted-foreground">
+                 <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                   <span>Processing with {generationProgress?.modelId?.split('/').pop() || 'Unknown Model'}</span>
+                 </div>
+                 
+                 {/* Model Change Button - Only show if progress is low and it's a video model */}
+                 {generationProgress && generationProgress.progress < 10 && generationProgress.modelId && generationProgress.modelId.includes('video') && (
+                   <button
+                     onClick={() => {
+                       try {
+                         // Find the current model in the list
+                         const videoModels = AVAILABLE_ENDPOINTS.filter((model: ApiInfo) => model.category === 'video');
+                         const currentModelIndex = videoModels.findIndex((model: ApiInfo) => model.endpointId === generationProgress?.modelId);
+                         
+                         if (currentModelIndex === -1) {
+                           console.error('❌ [Model Switch] Current model not found in video models list');
+                           return;
+                         }
+                         
+                         const nextModelIndex = (currentModelIndex + 1) % videoModels.length;
+                         const nextModel = videoModels[nextModelIndex];
+                         
+                         if (nextModel && nextModel.endpointId) {
+                           handleVideoModelChange(nextModel.endpointId);
+                         } else {
+                           console.error('❌ [Model Switch] Invalid next model:', nextModel);
+                         }
+                       } catch (error) {
+                         console.error('❌ [Model Switch] Error switching model:', error);
+                       }
+                     }}
+                     className="text-xs text-blue-400 hover:text-blue-300 transition-colors px-2 py-1 rounded hover:bg-blue-400/10"
+                     title="Switch to next video model"
+                   >
+                     Switch Model
+                   </button>
+                 )}
                </div>
              </div>
            </div>
@@ -3403,23 +3837,46 @@ Available commands:
             </div>
             <div className="flex flex-wrap gap-2">
               {message.suggestions.map((suggestion, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleAISuggestionClick(suggestion)}
-                  disabled={isProcessing}
-                  className="h-auto p-2 text-xs border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 hover:text-blue-200"
-                >
-                  <div className="flex items-center gap-1">
-                    <Zap className="w-3 h-3" />
-                    <span>{suggestion}</span>
-                  </div>
-                </Button>
+                <div key={index} className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAISuggestionClick(suggestion)}
+                    disabled={isProcessing}
+                    className="h-auto p-2 text-xs border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 hover:text-blue-200"
+                  >
+                    <div className="flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      <span>{suggestion}</span>
+                    </div>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(suggestion);
+                      toast({
+                        title: "Prompt copied!",
+                        description: "The prompt has been copied to your clipboard.",
+                        duration: 2000,
+                      });
+                    }}
+                    className="h-auto p-1 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/20"
+                  >
+                    <svg 
+                      className="w-3 h-3" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </Button>
+                </div>
               ))}
             </div>
             <p className="text-xs text-blue-400/70 mt-2">
-              Click any prompt above to generate content instantly (if a model is selected)
+              Click any prompt to generate content instantly, or click the copy icon to copy to clipboard
             </p>
           </div>
         )}
@@ -3434,15 +3891,13 @@ Available commands:
                   alt="Generated content"
                   className="w-full max-w-md h-auto rounded-lg shadow-lg cursor-pointer hover:opacity-90 transition-all duration-300"
                   onClick={() => {
-                    // Trigger fullscreen view
-                    const event = new CustomEvent('animate-image', {
-                      detail: {
-                        imageUrl: message.generatedContent?.url,
-                        imageTitle: 'Generated Image',
-                        prompt: message.generatedContent?.prompt
-                      }
+                    // Open fullscreen view
+                    handleOpenFullscreen({
+                      url: message.generatedContent?.url || '',
+                      title: 'Generated Image',
+                      prompt: message.generatedContent?.prompt,
+                      timestamp: message.timestamp
                     });
-                    window.dispatchEvent(event);
                   }}
                 />
                 {message.generatedContent.imageCount && message.generatedContent.imageCount > 1 && (
@@ -3493,49 +3948,7 @@ Available commands:
     );
   };
 
-  // Progress bar component
-  const ProgressBar = ({ progress, status, estimatedTime, modelId }: {
-    progress: number;
-    status: string;
-    estimatedTime: string;
-    modelId: string;
-  }) => {
-    return (
-      <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 w-96 max-w-[90vw]">
-        <div className="glass-heavy rounded-xl p-4 shadow-2xl border border-primary/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <Video className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-foreground">Generating Video</div>
-              <div className="text-xs text-muted-foreground">{modelId}</div>
-            </div>
-            <div className="text-xs text-muted-foreground">{estimatedTime}</div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{status}</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            
-            <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              <span>Processing with {modelId.split('/').pop()}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+
 
   // Function to poll for video generation results
   const pollVideoResult = async (taskId: string, modelId: string, maxAttempts: number = 300) => {
@@ -3791,8 +4204,9 @@ Available commands:
                 console.log('🔄 [Chat Mode] Current messages count:', messages.length);
                 console.log('🔄 [Chat Mode] Is processing:', isProcessing);
                 setChatMode('chat');
+                setShowSmartControls(true); // Show smart controls in chat mode
                 console.log('🔄 [Chat Mode] Mode set to chat');
-                console.log('🔄 [Chat Mode] New mode should be: chat');
+                console.log('🔄 [Chat Mode] Smart controls enabled for chat mode');
               }}
               className="flex items-center gap-2 text-xs transition-all duration-200"
             >
@@ -3808,7 +4222,9 @@ Available commands:
                 console.log('🔄 [Chat Mode] Current messages count:', messages.length);
                 console.log('🔄 [Chat Mode] Is processing:', isProcessing);
                 setChatMode('gen');
+                setShowSmartControls(false); // Hide smart controls in gen mode (automation handles it)
                 console.log('🔄 [Chat Mode] Mode set to gen');
+                console.log('🔄 [Chat Mode] Smart controls hidden for gen mode (automation active)');
               }}
               className="flex items-center gap-2 text-xs transition-all duration-200"
             >
@@ -3950,7 +4366,12 @@ Available commands:
                ].map((ratio) => (
                  <button
                    key={ratio.value}
-                   onClick={() => setSelectedAspectRatio(ratio.value)}
+                   onClick={() => {
+                     setSelectedAspectRatio(ratio.value);
+                     // Track user selection to override automatic optimization
+                     smartControlsAgent.userSelectsControl('aspectRatio', ratio.value);
+                     console.log('👤 [SmartControls] User manually selected aspect ratio:', ratio.value);
+                   }}
                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-enhanced focus-ring ${
                      selectedAspectRatio === ratio.value
                        ? 'bg-primary text-primary-foreground shadow-soft'
@@ -3976,7 +4397,12 @@ Available commands:
               <span className="text-body font-medium">Content Type:</span>
               <div className="flex bg-secondary rounded-lg p-1">
                 <button
-                  onClick={() => setContentType('image')}
+                  onClick={() => {
+                    setContentType('image');
+                    // Track user selection to override automatic optimization
+                    smartControlsAgent.userSelectsControl('contentType', 'image');
+                    console.log('👤 [SmartControls] User manually selected content type: image');
+                  }}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-enhanced focus-ring ${
                     contentType === 'image'
                       ? 'bg-primary text-primary-foreground shadow-soft'
@@ -3986,7 +4412,12 @@ Available commands:
                   🖼️ Image
                 </button>
                 <button
-                  onClick={() => setContentType('video')}
+                  onClick={() => {
+                    setContentType('video');
+                    // Track user selection to override automatic optimization
+                    smartControlsAgent.userSelectsControl('contentType', 'video');
+                    console.log('👤 [SmartControls] User manually selected content type: video');
+                  }}
                   className={`px-6 py-2 rounded-md text-sm font-medium transition-enhanced focus-ring ${
                     contentType === 'video'
                       ? 'bg-primary text-primary-foreground shadow-soft'
@@ -4239,6 +4670,65 @@ Available commands:
         </div>
       </div>
 
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999
+          }}
+          onClick={handleCloseFullscreen}
+        >
+          {/* Main Image Container - Centered */}
+          <div 
+            className="relative w-full h-full flex items-center justify-center p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button - Top Right */}
+            <button
+              onClick={handleCloseFullscreen}
+              className="absolute top-6 right-6 z-30 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+              aria-label="Close fullscreen"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            {/* Main Image - Centered and Large */}
+            <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+              <img
+                src={fullscreenImage.url}
+                alt={fullscreenImage.title}
+                className="max-w-full max-h-full object-contain transition-all duration-500"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Image Info Panel - Bottom */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-30 max-w-2xl w-full px-6">
+              <div className="bg-black/70 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-white mb-2">{fullscreenImage.title}</h3>
+                    {fullscreenImage.prompt && (
+                      <p className="text-sm text-gray-300 mb-3 leading-relaxed">"{fullscreenImage.prompt}"</p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <span>{fullscreenImage.timestamp.toLocaleTimeString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
     </div>
   );

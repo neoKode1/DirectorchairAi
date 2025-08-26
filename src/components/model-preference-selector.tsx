@@ -129,6 +129,16 @@ export function ModelPreferenceSelector({
     console.log('💾 [ModelPreferenceSelector] Preferences saved to localStorage');
     onPreferencesChange?.(newPreferences);
     console.log('💾 [ModelPreferenceSelector] onPreferencesChange callback called');
+    
+    // Dispatch custom event to notify other components of preference changes
+    const preferenceChangeEvent = new CustomEvent('model-preferences-changed', {
+      detail: {
+        preferences: newPreferences,
+        timestamp: new Date()
+      }
+    });
+    window.dispatchEvent(preferenceChangeEvent);
+    console.log('📡 [ModelPreferenceSelector] Dispatched model-preferences-changed event');
   }, [onPreferencesChange]);
 
   const handleModelSelect = (category: keyof ModelPreferences, modelId: string) => {

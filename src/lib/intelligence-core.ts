@@ -1853,204 +1853,42 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
   }
 
   private async getDefaultParameters(model: ModelCapability, intent: UserIntent, styleAnalysis?: any): Promise<Record<string, any>> {
-    // Extract the actual user prompt from the context, removing image upload metadata
-    let userPrompt = intent.context || 'Default prompt';
+    console.log('📋 [IntelligenceCore] Getting FAL-compatible parameters for model:', model.endpointId);
+    console.log('📋 [IntelligenceCore] Intent type:', intent.type);
+    console.log('📋 [IntelligenceCore] User prompt:', intent.context);
     
-    // Check for image upload or last generated image in the context
-    const hasImageUpload = userPrompt.includes('[Image uploaded:') && userPrompt.includes('requesting image-to-video animation');
-    const hasLastGeneratedImage = userPrompt.includes('[Last generated image:') && userPrompt.includes('requesting image-to-video animation');
-    let imageFileName = '';
-    let lastGeneratedImageUrl = '';
+    // Extract the user prompt from the intent context - PRESERVE ORIGINAL USER INTENT
+    let userPrompt = intent.context || '';
+    const hasImageUpload = intent.imageUrl && intent.imageUrl.trim() !== '';
+    const hasLastGeneratedImage = this.lastGeneratedImageUrl && this.lastGeneratedImageUrl.trim() !== '';
+    const imageFileName = intent.imageUrl;
+    const lastGeneratedImageUrl = this.lastGeneratedImageUrl;
     
-    if (hasImageUpload) {
-      // Extract the clean prompt (everything before the image metadata)
-      const parts = userPrompt.split('[Image uploaded:');
-      userPrompt = parts[0].trim();
-    } else if (hasLastGeneratedImage) {
-      // Extract the clean prompt (everything before the image metadata)
-      const parts = userPrompt.split('[Last generated image:');
-      userPrompt = parts[0].trim();
-    }
+    console.log('📋 [IntelligenceCore] Has image upload:', hasImageUpload);
+    console.log('📋 [IntelligenceCore] Has last generated image:', hasLastGeneratedImage);
     
-    // Content filtering removed - user has full control over prompts
-    console.log('🎭 [IntelligenceCore] Content filtering disabled - user has full prompt control');
-    
-    // Note: Custom style detection and application will happen AFTER prompt enhancement
-    // to ensure the enhanced prompt gets the style applied
-    
-    console.log('📋 [IntelligenceCore] ===== GET DEFAULT PARAMETERS START =====');
-    console.log('📋 [IntelligenceCore] Model for parameters:', {
-      endpointId: model.endpointId,
-      category: model.category,
-      label: model.label
-    });
-    console.log('📋 [IntelligenceCore] Intent for parameters:', {
-      type: intent.type,
-      context: intent.context,
-      confidence: intent.confidence
-    });
-    console.log('🎨 [IntelligenceCore] Style analysis provided:', styleAnalysis);
-    
-    // Custom style detection will happen after prompt enhancement
-
-    // Apply prompt enhancement with adherence monitoring
-    console.log('🤖 [IntelligenceCore] Applying prompt enhancement with adherence monitoring');
-    console.log('🤖 [IntelligenceCore] User prompt before enhancement:', userPrompt);
-    console.log('🤖 [IntelligenceCore] Intent type:', intent.type);
-    
+    // Store the original prompt for comparison
     const originalPrompt = userPrompt;
-    const enhancementLayers: string[] = [];
-    const validationWarnings: string[] = [];
     
+    // MINIMAL PROMPT ENHANCEMENT - Focus on adherence, not over-enhancement
     try {
-      // Analyze the prompt for genre and director style first
-      const directorAnalysis = analyzePromptForDirectorStyle(userPrompt);
-      console.log('🎬 [IntelligenceCore] Genre analysis for Claude AI:', directorAnalysis);
-      console.log('🎬 [IntelligenceCore] Selected director:', directorAnalysis.suggestedDirector);
-      console.log('🎬 [IntelligenceCore] Director techniques:', directorAnalysis.techniques);
-      console.log('🎬 [IntelligenceCore] Director lighting:', directorAnalysis.lighting);
-      
-      // Check if we should use JSON-structured prompts (for complex narrative prompts)
-      console.log('🔍 [IntelligenceCore] Checking if JSON structure should be used for prompt:', userPrompt);
-      const shouldUseJSONStructure = this.shouldUseJSONStructure(userPrompt, intent.type);
-      console.log('🔍 [IntelligenceCore] JSON structure decision result:', shouldUseJSONStructure);
-      
-      if (shouldUseJSONStructure) {
-        console.log('🎬 [IntelligenceCore] Using JSON-structured prompt enhancement');
-        enhancementLayers.push('json-structure');
-        const jsonStructure = this.generateJSONStructuredPrompt(userPrompt, intent.type);
-        const jsonEnhancedPrompt = this.convertJSONToNaturalLanguage(jsonStructure);
-        
-        if (jsonEnhancedPrompt && jsonEnhancedPrompt !== userPrompt) {
-          console.log('🤖 [IntelligenceCore] JSON-structured enhanced prompt:', jsonEnhancedPrompt);
-          userPrompt = jsonEnhancedPrompt;
-        } else {
-          console.log('🤖 [IntelligenceCore] JSON structure enhancement returned unchanged prompt, using Claude AI');
-          enhancementLayers.push('claude-ai');
-          // Fall back to Claude AI enhancement
-          if (this.claudeEnhancementEnabled && claudeAPI.isAPIAvailable()) {
-            const enhancedPrompt = await claudeAPI.enhancePromptWithClaude(userPrompt, intent.type);
-            if (enhancedPrompt && enhancedPrompt !== userPrompt) {
-              console.log('🤖 [IntelligenceCore] Claude AI enhanced prompt:', enhancedPrompt);
-              userPrompt = enhancedPrompt;
-            }
-          }
-        }
-      } else {
-        console.log('🤖 [IntelligenceCore] Using Claude AI prompt enhancement');
-        enhancementLayers.push('claude-ai');
-        if (this.claudeEnhancementEnabled && claudeAPI.isAPIAvailable()) {
-          const enhancedPrompt = await claudeAPI.enhancePromptWithClaude(userPrompt, intent.type);
-          if (enhancedPrompt && enhancedPrompt !== userPrompt) {
-            console.log('🤖 [IntelligenceCore] Claude AI enhanced prompt:', enhancedPrompt);
-            userPrompt = enhancedPrompt;
-          } else {
-            console.log('🤖 [IntelligenceCore] Claude AI enhancement returned unchanged prompt, using original');
-          }
+      // Only apply essential enhancements that improve prompt adherence
+      if (this.claudeEnhancementEnabled && claudeAPI.isAPIAvailable()) {
+        const enhancedPrompt = await claudeAPI.enhancePromptWithClaude(userPrompt, intent.type);
+        if (enhancedPrompt && enhancedPrompt !== userPrompt) {
+          console.log('🤖 [IntelligenceCore] Applied minimal Claude AI enhancement for better adherence');
+          userPrompt = enhancedPrompt;
         }
       }
       
-      // Validate the enhanced prompt
-      const validation = this.validateAndSanitizePrompt(userPrompt, intent.type);
-      if (!validation.isValid) {
-        validationWarnings.push(...validation.warnings);
-        console.warn('⚠️ [IntelligenceCore] Prompt validation warnings:', validation.warnings);
+      // Validate the prompt length and content
+      if (userPrompt.length > 1000) {
+        console.warn('⚠️ [IntelligenceCore] Prompt too long, truncating to 1000 characters');
+        userPrompt = userPrompt.substring(0, 1000);
       }
-      userPrompt = validation.sanitizedPrompt;
       
     } catch (error) {
       console.error('❌ [IntelligenceCore] Prompt enhancement failed, using original prompt:', error);
-      validationWarnings.push('Prompt enhancement failed');
-    }
-
-    // Apply structured cinematic prompt enhancement (original infrastructure)
-    console.log('🎬 [IntelligenceCore] Applying structured cinematic prompt enhancement');
-    let structuredPromptForDisplay = '';
-    try {
-      // Analyze the prompt for director style
-      const directorStyle = analyzePromptForDirectorStyle(userPrompt);
-      console.log('🎬 [IntelligenceCore] Detected director style:', directorStyle.suggestedDirector);
-      enhancementLayers.push('cinematic');
-      
-      // Generate structured cinematic prompt for display
-      structuredPromptForDisplay = generateStructuredCinematicPrompt(userPrompt, directorStyle.suggestedDirector);
-      console.log('🎬 [IntelligenceCore] Generated structured prompt for display:', structuredPromptForDisplay);
-      
-      // Preserve the original user prompt and add cinematic enhancements
-      const originalPrompt = userPrompt;
-      const director = filmDirectorData.directors[directorStyle.suggestedDirector as keyof typeof filmDirectorData.directors];
-      
-      // Create an enhanced API prompt that preserves the original content and adds cinematic elements
-      let apiPrompt = originalPrompt;
-      if (director) {
-        // Add director style elements without overriding the original content
-        apiPrompt += `, ${director.style.toLowerCase()}`;
-        // Add one key lighting technique
-        if (director.lighting.length > 0) {
-          apiPrompt += `, ${director.lighting[0]}`;
-        }
-        // Add one key technique
-        if (director.techniques.length > 0) {
-          apiPrompt += `, ${director.techniques[0]}`;
-        }
-      }
-      apiPrompt += `, professional cinematography, high production value, cinematic quality, 8K detail`;
-      
-      // Use the enhanced prompt for the API (preserving original content)
-      userPrompt = apiPrompt;
-      console.log('🎬 [IntelligenceCore] Using enhanced API prompt (preserving original content):', userPrompt);
-    } catch (error) {
-      console.error('❌ [IntelligenceCore] Structured prompt enhancement failed, using original prompt:', error);
-      validationWarnings.push('Cinematic enhancement failed');
-    }
-
-    // Apply Auteur Engine prompt augmentation (if enabled) - ENHANCES existing infrastructure
-    console.log('🎬 [IntelligenceCore] Checking Auteur Engine status');
-    if (auteurEngine.isEnabled()) {
-      console.log('🎬 [IntelligenceCore] Auteur Engine is enabled, enhancing with director style');
-      console.log('🎬 [IntelligenceCore] Original prompt before Auteur Engine:', userPrompt);
-      enhancementLayers.push('auteur');
-      const augmentationResult = auteurEngine.augmentPrompt(userPrompt);
-      console.log('🎬 [IntelligenceCore] Auteur Engine augmentation result:', augmentationResult);
-      
-      // ENHANCE the existing prompt instead of replacing it
-      userPrompt = augmentationResult.enhancedPrompt;
-      console.log('🎬 [IntelligenceCore] Final enhanced prompt with Auteur Engine:', userPrompt);
-      console.log('🎬 [IntelligenceCore] Prompt length after Auteur Engine:', userPrompt.length);
-    } else {
-      console.log('🎬 [IntelligenceCore] Auteur Engine is disabled');
-    }
-
-    // Integrate style analysis if provided
-    if (styleAnalysis && styleAnalysis.analysis) {
-      console.log('🎨 [IntelligenceCore] Integrating style analysis into prompt');
-      console.log('🎨 [IntelligenceCore] Original prompt:', userPrompt);
-      console.log('🎨 [IntelligenceCore] Style analysis:', styleAnalysis.analysis);
-      enhancementLayers.push('style-analysis');
-      
-      // Add the extracted style elements to the prompt
-      userPrompt += `, ${styleAnalysis.analysis}`;
-      console.log('🎨 [IntelligenceCore] Enhanced prompt with style analysis:', userPrompt);
-    }
-
-    // Content filtering removed - user has full control over prompts
-    console.log('🎭 [IntelligenceCore] Content filtering disabled - user has full prompt control');
-
-    // Apply custom style detection and application AFTER prompt enhancement
-    let customStyleUsage = customStyleManager.detectCustomStyleInPrompt(userPrompt);
-    
-    // For image generation, automatically apply hard-coded cinematic style if no custom style is detected
-    if (intent.type === 'image' && !customStyleUsage && supportsCustomLoRA(model.endpointId)) {
-      const hardcodedStyle = customStyleManager.getStyleByTriggerWord('cinematic');
-      if (hardcodedStyle) {
-        customStyleUsage = {
-          styleId: hardcodedStyle.id,
-          triggerWord: hardcodedStyle.trigger_word,
-          loraFileUrl: hardcodedStyle.lora_file_url,
-          loraScale: 0.65 // Set to 0.65 weight as requested
-        };
-        console.log('🎨 [IntelligenceCore] Automatically applying hard-coded cinematic style to all image generation');
-      }
     }
 
     // Extract aspect ratio from prompt if specified
@@ -2061,40 +1899,11 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     const validAspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16'];
     const finalAspectRatio = validAspectRatios.includes(aspectRatio) ? aspectRatio : '16:9';
 
-    // Select optimal seed for consistent, high-quality generation
-    const seedSelection = seedManager.selectOptimalSeed(userPrompt);
-    console.log('🎲 [IntelligenceCore] Seed selection:', seedSelection);
-
+    // Create clean base parameters
     const baseParams: Record<string, any> = {
-      prompt: userPrompt,
+      prompt: userPrompt.trim(),
       aspect_ratio: finalAspectRatio,
-      structuredPromptForDisplay: structuredPromptForDisplay, // Add structured prompt for display
-      seed: seedSelection.seed, // Add curated seed for consistent quality
     };
-
-    console.log('📋 [IntelligenceCore] Base parameters created:');
-    console.log('📋 [IntelligenceCore] - prompt:', baseParams.prompt);
-    console.log('📋 [IntelligenceCore] - structuredPromptForDisplay:', baseParams.structuredPromptForDisplay);
-    console.log('📋 [IntelligenceCore] - aspect_ratio:', baseParams.aspect_ratio);
-
-    // Apply custom style if detected
-    if (customStyleUsage && supportsCustomLoRA(model.endpointId)) {
-      console.log('🎨 [IntelligenceCore] Applying custom style to parameters:', customStyleUsage);
-      
-      // Enhance the prompt with the custom style
-      const enhancedPrompt = enhancePromptWithCustomStyle(userPrompt, customStyleUsage);
-      baseParams.prompt = enhancedPrompt;
-      
-      // Apply custom style parameters
-      const styleParams = customStyleManager.applyCustomStyleToParams(baseParams, customStyleUsage);
-      
-      console.log('🎨 [IntelligenceCore] Custom style applied successfully');
-      console.log('🎨 [IntelligenceCore] Enhanced prompt:', enhancedPrompt);
-      console.log('🎨 [IntelligenceCore] Style parameters:', styleParams);
-      
-      // Return the style-enhanced parameters
-      return styleParams;
-    }
 
     // Add image_url if we have an uploaded image or last generated image
     if (hasImageUpload && imageFileName) {
@@ -2114,286 +1923,49 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       console.log('💾 [IntelligenceCore] Using stored last generated image URL:', this.lastGeneratedImageUrl);
     }
 
-    console.log('📋 [IntelligenceCore] Creating parameters for model:', model.endpointId);
+    console.log('📋 [IntelligenceCore] Creating clean FAL-compatible parameters for model:', model.endpointId);
     console.log('📋 [IntelligenceCore] User prompt:', userPrompt);
     console.log('📋 [IntelligenceCore] Has image upload:', hasImageUpload);
     console.log('📋 [IntelligenceCore] Has last generated image:', hasLastGeneratedImage);
-    console.log('📋 [IntelligenceCore] Last generated image URL:', lastGeneratedImageUrl);
     
-    // Log prompt enhancement for adherence monitoring
-    promptAdherenceMonitor.logEnhancement(
-      originalPrompt,
-      userPrompt,
-      enhancementLayers,
-      auteurEngine.getActiveDirector() || undefined,
-      model.endpointId,
-      intent.type,
-      validationWarnings
-    );
-
-    // Model-specific parameter customization based on FAL.com documentation
+    // Return clean, FAL-compatible parameters based on model category
     switch (model.category) {
       case 'image':
-        // Image generation models
-        if (model.endpointId.includes('flux-pro/kontext')) {
-          const params = {
-            ...baseParams,
-            guidance_scale: 3.5,
-            num_images: 1,
-            output_format: "jpeg",
-            safety_tolerance: "2",
-            enhance_prompt: true
-          };
-          console.log('📋 [IntelligenceCore] Flux Pro Kontext parameters:', params);
-          return params;
-        } else if (model.endpointId.includes('flux-pro')) {
-          const params: Record<string, any> = {
-            ...baseParams,
-            num_inference_steps: 30,
-            guidance_scale: 7.5,
-            num_images: 4, // Generate 4 variants by default
-            output_format: "jpeg",
-            safety_tolerance: "2"
-          };
-          console.log('📋 [IntelligenceCore] Flux Pro parameters:', params);
-          console.log('📋 [IntelligenceCore] Flux Pro prompt:', params.prompt);
-          console.log('📋 [IntelligenceCore] Flux Pro structuredPromptForDisplay:', params.structuredPromptForDisplay);
-          return params;
-        } else if (model.endpointId.includes('recraft')) {
-          const params = {
-            ...baseParams,
-            num_inference_steps: 20,
-            guidance_scale: 7.5,
-            num_images: 4, // Generate 4 variants by default
-            output_format: "jpeg",
-            safety_tolerance: "2"
-          };
-          console.log('📋 [IntelligenceCore] Recraft parameters:', params);
-          return params;
-        } else if (model.endpointId.includes('stable-diffusion')) {
-          const params = {
-            ...baseParams,
-            num_inference_steps: 28,
-            guidance_scale: 7.5,
-            num_images: 4, // Generate 4 variants by default
-            output_format: "jpeg",
-            safety_tolerance: "2"
-          };
-          console.log('📋 [IntelligenceCore] Stable Diffusion parameters:', params);
-          return params;
-        } else if (model.endpointId.includes('photon')) {
-          const params = {
-            ...baseParams,
-            num_inference_steps: 25,
-            guidance_scale: 7.0,
-            num_images: 4, // Generate 4 variants by default
-            output_format: "jpeg",
-            safety_tolerance: "2"
-          };
-          console.log('📋 [IntelligenceCore] Photon parameters:', params);
-          return params;
-        } else if (model.endpointId.includes('flux-krea-lora')) {
-          const params = {
-            ...baseParams,
-            strength: 0.85,
-            num_inference_steps: 28,
-            guidance_scale: 3.5,
-            num_images: 1, // LoRA models typically generate single images
-            enable_safety_checker: true,
-            output_format: "jpeg"
-          };
-          console.log('📋 [IntelligenceCore] FLUX LoRA parameters:', params);
-          return params;
-        }
-        
-        const defaultImageParams: Record<string, any> = {
+        // Image generation models - minimal parameters for FAL compatibility
+        return {
           ...baseParams,
-          num_inference_steps: 25,
-          guidance_scale: 7.5,
-          num_images: 4, // Generate 4 variants by default
+          num_images: 1,
           output_format: "jpeg",
-          safety_tolerance: "2"
+          enable_safety_checker: true
         };
-        console.log('📋 [IntelligenceCore] Default image parameters:', defaultImageParams);
-        console.log('📋 [IntelligenceCore] Default image prompt:', defaultImageParams.prompt);
-        console.log('📋 [IntelligenceCore] Default image structuredPromptForDisplay:', defaultImageParams.structuredPromptForDisplay);
-        return defaultImageParams;
 
       case 'video':
-        // Video generation models
-        if (model.endpointId.includes('veo3')) {
-          return {
-            ...baseParams,
-            duration: "8s", // Veo3 requires "8s" format
-            enhance_prompt: true,
-            auto_fix: true,
-            resolution: "720p",
-            generate_audio: true
-          };
-        } else if (model.endpointId.includes('minimax')) {
-          if (model.endpointId.includes('hailuo-02')) {
-            return {
-              ...baseParams,
-              duration: "6", // No 's' suffix for Hailuo 02
-              prompt_optimizer: true,
-              resolution: "768P",
-              // Add additional required parameters for Hailuo 02
-              num_frames: 24,
-              fps: 8,
-              width: 1024,
-              height: 576
-            };
-          } else if (model.endpointId.includes('subject-reference')) {
-            return {
-              ...baseParams,
-              num_frames: 16,
-              width: 1024,
-              height: 576,
-              num_inference_steps: 30,
-              guidance_scale: 7.5,
-              fps: 8,
-              subject_strength: 0.8,
-              motion_bucket_id: 127,
-              prompt_optimizer: true
-            };
-          } else {
-            return {
-              ...baseParams,
-              num_frames: 24,
-              fps: 8,
-              style_strength: 0.8
-            };
-          }
-        } else if (model.endpointId.includes('hunyuan')) {
-          return {
-            ...baseParams,
-            num_inference_steps: 30,
-            resolution: "720p",
-            num_frames: 16,
-            enable_safety_checker: true,
-            pro_mode: false
-          };
-                 } else if (model.endpointId.includes('kling')) {
-           return {
-             ...baseParams,
-             duration: "5s",
-             negative_prompt: "blur, distort, and low quality",
-             cfg_scale: 0.5
-           };
-                 } else if (model.endpointId.includes('luma-dream-machine/ray-2-flash')) {
-             return {
-               ...baseParams,
-               duration: "5s",
-               resolution: "540p",
-               loop: false
-             };
-                 } else if (model.endpointId.includes('luma-dream-machine/ray-2')) {
-             return {
-               ...baseParams,
-               duration: "5s",
-               loop: false
-             };
-                 } else if (model.endpointId.includes('fal-ai/pixverse/v3.5/text-to-video/fast')) {
-                return {
-                  ...baseParams,
-                  duration: "5", // No 's' suffix for Pixverse
-                  aspect_ratio: "16:9",
-                  resolution: "720p"
-                };
-              } else if (model.endpointId.includes('fal-ai/pixverse/v3.5/text-to-video/standard')) {
-                return {
-                  ...baseParams,
-                  duration: "5", // No 's' suffix for Pixverse
-                  aspect_ratio: "16:9",
-                  resolution: "720p"
-                };
-              }
-        
-                 return {
-           ...baseParams,
-           duration: "5s",
-           resolution: "720p"
-         };
+        // Video generation models - minimal parameters for FAL compatibility
+        return {
+          ...baseParams,
+          duration: "8s",
+          resolution: "720p"
+        };
 
       case 'music':
-        // Music generation models
-        if (model.endpointId.includes('minimax-music')) {
-          return {
-            ...baseParams,
-            duration: 30
-          };
-        } else if (model.endpointId.includes('mmaudio')) {
-          return {
-            ...baseParams,
-            num_steps: 50,
-            duration: 10,
-            cfg_strength: 7.5
-          };
-        } else if (model.endpointId.includes('stable-audio')) {
-          return {
-            ...baseParams,
-            duration: 30,
-            top_k: 250,
-            top_p: 0,
-            temperature: 1.0,
-            classifier_free_guidance: 3
-          };
-        }
-        
+        // Music generation models - minimal parameters for FAL compatibility
         return {
           ...baseParams,
           duration: 30
         };
 
       case 'voiceover':
-        // Voice generation models
-        if (model.endpointId.includes('playht')) {
-          return {
-            ...baseParams,
-            text: userPrompt,
-            voice: "Dexter (English (US)/American)",
-            quality: "medium",
-            output_format: "mp3",
-            speed: 1.0,
-            sample_rate: 24000
-          };
-        } else if (model.endpointId.includes('elevenlabs')) {
-          return {
-            ...baseParams,
-            text: userPrompt,
-            voice: "Rachel",
-            stability: 0.5,
-            similarity_boost: 0.75,
-            speed: 1.0
-          };
-        } else if (model.endpointId.includes('f5-tts')) {
-          return {
-            ...baseParams,
-            text: userPrompt,
-            ref_audio_url: "https://github.com/SWivid/F5-TTS/raw/21900ba97d5020a5a70bcc9a0575dc7dec5021cb/tests/ref_audio/test_en_1_ref_short.wav",
-            ref_text: "Some call me nature, others call me mother nature.",
-            model_type: "F5-TTS",
-            remove_silence: true
-          };
-        } else if (model.endpointId.includes('llm')) {
-          return {
-            ...baseParams,
-            model: "google/gemini-flash-1.5",
-            system_prompt: "You are a helpful AI assistant."
-          };
-        }
-        
+        // Voice generation models - minimal parameters for FAL compatibility
         return {
           ...baseParams,
           text: userPrompt,
-          voice: "default",
-          speed: 1.0
+          voice: "Dexter (English (US)/American)",
+          quality: "medium",
+          output_format: "mp3"
         };
 
       default:
-         console.log('📋 [IntelligenceCore] Using default parameters for unknown category');
-         console.log('📋 [IntelligenceCore] ===== GET DEFAULT PARAMETERS END =====');
-         console.log('📋 [IntelligenceCore] Final parameters:', baseParams);
+        // Default parameters for unknown models
         return baseParams;
     }
   }

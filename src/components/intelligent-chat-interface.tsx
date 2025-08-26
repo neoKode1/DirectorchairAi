@@ -1935,6 +1935,60 @@ Starting workflow execution...`,
     let videoModelToUse = syncedVideoModel || currentVideoModel;
     
     try {
+      // Check if there's an uploaded image for animation and user provided a prompt
+      if (uploadedImage && userInput.trim()) {
+        console.log('🎬 [IntelligentChatInterface] Uploaded image detected with user prompt for animation');
+        
+        // Create a context that includes the uploaded image and user prompt
+        const animationContext = `[Image uploaded: ${uploadedImage} - requesting image-to-video animation] ${userInput}`;
+        
+        // Get delegation from intelligence core for video generation
+        const intent = await intelligenceCore.analyzeUserIntent(animationContext, 'video');
+        const delegation = await intelligenceCore.selectOptimalModel(intent);
+        
+        if (delegation) {
+          // Override the model to use the user's preferred video model
+          delegation.modelId = videoModelToUse;
+          delegation.reason = 'Image-to-video animation with user prompt';
+          
+          // Add the image_url parameter for video generation
+          delegation.parameters = {
+            ...delegation.parameters,
+            image_url: uploadedImage,
+            prompt: userInput.trim()
+          };
+          console.log('🎬 [IntelligentChatInterface] Added image_url and prompt to video delegation:', {
+            image_url: uploadedImage,
+            prompt: userInput.trim()
+          });
+          
+          // Set the pending delegation
+          setPendingDelegation(delegation);
+          startGeneration('video', 'Image-to-video animation');
+          
+          // Add delegation message
+          const delegationMessage: ChatMessage = {
+            id: `delegation-${Date.now()}`,
+            type: 'assistant',
+            content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModelToUse}`,
+            timestamp: new Date(),
+            intent: intent,
+            delegation: delegation,
+            status: 'pending',
+          };
+          setMessages(prev => [...prev, delegationMessage]);
+          
+          // Clear the uploaded image after setting up the delegation
+          setUploadedImage(null);
+          setImagePreview(null);
+          
+          // Continue with the generation process
+          currentDelegation = delegation;
+        } else {
+          throw new Error('No suitable video model found for animation. Please check your model preferences.');
+        }
+      }
+      
       // Check if a style image is uploaded and we should show the delegation selector
       if (hasStyleImageUploaded && styleReferenceImage && !isPendingStyleGeneration()) {
         console.log('🎨 [IntelligentChatInterface] Style image detected, showing delegation selector');
@@ -2701,7 +2755,7 @@ Starting workflow execution...`,
 
     toast({
       title: "Image Uploaded!",
-      description: `${file.name} is ready for animation. Describe how you want to animate it.`,
+      description: `${file.name} is ready for animation. Type a prompt to describe how you want to animate it, or click "Quick Gen" for instant animation.`,
     });
       
       console.log('✅ [IntelligentChatInterface] Image compressed and uploaded successfully');

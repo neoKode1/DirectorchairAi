@@ -2147,6 +2147,7 @@ Starting workflow execution...`,
       // Check if there's an uploaded image and user provided a prompt (intent-driven workflow)
       if (uploadedImage && userInput.trim()) {
         console.log('🖼️ [IntelligentChatInterface] Uploaded image detected with user prompt');
+        console.log('🎯 [IntelligentChatInterface] Selected intent:', selectedIntent);
         
         // Get the saved preferences to determine which model to use
         const saved = localStorage.getItem('narrative-model-preferences');
@@ -2156,9 +2157,8 @@ Starting workflow execution...`,
 
         const preferences = JSON.parse(saved);
         
-        // Check if this is an image editing request
-        if (userInput.toLowerCase().includes('edit') || userInput.toLowerCase().includes('modify') || 
-            userInput.toLowerCase().includes('change') || userInput.toLowerCase().includes('transform')) {
+        // Use the selected intent from the modal instead of guessing from text
+        if (selectedIntent === 'edit') {
           console.log('✏️ [IntelligentChatInterface] Detected image editing request');
           
           // Use the user's preferred image model or nano-banana/edit
@@ -2213,9 +2213,9 @@ Starting workflow execution...`,
           } else {
             throw new Error('No suitable image editing model found. Please check your model preferences.');
           }
-        } else {
-          // Default to animation
-          console.log('🎬 [IntelligentChatInterface] Defaulting to animation request');
+        } else if (selectedIntent === 'animate') {
+          // Handle animation intent
+          console.log('🎬 [IntelligentChatInterface] Handling animation intent');
           
           // Use the user's preferred video model
           const videoModel = preferences.video || videoModelToUse;
@@ -2245,6 +2245,103 @@ Starting workflow execution...`,
               id: `delegation-${Date.now()}`,
               type: 'assistant',
               content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel}`,
+              timestamp: new Date(),
+              intent: videoIntent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Clear the uploaded image after setting up the delegation
+            setUploadedImage(null);
+            setImagePreview(null);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable video model found for animation. Please check your model preferences.');
+          }
+        } else if (selectedIntent === 'style') {
+          // Handle style transfer intent
+          console.log('🎨 [IntelligentChatInterface] Handling style transfer intent');
+          
+          // Use FLUX LoRA for style transfer
+          const styleModel = 'fal-ai/flux-krea-lora/image-to-image';
+          
+          // Get delegation from intelligence core for style transfer
+          const styleIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          const delegation = await intelligenceCore.selectOptimalModel(styleIntent);
+          
+          if (delegation) {
+            // Override the model to use FLUX LoRA
+            delegation.modelId = styleModel;
+            delegation.reason = 'Style transfer with user prompt';
+            
+            // Add the image_url parameter for style transfer
+            delegation.parameters = {
+              ...delegation.parameters,
+              image_url: uploadedImage,
+              prompt: userInput.trim()
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('style', 'Style transfer generation');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `🎨 **Style Transfer Ready**: Your image is ready for style transfer using ${styleModel}`,
+              timestamp: new Date(),
+              intent: styleIntent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Clear the uploaded image after setting up the delegation
+            setUploadedImage(null);
+            setImagePreview(null);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable style transfer model found. Please check your model preferences.');
+          }
+        } else {
+          // Fallback: no specific intent selected, use default behavior
+          console.log('🔄 [IntelligentChatInterface] No specific intent selected, using default behavior');
+          console.log('🔄 [IntelligentChatInterface] Selected intent was:', selectedIntent);
+          
+          // Default to animation if no intent was selected
+          const videoModel = preferences.video || videoModelToUse;
+          
+          // Get delegation from intelligence core for video generation
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
+          
+          if (delegation) {
+            // Override the model to use the user's preferred video model
+            delegation.modelId = videoModel;
+            delegation.reason = 'Default image-to-video animation (no intent selected)';
+            
+            // Add the image_url parameter for video generation
+            delegation.parameters = {
+              ...delegation.parameters,
+              image_url: uploadedImage,
+              prompt: userInput.trim()
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('video', 'Default image-to-video animation');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel} (default behavior)`,
               timestamp: new Date(),
               intent: videoIntent,
               delegation: delegation,
@@ -2656,6 +2753,7 @@ Starting workflow execution...`,
       intelligenceCore.resetAuthorization();
       setPendingDelegation(null);
       setCurrentIntent(null);
+      setSelectedIntent(null); // Clear the selected intent after generation
       
       // Reset style generation state after successful generation
       if (isPendingStyleGeneration()) {

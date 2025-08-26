@@ -148,11 +148,20 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   useEffect(() => {
     console.log('🎯 [GeneratedContentDisplay] Component mounted, setting up event listeners');
     
+    // Prevent multiple event listeners
+    const existingListener = (window as any).__contentGeneratedListener;
+    if (existingListener) {
+      window.removeEventListener('content-generated', existingListener);
+    }
+    
          const handleNewContent = (event: CustomEvent) => {
        console.log('📥 [GeneratedContentDisplay] Received content-generated event:', event.detail);
        console.log('📥 [GeneratedContentDisplay] Prompt in event detail:', event.detail.prompt);
        const newContent: GeneratedContent = event.detail;
        console.log('📥 [GeneratedContentDisplay] Setting content:', newContent);
+       
+       // Store listener reference for cleanup
+       (window as any).__contentGeneratedListener = handleNewContent;
        
        // Add the new content to the list
        setContent(prev => {
@@ -201,6 +210,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
       console.log('🧹 [GeneratedContentDisplay] Cleaning up event listeners');
       window.removeEventListener('content-generated', handleNewContent as EventListener);
       window.removeEventListener('generation-started', handleGenerationStart as EventListener);
+      // Clear the stored listener reference
+      delete (window as any).__contentGeneratedListener;
     };
   }, [toast]);
 
@@ -334,7 +345,23 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
 
   const handleImageClick = (content: GeneratedContent) => {
     if (content.type === 'image') {
-      setFullscreenImage(content);
+      console.log('🖼️ [GeneratedContentDisplay] Image clicked:', content);
+      
+      // Use the selected image URL if available, otherwise use the main URL
+      const imageUrl = content.images && content.selectedImageIndex !== undefined 
+        ? content.images[content.selectedImageIndex] 
+        : content.url;
+      
+      console.log('🖼️ [GeneratedContentDisplay] Using image URL for injection:', imageUrl);
+      
+      // Create a content object with the correct image URL
+      const contentWithCorrectUrl = {
+        ...content,
+        url: imageUrl
+      };
+      
+      // Inject the image into the chat input instead of opening fullscreen
+      handleInjectImageToChat(contentWithCorrectUrl);
     }
   };
 
@@ -353,10 +380,17 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   const handleInjectImageToChat = (content: GeneratedContent) => {
     console.log('💉 [GeneratedContentDisplay] Injecting image to chat:', content);
     
+    // Use the selected image URL if available, otherwise use the main URL
+    const imageUrl = content.images && content.selectedImageIndex !== undefined 
+      ? content.images[content.selectedImageIndex] 
+      : content.url;
+    
+    console.log('💉 [GeneratedContentDisplay] Using image URL for injection:', imageUrl);
+    
     // Dispatch a custom event to inject the image into the chat interface
     const injectEvent = new CustomEvent('inject-image-to-chat', {
       detail: {
-        imageUrl: content.url,
+        imageUrl: imageUrl,
         imageTitle: content.title,
         prompt: content.prompt || ''
       }
@@ -365,8 +399,8 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
     window.dispatchEvent(injectEvent);
     
     toast({
-      title: "Image Injected!",
-      description: `${content.title} has been added to the chat input. Type a prompt to animate it!`,
+      title: "Image Added to Chat!",
+      description: `${content.title} has been added to the chat input. You can now type a prompt to animate it or use it for image editing.`,
     });
   };
 
@@ -682,151 +716,216 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
           </div>
         ) : (
           content.map((item) => (
-            <Card
+                        <Card
               key={item.id}
-              className={`p-3 cursor-pointer transition-all hover:bg-gray-800/30 ${
-                selectedContent?.id === item.id ? 'bg-gray-800/50 border-purple-500/50' : 'bg-gray-800/20 border-gray-700/30'
+              className={`relative overflow-hidden cursor-pointer transition-all group ${
+                selectedContent?.id === item.id ? 'border-purple-500/50' : 'border-gray-700/30'
               }`}
               onClick={() => setSelectedContent(content.find(c => c.id === item.id) || item)}
             >
-              <div className="flex items-start gap-3">
-                                 <div className="flex-shrink-0">
-                                      {item.type === 'image' && (
-                      <div className="relative w-12 h-12">
-                        <img
-                          src={item.url}
-                          alt={item.title}
-                          className={`w-12 h-12 object-cover rounded border border-gray-600 cursor-pointer hover:opacity-80 transition-all duration-500 ${
-                            loadingImages.has(item.id) 
-                              ? 'blur-md scale-95 opacity-70' 
-                              : 'blur-0 scale-100 opacity-100'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleImageClick(item);
-                          }}
-                          onLoad={() => handleImageLoad(item.id)}
-                          onError={() => handleImageLoad(item.id)}
-                        />
-                        {loadingImages.has(item.id) && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                          </div>
+              {/* Full background image for image content */}
+              {item.type === 'image' && (
+                <>
+                  <img
+                    src={item.url}
+                    alt={item.title}
+                    className={`absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+                      loadingImages.has(item.id) 
+                        ? 'blur-md scale-95 opacity-70' 
+                        : 'blur-0 scale-100 opacity-100'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleImageClick(item);
+                    }}
+                    onLoad={() => handleImageLoad(item.id)}
+                    onError={() => handleImageLoad(item.id)}
+                    title="Click to add this image to the chat input for animation"
+                  />
+                  {loadingImages.has(item.id) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  {/* Gradient overlay for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                  {/* Hover glow effect with inject indicator */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      Click to inject
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Content overlay */}
+              <div className="relative p-3">
+                {/* For non-image content, show the original layout */}
+                {item.type !== 'image' && (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      {item.type === 'video' && (
+                        <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
+                          <Video className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                      {item.type === 'audio' && (
+                        <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                      {item.type === 'text' && (
+                        <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {getContentIcon(item.type)}
+                        <span className="text-sm font-medium text-gray-200 truncate">
+                          {item.title}
+                        </span>
+                        <Badge variant="secondary" className="text-xs">
+                          {item.type}
+                        </Badge>
+                        {item.prompt && (
+                          <ModelIcon 
+                            model={item.prompt.toLowerCase().includes('flux') ? 'flux' : 
+                                   item.prompt.toLowerCase().includes('veo') ? 'veo3' :
+                                   item.prompt.toLowerCase().includes('kling') ? 'kling' :
+                                   item.prompt.toLowerCase().includes('luma') ? 'luma' :
+                                   item.prompt.toLowerCase().includes('minimax') ? 'minimax' :
+                                   item.prompt.toLowerCase().includes('seedance') ? 'seedance' : 'flux'}
+                            size="sm"
+                          />
                         )}
                       </div>
-                    )}
-                  {item.type === 'video' && (
-                    <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
-                      <Video className="w-5 h-5 text-gray-400" />
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                        <span>{item.timestamp.toLocaleTimeString()}</span>
+                        {item.metadata?.width && item.metadata?.height && (
+                          <span>{item.metadata.width}×{item.metadata.height}</span>
+                        )}
+                        {item.metadata?.duration && (
+                          <span>{formatDuration(item.metadata.duration)}</span>
+                        )}
+                        {item.metadata?.size && (
+                          <span>{formatFileSize(item.metadata.size)}</span>
+                        )}
+                        {item.metadata?.seed && (
+                          <span className="text-purple-400 font-mono">
+                            🎲 {item.metadata.seed}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {item.prompt && (
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          "{truncatePrompt(item.prompt)}"
+                        </p>
+                      )}
                     </div>
-                  )}
-                  {item.type === 'audio' && (
-                    <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
-                      <Music className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
-                  {item.type === 'text' && (
-                    <div className="w-12 h-12 bg-gray-700 rounded border border-gray-600 flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {getContentIcon(item.type)}
-                    <span className="text-sm font-medium text-gray-200 truncate">
-                      {item.title}
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {item.type}
-                    </Badge>
-                    {/* Model Icon - extract model from title or prompt */}
-                    {item.prompt && (
-                      <ModelIcon 
-                        model={item.prompt.toLowerCase().includes('flux') ? 'flux' : 
-                               item.prompt.toLowerCase().includes('veo') ? 'veo3' :
-                               item.prompt.toLowerCase().includes('kling') ? 'kling' :
-                               item.prompt.toLowerCase().includes('luma') ? 'luma' :
-                               item.prompt.toLowerCase().includes('minimax') ? 'minimax' :
-                               item.prompt.toLowerCase().includes('seedance') ? 'seedance' : 'flux'}
+                {/* For image content, show overlay layout */}
+                {item.type === 'image' && (
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {getContentIcon(item.type)}
+                        <span className="text-sm font-medium text-white truncate drop-shadow-lg">
+                          {item.title}
+                        </span>
+                        <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                          {item.type}
+                        </Badge>
+                        {item.prompt && (
+                          <ModelIcon 
+                            model={item.prompt.toLowerCase().includes('flux') ? 'flux' : 
+                                   item.prompt.toLowerCase().includes('veo') ? 'veo3' :
+                                   item.prompt.toLowerCase().includes('kling') ? 'kling' :
+                                   item.prompt.toLowerCase().includes('luma') ? 'luma' :
+                                   item.prompt.toLowerCase().includes('minimax') ? 'minimax' :
+                                   item.prompt.toLowerCase().includes('seedance') ? 'seedance' : 'flux'}
+                            size="sm"
+                          />
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-xs text-gray-200 drop-shadow-lg">
+                        <span>{item.timestamp.toLocaleTimeString()}</span>
+                        {item.metadata?.width && item.metadata?.height && (
+                          <span>{item.metadata.width}×{item.metadata.height}</span>
+                        )}
+                        {item.metadata?.duration && (
+                          <span>{formatDuration(item.metadata.duration)}</span>
+                        )}
+                        {item.metadata?.size && (
+                          <span>{formatFileSize(item.metadata.size)}</span>
+                        )}
+                        {item.metadata?.seed && (
+                          <span className="text-purple-300 font-mono">
+                            🎲 {item.metadata.seed}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {item.prompt && (
+                        <p className="text-xs text-gray-200 mt-1 truncate drop-shadow-lg">
+                          "{truncatePrompt(item.prompt)}"
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="flex-shrink-0 flex items-center gap-1">
+                      <Button
+                        variant="ghost"
                         size="sm"
-                      />
-                    )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAnimateImage(item);
+                        }}
+                        className="h-8 w-8 p-0 text-white hover:text-purple-300 hover:bg-white/20 backdrop-blur-sm"
+                        title="Animate this image"
+                      >
+                        <Zap className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(item);
+                        }}
+                        className="h-8 w-8 p-0 text-white hover:text-white hover:bg-white/20 backdrop-blur-sm"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveContent(item.id);
+                        }}
+                        className="h-8 w-8 p-0 text-white hover:text-red-300 hover:bg-white/20 backdrop-blur-sm"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
-                    <span>{item.timestamp.toLocaleTimeString()}</span>
-                    {item.metadata?.width && item.metadata?.height && (
-                      <span>{item.metadata.width}×{item.metadata.height}</span>
-                    )}
-                    {item.metadata?.duration && (
-                      <span>{formatDuration(item.metadata.duration)}</span>
-                    )}
-                    {item.metadata?.size && (
-                      <span>{formatFileSize(item.metadata.size)}</span>
-                    )}
-                    {item.metadata?.seed && (
-                      <span className="text-purple-400 font-mono">
-                        🎲 {item.metadata.seed}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {item.prompt && (
-                    <p className="text-xs text-gray-500 mt-1 truncate">
-                      "{truncatePrompt(item.prompt)}"
-                    </p>
-                  )}
-                  
-                  {/* Image variants grid for multiple images */}
-                  {item.type === 'image' && item.images && item.images.length > 1 && (
-                    <ImageVariantsGrid 
-                      key={`${item.id}-${item.selectedImageIndex || 0}`} 
-                      contentId={item.id} 
-                    />
-                  )}
-                </div>
+                )}
                 
-                                 <div className="flex-shrink-0 flex items-center gap-1">
-                   {/* Animate button for images */}
-                   {item.type === 'image' && (
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       onClick={(e) => {
-                         e.stopPropagation();
-                         handleAnimateImage(item);
-                       }}
-                       className="h-6 w-6 p-0 text-purple-400 hover:text-purple-300"
-                       title="Animate this image"
-                     >
-                       <Zap className="w-3 h-3" />
-                     </Button>
-                   )}
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       handleDownload(item);
-                     }}
-                     className="h-6 w-6 p-0 text-gray-400 hover:text-white"
-                   >
-                     <Download className="w-3 h-3" />
-                   </Button>
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       handleRemoveContent(item.id);
-                     }}
-                     className="h-6 w-6 p-0 text-gray-400 hover:text-red-400"
-                   >
-                     <X className="w-3 h-3" />
-                   </Button>
-                 </div>
+                {/* Image variants grid for multiple images */}
+                {item.type === 'image' && item.images && item.images.length > 1 && (
+                  <ImageVariantsGrid 
+                    key={`${item.id}-${item.selectedImageIndex || 0}`} 
+                    contentId={item.id} 
+                  />
+                )}
               </div>
             </Card>
           ))
@@ -904,20 +1003,20 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                             ? 'blur-lg scale-95 opacity-60' 
                             : 'blur-0 scale-100 opacity-100'
                         }`}
-                        onClick={() => handleOpenFullscreen(selectedContent)}
+                        onClick={() => handleInjectImageToChat(selectedContent)}
                         onContextMenu={(e) => {
                           e.preventDefault();
-                          handleInjectImageToChat(selectedContent);
+                          handleOpenFullscreen(selectedContent);
                         }}
                         onLoad={() => handleImageLoad(selectedContent.id)}
                         onError={() => handleImageLoad(selectedContent.id)}
-                        title="Left-click for fullscreen, Right-click to inject to chat"
+                        title="Left-click to inject to chat, Right-click for fullscreen"
                       />
                       {/* Hover overlay to indicate clickability */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                                 <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                           Click for fullscreen
-                         </div>
+                        <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                          Click to inject
+                        </div>
                       </div>
                     </div>
                     

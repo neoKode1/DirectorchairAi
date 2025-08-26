@@ -748,7 +748,7 @@ export function AvailableModelsShowcase({ className = "" }: { className?: string
   return (
     <div className={`space-y-6 ${className}`}>
       <div className="text-center">
-        <h3 className="mobile-text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent mb-2 drop-shadow-md">
+        <h3 className="mobile-text-xl sm:text-2xl font-black text-foreground mb-2 drop-shadow-lg">
           Available AI Models
         </h3>
         <p className={`${isDarkTheme ? 'text-cyan-100' : 'text-muted-foreground'} drop-shadow-sm mobile-text-sm sm:text-base`}>
@@ -771,7 +771,7 @@ export function AvailableModelsShowcase({ className = "" }: { className?: string
                key={model}
                className={`mobile-card-sm rounded-lg ${isDarkTheme 
                  ? 'bg-black/20 backdrop-blur-sm border border-cyan-500/30 hover:border-cyan-400/50' 
-                 : 'bg-gradient-to-br from-background to-muted border border-border/50 hover:border-border'
+                 : 'bg-background/20 backdrop-blur-sm border border-border/30 hover:border-border/50'
                } transition-colors`}
              >
                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">

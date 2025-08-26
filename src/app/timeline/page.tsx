@@ -87,7 +87,7 @@ function TimelineContent() {
   const [activeTab, setActiveTab] = useState<'content' | 'gallery' | 'storage' | 'sessions'>('content');
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
   const [contentPanelExpanded, setContentPanelExpanded] = useState(false);
-  const [contentPanelWidth, setContentPanelWidth] = useState("400px");
+  const [contentPanelWidth, setContentPanelWidth] = useState("600px");
   const selectedMediaId = useVideoProjectStore((s) => s.selectedMediaId);
   const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
   const keyDialogOpen = useVideoProjectStore((s) => s.keyDialogOpen);
@@ -251,7 +251,7 @@ function TimelineContent() {
         {/* Collapsible Right Panel - Content Display with Tabs */}
         <CollapsibleContentPanel 
           defaultExpanded={false}
-          panelWidth="400px"
+          panelWidth="600px"
           className="glass"
         >
           {/* Tab Navigation */}

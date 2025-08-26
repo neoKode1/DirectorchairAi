@@ -136,6 +136,16 @@ export function IntelligentChatInterface({
     timestamp: Date;
   } | null>(null); // Fullscreen image state for chat images
 
+  // Intent selection state
+  const [showIntentSelection, setShowIntentSelection] = useState(false);
+  const [uploadedImageForIntent, setUploadedImageForIntent] = useState<string | null>(null);
+  const [selectedIntent, setSelectedIntent] = useState<'animate' | 'edit' | 'style' | null>(null);
+  const [intentValidation, setIntentValidation] = useState<{
+    isValid: boolean;
+    message: string;
+    suggestions: string[];
+  } | null>(null);
+
   // Generation state helper functions
   const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow', task: string) => {
     console.log(`🚀 [Generation State] Starting ${type} generation: ${task}`);
@@ -160,6 +170,101 @@ export function IntelligentChatInterface({
   const isGenerating = () => generationState.isActive;
   const isVideoGenerating = () => generationState.isActive && generationState.type === 'video';
   const isPendingStyleGeneration = () => generationState.isActive && generationState.type === 'style';
+
+  // Intent options configuration
+  const INTENT_OPTIONS = [
+    {
+      id: 'animate' as const,
+      label: '🎬 Animate Image',
+      description: 'Convert image to video animation',
+      icon: Video,
+      category: 'video'
+    },
+    {
+      id: 'edit' as const,
+      label: '✏️ Edit Image', 
+      description: 'Modify the existing image',
+      icon: ImageIcon,
+      category: 'image'
+    },
+    {
+      id: 'style' as const,
+      label: '🎨 Style Transfer',
+      description: 'Apply style to generate new image',
+      icon: Sparkles,
+      category: 'image'
+    }
+  ];
+
+  // Intent validation function
+  const validateIntentWithPreferences = async (intent: 'animate' | 'edit' | 'style') => {
+    console.log('🔍 [Intent Validation] Validating intent:', intent);
+    
+    const saved = localStorage.getItem('narrative-model-preferences');
+    if (!saved) {
+      return {
+        isValid: false,
+        message: 'No model preferences found. Please set your preferred models first.',
+        suggestions: ['Go to Model Preferences and select your preferred models']
+      };
+    }
+
+    try {
+      const preferences = JSON.parse(saved);
+      const intentOption = INTENT_OPTIONS.find(option => option.id === intent);
+      
+      if (!intentOption) {
+        return {
+          isValid: false,
+          message: 'Invalid intent selected.',
+          suggestions: ['Please select a valid intent']
+        };
+      }
+
+      const requiredCategory = intentOption.category;
+      const preferredModel = preferences[requiredCategory];
+
+      if (!preferredModel || preferredModel === 'none') {
+        return {
+          isValid: false,
+          message: `No preferred ${requiredCategory} model selected.`,
+          suggestions: [
+            `Go to Model Preferences and select a ${requiredCategory} model`,
+            'Or I can suggest the best model for this task'
+          ]
+        };
+      }
+
+      // Check if the preferred model is suitable for the intent
+      const availableModels = AVAILABLE_ENDPOINTS.filter(model => model.category === requiredCategory);
+      const modelExists = availableModels.some(model => model.endpointId === preferredModel);
+
+      if (!modelExists) {
+        return {
+          isValid: false,
+          message: `Your preferred ${requiredCategory} model is no longer available.`,
+          suggestions: [
+            'Go to Model Preferences and select a different model',
+            'Or I can suggest the best available model'
+          ]
+        };
+      }
+
+      return {
+        isValid: true,
+        message: `✅ Ready to ${intent} using ${preferredModel}`,
+        suggestions: []
+      };
+
+    } catch (error) {
+      console.error('❌ [Intent Validation] Error validating intent:', error);
+      return {
+        isValid: false,
+        message: 'Error validating your preferences.',
+        suggestions: ['Please check your model preferences']
+      };
+    }
+  };
 
   // Handle fullscreen image display
   const handleOpenFullscreen = (imageData: {
@@ -296,6 +401,53 @@ export function IntelligentChatInterface({
     } catch (error) {
       console.error('❌ [Video Model Change] Error changing model:', error);
     }
+  };
+
+  // Handle intent selection
+  const handleIntentSelection = async (intent: 'animate' | 'edit' | 'style') => {
+    console.log('🎯 [Intent Selection] User selected intent:', intent);
+    
+    setSelectedIntent(intent);
+    
+    // Validate the intent with user preferences
+    const validation = await validateIntentWithPreferences(intent);
+    setIntentValidation(validation);
+    
+    if (validation.isValid) {
+      // Hide intent selection and proceed to prompt input
+      setShowIntentSelection(false);
+      setUploadedImageForIntent(null);
+      
+      // Set the uploaded image for processing
+      setUploadedImage(uploadedImageForIntent);
+      setImagePreview(uploadedImageForIntent);
+      
+      toast({
+        title: "Intent Confirmed",
+        description: `Ready to ${intent} your image. Enter your prompt below.`,
+      });
+    } else {
+      // Show validation error in the modal, don't add to chat
+      toast({
+        title: "Setup Required",
+        description: validation.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle intent selection cancellation
+  const handleIntentCancellation = () => {
+    console.log('❌ [Intent Selection] User cancelled intent selection');
+    
+    setShowIntentSelection(false);
+    setSelectedIntent(null);
+    setIntentValidation(null);
+    setUploadedImageForIntent(null);
+    
+    // Clear any uploaded image
+    setUploadedImage(null);
+    setImagePreview(null);
   };
 
   // Handle paste functionality
@@ -1420,7 +1572,18 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     
     const handleContentGenerated = (event: CustomEvent) => {
       console.log('📦 [IntelligentChatInterface] Received content-generated event:', event.detail);
-      const { type, url, title, prompt, timestamp, metadata } = event.detail;
+      const { type, url, title, prompt, timestamp, metadata, id } = event.detail;
+      
+      // Check if we've already processed this content (prevent duplicates)
+      const existingMessage = messages.find(msg => 
+        msg.generatedContent?.url === url && 
+        msg.timestamp.getTime() - new Date(timestamp).getTime() < 5000 // Within 5 seconds
+      );
+      
+      if (existingMessage) {
+        console.log('🔄 [IntelligentChatInterface] Content already exists in chat, skipping duplicate:', url);
+        return;
+      }
       
       // Create a message with the generated content
       const contentMessage: ChatMessage = {
@@ -1514,8 +1677,8 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
       
       // Show toast notification
       toast({
-        title: "Image Ready for Animation!",
-        description: `${imageTitle} has been added to the input. Type a prompt to describe how you want to animate it, or click "Quick Gen" for instant animation.`,
+        title: "Image Added Successfully!",
+        description: `${imageTitle} has been added to the chat input. You can now type a prompt to animate it, edit it, or use it for other AI operations.`,
       });
     };
 
@@ -1718,8 +1881,15 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     console.log('🚀 [Submit Debug] Is processing:', isProcessing);
     console.log('🚀 [Submit Debug] Chat mode:', chatMode);
     
+    // Prevent multiple submissions
     if (!userInput.trim() || isProcessing) {
       console.log('🚀 [Submit Debug] Early return - empty input or already processing');
+      return;
+    }
+    
+    // Additional safeguard against duplicate submissions
+    if (isGenerating()) {
+      console.log('🚀 [Submit Debug] Early return - generation already in progress');
       return;
     }
 
@@ -1735,7 +1905,9 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     }
 
     const inputText: string = userInput.trim();
+    const generationId = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log('🚀 [Submit Debug] Trimmed input text:', inputText);
+    console.log('🚀 [Submit Debug] Generation ID:', generationId);
     
     setUserInput('');
     setIsProcessing(true);
@@ -1913,7 +2085,7 @@ Starting workflow execution...`,
         await executeWorkflow(workflow);
       } else {
         // Regular single generation
-        await handleRegularGeneration(inputText);
+        await handleRegularGeneration(inputText, generationId);
       }
     } catch (error) {
       console.error('❌ [IntelligentChatInterface] Error processing message:', error);
@@ -1939,7 +2111,7 @@ Starting workflow execution...`,
   };
 
   // Extract regular generation logic
-  const handleRegularGeneration = async (userInput: string) => {
+  const handleRegularGeneration = async (userInput: string, generationId?: string) => {
     console.log('🚀 [IntelligentChatInterface] Starting generation process');
     console.log('🚀 [IntelligentChatInterface] Original user input:', userInput);
     console.log('📋 [IntelligentChatInterface] Delegation data:', pendingDelegation);
@@ -2004,57 +2176,126 @@ Starting workflow execution...`,
     let videoModelToUse = syncedVideoModel || currentVideoModel;
     
     try {
-      // Check if there's an uploaded image for animation and user provided a prompt
+      // Check if there's an uploaded image and user provided a prompt (intent-driven workflow)
       if (uploadedImage && userInput.trim()) {
-        console.log('🎬 [IntelligentChatInterface] Uploaded image detected with user prompt for animation');
+        console.log('🖼️ [IntelligentChatInterface] Uploaded image detected with user prompt');
         
-        // Create a context that includes the uploaded image and user prompt
-        const animationContext = `[Image uploaded: ${uploadedImage} - requesting image-to-video animation] ${userInput}`;
+        // Get the saved preferences to determine which model to use
+        const saved = localStorage.getItem('narrative-model-preferences');
+        if (!saved) {
+          throw new Error('No model preferences found. Please set your preferred models first.');
+        }
+
+        const preferences = JSON.parse(saved);
         
-        // Get delegation from intelligence core for video generation
-        const intent = await intelligenceCore.analyzeUserIntent(animationContext, 'video');
-        const delegation = await intelligenceCore.selectOptimalModel(intent);
+        // Determine the intent based on the selected intent (this should be set during intent selection)
+        // For now, we'll use the existing logic but with better model selection
         
-        if (delegation) {
-          // Override the model to use the user's preferred video model
-          delegation.modelId = videoModelToUse;
-          delegation.reason = 'Image-to-video animation with user prompt';
+        // Check if this is an image editing request
+        if (userInput.toLowerCase().includes('edit') || userInput.toLowerCase().includes('modify') || 
+            userInput.toLowerCase().includes('change') || userInput.toLowerCase().includes('transform')) {
+          console.log('✏️ [IntelligentChatInterface] Detected image editing request');
           
-          // Add the image_url parameter for video generation
-          delegation.parameters = {
-            ...delegation.parameters,
-            image_url: uploadedImage,
-            prompt: userInput.trim()
-          };
-          console.log('🎬 [IntelligentChatInterface] Added image_url and prompt to video delegation:', {
-            image_url: uploadedImage,
-            prompt: userInput.trim()
-          });
+          // Use the user's preferred image model or nano-banana/edit
+          const imageModel = preferences.image || 'fal-ai/nano-banana/edit';
           
-          // Set the pending delegation
-          setPendingDelegation(delegation);
-          startGeneration('video', 'Image-to-video animation');
+          // Get delegation for image editing
+          const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          const delegation = await intelligenceCore.selectOptimalModel(intent);
           
-          // Add delegation message
-          const delegationMessage: ChatMessage = {
-            id: `delegation-${Date.now()}`,
-            type: 'assistant',
-            content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModelToUse}`,
-            timestamp: new Date(),
-            intent: intent,
-            delegation: delegation,
-            status: 'pending',
-          };
-          setMessages(prev => [...prev, delegationMessage]);
-          
-          // Clear the uploaded image after setting up the delegation
-          setUploadedImage(null);
-          setImagePreview(null);
-          
-          // Continue with the generation process
-          currentDelegation = delegation;
+          if (delegation) {
+            // Override the model to use the user's preference or nano-banana/edit
+            delegation.modelId = imageModel;
+            delegation.reason = 'Image-to-image editing with user prompt';
+            
+            // Add the image_urls parameter for image editing
+            const enhancedPrompt = userInput.trim().startsWith('edit') || userInput.trim().startsWith('modify') || userInput.trim().startsWith('change')
+              ? `${userInput.trim()} - make dramatic and noticeable changes`
+              : `Edit this image with dramatic and noticeable changes: ${userInput.trim()}`;
+            
+            delegation.parameters = {
+              ...delegation.parameters,
+              image_urls: [uploadedImage],
+              prompt: enhancedPrompt,
+              num_images: 1,
+              output_format: "jpeg",
+              strength: 0.9,
+              guidance_scale: 7.5
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('image', 'Image-to-image editing');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `✏️ **Edit Ready**: Your image is ready to be edited using ${imageModel}`,
+              timestamp: new Date(),
+              intent: intent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Clear the uploaded image after setting up the delegation
+            setUploadedImage(null);
+            setImagePreview(null);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable image editing model found. Please check your model preferences.');
+          }
         } else {
-          throw new Error('No suitable video model found for animation. Please check your model preferences.');
+          // Default to animation
+          console.log('🎬 [IntelligentChatInterface] Defaulting to animation request');
+          
+          // Use the user's preferred video model
+          const videoModel = preferences.video || videoModelToUse;
+          
+          // Get delegation from intelligence core for video generation
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
+          
+          if (delegation) {
+            // Override the model to use the user's preferred video model
+            delegation.modelId = videoModel;
+            delegation.reason = 'Image-to-video animation with user prompt';
+            
+            // Add the image_url parameter for video generation
+            delegation.parameters = {
+              ...delegation.parameters,
+              image_url: uploadedImage,
+              prompt: userInput.trim()
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('video', 'Image-to-video animation');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel}`,
+              timestamp: new Date(),
+              intent: videoIntent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Clear the uploaded image after setting up the delegation
+            setUploadedImage(null);
+            setImagePreview(null);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable video model found for animation. Please check your model preferences.');
+          }
         }
       }
       
@@ -2098,6 +2339,60 @@ Starting workflow execution...`,
           
           setMessages(prev => [...prev, delegationMessage]);
           return; // Don't proceed with generation yet
+        }
+      }
+      
+      // Check if there's an uploaded image for editing and user provided a prompt
+      if (uploadedImage && userInput.trim()) {
+        console.log('✏️ [IntelligentChatInterface] Uploaded image detected with user prompt for editing');
+        
+        // Create a context that includes the uploaded image and user prompt
+        const editContext = `[Image uploaded: ${uploadedImage} - requesting image-to-image editing] ${userInput}`;
+        
+        // Get delegation from intelligence core for image editing
+        const intent = await intelligenceCore.analyzeUserIntent(editContext, 'image', true);
+        const delegation = await intelligenceCore.selectOptimalModel(intent);
+        
+        if (delegation) {
+          // Override the model to use nano-banana/edit
+          delegation.modelId = 'fal-ai/nano-banana/edit';
+          delegation.reason = 'Image-to-image editing with user prompt';
+          
+          // Add the image_urls parameter for nano-banana/edit
+          delegation.parameters = {
+            ...delegation.parameters,
+            image_urls: [uploadedImage],
+            prompt: userInput.trim()
+          };
+          console.log('✏️ [IntelligentChatInterface] Added image_urls and prompt to edit delegation:', {
+            image_urls: [uploadedImage],
+            prompt: userInput.trim()
+          });
+          
+          // Set the pending delegation
+          setPendingDelegation(delegation);
+          startGeneration('image', 'Image-to-image editing');
+          
+          // Add delegation message
+          const delegationMessage: ChatMessage = {
+            id: `delegation-${Date.now()}`,
+            type: 'assistant',
+            content: `✏️ **Edit Ready**: Your image is ready to be edited using Nano Banana Edit`,
+            timestamp: new Date(),
+            intent: intent,
+            delegation: delegation,
+            status: 'pending',
+          };
+          setMessages(prev => [...prev, delegationMessage]);
+          
+          // Clear the uploaded image after setting up the delegation
+          setUploadedImage(null);
+          setImagePreview(null);
+          
+          // Continue with the generation process
+          currentDelegation = delegation;
+        } else {
+          throw new Error('No suitable image editing model found. Please check your model preferences.');
         }
       }
       
@@ -2304,7 +2599,7 @@ Starting workflow execution...`,
               console.log('🔍 [IntelligentChatInterface] - pendingDelegation?.parameters.prompt:', pendingDelegation?.parameters.prompt);
               
               const eventDetail = {
-                id: Date.now().toString(),
+                id: generationId || Date.now().toString(),
                 type: 'image',
                 url: firstImage.url, // Use first image as primary URL
                 title: `Generated Image - ${new Date().toLocaleTimeString()}`,
@@ -2392,8 +2687,9 @@ Starting workflow execution...`,
              }
            };
            
-           console.log('📝 [IntelligentChatInterface] Adding result message to chat');
-           setMessages(prev => [...prev, resultMessage]);
+           console.log('📝 [IntelligentChatInterface] Content already added via event - skipping duplicate message');
+           // Note: Content is already added to chat via the content-generated event
+           // No need to add resultMessage here as it would create a duplicate
          }
       } else {
         console.warn('⚠️ [IntelligentChatInterface] No onContentGenerated callback provided');
@@ -2808,24 +3104,29 @@ Starting workflow execution...`,
       // Compress the image to fit within API limits
       const compressedImageUrl = await compressImage(file, 1920, 1920, 0.8);
       
-      // Store the compressed image URL
-      setUploadedImage(compressedImageUrl);
+      // Store the compressed image URL for intent selection
+      setUploadedImageForIntent(compressedImageUrl);
       setImagePreview(compressedImageUrl);
       
       // Add a user message indicating the image was uploaded
       const userMessage = {
         id: Date.now().toString(),
         type: 'user' as const,
-        content: `[Image uploaded: ${compressedImageUrl} - requesting image-to-video animation]`,
+        content: `[Image uploaded: ${file.name}]`,
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, userMessage]);
 
-    toast({
-      title: "Image Uploaded!",
-      description: `${file.name} is ready for animation. Type a prompt to describe how you want to animate it, or click "Quick Gen" for instant animation.`,
-    });
+      // Show intent selection instead of immediately processing
+      setShowIntentSelection(true);
+      setSelectedIntent(null);
+      setIntentValidation(null);
+
+      toast({
+        title: "Image Uploaded!",
+        description: `${file.name} is ready. Please select what you want to do with this image.`,
+      });
       
       console.log('✅ [IntelligentChatInterface] Image compressed and uploaded successfully');
       
@@ -4437,7 +4738,87 @@ Available commands:
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Intent Selection Modal */}
+      {showIntentSelection && uploadedImageForIntent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">What would you like to do with this image?</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleIntentCancellation}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              {INTENT_OPTIONS.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <Button
+                    key={option.id}
+                    variant="outline"
+                    className={`w-full justify-start h-auto p-4 text-left hover:bg-accent/50 transition-all duration-200 ${
+                      selectedIntent === option.id ? 'ring-2 ring-primary bg-accent/20' : ''
+                    }`}
+                    onClick={() => handleIntentSelection(option.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Icon className="w-5 h-5 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <div className="font-medium">{option.label}</div>
+                        <div className="text-sm text-muted-foreground">{option.description}</div>
+                      </div>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
 
+            {/* Validation Message */}
+            {intentValidation && (
+              <div className={`p-3 rounded-lg border ${
+                intentValidation.isValid 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="text-sm font-medium mb-1">
+                  {intentValidation.isValid ? '✅ Ready to proceed' : '⚠️ Setup required'}
+                </div>
+                <div className="text-sm">{intentValidation.message}</div>
+                {intentValidation.suggestions.length > 0 && (
+                  <div className="mt-2">
+                    <div className="text-sm font-medium mb-1">Suggestions:</div>
+                    <ul className="text-sm space-y-1">
+                      {intentValidation.suggestions.map((suggestion, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-xs mt-1">•</span>
+                          <span>{suggestion}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Image Preview */}
+            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+              <div className="text-sm font-medium mb-2">Image Preview:</div>
+              <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
+                <img
+                  src={uploadedImageForIntent}
+                  alt="Uploaded image"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
                            {/* Smart Controls Section - Conditionally Rendered */}
          {showSmartControls && chatMode === 'gen' && (
@@ -4610,11 +4991,11 @@ Available commands:
                           {uploadedImage ? (typeof uploadedImage === 'object' ? uploadedImage.name : 'Compressed Image') : 'Image'}
                         </span>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Ready to animate
+                          Ready to process
                         </Badge>
                       </div>
                        <p className="text-xs text-muted-foreground mt-1">
-                        Describe how you want to animate this image
+                        Describe how you want to animate or edit this image
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -4642,17 +5023,17 @@ Available commands:
                 onKeyDown={(e) => {
                     console.log('⌨️ [Input Debug] Key pressed:', e.key, 'Shift:', e.shiftKey);
                   if (e.key === 'Enter' && !e.shiftKey) {
-                      console.log('⌨️ [Input Debug] Enter pressed without shift, submitting form');
-                    e.preventDefault();
-                    handleSubmit(e as any);
+                      console.log('⌨️ [Input Debug] Enter pressed without shift - form will submit naturally');
+                    // Let the form submit naturally - no need to call handleSubmit manually
+                    // The form's onSubmit will handle it
                   }
                 }}
                   placeholder={
                     chatMode === 'chat' 
                       ? "Ask me about film techniques, director styles, or creative concepts..." 
                       : uploadedImage 
-                        ? "Describe how you want to animate this image..." 
-                        : `Describe what you want to create (${contentType === 'image' ? 'image' : 'video'}) or drag & drop an image to animate...`
+                        ? "Describe how you want to animate or edit this image..." 
+                        : `Describe what you want to create (${contentType === 'image' ? 'image' : 'video'}) or drag & drop an image to animate or edit...`
                   }
                   className="flex-1 min-h-[96px] px-6 py-5 bg-transparent border-0 text-foreground placeholder-muted-foreground resize-none outline-none text-body leading-relaxed focus-visible:ring-0 font-medium"
                 disabled={isProcessing}
@@ -4737,7 +5118,7 @@ Available commands:
                   onClick={() => fileInputRef.current?.click()}
                   className="h-10 w-10 p-0 rounded-full bg-secondary hover:bg-secondary/80 border-border focus-ring transition-enhanced"
                   disabled={isProcessing}
-                  title="Upload image to animate"
+                  title="Upload image to animate or edit"
                 >
                   <Upload className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -4769,7 +5150,7 @@ Available commands:
                 {chatMode === 'gen' && !uploadedImage && (
                   <>
                     {' • '}
-                    <span>Drag & drop images to animate</span>
+                    <span>Drag & drop images to animate or edit</span>
                   </>
                 )}
                 {chatMode === 'chat' && (

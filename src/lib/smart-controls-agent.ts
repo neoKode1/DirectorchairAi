@@ -386,20 +386,23 @@ export class SmartControlsAgent {
 
   private loadState(): void {
     try {
-      const saved = localStorage.getItem(this.storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        this.state = { ...this.getDefaultState(), ...parsed };
-        
-        // Convert date strings back to Date objects
-        Object.keys(this.state).forEach(key => {
-          const controlKey = key as keyof SmartControlState;
-          if (this.state[controlKey].lastUserSelection) {
-            this.state[controlKey].lastUserSelection = new Date(this.state[controlKey].lastUserSelection);
-          }
-        });
-        
-        console.log('📥 [SmartControlsAgent] Loaded state from localStorage');
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem(this.storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this.state = { ...this.getDefaultState(), ...parsed };
+          
+          // Convert date strings back to Date objects
+          Object.keys(this.state).forEach(key => {
+            const controlKey = key as keyof SmartControlState;
+            if (this.state[controlKey].lastUserSelection) {
+              this.state[controlKey].lastUserSelection = new Date(this.state[controlKey].lastUserSelection);
+            }
+          });
+          
+          console.log('📥 [SmartControlsAgent] Loaded state from localStorage');
+        }
       }
     } catch (error) {
       console.error('❌ [SmartControlsAgent] Failed to load state:', error);
@@ -408,8 +411,11 @@ export class SmartControlsAgent {
 
   private saveState(): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-      console.log('💾 [SmartControlsAgent] Saved state to localStorage');
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(this.storageKey, JSON.stringify(this.state));
+        console.log('💾 [SmartControlsAgent] Saved state to localStorage');
+      }
     } catch (error) {
       console.error('❌ [SmartControlsAgent] Failed to save state:', error);
     }

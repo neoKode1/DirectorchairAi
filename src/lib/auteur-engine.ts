@@ -856,12 +856,15 @@ export class AuteurEngine {
   // Tiered Memory Architecture Implementation
   private loadState(): AuteurEngineState {
     try {
-      // Front-end (Local Storage) - Immediate recall
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        console.log('🎬 [AuteurEngine] Loaded state from localStorage:', parsed);
-        return parsed;
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        // Front-end (Local Storage) - Immediate recall
+        const stored = localStorage.getItem(this.storageKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          console.log('🎬 [AuteurEngine] Loaded state from localStorage:', parsed);
+          return parsed;
+        }
       }
     } catch (error) {
       console.warn('⚠️ [AuteurEngine] Failed to load state from localStorage:', error);
@@ -878,10 +881,13 @@ export class AuteurEngine {
 
   private saveState(): void {
     try {
-      this.state.lastUpdated = new Date();
-      const stateString = JSON.stringify(this.state);
-      localStorage.setItem(this.storageKey, stateString);
-      console.log('💾 [AuteurEngine] Saved state to localStorage:', this.state);
+      // Only access localStorage on client side
+      if (typeof window !== 'undefined') {
+        this.state.lastUpdated = new Date();
+        const stateString = JSON.stringify(this.state);
+        localStorage.setItem(this.storageKey, stateString);
+        console.log('💾 [AuteurEngine] Saved state to localStorage:', this.state);
+      }
     } catch (error) {
       console.error('❌ [AuteurEngine] Failed to save state to localStorage:', error);
     }

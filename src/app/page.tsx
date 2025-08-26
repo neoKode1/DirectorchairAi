@@ -28,7 +28,7 @@ export default function HomePage() {
         
         <div className="relative z-20 mobile-container py-12 sm:py-16 lg:py-20">
           <div className="text-center space-y-6 sm:space-y-8">
-            <h1 className="mobile-text-4xl sm:text-6xl lg:text-8xl font-bold bg-gradient-to-r from-purple-500 via-cyan-500 to-blue-500 bg-clip-text text-transparent leading-tight">
+            <h1 className="mobile-text-4xl sm:text-6xl lg:text-8xl font-black text-foreground leading-tight drop-shadow-lg">
               DirectorchairAI
             </h1>
             
@@ -41,7 +41,7 @@ export default function HomePage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6 sm:pt-8">
-              <Button asChild size="lg" className="mobile-btn-lg bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white mobile-touch-target">
+              <Button asChild size="lg" className="mobile-btn-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-4 mobile-touch-target shadow-lg">
                 <Link href="/timeline">
                   <Sparkles className="w-5 h-5 mr-2" />
                   Start Creating
@@ -49,7 +49,7 @@ export default function HomePage() {
                 </Link>
               </Button>
               
-              <Button asChild variant="outline" size="lg" className="mobile-btn-lg mobile-touch-target">
+              <Button asChild variant="outline" size="lg" className="mobile-btn-lg mobile-touch-target bg-transparent border-2 border-foreground text-foreground hover:bg-foreground hover:text-background font-bold text-lg px-8 py-4">
                 <Link href="/auth/signin">
                   Sign In
                 </Link>
@@ -124,12 +124,12 @@ export default function HomePage() {
       </div>
 
       {/* Features Section */}
-      <div className="mobile-py bg-background/80 relative z-20">
+      <div className="mobile-py bg-background/20 relative z-20">
         <div className="mobile-container">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="mobile-text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-500 to-cyan-500 bg-clip-text text-transparent mb-4">
-              Professional AI Tools
-            </h2>
+                      <h2 className="mobile-text-2xl sm:text-4xl font-black text-foreground mb-4 drop-shadow-lg">
+            Professional AI Tools
+          </h2>
             <p className="mobile-text-base sm:text-xl text-muted-foreground mobile-container-sm">
               Everything you need to create stunning media content with AI assistance
             </p>
@@ -162,7 +162,7 @@ export default function HomePage() {
                 color: "from-pink-400 to-rose-500"
               }
             ].map((feature, index) => (
-              <Card key={index} className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <Card key={index} className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-105 bg-background/30 backdrop-blur-sm border-border/30">
                 <div className={`w-16 h-16 mx-auto mb-4 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center`}>
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
@@ -207,7 +207,7 @@ export default function HomePage() {
       </div>
 
       {/* AI Models Showcase */}
-      <div className="mobile-py bg-muted/60 relative z-20">
+      <div className="mobile-py bg-muted/20 relative z-20">
         <div className="mobile-container">
           <AvailableModelsShowcase />
         </div>
@@ -246,15 +246,15 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="mobile-py bg-background/90 relative z-20">
+      <div className="mobile-py bg-background/30 relative z-20">
         <div className="mobile-container text-center">
-          <h2 className="mobile-text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-500 to-cyan-500 bg-clip-text text-transparent mb-4">
+          <h2 className="mobile-text-2xl sm:text-4xl font-black text-foreground mb-4 drop-shadow-lg">
             Ready to Create?
           </h2>
           <p className="mobile-text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 mobile-container-sm">
             Join thousands of creators using AI to bring their vision to life
           </p>
-          <Button asChild size="lg" className="mobile-btn-lg bg-gradient-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white mobile-touch-target">
+          <Button asChild size="lg" className="mobile-btn-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-4 mobile-touch-target shadow-lg">
             <Link href="/timeline">
               <Sparkles className="w-5 h-5 mr-2" />
               Get Started Free
@@ -265,7 +265,7 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="mobile-py border-t border-border/50 relative z-20 bg-background/95">
+      <footer className="mobile-py border-t border-border/30 relative z-20 bg-background/40">
         <div className="mobile-container text-center">
           <p className="mobile-text-sm text-muted-foreground">
             © 2024 DirectorchairAI. All rights reserved. Built by DeeptechAi.

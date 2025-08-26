@@ -41,6 +41,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image_url = body.image_url;
     }
 
+    // Add image_urls if provided (for nano-banana/edit)
+    if (body.image_urls) {
+      input.image_urls = body.image_urls;
+    }
+
     // Add image-specific parameters that FAL expects
     if (body.aspect_ratio) {
       input.aspect_ratio = body.aspect_ratio;
@@ -137,6 +142,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    if (model.includes('nano-banana/edit')) {
+      if (body.image_urls) {
+        input.image_urls = body.image_urls;
+      }
+      if (body.num_images !== undefined) {
+        input.num_images = body.num_images;
+      }
+      if (body.output_format) {
+        input.output_format = body.output_format;
+      }
+      if (body.strength !== undefined) {
+        input.strength = body.strength;
+      }
+      if (body.guidance_scale !== undefined) {
+        input.guidance_scale = body.guidance_scale;
+      }
+    }
+
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
 
     // Call FAL API directly with subscription
@@ -202,6 +225,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       "fal-ai/flux-pro/v1.1-ultra",
       "fal-ai/flux-pro/kontext",
       "fal-ai/flux-krea-lora/image-to-image",
+      "fal-ai/nano-banana/edit",
       "fal-ai/ideogram/character"
     ]
   });

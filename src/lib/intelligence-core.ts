@@ -15,6 +15,7 @@ import { promptAdherenceMonitor } from './prompt-adherence-monitor';
 import { customStyleManager, enhancePromptWithCustomStyle, supportsCustomLoRA, filterProblematicContent } from './custom-styles';
 import { ContentFilteringLogger } from './content-filtering-logger';
 import { seedManager } from './seed-manager';
+import { getNegativePrompt } from './negative-prompts';
 
 // Core Intelligence System Types
 export interface UserIntent {
@@ -80,7 +81,7 @@ export interface ConversationState {
   userContext: string[];
   clarificationNeeded: boolean;
   generationAuthorized: boolean;
-  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation';
+  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation' | 'image-edit';
 }
 
 // New interfaces for Interactive Suggestions & Automated Workflows
@@ -878,6 +879,12 @@ export class IntelligenceCore {
         confidence = 0.95;
         // Add special flag for flux kontext
         this.conversationState.imageActionType = 'flux-kontext';
+      } else if (this.containsImageEditKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected image edit intent');
+        type = 'image';
+        confidence = 0.95;
+        // Add special flag for image editing
+        this.conversationState.imageActionType = 'image-edit';
       } else if (this.containsAnimationKeywords(lowerInput)) {
         console.log('🔍 [IntelligenceCore] ✅ Detected animation intent');
         type = 'video';
@@ -1148,7 +1155,8 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     const actionWords = [
       'style', 'transfer', 'look like', 'similar to', 'mimic', 'painting', 'artistic', 'filter',
       'background', 'scene', 'environment', 'setting', 'context', 'surroundings',
-      'animate', 'move', 'motion', 'video', 'cinematic', 'action', 'dynamic'
+      'animate', 'move', 'motion', 'video', 'cinematic', 'action', 'dynamic',
+      'edit', 'modify', 'change', 'transform', 'alter', 'adjust', 'enhance', 'improve'
     ];
     const found = actionWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking image action keywords:', { input, actionWords, found });
@@ -1184,6 +1192,17 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     ];
     const found = animationWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking animation keywords:', { input, animationWords, found });
+    return found;
+  }
+
+  private containsImageEditKeywords(input: string): boolean {
+    const imageEditWords = [
+      'edit', 'modify', 'change', 'transform', 'alter', 'adjust', 'enhance', 'improve',
+      'fix', 'correct', 'retouch', 'modify', 'adjust', 'tweak', 'refine', 'polish',
+      'edit this', 'modify this', 'change this', 'transform this', 'alter this'
+    ];
+    const found = imageEditWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking image edit keywords:', { input, imageEditWords, found });
     return found;
   }
 
@@ -1718,6 +1737,12 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               model.endpointId === 'fal-ai/flux-pro/kontext'
             );
             break;
+          case 'image-edit':
+            console.log('✏️ [IntelligenceCore] Routing to image edit model');
+            selectedModel = this.getModelCapabilities().find(model => 
+              model.endpointId === 'fal-ai/nano-banana/edit'
+            );
+            break;
           case 'animation':
             console.log('🎬 [IntelligenceCore] Routing to animation model');
             // Use user's preferred video model or default to Veo3
@@ -1899,10 +1924,14 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     const validAspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16'];
     const finalAspectRatio = validAspectRatios.includes(aspectRatio) ? aspectRatio : '16:9';
 
+    // Get appropriate negative prompt based on content type
+    const defaultNegativePrompt = getNegativePrompt(intent.type);
+
     // Create clean base parameters
     const baseParams: Record<string, any> = {
       prompt: userPrompt.trim(),
       aspect_ratio: finalAspectRatio,
+      negative_prompt: defaultNegativePrompt,
     };
 
     // Add image_url if we have an uploaded image or last generated image
@@ -1936,7 +1965,8 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
           ...baseParams,
           num_images: 1,
           output_format: "jpeg",
-          enable_safety_checker: true
+          enable_safety_checker: true,
+          negative_prompt: defaultNegativePrompt
         };
 
       case 'video':
@@ -1944,7 +1974,8 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
         return {
           ...baseParams,
           duration: "8s",
-          resolution: "720p"
+          resolution: "720p",
+          negative_prompt: defaultNegativePrompt
         };
 
       case 'music':

@@ -224,6 +224,21 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       output_format: "jpeg",
     },
   },
+  {
+    endpointId: "fal-ai/nano-banana/edit",
+    label: "Nano Banana Edit",
+    description: "Advanced image-to-image editing model for precise modifications, style transfers, and creative transformations with high fidelity",
+    category: "image",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "Edit this image with creative modifications",
+      image_urls: [],
+      num_images: 1,
+      output_format: "jpeg",
+      strength: 0.9,
+      guidance_scale: 7.5,
+    },
+  },
 
   // Video Generation Models
   {

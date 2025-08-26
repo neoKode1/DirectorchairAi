@@ -1418,6 +1418,37 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
   useEffect(() => {
     console.log('🎯 [IntelligentChatInterface] Setting up event listeners for animation requests');
     
+    const handleContentGenerated = (event: CustomEvent) => {
+      console.log('📦 [IntelligentChatInterface] Received content-generated event:', event.detail);
+      const { type, url, title, prompt, timestamp, metadata } = event.detail;
+      
+      // Create a message with the generated content
+      const contentMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: `✅ **${title}**`,
+        timestamp: new Date(timestamp),
+        status: 'completed',
+        generatedContent: {
+          type: type as 'image' | 'video' | 'audio',
+          url: url,
+          prompt: prompt,
+          metadata: metadata
+        }
+      };
+      
+      // Add the content message to the chat
+      setMessages(prev => [...prev, contentMessage]);
+      
+      // Show success toast
+      toast({
+        title: `${type.charAt(0).toUpperCase() + type.slice(1)} Generated!`,
+        description: `${title} has been created successfully.`,
+      });
+      
+      console.log('✅ [IntelligentChatInterface] Added generated content to chat:', contentMessage);
+    };
+    
     const handleAnimateImage = (event: CustomEvent) => {
       console.log('🎬 [IntelligentChatInterface] Received animate-image event:', event.detail);
       const { imageUrl, imageTitle, prompt } = event.detail;
@@ -1491,13 +1522,15 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     // Add event listeners
     window.addEventListener('animate-image', handleAnimateImage as EventListener);
     window.addEventListener('inject-image-to-chat', handleInjectImageToChat as EventListener);
+    window.addEventListener('content-generated', handleContentGenerated as EventListener);
     
-    console.log('✅ [IntelligentChatInterface] Event listeners added for animate-image and inject-image-to-chat');
+    console.log('✅ [IntelligentChatInterface] Event listeners added for animate-image, inject-image-to-chat, and content-generated');
 
     return () => {
       console.log('🧹 [IntelligentChatInterface] Cleaning up event listeners');
       window.removeEventListener('animate-image', handleAnimateImage as EventListener);
       window.removeEventListener('inject-image-to-chat', handleInjectImageToChat as EventListener);
+      window.removeEventListener('content-generated', handleContentGenerated as EventListener);
     };
   }, [toast]);
 

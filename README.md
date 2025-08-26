@@ -14,6 +14,15 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Real-time Generation**: Live progress tracking and content preview
 - **Collapsible Content Panel**: Dynamic content management with smooth slide animations
 - **Prompt Copy Functionality**: Clickable prompts with one-click clipboard copying
+- **Intent-Driven Workflow**: Clear intent selection for image editing, animation, and style transfer
+- **User Interaction Monitoring**: Comprehensive logging and analytics for user experience insights
+
+### Intent-Driven Workflow
+- **Intent Selection Modal**: Clear options for Edit, Animate, Style Transfer, Create Image, and Create Video
+- **Model Preference Validation**: Automatic validation against user's preferred models
+- **Smart Intent Detection**: AI-powered intent analysis with user confirmation
+- **Seamless Workflow**: Smooth transitions between intent selection and generation
+- **User Guidance**: Clear prompts and suggestions for optimal results
 
 ### Smart Controls Agent
 - **Automatic Parameter Optimization**: Background agent analyzes prompts and optimizes settings
@@ -31,6 +40,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Session Management**: Create and manage different creative sessions
 - **Persistent Storage**: Content survives page reloads and browser restarts
 - **Image Compression**: Automatic image resizing for optimal API compatibility
+- **Edit Button Integration**: One-click image editing from content panel
 
 ### Enhanced User Experience
 - **Dual Mode Interface**: Chat mode for conversation, Gen mode for focused generation
@@ -39,6 +49,8 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Visual Feedback**: Toast notifications and progress indicators
 - **Error Handling**: Comprehensive error messages and recovery options
 - **Model Preference Sync**: Automatic synchronization across all interface elements
+- **Centered Action Buttons**: Improved visual alignment and user interface
+- **User Interaction Dashboard**: Real-time monitoring and analytics
 
 ### Mobile Optimization
 - **Responsive Design**: Fully optimized for mobile devices with touch-friendly interfaces
@@ -59,6 +71,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Dreamina v3.1**: Enhanced image generation with artistic styles
 - **FLUX LoRA**: Image-to-image transformation with style transfer
 - **Ideogram Character**: Character consistency for visual content
+- **Nano Banana Edit**: Advanced image-to-image editing with precise modifications
 
 #### Video Generation
 - **Google Veo3 Fast**: Cost-effective video generation ($0.25/second)
@@ -84,6 +97,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Export Options**: Multiple format support for generated content
 - **Image-to-Video Animation**: Seamless animation from generated images
 - **Parameter Validation**: Automatic validation and correction of generation parameters
+- **User Interaction Analytics**: Comprehensive logging and monitoring system
 
 ## 🎬 Auteur Engine
 
@@ -152,15 +166,18 @@ The Smart Controls Agent is an intelligent background system that automatically 
 1. **Choose Your Mode**: Select "Chat" for conversation or "Gen" for focused generation
 2. **Set Model Preferences**: Configure your preferred AI models for each content type
 3. **Describe Your Vision**: Use natural language to describe what you want to create
-4. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
-5. **Generate Content**: Click generate and watch your content come to life
+4. **Select Intent**: Choose Edit, Animate, Style Transfer, Create Image, or Create Video
+5. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
+6. **Generate Content**: Click generate and watch your content come to life
 
 ### Advanced Features
+- **Edit Button**: Click the Edit button on any generated image to modify it
 - **Copy Prompts**: Click any suggested prompt to copy it to your clipboard
 - **Manual Override**: Use "Show Controls" to manually adjust settings when needed
 - **Style Reference**: Upload reference images for style transfer
 - **Voice Input**: Use your microphone to describe your vision
 - **Content Animation**: Animate generated images with one click
+- **Monitor Usage**: Use the Monitor button to view interaction analytics
 
 ### Tips for Best Results
 - **Be Descriptive**: Provide detailed descriptions for better results
@@ -168,6 +185,7 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Trust the Agent**: Let the Smart Controls Agent optimize parameters
 - **Experiment**: Try different prompts and styles to discover new possibilities
 - **Save Favorites**: Use the content panel to save and organize your best work
+- **Use Intent Selection**: Choose the right intent for your desired outcome
 
 ## 🔧 Technical Features
 
@@ -177,6 +195,7 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Parameter Validation**: Automatic validation and correction of API parameters
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Timeout Management**: Intelligent timeout handling for long-running generations
+- **Claude AI Integration**: Advanced conversational AI for film direction guidance
 
 ### Performance Optimization
 - **Image Compression**: Automatic compression for optimal API compatibility
@@ -184,36 +203,120 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Memory Management**: Efficient memory usage and cleanup
 - **Caching**: Smart caching of frequently used data
 - **Lazy Loading**: Optimized loading of components and resources
+- **Token Management**: Optimized token usage for AI model interactions
 
 ### Security & Privacy
 - **Local Storage**: All content stored locally in your browser
 - **No Data Collection**: No user data sent to external servers
 - **Secure API Calls**: Secure communication with AI model APIs
 - **Content Filtering**: Built-in content policy compliance
+- **Environment Variables**: Secure API key management
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Internet connection for AI model access
-- FAL.ai API key (for full functionality)
+- **Node.js**: Version 18 or higher
+- **Modern web browser**: Chrome, Firefox, Safari, Edge
+- **Internet connection**: For AI model access
+- **FAL.ai API key**: For full functionality (optional but recommended)
+- **Anthropic API key**: For advanced chat features (optional)
 
 ### Installation
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables
-4. Run the development server: `npm run dev`
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/neoKode1/DirectorchairAi.git
+   cd DirectorchairAi
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   Create a `.env.local` file in the root directory:
+   ```env
+   FAL_KEY=your_fal_ai_key_here
+   ANTHROPIC_API_KEY=your_anthropic_key_here
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Navigate to `http://localhost:3000`
 
 ### Environment Setup
-Create a `.env.local` file with your API keys:
+
+#### Required API Keys
+- **FAL_KEY**: Get your free API key from [FAL.ai](https://fal.ai/)
+- **ANTHROPIC_API_KEY**: Get your API key from [Anthropic](https://console.anthropic.com/)
+
+#### Optional Configuration
+- **NEXT_PUBLIC_APP_URL**: Your application URL (for production)
+- **NEXTAUTH_SECRET**: Secret for authentication (if using auth features)
+
+### Development Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Run tests
+npm test
+
+# Format code
+npm run format
+
+# Lint code
+npm run lint
 ```
-FAL_KEY=your_fal_ai_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── timeline/          # Main application page
+│   └── layout.tsx         # Root layout
+├── components/            # React components
+│   ├── ui/               # UI components (buttons, cards, etc.)
+│   ├── intelligent-chat-interface.tsx
+│   ├── generated-content-display.tsx
+│   └── user-interaction-monitor.tsx
+├── lib/                  # Utility libraries
+│   ├── claude-api.ts     # Claude AI integration
+│   ├── intelligence-core.ts
+│   └── content-storage.ts
+└── types/                # TypeScript type definitions
 ```
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Guidelines
+- **TypeScript**: All code should be written in TypeScript
+- **React**: Use functional components with hooks
+- **Tailwind CSS**: Use Tailwind for styling
+- **Testing**: Write tests for new features
+- **Documentation**: Update documentation for new features
+
+### Code Style
+- **Prettier**: Code formatting
+- **ESLint**: Code linting
+- **TypeScript**: Strict type checking
+- **Conventional Commits**: Use conventional commit messages
 
 ## 📄 License
 
@@ -222,10 +325,30 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 For support and questions:
-- Check our [Documentation](docs/)
-- Open an [Issue](https://github.com/neoKode1/DirectorchairAi/issues)
-- Join our [Discord Community](https://discord.gg/directorchair)
+- **Documentation**: Check our [Documentation](docs/)
+- **Issues**: Open an [Issue](https://github.com/neoKode1/DirectorchairAi/issues)
+- **Discussions**: Join our [Discussions](https://github.com/neoKode1/DirectorchairAi/discussions)
+- **Discord**: Join our [Discord Community](https://discord.gg/directorchair)
+
+## 🎬 Roadmap
+
+### Upcoming Features
+- **Advanced Video Editing**: Timeline-based video editing capabilities
+- **Collaborative Sessions**: Real-time collaboration features
+- **Advanced Analytics**: Detailed usage analytics and insights
+- **Mobile App**: Native mobile applications
+- **API Documentation**: Comprehensive API documentation
+- **Plugin System**: Extensible plugin architecture
+
+### Recent Updates
+- **Intent-Driven Workflow**: Clear intent selection for better user experience
+- **User Interaction Monitoring**: Comprehensive analytics and logging
+- **Edit Button Integration**: One-click image editing from content panel
+- **Chat Response Fixes**: Improved chat interface with full response display
+- **Mobile Optimization**: Enhanced mobile experience and responsiveness
 
 ---
 
 **DirectorchairAI** - Where AI meets cinematic creativity 🎬✨
+
+*Built with Next.js, React, TypeScript, and Tailwind CSS*

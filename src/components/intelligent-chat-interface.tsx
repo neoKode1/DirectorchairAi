@@ -2148,6 +2148,18 @@ Starting workflow execution...`,
       if (uploadedImage && userInput.trim()) {
         console.log('🖼️ [IntelligentChatInterface] Uploaded image detected with user prompt');
         console.log('🎯 [IntelligentChatInterface] Selected intent:', selectedIntent);
+        console.log('🎯 [IntelligentChatInterface] Show intent selection:', showIntentSelection);
+        console.log('🎯 [IntelligentChatInterface] Uploaded image for intent:', uploadedImageForIntent);
+        
+        // Check if intent selection is needed
+        if (!selectedIntent) {
+          console.log('⚠️ [IntelligentChatInterface] No intent selected, showing intent selection modal');
+          setShowIntentSelection(true);
+          // Convert uploadedImage to string if it's a File
+          const imageUrl = typeof uploadedImage === 'string' ? uploadedImage : uploadedImageForIntent;
+          setUploadedImageForIntent(imageUrl);
+          return; // Don't proceed with generation until intent is selected
+        }
         
         // Get the saved preferences to determine which model to use
         const saved = localStorage.getItem('narrative-model-preferences');
@@ -2178,8 +2190,8 @@ Starting workflow execution...`,
               ? `${userInput.trim()} - make dramatic and noticeable changes`
               : `Edit this image with dramatic and noticeable changes: ${userInput.trim()}`;
             
+            // Only use parameters valid for Nano Banana Edit model
             delegation.parameters = {
-              ...delegation.parameters,
               image_urls: [uploadedImage],
               prompt: enhancedPrompt,
               num_images: 1,
@@ -2277,11 +2289,16 @@ Starting workflow execution...`,
             delegation.modelId = styleModel;
             delegation.reason = 'Style transfer with user prompt';
             
-            // Add the image_url parameter for style transfer
+            // Only use parameters valid for FLUX LoRA model
             delegation.parameters = {
-              ...delegation.parameters,
               image_url: uploadedImage,
-              prompt: userInput.trim()
+              prompt: userInput.trim(),
+              strength: 0.85,
+              num_inference_steps: 28,
+              guidance_scale: 3.5,
+              num_images: 1,
+              enable_safety_checker: true,
+              output_format: "jpeg"
             };
             
             // Set the pending delegation

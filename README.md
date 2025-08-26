@@ -2,7 +2,7 @@
 
 **AI-Powered Media Studio with Film Director Intelligence**
 
-Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance.
+Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance with automated smart controls.
 
 ## 🚀 Features
 
@@ -10,9 +10,19 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Intelligent Chat Interface**: Natural language interaction with AI that understands film direction
 - **Multi-Model Generation**: Support for images, videos, audio, and voiceovers
 - **Auteur Engine**: Film director-style prompt enhancement with genre-specific styling
-- **Smart Controls**: Advanced prompt engineering and style reference analysis
+- **Smart Controls Agent**: Automated parameter optimization with background intelligence
 - **Real-time Generation**: Live progress tracking and content preview
 - **Collapsible Content Panel**: Dynamic content management with smooth slide animations
+- **Prompt Copy Functionality**: Clickable prompts with one-click clipboard copying
+
+### Smart Controls Agent
+- **Automatic Parameter Optimization**: Background agent analyzes prompts and optimizes settings
+- **User Preference Learning**: Remembers user choices and respects manual overrides
+- **Intelligent Aspect Ratio Selection**: Automatically chooses optimal aspect ratios
+- **Content Type Detection**: Smart detection of image vs video intent
+- **Resolution Optimization**: Automatic resolution selection based on model requirements
+- **Style Enhancement**: Background style analysis and enhancement
+- **Seamless Integration**: Works automatically without user intervention
 
 ### Content Management & Storage
 - **Automatic Content Saving**: All generations automatically saved to localStorage
@@ -20,6 +30,15 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Storage Manager**: Export, import, and manage your content library
 - **Session Management**: Create and manage different creative sessions
 - **Persistent Storage**: Content survives page reloads and browser restarts
+- **Image Compression**: Automatic image resizing for optimal API compatibility
+
+### Enhanced User Experience
+- **Dual Mode Interface**: Chat mode for conversation, Gen mode for focused generation
+- **Auto-Hide Smart Controls**: Clean interface in generation mode with background automation
+- **Clickable Prompts**: One-click copying of suggested prompts to clipboard
+- **Visual Feedback**: Toast notifications and progress indicators
+- **Error Handling**: Comprehensive error messages and recovery options
+- **Model Preference Sync**: Automatic synchronization across all interface elements
 
 ### Mobile Optimization
 - **Responsive Design**: Fully optimized for mobile devices with touch-friendly interfaces
@@ -46,7 +65,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Google Veo3 Standard**: High-quality video generation
 - **Kling v2.1 Master**: Professional video generation with advanced features
 - **Luma Ray 2**: Natural motion video generation
-- **Luma Ray 2 Flash**: Fast image-to-video generation
+- **Luma Ray 2 Flash**: Fast image-to-video generation with automatic compression
 - **Minimax Hailuo 02**: Enhanced motion and smoothness
 - **Seedance 1.0 Pro**: Multiple angle shot variations
 
@@ -63,6 +82,8 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Content Filtering**: Intelligent content policy compliance
 - **Cost Estimation**: Real-time cost tracking for AI model usage
 - **Export Options**: Multiple format support for generated content
+- **Image-to-Video Animation**: Seamless animation from generated images
+- **Parameter Validation**: Automatic validation and correction of generation parameters
 
 ## 🎬 Auteur Engine
 
@@ -88,6 +109,29 @@ The system automatically detects content genre and applies appropriate director 
 - **Sci-Fi**: Futuristic aesthetics and technological themes
 - **Comedy**: Bright lighting and playful composition
 
+## 🤖 Smart Controls Agent
+
+The Smart Controls Agent is an intelligent background system that automatically optimizes your generation parameters:
+
+### Automatic Optimization
+- **Aspect Ratio Selection**: Analyzes prompts and selects optimal aspect ratios
+- **Content Type Detection**: Automatically determines image vs video intent
+- **Resolution Optimization**: Chooses appropriate resolutions for each model
+- **Style Enhancement**: Applies cinematic styling automatically
+- **Parameter Validation**: Ensures all parameters meet model requirements
+
+### User Preference Learning
+- **Manual Override Respect**: Remembers when users manually select settings
+- **Temporary Override**: Respects manual choices for a set duration
+- **Learning Algorithm**: Adapts to user preferences over time
+- **Background Operation**: Works seamlessly without interrupting workflow
+
+### Integration Features
+- **Seamless Operation**: No user intervention required
+- **Performance Optimization**: Efficient background processing
+- **Error Recovery**: Automatic fallback to safe defaults
+- **Cross-Model Compatibility**: Works with all supported AI models
+
 ## 📱 Mobile Experience
 
 ### Responsive Design
@@ -98,234 +142,90 @@ The system automatically detects content genre and applies appropriate director 
 
 ### Mobile-Specific Features
 - **Bottom Navigation**: Easy access to Home, Chat, Models, and Gallery
-- **Mobile Menu**: Slide-out menu with additional options
-- **Touch-Friendly Controls**: All interactive elements meet accessibility standards
-- **Mobile Typography**: Responsive text that scales appropriately
-- **Mobile Grids**: Flexible layouts that work on all screen sizes
+- **Touch-Friendly Controls**: All interactive elements sized for mobile
+- **Mobile-Optimized Animations**: Smooth, performance-optimized transitions
+- **Responsive Typography**: Text that scales appropriately for mobile screens
 
-## 🗂️ Content Management
+## 🎯 Usage Guide
 
-### Collapsible Content Panel
-- **Dynamic Interface**: Smooth slide-in/out animations
-- **State Persistence**: Remembers your panel preferences
-- **Keyboard Accessible**: Full keyboard navigation support
-- **Responsive Design**: Works seamlessly on all devices
+### Getting Started
+1. **Choose Your Mode**: Select "Chat" for conversation or "Gen" for focused generation
+2. **Set Model Preferences**: Configure your preferred AI models for each content type
+3. **Describe Your Vision**: Use natural language to describe what you want to create
+4. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
+5. **Generate Content**: Click generate and watch your content come to life
 
-### Storage Features
-- **Automatic Saving**: All generations saved automatically
-- **Content Gallery**: Browse all your generated content
-- **Storage Statistics**: Track usage and storage space
-- **Export/Import**: Backup and restore your content library
-- **Session Management**: Organize content by creative sessions
+### Advanced Features
+- **Copy Prompts**: Click any suggested prompt to copy it to your clipboard
+- **Manual Override**: Use "Show Controls" to manually adjust settings when needed
+- **Style Reference**: Upload reference images for style transfer
+- **Voice Input**: Use your microphone to describe your vision
+- **Content Animation**: Animate generated images with one click
 
-### Content Types Supported
-- **Images**: All major formats (PNG, JPG, WEBP)
-- **Videos**: MP4, MOV, and other video formats
-- **Audio**: MP3, WAV, and audio files
-- **Metadata**: Prompts, timestamps, and generation parameters
+### Tips for Best Results
+- **Be Descriptive**: Provide detailed descriptions for better results
+- **Use Director References**: Mention specific directors or styles
+- **Trust the Agent**: Let the Smart Controls Agent optimize parameters
+- **Experiment**: Try different prompts and styles to discover new possibilities
+- **Save Favorites**: Use the content panel to save and organize your best work
 
-## 🛠️ Technical Stack
+## 🔧 Technical Features
 
-- **Framework**: Next.js 14 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom mobile utilities
-- **AI Integration**: FAL.ai API with proxy server
-- **Chat**: Claude AI for intelligent conversations
-- **State Management**: Zustand for client-side state
-- **UI Components**: Radix UI with custom mobile components
-- **Animations**: Framer Motion and CSS animations
-- **Storage**: localStorage with IndexedDB support
-- **Mobile**: Responsive design with mobile-first approach
+### API Integration
+- **FAL.ai Integration**: Direct integration with FAL.ai's model ecosystem
+- **Dedicated Routes**: Separate API routes for video and image generation
+- **Parameter Validation**: Automatic validation and correction of API parameters
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Timeout Management**: Intelligent timeout handling for long-running generations
+
+### Performance Optimization
+- **Image Compression**: Automatic compression for optimal API compatibility
+- **Background Processing**: Non-blocking background operations
+- **Memory Management**: Efficient memory usage and cleanup
+- **Caching**: Smart caching of frequently used data
+- **Lazy Loading**: Optimized loading of components and resources
+
+### Security & Privacy
+- **Local Storage**: All content stored locally in your browser
+- **No Data Collection**: No user data sent to external servers
+- **Secure API Calls**: Secure communication with AI model APIs
+- **Content Filtering**: Built-in content policy compliance
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-- FAL.ai API key
-- Anthropic API key (for Claude chat)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Internet connection for AI model access
+- FAL.ai API key (for full functionality)
 
 ### Installation
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Set up environment variables
+4. Run the development server: `npm run dev`
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/directorchair-ai.git
-   cd directorchair-ai
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Add your API keys:
-   ```env
-   FAL_KEY=your_fal_api_key
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   NEXT_PUBLIC_BASE_URL=http://localhost:3000
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-## 🧪 Beta Testing
-
-### Current Status: **READY FOR BETA TESTING** ✅
-
-The application is fully configured for beta testing with the following features:
-
-#### Storage System
-- ✅ **Public folder**: Configured with uploads directory
-- ✅ **localStorage**: Fully implemented with 50MB limit
-- ✅ **Content persistence**: Survives page reloads
-- ✅ **Auto-save**: All generations automatically saved
-
-#### Content Management
-- ✅ **Collapsible panel**: Smooth animations and state persistence
-- ✅ **Gallery view**: Browse all saved content
-- ✅ **Storage manager**: Export/import functionality
-- ✅ **Session management**: Organize by creative sessions
-
-#### AI Integration
-- ✅ **17 AI models**: All models configured and ready
-- ✅ **Custom LoRAs**: Hard-coded cinema styles
-- ✅ **Content filtering**: Policy compliance
-- ✅ **Cost tracking**: Real-time usage monitoring
-
-### Testing Checklist
-- [ ] Generate images with different models
-- [ ] Create videos with various durations
-- [ ] Test voice input functionality
-- [ ] Verify content panel collapse/expand
-- [ ] Check content persistence across reloads
-- [ ] Test export/import functionality
-- [ ] Verify mobile responsiveness
-- [ ] Test custom LoRA styles
-
-## 📱 Mobile Development
-
-### Mobile-First Approach
-The application is built with a mobile-first approach, ensuring optimal performance and user experience across all devices.
-
-### Mobile Utilities
-Custom Tailwind utilities for mobile optimization:
-- `mobile-px`, `mobile-py`: Responsive padding
-- `mobile-text-*`: Responsive typography
-- `mobile-grid-*`: Responsive grid layouts
-- `mobile-touch-target`: Touch-friendly sizing
-- `mobile-safe-area`: Safe area handling
-
-### Mobile Components
-- `MobileNavigation`: Bottom navigation bar
-- `MobileTopNavigation`: Top navigation with menu
-- Mobile-optimized modals and sheets
-- Touch-friendly buttons and inputs
-
-## 🎯 Usage
-
-### Basic Workflow
-1. **Start a Conversation**: Use the chat interface to describe what you want to create
-2. **AI Analysis**: The system analyzes your request and selects appropriate models
-3. **Style Enhancement**: The Auteur Engine applies director-specific styling
-4. **Generation**: Content is generated with real-time progress tracking
-5. **Review & Export**: Preview and download your generated content
-6. **Content Management**: Access your content through the collapsible panel
-
-### Advanced Features
-- **Style Reference**: Upload images to extract and apply specific styles
-- **Voice Input**: Use your microphone for hands-free interaction
-- **Batch Generation**: Create multiple variations of your content
-- **Cost Tracking**: Monitor your AI usage and costs in real-time
-- **Content Export**: Backup your entire content library
-
-## 🔧 Configuration
-
-### Model Selection
-The AI automatically selects the best model for your request, but you can also:
-- Manually select specific models
-- Set default preferences
-- Configure cost limits and usage alerts
-
-### Auteur Engine Settings
-- Choose your preferred director style
-- Set genre-specific preferences
-- Configure prompt enhancement intensity
-- Customize style application rules
-
-### Storage Configuration
-- Set storage limits and cleanup policies
-- Configure export/import settings
-- Manage session preferences
-- Set content retention policies
-
-## 📊 Performance
-
-### Mobile Optimization
-- **Lazy Loading**: Components load only when needed
-- **Image Optimization**: Automatic image compression and optimization
-- **Code Splitting**: Efficient bundle splitting for faster loading
-- **Caching**: Intelligent caching for improved performance
-
-### AI Performance
-- **Real-time Processing**: Live progress updates during generation
-- **Batch Operations**: Efficient handling of multiple requests
-- **Error Recovery**: Graceful handling of API failures
-- **Cost Optimization**: Smart model selection for cost efficiency
-
-### Storage Performance
-- **Efficient Storage**: Optimized localStorage usage
-- **Automatic Cleanup**: Smart content management
-- **Fast Retrieval**: Quick content loading and display
-- **Export Optimization**: Efficient backup and restore
+### Environment Setup
+Create a `.env.local` file with your API keys:
+```
+FAL_KEY=your_fal_ai_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
+```
 
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test on both desktop and mobile
-5. Submit a pull request
-
-### Mobile Testing
-- Test on various screen sizes (320px to 1920px+)
-- Verify touch interactions work correctly
-- Check performance on mobile devices
-- Ensure accessibility standards are met
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🆘 Support
 
-- **FAL.ai** for providing the AI model infrastructure
-- **Anthropic** for Claude AI integration
-- **Next.js** team for the excellent framework
-- **Tailwind CSS** for the utility-first styling system
-- **Radix UI** for accessible component primitives
-
-## 📞 Support
-
-- **Documentation**: [docs.directorchair.ai](https://docs.directorchair.ai)
-- **Discord**: [Join our community](https://discord.gg/directorchair)
-- **Email**: support@directorchair.ai
-- **Issues**: [GitHub Issues](https://github.com/your-username/directorchair-ai/issues)
+For support and questions:
+- Check our [Documentation](docs/)
+- Open an [Issue](https://github.com/neoKode1/DirectorchairAi/issues)
+- Join our [Discord Community](https://discord.gg/directorchair)
 
 ---
 
-**Built with ❤️ by [DeeptechAi](https://deeptech.ai)**
-
-*Transform your creative vision with AI that thinks like a film director.*
+**DirectorchairAI** - Where AI meets cinematic creativity 🎬✨

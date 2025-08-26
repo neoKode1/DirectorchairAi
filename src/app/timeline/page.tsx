@@ -143,6 +143,7 @@ function TimelineContent() {
       // Validate that generationData is not empty or null
       if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {
         console.error('❌ [Timeline] Empty or invalid generation data received:', generationData);
+        console.error('❌ [Timeline] Generation data that caused error:', generationData);
         throw new Error('Empty or invalid generation data received. Please try again.');
       }
       

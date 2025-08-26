@@ -175,10 +175,11 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
         if (sessionId) {
           sessionStorage.addContent(sessionId, newContent);
           console.log('💾 [GeneratedContentDisplay] Saved new content to session:', sessionId);
-        } else {
-          contentStorage.addContent(newContent);
-          console.log('💾 [GeneratedContentDisplay] Saved new content to localStorage');
         }
+        
+        // Always save to localStorage for gallery access
+        contentStorage.addContent(newContent);
+        console.log('💾 [GeneratedContentDisplay] Saved new content to localStorage for gallery');
        
        // If it's an image, add it to loading state for blur effect
        if (newContent.type === 'image') {

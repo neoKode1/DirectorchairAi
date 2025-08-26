@@ -43,6 +43,7 @@ import { AuteurEngineSelector } from '@/components/auteur-engine-selector';
 import { type Movie } from '@/lib/movies-database';
 import { AVAILABLE_ENDPOINTS, type ApiInfo } from '@/lib/fal';
 import { smartControlsAgent } from '@/lib/smart-controls-agent';
+import { contentStorage } from '@/lib/content-storage';
 
 import { useToast } from '@/hooks/use-toast';
 
@@ -1601,10 +1602,24 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
       // Add the content message to the chat
       setMessages(prev => [...prev, contentMessage]);
       
+      // Save content to gallery storage
+      const contentToSave = {
+        id: id || Date.now().toString(),
+        type: type as 'image' | 'video' | 'audio',
+        url: url,
+        title: title,
+        prompt: prompt,
+        timestamp: new Date(timestamp),
+        metadata: metadata
+      };
+      
+      contentStorage.addContent(contentToSave);
+      console.log('💾 [IntelligentChatInterface] Saved generated content to gallery:', contentToSave);
+      
       // Show success toast
       toast({
         title: `${type.charAt(0).toUpperCase() + type.slice(1)} Generated!`,
-        description: `${title} has been created successfully.`,
+        description: `${title} has been created successfully and saved to gallery.`,
       });
       
       console.log('✅ [IntelligentChatInterface] Added generated content to chat:', contentMessage);
@@ -2329,7 +2344,19 @@ Starting workflow execution...`,
       
       // Verify we have a delegation
       if (!currentDelegation) {
+        console.error('❌ [IntelligentChatInterface] No delegation available for generation');
         throw new Error('No delegation available for generation');
+      }
+      
+      // Verify delegation has required properties
+      if (!currentDelegation.modelId) {
+        console.error('❌ [IntelligentChatInterface] Delegation missing modelId:', currentDelegation);
+        throw new Error('Delegation missing model ID');
+      }
+      
+      if (!currentDelegation.parameters) {
+        console.error('❌ [IntelligentChatInterface] Delegation missing parameters:', currentDelegation);
+        throw new Error('Delegation missing parameters');
       }
       
       // Prepare generation data
@@ -2337,6 +2364,15 @@ Starting workflow execution...`,
         model: currentDelegation.intent === 'video' ? videoModelToUse : currentDelegation.modelId,
         ...currentDelegation.parameters,
       };
+      
+      console.log('🔍 [IntelligentChatInterface] Delegation validation:', {
+        hasDelegation: !!currentDelegation,
+        hasModelId: !!currentDelegation.modelId,
+        hasParameters: !!currentDelegation.parameters,
+        parametersKeys: currentDelegation.parameters ? Object.keys(currentDelegation.parameters) : 'none',
+        intent: currentDelegation.intent,
+        modelId: currentDelegation.modelId
+      });
       
       // Ensure required parameters for Luma models
       if (generationData.model?.includes('luma')) {
@@ -2431,10 +2467,26 @@ Starting workflow execution...`,
            setGenerationProgress(null);
            throw error;
          }
-       } else if (onContentGenerated) {
-         // Handle image generation normally
+             } else if (onContentGenerated) {
+        // Handle image generation normally
         console.log('📞 [IntelligentChatInterface] Calling onContentGenerated callback');
-          console.log('📞 [IntelligentChatInterface] Generation data being sent:', generationData);
+        console.log('📞 [IntelligentChatInterface] Generation data being sent:', generationData);
+        
+        // Validate generation data before calling callback
+        if (!generationData || Object.keys(generationData).length === 0) {
+          console.error('❌ [IntelligentChatInterface] Empty generation data, cannot call onContentGenerated');
+          throw new Error('Empty generation data - cannot proceed with generation');
+        }
+        
+        if (!generationData.model) {
+          console.error('❌ [IntelligentChatInterface] Missing model in generation data:', generationData);
+          throw new Error('Missing model in generation data');
+        }
+        
+        if (!generationData.prompt && !generationData.image_url) {
+          console.error('❌ [IntelligentChatInterface] Missing prompt or image_url in generation data:', generationData);
+          throw new Error('Missing prompt or image_url in generation data');
+        }
          
         // Call the content generated callback instead of onGenerate
         const result = await onContentGenerated(generationData);

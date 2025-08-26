@@ -1454,16 +1454,52 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
       handleAnimationFromButton(imageUrl, imageTitle, prompt);
     };
 
-    // Add event listener
+    const handleInjectImageToChat = (event: CustomEvent) => {
+      console.log('💉 [IntelligentChatInterface] Received inject-image-to-chat event:', event.detail);
+      const { imageUrl, imageTitle, prompt } = event.detail;
+      
+      console.log('💉 [IntelligentChatInterface] Image injection details:', {
+        imageUrl,
+        imageTitle,
+        prompt,
+        hasImageUrl: !!imageUrl,
+        imageUrlLength: imageUrl?.length
+      });
+      
+      // Set the uploaded image
+      setUploadedImage(imageUrl);
+      setImagePreview(imageUrl);
+      
+      // Add a user message showing the image was injected
+      const userMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: `[Image injected: ${imageTitle} - ready for animation]`,
+        timestamp: new Date(),
+      };
+      
+      console.log('💉 [IntelligentChatInterface] Adding user message for image injection');
+      setMessages(prev => [...prev, userMessage]);
+      
+      // Show toast notification
+      toast({
+        title: "Image Ready for Animation!",
+        description: `${imageTitle} has been added to the input. Type a prompt to describe how you want to animate it, or click "Quick Gen" for instant animation.`,
+      });
+    };
+
+    // Add event listeners
     window.addEventListener('animate-image', handleAnimateImage as EventListener);
+    window.addEventListener('inject-image-to-chat', handleInjectImageToChat as EventListener);
     
-    console.log('✅ [IntelligentChatInterface] Event listener added for animate-image');
+    console.log('✅ [IntelligentChatInterface] Event listeners added for animate-image and inject-image-to-chat');
 
     return () => {
-      console.log('🧹 [IntelligentChatInterface] Cleaning up animate-image event listener');
+      console.log('🧹 [IntelligentChatInterface] Cleaning up event listeners');
       window.removeEventListener('animate-image', handleAnimateImage as EventListener);
+      window.removeEventListener('inject-image-to-chat', handleInjectImageToChat as EventListener);
     };
-  }, []);
+  }, [toast]);
 
   // Helper function to compress image to fit within API limits
   const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {

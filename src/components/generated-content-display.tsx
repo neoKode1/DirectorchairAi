@@ -20,7 +20,8 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
-  Maximize2
+  Maximize2,
+  Upload
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ModelIcon } from '@/components/model-icons';
@@ -347,6 +348,26 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
     console.log('🔍 [GeneratedContentDisplay] Content type:', content.type);
     console.log('🔍 [GeneratedContentDisplay] Content URL:', content.url);
     setFullscreenImage(content);
+  };
+
+  const handleInjectImageToChat = (content: GeneratedContent) => {
+    console.log('💉 [GeneratedContentDisplay] Injecting image to chat:', content);
+    
+    // Dispatch a custom event to inject the image into the chat interface
+    const injectEvent = new CustomEvent('inject-image-to-chat', {
+      detail: {
+        imageUrl: content.url,
+        imageTitle: content.title,
+        prompt: content.prompt || ''
+      }
+    });
+    
+    window.dispatchEvent(injectEvent);
+    
+    toast({
+      title: "Image Injected!",
+      description: `${content.title} has been added to the chat input. Type a prompt to animate it!`,
+    });
   };
 
   const handleImageLoad = (contentId: string) => {
@@ -831,6 +852,19 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                      Animate
                    </Button>
                  )}
+                 {/* Inject to chat button for images in preview */}
+                 {selectedContent.type === 'image' && (
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => handleInjectImageToChat(selectedContent)}
+                     className="text-xs border-green-500/50 text-green-400 hover:bg-green-500/20"
+                     title="Add this image to the chat input for animation"
+                   >
+                     <Upload className="w-3 h-3 mr-1" />
+                     Inject
+                   </Button>
+                 )}
                  {/* Fullscreen button for images */}
                  {selectedContent.type === 'image' && (
                    <Button
@@ -871,9 +905,13 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                             : 'blur-0 scale-100 opacity-100'
                         }`}
                         onClick={() => handleOpenFullscreen(selectedContent)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          handleInjectImageToChat(selectedContent);
+                        }}
                         onLoad={() => handleImageLoad(selectedContent.id)}
                         onError={() => handleImageLoad(selectedContent.id)}
-                        title="Click to open fullscreen view (or press F)"
+                        title="Left-click for fullscreen, Right-click to inject to chat"
                       />
                       {/* Hover overlay to indicate clickability */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">

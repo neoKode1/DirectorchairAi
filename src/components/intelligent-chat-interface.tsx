@@ -139,7 +139,7 @@ export function IntelligentChatInterface({
   // Intent selection state
   const [showIntentSelection, setShowIntentSelection] = useState(false);
   const [uploadedImageForIntent, setUploadedImageForIntent] = useState<string | null>(null);
-  const [selectedIntent, setSelectedIntent] = useState<'animate' | 'edit' | 'style' | null>(null);
+  const [selectedIntent, setSelectedIntent] = useState<'animate' | 'edit' | 'style' | 'create-image' | 'create-video' | null>(null);
   const [intentValidation, setIntentValidation] = useState<{
     isValid: boolean;
     message: string;
@@ -174,30 +174,49 @@ export function IntelligentChatInterface({
   // Intent options configuration
   const INTENT_OPTIONS = [
     {
+      id: 'create-image' as const,
+      label: '🖼️ Create Image',
+      description: 'Generate image from text prompt',
+      icon: ImageIcon,
+      category: 'image',
+      requiresUpload: false
+    },
+    {
+      id: 'create-video' as const,
+      label: '🎬 Create Video',
+      description: 'Generate video from text prompt',
+      icon: Video,
+      category: 'video',
+      requiresUpload: false
+    },
+    {
       id: 'animate' as const,
       label: '🎬 Animate Image',
       description: 'Convert image to video animation',
       icon: Video,
-      category: 'video'
+      category: 'video',
+      requiresUpload: true
     },
     {
       id: 'edit' as const,
       label: '✏️ Edit Image', 
       description: 'Modify the existing image',
       icon: ImageIcon,
-      category: 'image'
+      category: 'image',
+      requiresUpload: true
     },
     {
       id: 'style' as const,
       label: '🎨 Style Transfer',
       description: 'Apply style to generate new image',
       icon: Sparkles,
-      category: 'image'
+      category: 'image',
+      requiresUpload: true
     }
   ];
 
   // Intent validation function
-  const validateIntentWithPreferences = async (intent: 'animate' | 'edit' | 'style') => {
+  const validateIntentWithPreferences = async (intent: 'animate' | 'edit' | 'style' | 'create-image' | 'create-video') => {
     console.log('🔍 [Intent Validation] Validating intent:', intent);
     
     const saved = localStorage.getItem('narrative-model-preferences');
@@ -404,7 +423,7 @@ export function IntelligentChatInterface({
   };
 
   // Handle intent selection
-  const handleIntentSelection = async (intent: 'animate' | 'edit' | 'style') => {
+  const handleIntentSelection = async (intent: 'animate' | 'edit' | 'style' | 'create-image' | 'create-video') => {
     console.log('🎯 [Intent Selection] User selected intent:', intent);
     
     setSelectedIntent(intent);
@@ -1943,6 +1962,14 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     });
 
     try {
+      // Check if we need to show intent selection for text-only input
+      if (chatMode === 'gen' && !uploadedImage && !selectedIntent && inputText.trim()) {
+        console.log('🎯 [Intent Selection] Text-only input detected, showing intent selection');
+        setShowIntentSelection(true);
+        setIsProcessing(false);
+        return;
+      }
+      
       // Check chat mode first
       console.log('🔍 [Chat Mode] Current chat mode:', chatMode);
       console.log('🔍 [Chat Mode] Input text length:', inputText.length);
@@ -2144,8 +2171,8 @@ Starting workflow execution...`,
     let videoModelToUse = syncedVideoModel || currentVideoModel;
     
     try {
-      // Check if there's an uploaded image and user provided a prompt (intent-driven workflow)
-      if (uploadedImage && userInput.trim()) {
+      // Check if there's an uploaded image and user provided a prompt, OR if user wants to create from text
+      if ((uploadedImage && userInput.trim()) || (selectedIntent && (selectedIntent === 'create-image' || selectedIntent === 'create-video') && userInput.trim())) {
         console.log('🖼️ [IntelligentChatInterface] Uploaded image detected with user prompt');
         console.log('🎯 [IntelligentChatInterface] Selected intent:', selectedIntent);
         console.log('🎯 [IntelligentChatInterface] Show intent selection:', showIntentSelection);
@@ -2325,6 +2352,96 @@ Starting workflow execution...`,
             currentDelegation = delegation;
           } else {
             throw new Error('No suitable style transfer model found. Please check your model preferences.');
+          }
+        } else if (selectedIntent === 'create-image') {
+          // Handle text-to-image generation
+          console.log('🖼️ [IntelligentChatInterface] Handling text-to-image generation');
+          
+          // Use the user's preferred image model
+          const imageModel = preferences.image || 'fal-ai/imagen4/preview';
+          
+          // Get delegation from intelligence core for image generation
+          const imageIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          const delegation = await intelligenceCore.selectOptimalModel(imageIntent);
+          
+          if (delegation) {
+            // Override the model to use the user's preferred image model
+            delegation.modelId = imageModel;
+            delegation.reason = 'Text-to-image generation with user prompt';
+            
+            // Set parameters for text-to-image generation
+            delegation.parameters = {
+              prompt: userInput.trim(),
+              num_images: 1,
+              aspect_ratio: '1:1',
+              output_format: 'jpeg'
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('image', 'Text-to-image generation');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `🖼️ **Image Generation Ready**: Ready to create image using ${imageModel}`,
+              timestamp: new Date(),
+              intent: imageIntent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable image generation model found. Please check your model preferences.');
+          }
+        } else if (selectedIntent === 'create-video') {
+          // Handle text-to-video generation
+          console.log('🎬 [IntelligentChatInterface] Handling text-to-video generation');
+          
+          // Use the user's preferred video model
+          const videoModel = preferences.video || videoModelToUse;
+          
+          // Get delegation from intelligence core for video generation
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
+          
+          if (delegation) {
+            // Override the model to use the user's preferred video model
+            delegation.modelId = videoModel;
+            delegation.reason = 'Text-to-video generation with user prompt';
+            
+            // Set parameters for text-to-video generation
+            delegation.parameters = {
+              prompt: userInput.trim(),
+              aspect_ratio: '16:9',
+              duration: '5s',
+              resolution: '1080p'
+            };
+            
+            // Set the pending delegation
+            setPendingDelegation(delegation);
+            startGeneration('video', 'Text-to-video generation');
+            
+            // Add delegation message
+            const delegationMessage: ChatMessage = {
+              id: `delegation-${Date.now()}`,
+              type: 'assistant',
+              content: `🎬 **Video Generation Ready**: Ready to create video using ${videoModel}`,
+              timestamp: new Date(),
+              intent: videoIntent,
+              delegation: delegation,
+              status: 'pending',
+            };
+            setMessages(prev => [...prev, delegationMessage]);
+            
+            // Continue with the generation process
+            currentDelegation = delegation;
+          } else {
+            throw new Error('No suitable video generation model found. Please check your model preferences.');
           }
         } else {
           // Fallback: no specific intent selected, use default behavior
@@ -4733,11 +4850,16 @@ Available commands:
       </div>
 
       {/* Intent Selection Modal */}
-      {showIntentSelection && uploadedImageForIntent && (
+      {showIntentSelection && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">What would you like to do with this image?</h3>
+              <h3 className="text-lg font-semibold">
+                {uploadedImageForIntent 
+                  ? "What would you like to do with this image?" 
+                  : "What would you like to create?"
+                }
+              </h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -4749,7 +4871,11 @@ Available commands:
             </div>
             
             <div className="space-y-3 mb-6">
-              {INTENT_OPTIONS.map((option) => {
+              {INTENT_OPTIONS.filter(option => {
+                // If there's an uploaded image, show all options
+                // If no uploaded image, only show create options
+                return uploadedImageForIntent ? true : !option.requiresUpload;
+              }).map((option) => {
                 const Icon = option.icon;
                 return (
                   <Button
@@ -4799,17 +4925,19 @@ Available commands:
               </div>
             )}
 
-            {/* Image Preview */}
-            <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-              <div className="text-sm font-medium mb-2">Image Preview:</div>
-              <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
-                <img
-                  src={uploadedImageForIntent}
-                  alt="Uploaded image"
-                  className="w-full h-full object-cover"
-                />
+            {/* Image Preview - Only show if there's an uploaded image */}
+            {uploadedImageForIntent && (
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                <div className="text-sm font-medium mb-2">Image Preview:</div>
+                <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
+                  <img
+                    src={uploadedImageForIntent}
+                    alt="Uploaded image"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

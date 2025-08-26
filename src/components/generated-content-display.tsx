@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
-  Upload
+  Upload,
+  Edit
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ModelIcon } from '@/components/model-icons';
@@ -54,6 +55,32 @@ interface GeneratedContentDisplayProps {
   className?: string;
   sessionId?: string;
 }
+
+// Add monitoring utility at the top of the component
+const ContentPanelMonitor = {
+  log(action: string, details: any = {}) {
+    const interaction = {
+      timestamp: Date.now(),
+      action,
+      details,
+      component: 'GeneratedContentDisplay'
+    };
+    
+    console.log(`📊 [ContentPanelMonitor] ${action}:`, details);
+    
+    // Store in localStorage for persistence
+    const existingData = localStorage.getItem('content-panel-interactions');
+    const allInteractions = existingData ? JSON.parse(existingData) : [];
+    allInteractions.push(interaction);
+    
+    // Keep only last 500 interactions
+    if (allInteractions.length > 500) {
+      allInteractions.splice(0, allInteractions.length - 500);
+    }
+    
+    localStorage.setItem('content-panel-interactions', JSON.stringify(allInteractions));
+  }
+};
 
 export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = ({ 
   className = "",
@@ -347,6 +374,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
   const handleImageClick = (content: GeneratedContent) => {
     if (content.type === 'image') {
       console.log('🖼️ [GeneratedContentDisplay] Image clicked:', content);
+      ContentPanelMonitor.log('image_click', { contentId: content.id, title: content.title });
       
       // Use the selected image URL if available, otherwise use the main URL
       const imageUrl = content.images && content.selectedImageIndex !== undefined 
@@ -380,6 +408,15 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
 
   const handleInjectImageToChat = (content: GeneratedContent) => {
     console.log('💉 [GeneratedContentDisplay] Injecting image to chat:', content);
+    console.log('💉 [GeneratedContentDisplay] Content type:', content.type);
+    console.log('💉 [GeneratedContentDisplay] Content URL:', content.url);
+    console.log('💉 [GeneratedContentDisplay] Content images:', content.images);
+    console.log('💉 [GeneratedContentDisplay] Selected image index:', content.selectedImageIndex);
+    
+    if (content.type !== 'image') {
+      console.log('❌ [GeneratedContentDisplay] Cannot inject non-image content:', content.type);
+      return;
+    }
     
     // Use the selected image URL if available, otherwise use the main URL
     const imageUrl = content.images && content.selectedImageIndex !== undefined 
@@ -881,7 +918,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                       )}
                     </div>
                     
-                    <div className="flex-shrink-0 flex items-center gap-1">
+                    <div className="flex-shrink-0 flex items-center justify-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -893,6 +930,18 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                         title="Animate this image"
                       >
                         <Zap className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleInjectImageToChat(item);
+                        }}
+                        className="h-8 w-8 p-0 text-white hover:text-green-300 hover:bg-white/20 backdrop-blur-sm"
+                        title="Edit this image"
+                      >
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -939,7 +988,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
           <div className="space-y-3">
                          <div className="flex items-center justify-between">
                <h3 className="text-sm font-medium text-white">Preview</h3>
-               <div className="flex items-center gap-2">
+               <div className="flex items-center justify-center gap-2">
                  {/* Animate button for images in preview */}
                  {selectedContent.type === 'image' && (
                    <Button
@@ -952,17 +1001,17 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                      Animate
                    </Button>
                  )}
-                 {/* Inject to chat button for images in preview */}
+                 {/* Edit button for images in preview */}
                  {selectedContent.type === 'image' && (
                    <Button
                      variant="outline"
                      size="sm"
                      onClick={() => handleInjectImageToChat(selectedContent)}
                      className="text-xs border-green-500/50 text-green-400 hover:bg-green-500/20"
-                     title="Add this image to the chat input for animation"
+                     title="Edit this image"
                    >
-                     <Upload className="w-3 h-3 mr-1" />
-                     Inject
+                     <Edit className="w-3 h-3 mr-1" />
+                     Edit
                    </Button>
                  )}
                  {/* Fullscreen button for images */}
@@ -1004,20 +1053,16 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                             ? 'blur-lg scale-95 opacity-60' 
                             : 'blur-0 scale-100 opacity-100'
                         }`}
-                        onClick={() => handleInjectImageToChat(selectedContent)}
                         onContextMenu={(e) => {
                           e.preventDefault();
                           handleOpenFullscreen(selectedContent);
                         }}
                         onLoad={() => handleImageLoad(selectedContent.id)}
                         onError={() => handleImageLoad(selectedContent.id)}
-                        title="Left-click to inject to chat, Right-click for fullscreen"
+                        title="Right-click for fullscreen"
                       />
-                      {/* Hover overlay to indicate clickability */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                          Click to inject
-                        </div>
+                      {/* Hover overlay for visual feedback */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-200 opacity-0 group-hover:opacity-100">
                       </div>
                     </div>
                     
@@ -1229,7 +1274,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                    </div>
                    
                    {/* Action Buttons */}
-                   <div className="flex items-center gap-2">
+                   <div className="flex items-center justify-center gap-2">
                      <Button
                        variant="outline"
                        size="sm"

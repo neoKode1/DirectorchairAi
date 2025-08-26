@@ -18,6 +18,7 @@ import { StorageManager } from "@/components/storage-manager";
 import { SessionManager } from "@/components/session-manager";
 import { MobileNavigation } from "@/components/mobile-navigation";
 import { CollapsibleContentPanel } from "@/components/collapsible-content-panel";
+import { UserInteractionMonitor } from "@/components/user-interaction-monitor";
 // Content filtering removed - user has full control over prompts
 
 // Create QueryClient instance
@@ -362,6 +363,9 @@ export default function TimelinePage() {
           
           {/* Mobile Navigation */}
           <MobileNavigation />
+          
+          {/* User Interaction Monitor */}
+          <UserInteractionMonitor />
           
           {/* Content filtering removed - user has full control over prompts */}
         </QueryClientProvider>

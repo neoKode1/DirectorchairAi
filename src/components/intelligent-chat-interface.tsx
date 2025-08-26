@@ -91,6 +91,74 @@ interface IntelligentChatInterfaceProps {
   onGenerationComplete?: () => void;
 }
 
+// Add monitoring utility at the top of the component
+const UserInteractionMonitor = {
+  sessionId: Date.now().toString(),
+  interactions: [] as Array<{
+    timestamp: number;
+    action: string;
+    details: any;
+    component: string;
+  }>,
+  
+  log(action: string, details: any = {}, component: string = 'IntelligentChatInterface') {
+    const interaction = {
+      timestamp: Date.now(),
+      action,
+      details,
+      component
+    };
+    
+    this.interactions.push(interaction);
+    
+    // Log to console with emoji for easy identification
+    console.log(`📊 [UserMonitor] ${action}:`, details);
+    
+    // Store in localStorage for persistence across sessions
+    const existingData = localStorage.getItem('user-interaction-log');
+    const allInteractions = existingData ? JSON.parse(existingData) : [];
+    allInteractions.push(interaction);
+    
+    // Keep only last 1000 interactions to prevent localStorage bloat
+    if (allInteractions.length > 1000) {
+      allInteractions.splice(0, allInteractions.length - 1000);
+    }
+    
+    localStorage.setItem('user-interaction-log', JSON.stringify(allInteractions));
+  },
+  
+  getSessionSummary() {
+    const sessionInteractions = this.interactions.filter(i => 
+      i.timestamp > Date.now() - (30 * 60 * 1000) // Last 30 minutes
+    );
+    
+    const summary = {
+      totalInteractions: sessionInteractions.length,
+      actions: sessionInteractions.reduce((acc, interaction) => {
+        acc[interaction.action] = (acc[interaction.action] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      recentInteractions: sessionInteractions.slice(-10)
+    };
+    
+    console.log('📊 [UserMonitor] Session Summary:', summary);
+    return summary;
+  },
+  
+  exportLog() {
+    const allData = localStorage.getItem('user-interaction-log');
+    if (allData) {
+      const blob = new Blob([allData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `user-interaction-log-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }
+};
+
 export function IntelligentChatInterface({ 
   className, 
   onContentGenerated, 
@@ -424,6 +492,12 @@ export function IntelligentChatInterface({
 
   // Handle intent selection
   const handleIntentSelection = async (intent: 'animate' | 'edit' | 'style' | 'create-image' | 'create-video') => {
+    UserInteractionMonitor.log('intent_selection', {
+      selectedIntent: intent,
+      hasUploadedImage: !!uploadedImageForIntent,
+      timestamp: Date.now()
+    });
+    
     console.log('🎯 [Intent Selection] User selected intent:', intent);
     
     setSelectedIntent(intent);
@@ -1681,6 +1755,22 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     };
 
     const handleInjectImageToChat = (event: CustomEvent) => {
+      UserInteractionMonitor.log('image_injection', {
+        imageTitle: event.detail.imageTitle,
+        hasImageUrl: !!event.detail.imageUrl,
+        imageUrlLength: event.detail.imageUrl?.length,
+        hasPrompt: !!event.detail.prompt,
+        timestamp: Date.now()
+      });
+      
+      UserInteractionMonitor.log('image_injection_received', {
+        imageTitle: event.detail.imageTitle,
+        hasImageUrl: !!event.detail.imageUrl,
+        imageUrlLength: event.detail.imageUrl?.length,
+        hasPrompt: !!event.detail.prompt,
+        timestamp: Date.now()
+      });
+      
       console.log('💉 [IntelligentChatInterface] Received inject-image-to-chat event:', event.detail);
       const { imageUrl, imageTitle, prompt } = event.detail;
       
@@ -1696,11 +1786,18 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
       setUploadedImage(imageUrl);
       setImagePreview(imageUrl);
       
+      // Set the uploaded image for intent selection
+      setUploadedImageForIntent(imageUrl);
+      
+      // Show intent selection modal immediately
+      console.log('🎯 [Intent Selection] Showing intent selection modal for injected image');
+      setShowIntentSelection(true);
+      
       // Add a user message showing the image was injected
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'user',
-        content: `[Image injected: ${imageTitle} - ready for animation]`,
+        content: `[Image injected: ${imageTitle} - select your intent below]`,
         timestamp: new Date(),
       };
       
@@ -1710,7 +1807,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
       // Show toast notification
       toast({
         title: "Image Added Successfully!",
-        description: `${imageTitle} has been added to the chat input. You can now type a prompt to animate it, edit it, or use it for other AI operations.`,
+        description: `${imageTitle} has been added to the chat input. Please select what you'd like to do with this image.`,
       });
     };
 
@@ -1908,6 +2005,16 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
   // Modified handleSubmit to detect and execute workflows
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    UserInteractionMonitor.log('form_submit', {
+      hasText: !!userInput.trim(),
+      hasImage: !!uploadedImage,
+      textLength: userInput.trim().length,
+      chatMode,
+      selectedIntent,
+      isProcessing
+    });
+    
     console.log('🚀 [Submit Debug] Form submitted');
     console.log('🚀 [Submit Debug] User input:', userInput);
     console.log('🚀 [Submit Debug] Is processing:', isProcessing);
@@ -1989,12 +2096,8 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
                 .filter(msg => msg.type === 'user' || msg.type === 'assistant')
                 .filter(msg => !msg.isWelcomeMessage && !msg.isShotSuggestion && !msg.isProgressMessage) // Skip system messages
                 .map(msg => {
-                  // Truncate very long messages but keep more context
-                  const maxLength = msg.type === 'assistant' ? 800 : 200; // Allow longer assistant messages
-                  const content = msg.content.length > maxLength 
-                    ? msg.content.substring(0, maxLength) + '...' 
-                    : msg.content;
-                  return `${msg.type === 'user' ? 'User' : 'Assistant'}: ${content}`;
+                  // Use full message content without truncation
+                  return `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`;
                 })
                 .slice(-12); // Keep last 12 messages for better context
               
@@ -3262,6 +3365,13 @@ Starting workflow execution...`,
 
   // Handle file upload with compression
   const handleImageUpload = useCallback(async (file: File) => {
+    UserInteractionMonitor.log('image_upload', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      timestamp: Date.now()
+    });
+    
     console.log('🖼️ [IntelligentChatInterface] Image uploaded:', file.name);
     
     try {

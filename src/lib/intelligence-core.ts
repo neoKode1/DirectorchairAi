@@ -81,7 +81,7 @@ export interface ConversationState {
   userContext: string[];
   clarificationNeeded: boolean;
   generationAuthorized: boolean;
-  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation' | 'image-edit' | 'edit';
+  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation' | 'image-edit' | 'edit' | 'extract-frame';
 }
 
 // New interfaces for Interactive Suggestions & Automated Workflows
@@ -891,6 +891,12 @@ export class IntelligenceCore {
         confidence = 0.95;
         // Add special flag for flux kontext
         this.conversationState.imageActionType = 'flux-kontext';
+      } else if (this.containsFrameExtractionKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected frame extraction intent');
+        type = 'image';
+        confidence = 0.95;
+        // Add special flag for frame extraction
+        this.conversationState.imageActionType = 'extract-frame';
       }
     }
     // Check for descriptive content that should be treated as generation requests
@@ -1182,6 +1188,18 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     ];
     const found = fluxKontextWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking flux kontext keywords:', { input, fluxKontextWords, found });
+    return found;
+  }
+
+  private containsFrameExtractionKeywords(input: string): boolean {
+    const frameExtractionWords = [
+      'extract frame', 'get frame', 'take frame', 'capture frame',
+      'first frame', 'middle frame', 'last frame', 'key frame',
+      'extract image from video', 'get image from video', 'capture image from video',
+      'video thumbnail', 'video preview', 'video still'
+    ];
+    const found = frameExtractionWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking frame extraction keywords:', { input, frameExtractionWords, found });
     return found;
   }
 
@@ -1755,6 +1773,12 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                 model.endpointId === 'fal-ai/qwen-image-edit'
               );
             }
+            break;
+          case 'extract-frame':
+            console.log('🎬 [IntelligenceCore] Routing to frame extraction model');
+            selectedModel = this.getModelCapabilities().find(model => 
+              model.endpointId === 'fal-ai/ffmpeg-api/extract-frame'
+            );
             break;
 
           case 'animation':

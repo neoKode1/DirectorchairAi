@@ -240,6 +240,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('🔧 [FAL Image Proxy] Qwen Image Edit input parameters:', input);
     }
 
+    if (model.includes('ffmpeg-api/extract-frame')) {
+      console.log('🔧 [FAL Image Proxy] Processing FFmpeg Extract Frame model parameters');
+      
+      // FFmpeg Extract Frame expects video_url and frame_type
+      if (body.video_url) {
+        input.video_url = body.video_url;
+      }
+      if (body.frame_type) {
+        input.frame_type = body.frame_type; // "first", "middle", or "last"
+      }
+      
+      // Remove any image-related parameters that might conflict
+      if (input.image_url) {
+        delete input.image_url;
+      }
+      if (input.image_urls) {
+        delete input.image_urls;
+      }
+      
+      console.log('🔧 [FAL Image Proxy] FFmpeg Extract Frame input parameters:', input);
+    }
+
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
 
     // Call FAL API directly with subscription
@@ -308,7 +330,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       "fal-ai/nano-banana/edit",
       "fal-ai/gemini-25-flash-image/edit",
       "fal-ai/qwen-image-edit",
-      "fal-ai/ideogram/character"
+      "fal-ai/ideogram/character",
+      "fal-ai/ffmpeg-api/extract-frame"
     ]
   });
 }

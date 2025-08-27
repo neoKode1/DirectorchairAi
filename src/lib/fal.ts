@@ -129,6 +129,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStyleReference: false,
     supportsStylePresets: false,
     maxStyleStrength: 0,
+  },
+  "fal-ai/ffmpeg-api/extract-frame": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
   }
 } as const;
 
@@ -435,6 +440,17 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
         style: 0.0,
         use_speaker_boost: true,
       },
+    },
+  },
+  {
+    endpointId: "fal-ai/ffmpeg-api/extract-frame",
+    label: "FFmpeg Extract Frame",
+    description: "Extract first, middle, or last frame from videos using FFmpeg",
+    category: "image",
+    inputAsset: ["video"],
+    initialInput: {
+      video_url: "",
+      frame_type: "first", // "first", "middle", or "last"
     },
   },
 ];

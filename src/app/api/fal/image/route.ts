@@ -68,6 +68,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (body.safety_tolerance) {
       input.safety_tolerance = body.safety_tolerance;
     }
+    if (body.image_size) {
+      input.image_size = body.image_size;
+    }
 
     // Model-specific parameters
     if (model.includes('flux-pro')) {
@@ -197,6 +200,46 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('🔧 [FAL Image Proxy] Gemini input parameters (cleaned):', input);
     }
 
+    if (model.includes('qwen-image-edit')) {
+      console.log('🔧 [FAL Image Proxy] Processing Qwen Image Edit model parameters');
+      
+      // Qwen Image Edit expects image_url (singular), not image_urls
+      if (body.image_url) {
+        input.image_url = body.image_url;
+      } else if (body.image_urls && body.image_urls.length > 0) {
+        // If image_urls is provided, use the first one as image_url
+        input.image_url = body.image_urls[0];
+        console.log('🔧 [FAL Image Proxy] Converted image_urls[0] to image_url for Qwen model');
+      }
+      
+      // Remove image_urls if it exists to avoid conflicts
+      if (input.image_urls) {
+        delete input.image_urls;
+      }
+      
+      // Add Qwen-specific parameters according to FAL documentation
+      if (body.num_inference_steps !== undefined) {
+        input.num_inference_steps = body.num_inference_steps;
+      }
+      if (body.guidance_scale !== undefined) {
+        input.guidance_scale = body.guidance_scale;
+      }
+      if (body.negative_prompt) {
+        input.negative_prompt = body.negative_prompt;
+      }
+      if (body.acceleration) {
+        input.acceleration = body.acceleration;
+      }
+      if (body.sync_mode !== undefined) {
+        input.sync_mode = body.sync_mode;
+      }
+      if (body.image_size) {
+        input.image_size = body.image_size;
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Qwen Image Edit input parameters:', input);
+    }
+
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
 
     // Call FAL API directly with subscription
@@ -264,6 +307,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       "fal-ai/flux-krea-lora/image-to-image",
       "fal-ai/nano-banana/edit",
       "fal-ai/gemini-25-flash-image/edit",
+      "fal-ai/qwen-image-edit",
       "fal-ai/ideogram/character"
     ]
   });

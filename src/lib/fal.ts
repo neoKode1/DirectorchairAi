@@ -124,6 +124,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStyleReference: true,
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
+  },
+  "fal-ai/qwen-image-edit": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
   }
 } as const;
 
@@ -162,6 +167,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
       enable_safety_checker: true,
       output_format: "jpeg",
+      seed: undefined, // Optional seed for reproducibility
     },
   },
   {
@@ -189,6 +195,10 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_inference_steps: 30,
       guidance_scale: 7.5,
       aspect_ratio: "1:1",
+      num_images: 1,
+      output_format: "jpeg",
+      enhance_prompt: true,
+      raw: false,
     },
   },
   {
@@ -251,6 +261,24 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
     },
   },
+  {
+    endpointId: "fal-ai/qwen-image-edit",
+    label: "Qwen Image Edit",
+    description: "Qwen's Image Editing model with superior text editing capabilities for precise image modifications",
+    category: "image",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "Edit this image with creative modifications",
+      image_url: "",
+      num_inference_steps: 30,
+      guidance_scale: 4,
+      num_images: 1,
+      enable_safety_checker: true,
+      output_format: "png",
+      negative_prompt: "blurry, ugly",
+      acceleration: "regular",
+    },
+  },
 
   // Video Generation Models
   {
@@ -267,6 +295,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       auto_fix: true,
       resolution: "720p",
       generate_audio: true,
+      negative_prompt: "blurry, low quality, distorted",
     },
   },
   {
@@ -280,6 +309,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       aspect_ratio: "16:9",
       duration: "8s",
       resolution: "1080p",
+      negative_prompt: "blurry, low quality, distorted",
     },
   },
   {

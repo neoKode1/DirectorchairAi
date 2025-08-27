@@ -1748,10 +1748,11 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               );
             }
             if (!selectedModel) {
-              // Default to Nano Banana Edit, but also consider Gemini
+              // Default to Nano Banana Edit, but also consider Gemini and Qwen
               selectedModel = this.getModelCapabilities().find(model => 
                 model.endpointId === 'fal-ai/nano-banana/edit' || 
-                model.endpointId === 'fal-ai/gemini-25-flash-image/edit'
+                model.endpointId === 'fal-ai/gemini-25-flash-image/edit' ||
+                model.endpointId === 'fal-ai/qwen-image-edit'
               );
             }
             break;

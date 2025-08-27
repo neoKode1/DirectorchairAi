@@ -35,6 +35,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Resolution Optimization**: Automatic resolution selection based on model requirements
 - **Style Enhancement**: Background style analysis and enhancement
 - **Seamless Integration**: Works automatically without user intervention
+- **Audio Toggle**: Coming soon text-to-speech generation toggle (disabled for future implementation)
 
 ### Content Management & Storage
 - **Automatic Content Saving**: All generations automatically saved to localStorage
@@ -194,6 +195,29 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Touch-Friendly Controls**: All interactive elements sized for mobile
 - **Mobile-Optimized Animations**: Smooth, performance-optimized transitions
 - **Responsive Typography**: Text that scales appropriately for mobile screens
+
+## 🎨 Models Page
+
+The Models Page provides a comprehensive interface for exploring and selecting AI models:
+
+### Visual Design
+- **Full-Screen Background**: Immersive Gen4.png background covering the entire viewport
+- **PNG Icon Integration**: Each model uses its actual PNG icon as the full card background
+- **Reduced Sidebar Blur**: Improved readability with minimal blur effects
+- **Responsive Grid**: Adaptive grid layout that works on all screen sizes
+- **Hover Effects**: Subtle glow and scale effects for interactive feedback
+
+### Navigation Features
+- **Category Organization**: Models organized by Image, Video, and Voice categories
+- **Clickable Cards**: Each model card navigates to its specific interface
+- **Use in Chat Button**: Quick access to set model as preferred and redirect to chat
+- **Sidebar Navigation**: Clean sidebar with actual model PNG icons and readable text
+- **Model Preferences**: Automatic synchronization with user's preferred models
+
+### Model Categories
+- **Image Models**: 9 models including Google Imagen 4, Stable Diffusion 3.5, Flux Pro, Gemini 2.5 Flash
+- **Video Models**: 8 models including Google Veo3, Kling v2.1, Luma Ray 2, Minimax Hailuo 02
+- **Voice Models**: ElevenLabs TTS Turbo v2.5 for text-to-speech generation
 
 ## 🎯 Usage Guide
 
@@ -383,6 +407,10 @@ For support and questions:
 - **Plugin System**: Extensible plugin architecture
 
 ### Recent Updates
+- **Models Page Redesign**: Complete redesign with PNG icons, full-screen background, and improved navigation
+- **Sidebar Enhancement**: Reduced blur and improved readability with actual model PNG icons
+- **Audio Toggle**: Coming soon audio generation toggle in smart controls (disabled for future implementation)
+- **F Key Fix**: Disabled F key fullscreen to allow typing "F" in chat input
 - **Frame System**: Advanced two-slot image input system for complex editing workflows
 - **Gemini 2.5 Flash Image Edit**: New Google model with multi-image support
 - **Nano Banana Edit**: Enhanced image editing with precise parameter control

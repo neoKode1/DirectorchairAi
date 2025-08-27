@@ -8,6 +8,7 @@ import Image from "next/image";
 import { button as Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DownloadIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 // Placeholder type for Luma response
 type LumaResponse = any;
 
@@ -24,6 +25,7 @@ import { LumaRay2FlashInterface } from "@/components/model-inputs/luma-ray2-flas
 import { KlingV21MasterInterface } from "@/components/model-inputs/kling-v21-master-interface";
 import { MinimaxHailuo02Interface } from "@/components/model-inputs/minimax-hailuo02-interface";
 import { ElevenLabsTTSInterface } from "@/components/model-inputs/elevenlabs-tts-interface";
+import { MessageSquare } from "lucide-react";
 
 interface ApiInfo {
   id: string;
@@ -67,6 +69,7 @@ interface PageProps {
 export default async function ModelPage({ params }: PageProps) {
   const { category, modelId } = await params;
   const { toast } = useToast();
+  const router = useRouter();
   const [result, setResult] = useState<GenerationResult | null>(null);
 
   // Decode the URL parameter and clean it up
@@ -236,6 +239,54 @@ export default async function ModelPage({ params }: PageProps) {
     }
   };
 
+  // Function to set model as preferred and redirect to chat
+  const handleUseInChat = () => {
+    try {
+      // Load current preferences
+      const saved = localStorage.getItem('narrative-model-preferences');
+      let preferences = saved ? JSON.parse(saved) : {
+        image: null,
+        video: null,
+        music: null,
+        voiceover: null,
+      };
+
+      // Set the current model as preferred for its category
+      const categoryMap: Record<string, keyof typeof preferences> = {
+        'image': 'image',
+        'video': 'video',
+        'music': 'music',
+        'voiceover': 'voiceover',
+      };
+
+      const preferenceKey = categoryMap[category];
+      if (preferenceKey) {
+        preferences[preferenceKey] = decodedModelId;
+        localStorage.setItem('narrative-model-preferences', JSON.stringify(preferences));
+        
+        // Dispatch event to notify chat interface
+        window.dispatchEvent(new CustomEvent('model-preferences-changed', {
+          detail: preferences
+        }));
+
+        toast({
+          title: "Model Set as Preferred",
+          description: `${decodedModelId} is now your preferred ${category} model.`,
+        });
+
+        // Redirect to chat interface
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Error setting model preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to set model preference. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Helper function to determine which interface to show
   const renderModelInterface = () => {
     // Handle Luma Labs models
@@ -391,8 +442,20 @@ export default async function ModelPage({ params }: PageProps) {
     <div className="container mx-auto py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <h1 className="text-2xl font-bold">{modelInfo.name}</h1>
-          <p className="text-muted-foreground">{modelInfo.description}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">{modelInfo.name}</h1>
+              <p className="text-muted-foreground">{modelInfo.description}</p>
+            </div>
+            <Button 
+              onClick={handleUseInChat}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Use in Chat
+            </Button>
+          </div>
           {renderModelInterface()}
         </div>
         <div className="space-y-4">

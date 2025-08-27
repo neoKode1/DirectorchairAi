@@ -782,7 +782,7 @@ export class IntelligenceCore {
   /**
    * Analyzes user input to determine intent and required actions
    */
-  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video', hasUploadedImage?: boolean): Promise<UserIntent> {
+  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video' | 'audio', hasUploadedImage?: boolean): Promise<UserIntent> {
     console.log('🔍 [IntelligenceCore] Analyzing user intent:', userInput);
     console.log('🔍 [IntelligenceCore] Forced content type:', forcedContentType);
     const lowerInput = userInput.toLowerCase();

@@ -171,7 +171,7 @@ export function IntelligentChatInterface({
   // Unified generation state management
   const [generationState, setGenerationState] = useState<{
     isActive: boolean;
-    type: 'image' | 'video' | 'style' | 'workflow' | null;
+    type: 'image' | 'video' | 'style' | 'workflow' | 'audio' | null;
     startTime: Date | null;
     currentTask: string | null;
   }>({
@@ -221,7 +221,7 @@ export function IntelligentChatInterface({
   const [showFrameContainer, setShowFrameContainer] = useState(false);
 
   // Generation state helper functions
-  const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow', task: string) => {
+  const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow' | 'audio', task: string) => {
     console.log(`🚀 [Generation State] Starting ${type} generation: ${task}`);
     setGenerationState({
       isActive: true,
@@ -988,7 +988,8 @@ export function IntelligentChatInterface({
   // Removed delegation override state - no longer needed with intent-driven workflow
   
   // Add state for content type selection
-  const [contentType, setContentType] = useState<'image' | 'video'>('image');
+  const [contentType, setContentType] = useState<'image' | 'video' | 'audio'>('image');
+  const [audioToggle, setAudioToggle] = useState(false);
 
   // Add workflow execution state
   const [currentWorkflow, setCurrentWorkflow] = useState<any>(null);
@@ -2266,18 +2267,86 @@ Starting workflow execution...`,
     console.log('📋 [IntelligentChatInterface] Delegation data:', pendingDelegation);
     console.log('🎨 [IntelligentChatInterface] Style image uploaded:', hasStyleImageUploaded);
     console.log('🎨 [IntelligentChatInterface] Style reference image:', styleReferenceImage);
-    
-    // Start generation state tracking
-    startGeneration('image', 'Regular generation process');
-    
-    // Sync video model with user preferences before generation
-    const syncedVideoModel = syncVideoModelWithPreferences();
-    console.log('🎬 [IntelligentChatInterface] Using synced video model for generation:', syncedVideoModel);
+    console.log('🎵 [IntelligentChatInterface] Audio toggle:', audioToggle);
+    console.log('🎵 [IntelligentChatInterface] Content type:', contentType);
     
     // Declare variables at the function level
     let progressInterval: NodeJS.Timeout | null = null;
     let currentDelegation = pendingDelegation;
+    
+    // Sync video model with user preferences before generation
+    const syncedVideoModel = syncVideoModelWithPreferences();
+    console.log('🎬 [IntelligentChatInterface] Using synced video model for generation:', syncedVideoModel);
     let videoModelToUse = syncedVideoModel || currentVideoModel;
+    
+    // Check if audio generation is requested
+    if (audioToggle && contentType === 'audio') {
+      console.log('🎵 [IntelligentChatInterface] Processing audio generation request');
+      
+      try {
+        // Get the saved preferences to determine which model to use
+        const saved = localStorage.getItem('narrative-model-preferences');
+        if (!saved) {
+          throw new Error('No model preferences found. Please set your preferred models first.');
+        }
+
+        const preferences = JSON.parse(saved);
+        const voiceModel = preferences.voiceover || 'fal-ai/elevenlabs/tts/multilingual-v2';
+        
+        // Create audio generation delegation
+        const audioIntent = await intelligenceCore.analyzeUserIntent(userInput, 'audio');
+        const delegation = await intelligenceCore.selectOptimalModel(audioIntent);
+        
+        if (delegation) {
+          // Override the model to use the user's preferred voice model
+          delegation.modelId = voiceModel;
+          delegation.reason = 'Text-to-speech generation with user prompt';
+          
+          // Set parameters for text-to-speech generation
+          delegation.parameters = {
+            text: userInput.trim(),
+            voice_id: 'pNInz6obpgDQGcFmaJgB', // Default ElevenLabs voice ID (Rachel)
+            model_id: 'eleven_turbo_v2',
+            output_format: 'mp3'
+          };
+          
+          // Set the pending delegation
+          setPendingDelegation(delegation);
+          startGeneration('audio', 'Text-to-speech generation');
+          
+          // Add delegation message
+          const delegationMessage: ChatMessage = {
+            id: `delegation-${Date.now()}`,
+            type: 'assistant',
+            content: `🎵 **Audio Generation Ready**: Ready to create audio using ${voiceModel}`,
+            timestamp: new Date(),
+            intent: audioIntent,
+            delegation: delegation,
+            status: 'pending',
+          };
+          setMessages(prev => [...prev, delegationMessage]);
+          
+          // Continue with the generation process
+          currentDelegation = delegation;
+        } else {
+          throw new Error('No suitable audio generation model found. Please check your model preferences.');
+        }
+      } catch (error) {
+        console.error('❌ [IntelligentChatInterface] Audio generation error:', error);
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: `❌ **Audio Generation Error**: ${error instanceof Error ? error.message : 'Failed to process audio generation request.'}`,
+          timestamp: new Date(),
+          status: 'error',
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      return;
+      }
+    }
+    
+    // Start generation state tracking
+    startGeneration('image', 'Regular generation process');
     
     try {
       // Check if there's an uploaded image and user provided a prompt, OR if user wants to create from text
@@ -2374,7 +2443,7 @@ Starting workflow execution...`,
               
               // Remove any extra parameters that might have been added by the intelligence core
               console.log('🔧 [IntelligentChatInterface] Using Gemini model - ensuring clean parameters');
-            } else {
+      } else {
               // Default fallback
               modelParameters = {
                 image_urls: imageUrls,
@@ -2421,22 +2490,22 @@ Starting workflow execution...`,
           
           // Use the user's preferred video model
           const videoModel = preferences.video || videoModelToUse;
-          
-          // Get delegation from intelligence core for video generation
+        
+        // Get delegation from intelligence core for video generation
           const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
           const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
-          
-          if (delegation) {
-            // Override the model to use the user's preferred video model
+        
+        if (delegation) {
+          // Override the model to use the user's preferred video model
             delegation.modelId = videoModel;
-            delegation.reason = 'Image-to-video animation with user prompt';
-            
-            // Add the image_url parameter for video generation
-            delegation.parameters = {
-              ...delegation.parameters,
-              image_url: uploadedImage,
-              prompt: userInput.trim()
-            };
+          delegation.reason = 'Image-to-video animation with user prompt';
+          
+          // Add the image_url parameter for video generation
+          delegation.parameters = {
+            ...delegation.parameters,
+            image_url: uploadedImage,
+            prompt: userInput.trim()
+          };
             
             // Set the pending delegation
             setPendingDelegation(delegation);
@@ -5291,7 +5360,33 @@ Available commands:
               </div>
             </div>
             <div className="text-caption text-muted-foreground">
-              Generating: {contentType === 'image' ? 'Images' : 'Videos'}
+              Generating: {contentType === 'image' ? 'Images' : contentType === 'video' ? 'Videos' : 'Audio'}
+            </div>
+          </div>
+        </div>
+
+        {/* Audio Toggle - Coming Soon */}
+        <div className="border-t border-border/50 glass-light p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-body font-medium">Audio Generation:</span>
+              <div className="flex bg-secondary rounded-lg p-1 opacity-50 cursor-not-allowed">
+                <button
+                  disabled
+                  className="px-6 py-2 rounded-md text-sm font-medium text-muted-foreground cursor-not-allowed"
+                >
+                  🎵 TTS (Basic)
+                </button>
+                <button
+                  disabled
+                  className="px-6 py-2 rounded-md text-sm font-medium text-muted-foreground cursor-not-allowed"
+                >
+                  🖼️ Image/Video
+                </button>
+              </div>
+            </div>
+            <div className="text-caption text-muted-foreground">
+              Coming Soon
             </div>
           </div>
         </div>

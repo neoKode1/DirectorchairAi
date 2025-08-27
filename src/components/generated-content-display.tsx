@@ -119,16 +119,10 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
     }
   }, [content, selectedContent]);
 
-  // Keyboard shortcuts for fullscreen
+  // Keyboard shortcuts for fullscreen (F key disabled to allow typing)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Press 'F' to open fullscreen for selected content
-      if (event.key === 'f' || event.key === 'F') {
-        if (selectedContent && selectedContent.type === 'image') {
-          event.preventDefault();
-          handleOpenFullscreen(selectedContent);
-        }
-      }
+      // F key functionality disabled - users can use the fullscreen button instead
       // Press 'Escape' to close fullscreen
       if (event.key === 'Escape') {
         if (fullscreenImage) {
@@ -1021,7 +1015,7 @@ export const GeneratedContentDisplay: React.FC<GeneratedContentDisplayProps> = (
                      size="sm"
                      onClick={() => handleOpenFullscreen(selectedContent)}
                      className="text-xs border-blue-500/50 text-blue-400 hover:bg-blue-500/20"
-                                            title="Open fullscreen view (F)"
+                                            title="Open fullscreen view"
                    >
                      <Maximize2 className="w-3 h-3 mr-1" />
                      Fullscreen

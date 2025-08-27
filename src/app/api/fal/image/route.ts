@@ -247,6 +247,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.video_url) {
         input.video_url = body.video_url;
       }
+      
       if (body.frame_type) {
         input.frame_type = body.frame_type; // "first", "middle", or "last"
       }

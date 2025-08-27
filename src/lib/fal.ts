@@ -445,7 +445,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   {
     endpointId: "fal-ai/ffmpeg-api/extract-frame",
     label: "FFmpeg Extract Frame",
-    description: "Extract first, middle, or last frame from videos using FFmpeg",
+    description: "Extract first, middle, or last frame from videos using FFmpeg. Supports frame_type: 'first', 'middle', 'last'. Note: Time-based extraction (e.g., 'at 4 seconds') is not supported - only predefined frame positions.",
     category: "image",
     inputAsset: ["video"],
     initialInput: {

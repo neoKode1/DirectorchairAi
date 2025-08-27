@@ -81,7 +81,7 @@ export interface ConversationState {
   userContext: string[];
   clarificationNeeded: boolean;
   generationAuthorized: boolean;
-  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation' | 'image-edit';
+  imageActionType?: 'style-transfer' | 'flux-kontext' | 'animation' | 'image-edit' | 'edit';
 }
 
 // New interfaces for Interactive Suggestions & Automated Workflows
@@ -873,12 +873,6 @@ export class IntelligenceCore {
         confidence = 0.95;
         // Add special flag for style transfer
         this.conversationState.imageActionType = 'style-transfer';
-      } else if (this.containsFluxKontextKeywords(lowerInput)) {
-        console.log('🔍 [IntelligenceCore] ✅ Detected flux kontext intent');
-        type = 'image';
-        confidence = 0.95;
-        // Add special flag for flux kontext
-        this.conversationState.imageActionType = 'flux-kontext';
       } else if (this.containsImageEditKeywords(lowerInput)) {
         console.log('🔍 [IntelligenceCore] ✅ Detected image edit intent');
         type = 'image';
@@ -891,6 +885,12 @@ export class IntelligenceCore {
         confidence = 0.95;
         // Add special flag for animation
         this.conversationState.imageActionType = 'animation';
+      } else if (this.containsFluxKontextKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Detected flux kontext intent');
+        type = 'image';
+        confidence = 0.95;
+        // Add special flag for flux kontext
+        this.conversationState.imageActionType = 'flux-kontext';
       }
     }
     // Check for descriptive content that should be treated as generation requests
@@ -1176,9 +1176,9 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
 
   private containsFluxKontextKeywords(input: string): boolean {
     const fluxKontextWords = [
-      'background', 'scene', 'environment', 'setting', 'context', 'surroundings',
-      'place', 'location', 'atmosphere', 'ambience', 'mood', 'setting',
-      'add background', 'change background', 'new scene', 'different environment'
+      'add background', 'change background', 'new scene', 'different environment',
+      'replace background', 'swap background', 'new setting', 'different scene',
+      'background context', 'scene context', 'environment context'
     ];
     const found = fluxKontextWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking flux kontext keywords:', { input, fluxKontextWords, found });
@@ -1738,6 +1738,7 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
             );
             break;
           case 'image-edit':
+          case 'edit':
             console.log('✏️ [IntelligenceCore] Routing to image edit model');
             // Check if user has a preferred image editing model
             const preferredImageEditModel = this.modelPreferences.imageEdit;
@@ -1754,6 +1755,7 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               );
             }
             break;
+
           case 'animation':
             console.log('🎬 [IntelligenceCore] Routing to animation model');
             // Use user's preferred video model or default to Veo3

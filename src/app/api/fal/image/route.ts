@@ -83,6 +83,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.raw !== undefined) {
         input.raw = body.raw;
       }
+      if (body.safety_tolerance) {
+        input.safety_tolerance = body.safety_tolerance;
+      }
+    }
+
+    // Special handling for Flux Pro Kontext model
+    if (model.includes('flux-pro/kontext')) {
+      console.log('🔧 [FAL Image Proxy] Processing Flux Pro Kontext model parameters');
+      
+      // Flux Pro Kontext expects image_url (singular), not image_urls
+      if (body.image_url) {
+        input.image_url = body.image_url;
+      } else if (body.image_urls && body.image_urls.length > 0) {
+        // If image_urls is provided, use the first one as image_url
+        input.image_url = body.image_urls[0];
+        console.log('🔧 [FAL Image Proxy] Converted image_urls[0] to image_url for Kontext model');
+      }
+      
+      // Remove image_urls if it exists to avoid conflicts
+      if (input.image_urls) {
+        delete input.image_urls;
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Flux Pro Kontext input parameters:', input);
     }
 
     if (model.includes('flux-krea-lora')) {

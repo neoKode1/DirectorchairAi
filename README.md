@@ -23,6 +23,9 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Smart Intent Detection**: AI-powered intent analysis with user confirmation
 - **Seamless Workflow**: Smooth transitions between intent selection and generation
 - **User Guidance**: Clear prompts and suggestions for optimal results
+- **Frame System**: Two-slot image input system for primary image + optional style reference
+- **Drag & Drop Support**: Intuitive drag and drop for both primary and style images
+- **Dynamic UI**: Style reference slot appears only after primary image is uploaded
 
 ### Smart Controls Agent
 - **Automatic Parameter Optimization**: Background agent analyzes prompts and optimizes settings
@@ -72,6 +75,7 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **FLUX LoRA**: Image-to-image transformation with style transfer
 - **Ideogram Character**: Character consistency for visual content
 - **Nano Banana Edit**: Advanced image-to-image editing with precise modifications
+- **Gemini 2.5 Flash Image Edit**: Google's state-of-the-art image editing with multi-image support
 
 #### Video Generation
 - **Google Veo3 Fast**: Cost-effective video generation ($0.25/second)
@@ -98,6 +102,37 @@ Create professional media with AI that thinks like a film director. Generate ima
 - **Image-to-Video Animation**: Seamless animation from generated images
 - **Parameter Validation**: Automatic validation and correction of generation parameters
 - **User Interaction Analytics**: Comprehensive logging and monitoring system
+- **Frame System**: Advanced two-slot image input for complex editing workflows
+- **Multi-Image Support**: Support for primary image + style reference combinations
+- **Model-Specific Optimization**: Automatic parameter optimization for each AI model
+
+## 🖼️ Frame System
+
+The Frame System is an advanced image input interface that enables complex editing workflows with multiple image inputs:
+
+### Two-Slot Design
+- **Primary Image Slot**: Upload your main image for editing
+- **Style Reference Slot**: Optionally upload a style reference image
+- **Dynamic UI**: Style slot appears only after primary image is uploaded
+- **Visual Feedback**: Clear preview of uploaded images with drag & drop support
+
+### Supported Models
+- **Nano Banana Edit**: Advanced image-to-image editing with precise control
+- **Gemini 2.5 Flash Image Edit**: Google's state-of-the-art multi-image editing
+- **FLUX LoRA**: Style transfer with reference image support
+
+### Workflow
+1. **Toggle Frame System**: Click "Show Frames" to enable the interface
+2. **Upload Primary Image**: Drag & drop or click to upload your main image
+3. **Add Style Reference** (Optional): Upload a reference image for style guidance
+4. **Select Intent**: Choose "Edit" for image editing or "Style" for style transfer
+5. **Generate**: Let the AI process both images for enhanced results
+
+### Use Cases
+- **Style Transfer**: Use reference images to apply specific artistic styles
+- **Complex Editing**: Combine multiple images for sophisticated edits
+- **Consistency**: Maintain visual consistency across multiple images
+- **Creative Exploration**: Experiment with different style combinations
 
 ## 🎬 Auteur Engine
 
@@ -167,8 +202,9 @@ The Smart Controls Agent is an intelligent background system that automatically 
 2. **Set Model Preferences**: Configure your preferred AI models for each content type
 3. **Describe Your Vision**: Use natural language to describe what you want to create
 4. **Select Intent**: Choose Edit, Animate, Style Transfer, Create Image, or Create Video
-5. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
-6. **Generate Content**: Click generate and watch your content come to life
+5. **Use Frame System** (Optional): Upload primary image + optional style reference for advanced editing
+6. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
+7. **Generate Content**: Click generate and watch your content come to life
 
 ### Advanced Features
 - **Edit Button**: Click the Edit button on any generated image to modify it
@@ -178,6 +214,9 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Voice Input**: Use your microphone to describe your vision
 - **Content Animation**: Animate generated images with one click
 - **Monitor Usage**: Use the Monitor button to view interaction analytics
+- **Frame System**: Toggle "Show Frames" to access advanced two-slot image input
+- **Multi-Image Editing**: Upload primary image + style reference for complex edits
+- **Model Comparison**: Test different models (Nano Banana vs Gemini) for best results
 
 ### Tips for Best Results
 - **Be Descriptive**: Provide detailed descriptions for better results
@@ -186,6 +225,9 @@ The Smart Controls Agent is an intelligent background system that automatically 
 - **Experiment**: Try different prompts and styles to discover new possibilities
 - **Save Favorites**: Use the content panel to save and organize your best work
 - **Use Intent Selection**: Choose the right intent for your desired outcome
+- **Leverage Frame System**: Use primary + style reference for complex editing workflows
+- **Compare Models**: Test Nano Banana Edit vs Gemini for different editing styles
+- **Use Style References**: Upload reference images to guide the editing process
 
 ## 🔧 Technical Features
 
@@ -341,6 +383,9 @@ For support and questions:
 - **Plugin System**: Extensible plugin architecture
 
 ### Recent Updates
+- **Frame System**: Advanced two-slot image input system for complex editing workflows
+- **Gemini 2.5 Flash Image Edit**: New Google model with multi-image support
+- **Nano Banana Edit**: Enhanced image editing with precise parameter control
 - **Intent-Driven Workflow**: Clear intent selection for better user experience
 - **User Interaction Monitoring**: Comprehensive analytics and logging
 - **Edit Button Integration**: One-click image editing from content panel

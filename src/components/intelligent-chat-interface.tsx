@@ -46,6 +46,7 @@ import { smartControlsAgent } from '@/lib/smart-controls-agent';
 import { contentStorage } from '@/lib/content-storage';
 
 import { useToast } from '@/hooks/use-toast';
+import FrameContainer from '@/components/frame-container';
 
 interface ChatMessage {
   id: string;
@@ -213,6 +214,11 @@ export function IntelligentChatInterface({
     message: string;
     suggestions: string[];
   } | null>(null);
+
+  // Frame system state
+  const [primaryImage, setPrimaryImage] = useState<FileList | null>(null);
+  const [styleImage, setStyleImage] = useState<FileList | null>(null);
+  const [showFrameContainer, setShowFrameContainer] = useState(false);
 
   // Generation state helper functions
   const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow', task: string) => {
@@ -2179,14 +2185,14 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         console.log('💬 [Chat Mode] Final state check - messages count:', messages.length);
         return;
       }
-      
-      // Check if this is a style command
-      if (inputText.startsWith('/')) {
-        console.log('🎨 [Style] Detected style command:', inputText);
-        await handleStyleCommandExecution(inputText);
-        return;
-      }
-      
+        
+        // Check if this is a style command
+        if (inputText.startsWith('/')) {
+          console.log('🎨 [Style] Detected style command:', inputText);
+          await handleStyleCommandExecution(inputText);
+          return;
+        }
+        
       // Animation requests are now handled by dedicated animate buttons on images
       // No longer processing "animate it" commands in chat interface
       
@@ -2306,29 +2312,83 @@ Starting workflow execution...`,
           // Use the user's preferred image model or nano-banana/edit
           const imageModel = preferences.image || 'fal-ai/nano-banana/edit';
           
-          // Get delegation for image editing
-          const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
-          const delegation = await intelligenceCore.selectOptimalModel(intent);
-          
-          if (delegation) {
-            // Override the model to use the user's preference or nano-banana/edit
-            delegation.modelId = imageModel;
-            delegation.reason = 'Image-to-image editing with user prompt';
+                      // Get delegation for image editing
+            const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+            const delegation = await intelligenceCore.selectOptimalModel(intent);
+            
+            if (delegation) {
+              // Override the model to use the user's preference or nano-banana/edit
+              delegation.modelId = imageModel;
+              delegation.reason = 'Image-to-image editing with user prompt';
             
             // Add the image_urls parameter for image editing
             const enhancedPrompt = userInput.trim().startsWith('edit') || userInput.trim().startsWith('modify') || userInput.trim().startsWith('change')
               ? `${userInput.trim()} - make dramatic and noticeable changes`
               : `Edit this image with dramatic and noticeable changes: ${userInput.trim()}`;
             
-            // Only use parameters valid for Nano Banana Edit model
-            delegation.parameters = {
-              image_urls: [uploadedImage],
-              prompt: enhancedPrompt,
-              num_images: 1,
-              output_format: "jpeg",
-              strength: 0.9,
-              guidance_scale: 7.5
-            };
+            // Prepare image URLs for the frame system
+            const imageUrls: string[] = [];
+            
+            // Add primary image from frame system or fallback to uploaded image
+            if (primaryImage && primaryImage.length > 0) {
+              const primaryFile = primaryImage[0];
+              const primaryUrl = await compressImage(primaryFile, 1920, 1920, 0.8);
+              imageUrls.push(primaryUrl);
+            } else if (uploadedImage) {
+              // Handle uploadedImage which can be string or File
+              if (typeof uploadedImage === 'string') {
+                imageUrls.push(uploadedImage);
+              } else {
+                const uploadedUrl = await compressImage(uploadedImage, 1920, 1920, 0.8);
+                imageUrls.push(uploadedUrl);
+              }
+            }
+            
+            // Add style reference image if available
+            if (styleImage && styleImage.length > 0) {
+              const styleFile = styleImage[0];
+              const styleUrl = await compressImage(styleFile, 1920, 1920, 0.8);
+              imageUrls.push(styleUrl);
+            }
+            
+            // Determine model-specific parameters
+            let modelParameters: any = {};
+            
+            // Add model-specific parameters
+            if (imageModel === 'fal-ai/nano-banana/edit') {
+              modelParameters = {
+                image_urls: imageUrls,
+                prompt: enhancedPrompt,
+                num_images: 1,
+                output_format: "jpeg",
+                strength: 0.9,
+                guidance_scale: 7.5
+              };
+            } else if (imageModel === 'fal-ai/gemini-25-flash-image/edit') {
+              // Gemini model only accepts these specific parameters - no extra fields
+              modelParameters = {
+                image_urls: imageUrls,
+                prompt: enhancedPrompt,
+                num_images: 1
+              };
+              
+              // Remove any extra parameters that might have been added by the intelligence core
+              console.log('🔧 [IntelligentChatInterface] Using Gemini model - ensuring clean parameters');
+            } else {
+              // Default fallback
+              modelParameters = {
+                image_urls: imageUrls,
+                prompt: enhancedPrompt,
+                num_images: 1
+              };
+            }
+            
+            // Completely replace the delegation parameters to avoid conflicts
+            delegation.parameters = modelParameters;
+            
+            // Log the final parameters for debugging
+            console.log('🔧 [IntelligentChatInterface] Final delegation parameters:', delegation.parameters);
+            console.log('🔧 [IntelligentChatInterface] Model being used:', imageModel);
             
             // Set the pending delegation
             setPendingDelegation(delegation);
@@ -2337,9 +2397,9 @@ Starting workflow execution...`,
             // Add delegation message
             const delegationMessage: ChatMessage = {
               id: `delegation-${Date.now()}`,
-              type: 'assistant',
+          type: 'assistant',
               content: `✏️ **Edit Ready**: Your image is ready to be edited using ${imageModel}`,
-              timestamp: new Date(),
+          timestamp: new Date(),
               intent: intent,
               delegation: delegation,
               status: 'pending',
@@ -2352,7 +2412,7 @@ Starting workflow execution...`,
             
             // Continue with the generation process
             currentDelegation = delegation;
-          } else {
+      } else {
             throw new Error('No suitable image editing model found. Please check your model preferences.');
           }
         } else if (selectedIntent === 'animate') {
@@ -2507,13 +2567,13 @@ Starting workflow execution...`,
           
           // Use the user's preferred video model
           const videoModel = preferences.video || videoModelToUse;
-          
-          // Get delegation from intelligence core for video generation
+        
+        // Get delegation from intelligence core for video generation
           const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
           const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
-          
-          if (delegation) {
-            // Override the model to use the user's preferred video model
+        
+        if (delegation) {
+          // Override the model to use the user's preferred video model
             delegation.modelId = videoModel;
             delegation.reason = 'Text-to-video generation with user prompt';
             
@@ -2562,38 +2622,38 @@ Starting workflow execution...`,
             // Override the model to use the user's preferred video model
             delegation.modelId = videoModel;
             delegation.reason = 'Default image-to-video animation (no intent selected)';
-            
-            // Add the image_url parameter for video generation
-            delegation.parameters = {
-              ...delegation.parameters,
-              image_url: uploadedImage,
-              prompt: userInput.trim()
-            };
-            
-            // Set the pending delegation
-            setPendingDelegation(delegation);
+          
+          // Add the image_url parameter for video generation
+          delegation.parameters = {
+            ...delegation.parameters,
+            image_url: uploadedImage,
+            prompt: userInput.trim()
+          };
+          
+          // Set the pending delegation
+          setPendingDelegation(delegation);
             startGeneration('video', 'Default image-to-video animation');
-            
-            // Add delegation message
-            const delegationMessage: ChatMessage = {
-              id: `delegation-${Date.now()}`,
-              type: 'assistant',
+          
+          // Add delegation message
+          const delegationMessage: ChatMessage = {
+            id: `delegation-${Date.now()}`,
+            type: 'assistant',
               content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel} (default behavior)`,
-              timestamp: new Date(),
+            timestamp: new Date(),
               intent: videoIntent,
-              delegation: delegation,
-              status: 'pending',
-            };
-            setMessages(prev => [...prev, delegationMessage]);
-            
-            // Clear the uploaded image after setting up the delegation
-            setUploadedImage(null);
-            setImagePreview(null);
-            
-            // Continue with the generation process
-            currentDelegation = delegation;
-          } else {
-            throw new Error('No suitable video model found for animation. Please check your model preferences.');
+            delegation: delegation,
+            status: 'pending',
+          };
+          setMessages(prev => [...prev, delegationMessage]);
+          
+          // Clear the uploaded image after setting up the delegation
+          setUploadedImage(null);
+          setImagePreview(null);
+          
+          // Continue with the generation process
+          currentDelegation = delegation;
+        } else {
+          throw new Error('No suitable video model found for animation. Please check your model preferences.');
           }
         }
       }
@@ -2696,8 +2756,14 @@ Starting workflow execution...`,
       // Prepare generation data
       const generationData: Record<string, any> = {
         model: currentDelegation.intent === 'video' ? videoModelToUse : currentDelegation.modelId,
+        prompt: currentDelegation.parameters.prompt,
         ...currentDelegation.parameters,
       };
+      
+      // Ensure the model field is correctly set for the API
+      if (!generationData.model) {
+        generationData.model = currentDelegation.modelId;
+      }
       
       console.log('🔍 [IntelligentChatInterface] Delegation validation:', {
         hasDelegation: !!currentDelegation,
@@ -2801,11 +2867,11 @@ Starting workflow execution...`,
            setGenerationProgress(null);
            throw error;
          }
-             } else if (onContentGenerated) {
-        // Handle image generation normally
+       } else if (onContentGenerated) {
+         // Handle image generation normally
         console.log('📞 [IntelligentChatInterface] Calling onContentGenerated callback');
-        console.log('📞 [IntelligentChatInterface] Generation data being sent:', generationData);
-        
+          console.log('📞 [IntelligentChatInterface] Generation data being sent:', generationData);
+         
         // Validate generation data before calling callback
         if (!generationData || Object.keys(generationData).length === 0) {
           console.error('❌ [IntelligentChatInterface] Empty generation data, cannot call onContentGenerated');
@@ -2820,11 +2886,11 @@ Starting workflow execution...`,
         if (!generationData.prompt && !generationData.image_url) {
           console.error('❌ [IntelligentChatInterface] Missing prompt or image_url in generation data:', generationData);
           throw new Error('Missing prompt or image_url in generation data');
-        }
-         
-        // Call the content generated callback instead of onGenerate
-        const result = await onContentGenerated(generationData);
-        console.log('📞 [IntelligentChatInterface] Content generation callback completed');
+      }
+      
+      // Call the content generated callback instead of onGenerate
+      const result = await onContentGenerated(generationData);
+      console.log('📞 [IntelligentChatInterface] Content generation callback completed');
           console.log('📞 [IntelligentChatInterface] Result type:', typeof result);
           console.log('📞 [IntelligentChatInterface] Result keys:', result ? Object.keys(result) : 'null/undefined');
           
@@ -3397,10 +3463,10 @@ Starting workflow execution...`,
       setSelectedIntent(null);
       setIntentValidation(null);
 
-      toast({
-        title: "Image Uploaded!",
+    toast({
+      title: "Image Uploaded!",
         description: `${file.name} is ready. Please select what you want to do with this image.`,
-      });
+    });
       
       console.log('✅ [IntelligentChatInterface] Image compressed and uploaded successfully');
       
@@ -3459,6 +3525,66 @@ Starting workflow execution...`,
       description: "Cinematic style elements have been extracted and will be applied to your next prompt.",
     });
   }, [toast]);
+
+  // Frame system handlers
+  const handlePrimaryImageUpload = useCallback((files: FileList | null) => {
+    console.log('🖼️ [Frame System] Primary image uploaded:', files?.length || 0, 'files');
+    
+    if (files && files.length > 0) {
+      const file = files[0];
+      setPrimaryImage(files);
+      setUploadedImageForIntent(URL.createObjectURL(file));
+      setImagePreview(URL.createObjectURL(file));
+      
+      // Add a user message indicating the image was uploaded
+      const userMessage = {
+        id: Date.now().toString(),
+        type: 'user' as const,
+        content: `[Primary image uploaded: ${file.name}]`,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+
+      // Show intent selection
+      setShowIntentSelection(true);
+      setSelectedIntent(null);
+      setIntentValidation(null);
+
+      toast({
+        title: "Primary Image Uploaded!",
+        description: `${file.name} is ready. Please select what you want to do with this image.`,
+      });
+    }
+  }, [toast]);
+
+  const handleStyleImageUploadFrame = useCallback((files: FileList | null) => {
+    console.log('🎨 [Frame System] Style image uploaded:', files?.length || 0, 'files');
+    
+    if (files && files.length > 0) {
+      const file = files[0];
+      setStyleImage(files);
+      
+      toast({
+        title: "Style Reference Added!",
+        description: `${file.name} will be used as style reference.`,
+      });
+    }
+  }, [toast]);
+
+  const handlePrimaryImageRemove = useCallback(() => {
+    console.log('🗑️ [Frame System] Primary image removed');
+    setPrimaryImage(null);
+    setStyleImage(null); // Also remove style image when primary is removed
+    setUploadedImageForIntent(null);
+    setImagePreview(null);
+    setShowFrameContainer(false);
+  }, []);
+
+  const handleStyleImageRemove = useCallback(() => {
+    console.log('🗑️ [Frame System] Style image removed');
+    setStyleImage(null);
+  }, []);
 
   const handleStyleImageUpload = useCallback((imageFile: File, imageUrl: string) => {
     console.log('🎨 [IntelligentChatInterface] Style image uploaded:', imageFile.name);
@@ -5198,8 +5324,129 @@ Available commands:
                 </div>
               )}
 
-              {/* Image Preview */}
-              {imagePreview && (
+              {/* Frame System Toggle */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-300/30">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowFrameContainer(!showFrameContainer)}
+                    className="text-xs"
+                  >
+                    {showFrameContainer ? '🖼️ Hide Frames' : '🖼️ Show Frames'}
+                  </Button>
+                  {showFrameContainer && (
+                    <span className="text-xs text-muted-foreground">
+                      Upload primary image + optional style reference
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Frame Slots - Direct in Input Area */}
+              {showFrameContainer && (
+                <div className="flex items-center gap-4 p-4 border-b border-gray-300/30">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-foreground">Primary Image:</span>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            handlePrimaryImageUpload(files);
+                          }
+                        }}
+                        className="hidden"
+                        id="primary-image-input"
+                      />
+                      <label
+                        htmlFor="primary-image-input"
+                        className="flex items-center justify-center w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                      >
+                        {primaryImage && primaryImage.length > 0 ? (
+                          <img
+                            src={URL.createObjectURL(primaryImage[0])}
+                            alt="Primary"
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Plus className="w-6 h-6 text-gray-400" />
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-foreground">Style Reference:</span>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const files = e.target.files;
+                          if (files && files.length > 0) {
+                            handleStyleImageUploadFrame(files);
+                          }
+                        }}
+                        className="hidden"
+                        id="style-image-input"
+                        disabled={!primaryImage || primaryImage.length === 0}
+                      />
+                      <label
+                        htmlFor="style-image-input"
+                        className={`flex items-center justify-center w-16 h-16 border-2 border-dashed rounded-lg transition-colors ${
+                          !primaryImage || primaryImage.length === 0
+                            ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
+                            : 'border-gray-300 cursor-pointer hover:border-primary hover:bg-primary/5'
+                        }`}
+                      >
+                        {styleImage && styleImage.length > 0 ? (
+                          <img
+                            src={URL.createObjectURL(styleImage[0])}
+                            alt="Style"
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <Plus className={`w-6 h-6 ${!primaryImage || primaryImage.length === 0 ? 'text-gray-300' : 'text-gray-400'}`} />
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {primaryImage && primaryImage.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handlePrimaryImageRemove}
+                        className="text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Clear
+                      </Button>
+                    )}
+                    {styleImage && styleImage.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleStyleImageRemove}
+                        className="text-xs"
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Clear Style
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Image Preview - Only show when not using frame system */}
+              {imagePreview && !showFrameContainer && (
                 <div className="p-4 border-b border-gray-300/30">
                   <div className="flex items-center gap-3">
                     <div className="relative">

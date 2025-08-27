@@ -239,6 +239,18 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       guidance_scale: 7.5,
     },
   },
+  {
+    endpointId: "fal-ai/gemini-25-flash-image/edit",
+    label: "Gemini 2.5 Flash Image Edit",
+    description: "Google's state-of-the-art image generation and editing model with advanced multi-image editing capabilities",
+    category: "image",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "Edit this image with creative modifications",
+      image_urls: [],
+      num_images: 1,
+    },
+  },
 
   // Video Generation Models
   {

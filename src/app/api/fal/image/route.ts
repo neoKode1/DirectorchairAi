@@ -160,6 +160,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    if (model.includes('gemini-25-flash-image/edit')) {
+      console.log('🔧 [FAL Image Proxy] Processing Gemini model parameters');
+      console.log('🔧 [FAL Image Proxy] Body received:', body);
+      
+      // Clear all existing properties and set only Gemini-supported parameters
+      Object.keys(input).forEach(key => delete input[key]);
+      input.prompt = body.prompt || prompt;
+      input.image_urls = body.image_urls || [];
+      input.num_images = body.num_images !== undefined ? body.num_images : 1;
+      
+      console.log('🔧 [FAL Image Proxy] Gemini input parameters (cleaned):', input);
+    }
+
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
 
     // Call FAL API directly with subscription
@@ -226,6 +239,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       "fal-ai/flux-pro/kontext",
       "fal-ai/flux-krea-lora/image-to-image",
       "fal-ai/nano-banana/edit",
+      "fal-ai/gemini-25-flash-image/edit",
       "fal-ai/ideogram/character"
     ]
   });

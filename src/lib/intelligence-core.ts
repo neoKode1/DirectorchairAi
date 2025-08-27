@@ -1739,9 +1739,20 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
             break;
           case 'image-edit':
             console.log('✏️ [IntelligenceCore] Routing to image edit model');
-            selectedModel = this.getModelCapabilities().find(model => 
-              model.endpointId === 'fal-ai/nano-banana/edit'
-            );
+            // Check if user has a preferred image editing model
+            const preferredImageEditModel = this.modelPreferences.imageEdit;
+            if (preferredImageEditModel && preferredImageEditModel !== 'none') {
+              selectedModel = this.getModelCapabilities().find(model => 
+                model.endpointId === preferredImageEditModel
+              );
+            }
+            if (!selectedModel) {
+              // Default to Nano Banana Edit, but also consider Gemini
+              selectedModel = this.getModelCapabilities().find(model => 
+                model.endpointId === 'fal-ai/nano-banana/edit' || 
+                model.endpointId === 'fal-ai/gemini-25-flash-image/edit'
+              );
+            }
             break;
           case 'animation':
             console.log('🎬 [IntelligenceCore] Routing to animation model');

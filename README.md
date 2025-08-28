@@ -4,14 +4,14 @@
 
 Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance with automated smart controls.
 
-![DirectorchairAI Screenshot](public/Screenshot (2155).png)
+![DirectorchairAI Screenshot](https://raw.githubusercontent.com/neoKode1/DirectorchairAi/main/public/Screenshot%20(2155).png)
 
 ## 🎬 Demo Video
 
 Watch DirectorchairAI in action:
 
 <div align="center">
-  <a href="public/DcAi.mp4">
+  <a href="https://youtu.be/tssJN3-TwvI?si=16X4QB_AZXq0NgAq">
     <img src="https://img.shields.io/badge/Watch-Demo%20Video-red?style=for-the-badge&logo=youtube" alt="Watch Demo Video" />
   </a>
 </div>

@@ -4,7 +4,7 @@
 
 Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance with automated smart controls.
 
-![DirectorchairAI Screenshot](public/screenshot.webp)
+![DirectorchairAI Screenshot](public/Screenshot (2155).png)
 
 ## 🎬 Demo Video
 

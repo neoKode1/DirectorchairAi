@@ -129,6 +129,7 @@ function TimelineContent() {
 
     const handleGenerate = async (generationData: any): Promise<any> => {
     try {
+      console.log('🚀 [Timeline] ===== GENERATION START =====');
       console.log('🚀 [Timeline] Generation data received:', generationData);
       console.log('📊 [Timeline] Generation data type:', typeof generationData);
       console.log('📊 [Timeline] Generation data keys:', generationData ? Object.keys(generationData) : 'null/undefined');
@@ -140,6 +141,7 @@ function TimelineContent() {
       });
       console.log('📦 [Timeline] Enhanced prompt in generation data:', generationData?.prompt);
       console.log('📦 [Timeline] Structured prompt for display:', generationData?.structuredPromptForDisplay);
+      console.log('📦 [Timeline] Generation data stringified:', JSON.stringify(generationData, null, 2));
       
       // Validate that generationData is not empty or null
       if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {

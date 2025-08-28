@@ -72,9 +72,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (body.aspect_ratio) {
       input.aspect_ratio = body.aspect_ratio;
     }
-    if (body.duration) {
-      input.duration = body.duration;
+    
+    // Set duration based on model requirements
+    if (model.includes('minimax')) {
+      // Minimax models require minimum 6s
+      input.duration = '6s';
+      console.log('🎬 [FAL Video Proxy] Setting duration to 6s for Minimax model (minimum requirement)');
+    } else if (model.includes('luma-dream-machine/ray-2-flash')) {
+      // Luma Ray 2 Flash only accepts 5s or 9s
+      input.duration = '5s';
+      console.log('🎬 [FAL Video Proxy] Setting duration to 5s for Luma Ray 2 Flash');
+    } else {
+      // Default to 5s for other models
+      input.duration = '5s';
+      console.log('🎬 [FAL Video Proxy] Setting duration to 5s for other video models');
     }
+    
     if (body.resolution) {
       input.resolution = body.resolution;
     }
@@ -136,6 +149,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.loop !== undefined) {
         input.loop = body.loop;
       }
+      
+      // Luma Ray 2 Flash only accepts '5s' or '9s' for duration
+      if (model.includes('ray-2-flash')) {
+        console.log('🎬 [FAL Video Proxy] Luma Ray 2 Flash detected, validating duration');
+        if (body.duration && body.duration !== '5s' && body.duration !== '9s') {
+          console.log('🎬 [FAL Video Proxy] Invalid duration for Ray 2 Flash, defaulting to 5s');
+          input.duration = '5s';
+        }
+      }
+      
       // Ensure duration is properly formatted for Luma models
       if (body.duration && !body.duration.endsWith('s')) {
         input.duration = body.duration + 's';

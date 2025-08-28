@@ -868,11 +868,14 @@ export class IntelligenceCore {
       requiresGeneration = true;
       
       if (this.containsStyleTransferKeywords(lowerInput)) {
+        console.log('🎨 [IntelligenceCore] ===== STYLE TRANSFER KEYWORD DETECTION =====');
         console.log('🔍 [IntelligenceCore] ✅ Detected style transfer intent');
+        console.log('🎨 [IntelligenceCore] Input that triggered style transfer:', lowerInput);
         type = 'image';
         confidence = 0.95;
         // Add special flag for style transfer
         this.conversationState.imageActionType = 'style-transfer';
+        console.log('🎨 [IntelligenceCore] Set imageActionType to style-transfer');
       } else if (this.containsImageEditKeywords(lowerInput)) {
         console.log('🔍 [IntelligenceCore] ✅ Detected image edit intent');
         type = 'image';
@@ -1176,7 +1179,12 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       'vintage', 'retro', 'modern', 'classic', 'abstract', 'impressionist', 'realistic'
     ];
     const found = styleTransferWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
-    console.log('🔍 [IntelligenceCore] Checking style transfer keywords:', { input, styleTransferWords, found });
+    console.log('🎨 [IntelligenceCore] Style transfer keyword check:', { 
+      input, 
+      styleTransferWords, 
+      found,
+      matchingWords: styleTransferWords.filter(word => input.toLowerCase().includes(word.toLowerCase()))
+    });
     return found;
   }
 
@@ -1744,10 +1752,16 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
         
         switch (this.conversationState.imageActionType) {
           case 'style-transfer':
+            console.log('🎨 [IntelligenceCore] ===== STYLE TRANSFER MODEL SELECTION =====');
             console.log('🎨 [IntelligenceCore] Routing to style transfer model');
             selectedModel = this.getModelCapabilities().find(model => 
               model.endpointId === 'fal-ai/flux-krea-lora/image-to-image'
             );
+            console.log('🎨 [IntelligenceCore] Style transfer model found:', selectedModel);
+            if (!selectedModel) {
+              console.error('❌ [IntelligenceCore] FLUX LoRA model not found in capabilities');
+              console.log('🎨 [IntelligenceCore] Available models:', this.getModelCapabilities().map(m => m.endpointId));
+            }
             break;
           case 'flux-kontext':
             console.log('🌍 [IntelligenceCore] Routing to flux kontext model');

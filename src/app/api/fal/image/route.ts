@@ -41,6 +41,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image_url = body.image_url;
     }
 
+    // Add image data if provided (for base64 images)
+    if (body.image && typeof body.image === 'object' && body.image.data) {
+      input.image = body.image;
+    }
+
     // Add image_urls if provided (for nano-banana/edit)
     if (body.image_urls) {
       input.image_urls = body.image_urls;
@@ -113,15 +118,71 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (model.includes('flux-krea-lora')) {
+      console.log('🎨 [FAL Image Proxy] Processing FLUX LoRA model parameters');
+      console.log('🎨 [FAL Image Proxy] Body received for FLUX LoRA:', body);
+      console.log('🎨 [FAL Image Proxy] Current input before FLUX LoRA processing:', input);
+      
+      // Create a clean input object with only FLUX LoRA supported parameters
+      const fluxLoraInput: Record<string, any> = {
+        prompt: input.prompt
+      };
+      
+      // Handle image data - FLUX LoRA expects image_url even for base64
+      if (input.image && typeof input.image === 'object' && input.image.data) {
+        // Convert base64 to data URL for FLUX LoRA
+        fluxLoraInput.image_url = `data:${input.image.mime_type};base64,${input.image.data}`;
+        console.log('🎨 [FAL Image Proxy] Converted base64 to data URL for FLUX LoRA');
+      } else if (input.image_url) {
+        fluxLoraInput.image_url = input.image_url;
+        console.log('🎨 [FAL Image Proxy] Using existing image_url for FLUX LoRA');
+      }
+      
       if (body.strength !== undefined) {
-        input.strength = body.strength;
+        fluxLoraInput.strength = body.strength;
+        console.log('🎨 [FAL Image Proxy] Set strength to:', body.strength);
       }
       if (body.num_inference_steps !== undefined) {
-        input.num_inference_steps = body.num_inference_steps;
+        fluxLoraInput.num_inference_steps = body.num_inference_steps;
+        console.log('🎨 [FAL Image Proxy] Set num_inference_steps to:', body.num_inference_steps);
       }
       if (body.guidance_scale !== undefined) {
-        input.guidance_scale = body.guidance_scale;
+        fluxLoraInput.guidance_scale = body.guidance_scale;
+        console.log('🎨 [FAL Image Proxy] Set guidance_scale to:', body.guidance_scale);
       }
+      if (body.num_images !== undefined) {
+        fluxLoraInput.num_images = body.num_images;
+        console.log('🎨 [FAL Image Proxy] Set num_images to:', body.num_images);
+      }
+      if (body.aspect_ratio) {
+        fluxLoraInput.aspect_ratio = body.aspect_ratio;
+        console.log('🎨 [FAL Image Proxy] Set aspect_ratio to:', body.aspect_ratio);
+      }
+      
+      // Validate required parameters for FLUX LoRA
+      if (!fluxLoraInput.image_url) {
+        console.error('❌ [FAL Image Proxy] FLUX LoRA missing required image_url parameter');
+        return NextResponse.json({ 
+          success: false,
+          error: "FLUX LoRA requires image_url parameter" 
+        }, { status: 400 });
+      }
+      
+      if (!fluxLoraInput.prompt) {
+        console.error('❌ [FAL Image Proxy] FLUX LoRA missing required prompt parameter');
+        return NextResponse.json({ 
+          success: false,
+          error: "FLUX LoRA requires prompt parameter" 
+        }, { status: 400 });
+      }
+      
+      // Replace the input with the clean FLUX LoRA input
+      Object.keys(input).forEach(key => delete input[key]);
+      Object.assign(input, fluxLoraInput);
+      
+      console.log('🎨 [FAL Image Proxy] FLUX LoRA final input parameters:', input);
+      console.log('🎨 [FAL Image Proxy] FLUX LoRA image_url:', input.image_url);
+      console.log('🎨 [FAL Image Proxy] FLUX LoRA prompt:', input.prompt);
+      console.log('🎨 [FAL Image Proxy] FLUX LoRA strength:', input.strength);
     }
 
     if (model.includes('stable-diffusion')) {
@@ -264,6 +325,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
+    console.log('📦 [FAL Image Proxy] Input JSON:', JSON.stringify(input, null, 2));
 
     // Call FAL API directly with subscription
     try {
@@ -274,8 +336,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         logs: true,
         onQueueUpdate: (update: any) => {
           console.log('📊 [FAL Image Proxy] Queue update:', update.status);
-          if (update.status === "IN_PROGRESS" && update.logs) {
-            update.logs.map((log: any) => log.message).forEach(console.log);
+          if (update.logs) {
+            update.logs.forEach((log: any) => {
+              console.log('📊 [FAL Image Proxy] Queue log:', log.message);
+            });
           }
         },
       });
@@ -295,11 +359,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     } catch (falError: any) {
       console.error('❌ [FAL Image Proxy] FAL API error:', falError);
+      console.error('❌ [FAL Image Proxy] Error status:', falError.status);
+      console.error('❌ [FAL Image Proxy] Error body:', falError.body);
+      console.error('❌ [FAL Image Proxy] Error message:', falError.message);
       
       return NextResponse.json({
         success: false,
         error: 'FAL API call failed',
         details: falError.message || 'Unknown FAL error',
+        status: falError.status,
+        body: falError.body,
         model: model,
         prompt: prompt
       }, { status: 500 });

@@ -100,7 +100,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "^2.2.2",
     "@jest/globals": "^29.7.0",
     "@remotion/cli": "^4.0.240",
     "@shadcn/ui": "^0.0.4",

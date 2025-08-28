@@ -295,7 +295,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "A cinematic scene with smooth camera movement",
       aspect_ratio: "16:9",
-      duration: "8s",
+      duration: "5s",
       enhance_prompt: true,
       auto_fix: true,
       resolution: "720p",
@@ -312,7 +312,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "A professional video with natural motion",
       aspect_ratio: "16:9",
-      duration: "8s",
+      duration: "5s",
       resolution: "1080p",
       negative_prompt: "blurry, low quality, distorted",
     },

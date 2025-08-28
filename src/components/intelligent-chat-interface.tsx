@@ -160,6 +160,246 @@ const UserInteractionMonitor = {
   }
 };
 
+// Add this new component after the imports and before the main component
+const ModelStatusBar = ({ className }: { className?: string }) => {
+  const [preferences, setPreferences] = useState<{
+    image: string | null;
+    video: string | null;
+    music: string | null;
+    voiceover: string | null;
+  }>({
+    image: null,
+    video: null,
+    music: null,
+    voiceover: null,
+  });
+
+  const loadPreferences = useCallback(() => {
+    const saved = localStorage.getItem('narrative-model-preferences');
+    if (saved) {
+      try {
+        const parsedPreferences = JSON.parse(saved);
+        setPreferences({
+          image: parsedPreferences.image === 'none' ? null : parsedPreferences.image,
+          video: parsedPreferences.video === 'none' ? null : parsedPreferences.video,
+          music: parsedPreferences.music === 'none' ? null : parsedPreferences.music,
+          voiceover: parsedPreferences.voiceover === 'none' ? null : parsedPreferences.voiceover,
+        });
+      } catch (error) {
+        console.error('Failed to load model preferences:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPreferences();
+    
+    // Listen for preference changes
+    const handlePreferenceChange = () => {
+      loadPreferences();
+    };
+    
+    window.addEventListener('model-preferences-changed', handlePreferenceChange);
+    
+    return () => {
+      window.removeEventListener('model-preferences-changed', handlePreferenceChange);
+    };
+  }, [loadPreferences]);
+
+  const getModelDisplayName = (modelId: string | null) => {
+    if (!modelId) return 'Not Set';
+    
+    // Get the base model name
+    let baseName = '';
+    if (modelId.includes('flux-pro/1.1/ultra')) baseName = 'Flux v1.1 Ultra';
+    else if (modelId.includes('flux-pro/1.1')) baseName = 'Flux v1.1';
+    else if (modelId.includes('flux-pro/kontext')) baseName = 'Flux Kontext';
+    else if (modelId.includes('flux-krea-lora')) baseName = 'FLUX LoRA';
+    else if (modelId.includes('kling-video/v2.1/master/image-to-video')) baseName = 'Kling Master v2.1';
+    else if (modelId.includes('kling-video/v2.1/master/text-to-video')) baseName = 'Kling Master v2.1';
+    else if (modelId.includes('veo3/fast')) baseName = 'Veo3 Fast';
+    else if (modelId.includes('veo3/standard')) baseName = 'Veo3 Standard';
+    else if (modelId.includes('luma-dream-machine/ray-2')) baseName = 'Luma Ray 2';
+    else if (modelId.includes('luma-dream-machine/ray-2-flash')) baseName = 'Luma Ray 2 Flash';
+    else if (modelId.includes('minimax/hailuo-02/standard/image-to-video')) baseName = 'Minimax Hailuo 02';
+    else if (modelId.includes('minimax/hailuo-02/standard/text-to-video')) baseName = 'Minimax Hailuo 02';
+    else if (modelId.includes('seedance/v1/pro')) baseName = 'Seedance 1.0 Pro';
+    else if (modelId.includes('elevenlabs/tts')) baseName = 'ElevenLabs TTS';
+    else if (modelId.includes('imagen4')) baseName = 'Google Imagen 4';
+    else if (modelId.includes('stable-diffusion')) baseName = 'Stable Diffusion 3.5';
+    else if (modelId.includes('dreamina')) baseName = 'Dreamina v3.1';
+    else if (modelId.includes('nano-banana')) baseName = 'Nano Banana';
+    else if (modelId.includes('gemini-25-flash-image')) baseName = 'Gemini 2.5 Flash';
+    else if (modelId.includes('qwen-image-edit')) baseName = 'Qwen Image Edit';
+    else if (modelId.includes('ideogram/character')) baseName = 'Ideogram Character';
+    else if (modelId.includes('ffmpeg-api')) baseName = 'Frame Extractor';
+    else baseName = modelId.split('/').pop() || 'Unknown';
+    
+    return baseName;
+  };
+
+  const getModelType = (modelId: string | null) => {
+    if (!modelId) return '';
+    
+    // Text-to-Image models
+    if (modelId.includes('imagen4/preview')) return 'T2I';
+    if (modelId.includes('stable-diffusion-v35-large')) return 'T2I';
+    if (modelId.includes('dreamina/v3.1/text-to-image')) return 'T2I';
+    if (modelId.includes('flux-pro/v1.1-ultra')) return 'T2I';
+    if (modelId.includes('ideogram/character')) return 'T2I';
+    
+    // Image-to-Image/Edit models
+    if (modelId.includes('flux-pro/kontext')) return 'I2I';
+    if (modelId.includes('flux-krea-lora/image-to-image')) return 'I2I';
+    if (modelId.includes('nano-banana/edit')) return 'I2I';
+    if (modelId.includes('gemini-25-flash-image/edit')) return 'I2I';
+    if (modelId.includes('qwen-image-edit')) return 'I2I';
+    
+    // Text-to-Video models
+    if (modelId.includes('kling-video/v2.1/master/text-to-video')) return 'T2V';
+    if (modelId.includes('minimax/hailuo-02/standard/text-to-video')) return 'T2V';
+    
+    // Image-to-Video models
+    if (modelId.includes('veo3/fast')) return 'I2V';
+    if (modelId.includes('veo3/standard')) return 'I2V';
+    if (modelId.includes('kling-video/v2.1/master/image-to-video')) return 'I2V';
+    if (modelId.includes('luma-dream-machine/ray-2')) return 'I2V';
+    if (modelId.includes('luma-dream-machine/ray-2-flash/image-to-video')) return 'I2V';
+    if (modelId.includes('minimax/hailuo-02/standard/image-to-video')) return 'I2V';
+    if (modelId.includes('seedance/v1/pro/image-to-video')) return 'I2V';
+    
+    // Text-to-Speech models
+    if (modelId.includes('elevenlabs/tts')) return 'TTS';
+    
+    // Edit tools
+    if (modelId.includes('ffmpeg-api')) return 'Edit';
+    
+    return '';
+  };
+
+  const getModelIcon = (modelId: string | null) => {
+    if (!modelId) return '/gemini-color.png'; // Default fallback
+    
+    // Image models
+    if (modelId.includes('imagen')) return '/gemini-color.png'; // Google Imagen
+    if (modelId.includes('stable-diffusion')) return '/gemini-color.png'; // Stable Diffusion
+    if (modelId.includes('dreamina')) return '/bytedance-color.webp'; // Dreamina
+    if (modelId.includes('flux')) return '/flux.png'; // Flux models
+    if (modelId.includes('nano-banana')) return '/flux.png'; // Nano Banana
+    if (modelId.includes('gemini')) return '/gemini-color.png'; // Gemini
+    if (modelId.includes('ideogram')) return '/ideogram.png'; // Ideogram
+    
+    // Video models
+    if (modelId.includes('veo')) return '/gemini-color.png'; // Google Veo
+    if (modelId.includes('kling')) return '/kling-color.png'; // Kling
+    if (modelId.includes('luma')) return '/dreammachine.png'; // Luma
+    if (modelId.includes('minimax')) return '/minimax-color.png'; // Minimax
+    if (modelId.includes('seedance')) return '/bytedance-color.webp'; // Seedance
+    
+    // Voice models
+    if (modelId.includes('elevenlabs')) return '/elevenlabs.png'; // ElevenLabs
+    
+    return '/gemini-color.png'; // Default fallback
+  };
+
+  return (
+    <div 
+      className={`bg-gradient-to-r from-background/90 to-background/80 backdrop-blur-sm border-b border-border/50 p-3 transition-all duration-300 hover:from-background/95 hover:to-background/85 ${className}`}
+      title="Current active AI models - Click Model Preferences to change"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Settings className="w-3 h-3" />
+            Active Models
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Image Model */}
+          <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-accent/20 border border-accent/30 transition-all duration-200 hover:bg-accent/30">
+            <div className="w-4 h-4 flex-shrink-0 rounded overflow-hidden bg-white/30">
+              <img 
+                src={getModelIcon(preferences.image)} 
+                alt="Image Model" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-foreground">
+                {getModelDisplayName(preferences.image)}
+              </span>
+              {getModelType(preferences.image) && (
+                <span className="text-xs text-muted-foreground">
+                  {getModelType(preferences.image)}
+                </span>
+              )}
+            </div>
+            {preferences.image ? (
+              <span className="text-green-500 text-xs animate-pulse">✓</span>
+            ) : (
+              <span className="text-red-500 text-xs">⚠</span>
+            )}
+          </div>
+          
+          {/* Video Model */}
+          <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-accent/20 border border-accent/30 transition-all duration-200 hover:bg-accent/30">
+            <div className="w-4 h-4 flex-shrink-0 rounded overflow-hidden bg-white/30">
+              <img 
+                src={getModelIcon(preferences.video)} 
+                alt="Video Model" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-foreground">
+                {getModelDisplayName(preferences.video)}
+              </span>
+              {getModelType(preferences.video) && (
+                <span className="text-xs text-muted-foreground">
+                  {getModelType(preferences.video)}
+                </span>
+              )}
+            </div>
+            {preferences.video ? (
+              <span className="text-green-500 text-xs animate-pulse">✓</span>
+            ) : (
+              <span className="text-red-500 text-xs">⚠</span>
+            )}
+          </div>
+
+          {/* Voice Model (if set) */}
+          {(preferences.music || preferences.voiceover) && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md bg-accent/20 border border-accent/30 transition-all duration-200 hover:bg-accent/30">
+              <div className="w-4 h-4 flex-shrink-0 rounded overflow-hidden bg-white/30">
+                <img 
+                  src={getModelIcon(preferences.voiceover || preferences.music)} 
+                  alt="Voice Model" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground">
+                  {getModelDisplayName(preferences.voiceover || preferences.music)}
+                </span>
+                {getModelType(preferences.voiceover || preferences.music) && (
+                  <span className="text-xs text-muted-foreground">
+                    {getModelType(preferences.voiceover || preferences.music)}
+                  </span>
+                )}
+              </div>
+              {(preferences.voiceover || preferences.music) ? (
+                <span className="text-green-500 text-xs animate-pulse">✓</span>
+              ) : (
+                <span className="text-red-500 text-xs">⚠</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function IntelligentChatInterface({ 
   className, 
   onContentGenerated, 
@@ -1651,9 +1891,11 @@ I'm your AI-powered media creation assistant, designed to help you generate stun
 3. Choose your preferred AI models in the Model Preferences
 4. Generate your content with one click!
 
-**Default Models Loaded:**
+**🎯 Active Models:**
 ${imageModelAvailable ? '✅' : '❌'} **Image**: Flux v1.1 Ultra
 ${videoModelAvailable ? '✅' : '❌'} **Video**: Kling Master v2.1 I2V
+
+*Models are displayed in the status bar above for quick reference*
 
 Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         timestamp: new Date(),
@@ -2368,11 +2610,15 @@ Starting workflow execution...`,
         
         // Get the saved preferences to determine which model to use
         const saved = localStorage.getItem('narrative-model-preferences');
+        console.log('🔍 [IntelligentChatInterface] Saved preferences from localStorage (line 2370):', saved);
+        
         if (!saved) {
+          console.error('❌ [IntelligentChatInterface] No model preferences found in localStorage (line 2372)');
           throw new Error('No model preferences found. Please set your preferred models first.');
         }
 
         const preferences = JSON.parse(saved);
+        console.log('🔍 [IntelligentChatInterface] Parsed preferences (line 2375):', preferences);
         
         // Use the selected intent from the modal instead of guessing from text
         if (selectedIntent === 'edit') {
@@ -2380,12 +2626,16 @@ Starting workflow execution...`,
           
           // Use the user's preferred image model or nano-banana/edit
           const imageModel = preferences.image || 'fal-ai/nano-banana/edit';
+          console.log('🔍 [IntelligentChatInterface] Using image model:', imageModel);
           
-                      // Get delegation for image editing
-            const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
-            const delegation = await intelligenceCore.selectOptimalModel(intent);
+          // Get delegation for image editing
+          const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          console.log('🔍 [IntelligentChatInterface] Intent analysis result:', intent);
+          const delegation = await intelligenceCore.selectOptimalModel(intent);
+          console.log('🔍 [IntelligentChatInterface] Delegation result:', delegation);
             
             if (delegation) {
+              console.log('✅ [IntelligentChatInterface] Delegation created successfully');
               // Override the model to use the user's preference or nano-banana/edit
               delegation.modelId = imageModel;
               delegation.reason = 'Image-to-image editing with user prompt';
@@ -2458,6 +2708,7 @@ Starting workflow execution...`,
             // Log the final parameters for debugging
             console.log('🔧 [IntelligentChatInterface] Final delegation parameters:', delegation.parameters);
             console.log('🔧 [IntelligentChatInterface] Model being used:', imageModel);
+            console.log('🔧 [IntelligentChatInterface] Delegation object after parameter assignment:', delegation);
             
             // Set the pending delegation
             setPendingDelegation(delegation);
@@ -2481,7 +2732,9 @@ Starting workflow execution...`,
             
             // Continue with the generation process
             currentDelegation = delegation;
-      } else {
+                } else {
+            console.error('❌ [IntelligentChatInterface] No delegation returned from intelligence core');
+            console.error('❌ [IntelligentChatInterface] Intent analysis result:', intent);
             throw new Error('No suitable image editing model found. Please check your model preferences.');
           }
         } else if (selectedIntent === 'animate') {
@@ -2534,14 +2787,21 @@ Starting workflow execution...`,
           }
         } else if (selectedIntent === 'style') {
           // Handle style transfer intent
+          console.log('🎨 [IntelligentChatInterface] ===== STYLE TRANSFER INTENT START =====');
           console.log('🎨 [IntelligentChatInterface] Handling style transfer intent');
+          console.log('🎨 [IntelligentChatInterface] User input:', userInput);
+          console.log('🎨 [IntelligentChatInterface] Uploaded image:', uploadedImage);
+          console.log('🎨 [IntelligentChatInterface] Uploaded image type:', typeof uploadedImage);
           
           // Use FLUX LoRA for style transfer
           const styleModel = 'fal-ai/flux-krea-lora/image-to-image';
+          console.log('🎨 [IntelligentChatInterface] Using style model:', styleModel);
           
           // Get delegation from intelligence core for style transfer
           const styleIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          console.log('🎨 [IntelligentChatInterface] Style intent analysis result:', styleIntent);
           const delegation = await intelligenceCore.selectOptimalModel(styleIntent);
+          console.log('🎨 [IntelligentChatInterface] Style delegation result:', delegation);
           
           if (delegation) {
             // Override the model to use FLUX LoRA
@@ -2549,16 +2809,63 @@ Starting workflow execution...`,
             delegation.reason = 'Style transfer with user prompt';
             
             // Only use parameters valid for FLUX LoRA model
+            console.log('🎨 [IntelligentChatInterface] Setting FLUX LoRA parameters');
+            console.log('🎨 [IntelligentChatInterface] Uploaded image for style transfer:', uploadedImage);
+            console.log('🎨 [IntelligentChatInterface] User prompt for style transfer:', userInput.trim());
+            
+            // For FLUX LoRA, we need to convert the image to base64 for direct upload
+            let imageData: string | { data: string; mime_type: string } | null = null;
+            if (uploadedImage && typeof uploadedImage === 'string' && uploadedImage.startsWith('blob:')) {
+              console.log('🎨 [IntelligentChatInterface] Converting blob URL to base64 for FLUX LoRA');
+              
+              try {
+                // Convert blob URL to base64
+                const response = await fetch(uploadedImage);
+                const blob = await response.blob();
+                
+                // Convert blob to base64
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve, reject) => {
+                  reader.onload = () => {
+                    const base64 = reader.result as string;
+                    // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+                    const base64Data = base64.split(',')[1];
+                    resolve(base64Data);
+                  };
+                  reader.onerror = reject;
+                });
+                
+                reader.readAsDataURL(blob);
+                const base64Data = await base64Promise;
+                
+                // Create image data object for FAL
+                imageData = {
+                  data: base64Data,
+                  mime_type: blob.type
+                };
+                
+                console.log('🎨 [IntelligentChatInterface] Image converted to base64 for FLUX LoRA');
+              } catch (error) {
+                console.error('❌ [IntelligentChatInterface] Failed to convert image for FLUX LoRA:', error);
+                throw new Error('Failed to process image for style transfer. Please try again.');
+              }
+            } else if (uploadedImage && typeof uploadedImage === 'string') {
+              // If it's already a URL, use it as is
+              imageData = uploadedImage;
+            } else {
+              throw new Error('No valid image provided for style transfer');
+            }
+            
             delegation.parameters = {
-              image_url: uploadedImage,
+              image: imageData,
               prompt: userInput.trim(),
               strength: 0.85,
               num_inference_steps: 28,
               guidance_scale: 3.5,
-              num_images: 1,
-              enable_safety_checker: true,
-              output_format: "jpeg"
+              num_images: 1
             };
+            
+            console.log('🎨 [IntelligentChatInterface] FLUX LoRA parameters set:', delegation.parameters);
             
             // Set the pending delegation
             setPendingDelegation(delegation);
@@ -2739,17 +3046,60 @@ Starting workflow execution...`,
         const delegation = await intelligenceCore.selectOptimalModel(intent);
         
         if (delegation) {
+          console.log('🎨 [IntelligentChatInterface] ===== STYLE REFERENCE TRANSFER START =====');
+          console.log('🎨 [IntelligentChatInterface] Style reference image:', styleReferenceImage);
+          console.log('🎨 [IntelligentChatInterface] User input:', userInput);
+          
           // Override the model to use FLUX LoRA
           delegation.modelId = 'fal-ai/flux-krea-lora/image-to-image';
           delegation.reason = 'Style transfer using uploaded reference image';
+          console.log('🎨 [IntelligentChatInterface] Set delegation model to FLUX LoRA');
           
           // Add the image_url parameter for FLUX LoRA
           if (styleReferenceImage) {
+            console.log('🎨 [IntelligentChatInterface] Setting style reference image as image_url');
+            
+            // For FLUX LoRA, we need to ensure the image is uploaded to the server first
+            let imageUrl = styleReferenceImage;
+            if (styleReferenceImage && typeof styleReferenceImage === 'string' && styleReferenceImage.startsWith('blob:')) {
+              console.log('🎨 [IntelligentChatInterface] Converting style reference blob URL to server URL for FLUX LoRA');
+              
+              try {
+                // Convert blob URL to File object
+                const response = await fetch(styleReferenceImage);
+                const blob = await response.blob();
+                const file = new File([blob], 'style-reference-image.jpg', { type: blob.type });
+                
+                // Upload to server
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const uploadResponse = await fetch('/api/upload', {
+                  method: 'POST',
+                  body: formData,
+                });
+                
+                if (!uploadResponse.ok) {
+                  throw new Error('Failed to upload style reference image for FLUX LoRA');
+                }
+                
+                const uploadResult = await uploadResponse.json();
+                imageUrl = uploadResult.url;
+                console.log('🎨 [IntelligentChatInterface] Style reference image uploaded for FLUX LoRA:', imageUrl);
+              } catch (error) {
+                console.error('❌ [IntelligentChatInterface] Failed to upload style reference image for FLUX LoRA:', error);
+                throw new Error('Failed to upload style reference image for style transfer. Please try again.');
+              }
+            }
+            
             delegation.parameters = {
               ...delegation.parameters,
-              image_url: styleReferenceImage
+              image_url: imageUrl
             };
-            console.log('🎨 [IntelligentChatInterface] Added image_url to FLUX LoRA delegation:', styleReferenceImage);
+            console.log('🎨 [IntelligentChatInterface] Added image_url to FLUX LoRA delegation:', imageUrl);
+            console.log('🎨 [IntelligentChatInterface] Full delegation parameters:', delegation.parameters);
+          } else {
+            console.error('❌ [IntelligentChatInterface] No style reference image available');
           }
           
           // Set the pending delegation
@@ -2823,11 +3173,30 @@ Starting workflow execution...`,
       }
       
       // Prepare generation data
+      console.log('🔍 [IntelligentChatInterface] Preparing generation data...');
+      console.log('🔍 [IntelligentChatInterface] Current delegation:', currentDelegation);
+      console.log('🔍 [IntelligentChatInterface] Delegation parameters:', currentDelegation.parameters);
+      console.log('🔍 [IntelligentChatInterface] Delegation modelId:', currentDelegation.modelId);
+      console.log('🔍 [IntelligentChatInterface] Delegation intent:', currentDelegation.intent);
+      console.log('🔍 [IntelligentChatInterface] Video model to use:', videoModelToUse);
+      
       const generationData: Record<string, any> = {
         model: currentDelegation.intent === 'video' ? videoModelToUse : currentDelegation.modelId,
         prompt: currentDelegation.parameters.prompt,
         ...currentDelegation.parameters,
       };
+      
+      // Special logging for FLUX LoRA model
+      if (generationData.model === 'fal-ai/flux-krea-lora/image-to-image') {
+        console.log('🎨 [IntelligentChatInterface] ===== FLUX LoRA GENERATION DATA PREPARATION =====');
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA generation data:', generationData);
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA image_url:', generationData.image_url);
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA prompt:', generationData.prompt);
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA strength:', generationData.strength);
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA parameters:', currentDelegation.parameters);
+      }
+      
+      console.log('🔍 [IntelligentChatInterface] Initial generation data:', generationData);
       
       // Ensure the model field is correctly set for the API
       if (!generationData.model) {
@@ -2958,8 +3327,19 @@ Starting workflow execution...`,
       }
       
       // Call the content generated callback instead of onGenerate
+      if (generationData.model === 'fal-ai/flux-krea-lora/image-to-image') {
+        console.log('🎨 [IntelligentChatInterface] ===== FLUX LoRA API CALL START =====');
+        console.log('🎨 [IntelligentChatInterface] About to call onContentGenerated with FLUX LoRA data');
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA generation data being sent:', generationData);
+      }
+      
       const result = await onContentGenerated(generationData);
       console.log('📞 [IntelligentChatInterface] Content generation callback completed');
+      
+      if (generationData.model === 'fal-ai/flux-krea-lora/image-to-image') {
+        console.log('🎨 [IntelligentChatInterface] ===== FLUX LoRA API CALL COMPLETED =====');
+        console.log('🎨 [IntelligentChatInterface] FLUX LoRA result received:', result);
+      }
           console.log('📞 [IntelligentChatInterface] Result type:', typeof result);
           console.log('📞 [IntelligentChatInterface] Result keys:', result ? Object.keys(result) : 'null/undefined');
           
@@ -5093,11 +5473,14 @@ Available commands:
             )}
           </Button>
         
-        <ModelPreferenceSelector 
+                <ModelPreferenceSelector 
           onPreferencesChange={handleModelPreferencesChange}
           className="flex-shrink-0"
         />
-        </div>
+      </div>
+
+      {/* Model Status Bar */}
+      <ModelStatusBar className="cursor-pointer hover:bg-background/95" />
       </div>
 
       {/* Messages */}

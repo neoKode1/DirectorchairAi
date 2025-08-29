@@ -25,6 +25,7 @@ import { LumaRay2FlashInterface } from "@/components/model-inputs/luma-ray2-flas
 import { KlingV21MasterInterface } from "@/components/model-inputs/kling-v21-master-interface";
 import { MinimaxHailuo02Interface } from "@/components/model-inputs/minimax-hailuo02-interface";
 import { ElevenLabsTTSInterface } from "@/components/model-inputs/elevenlabs-tts-interface";
+import { MiniMaxTTSInterface } from "@/components/model-inputs/minimax-tts-interface";
 import { MessageSquare } from "lucide-react";
 
 interface ApiInfo {
@@ -400,6 +401,13 @@ export default async function ModelPage({ params }: PageProps) {
         if (modelInfo.id === "fal-ai/elevenlabs/tts/multilingual-v2") {
           return (
             <ElevenLabsTTSInterface
+              onGenerate={handleResult}
+            />
+          );
+        }
+        if (modelInfo.id === "fal-ai/minimax/preview/speech-2.5-hd") {
+          return (
+            <MiniMaxTTSInterface
               onGenerate={handleResult}
             />
           );

@@ -443,6 +443,29 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/minimax/preview/speech-2.5-hd",
+    label: "MiniMax Speech 2.5 HD",
+    description: "High-quality text-to-speech with advanced AI techniques and multiple voice options",
+    category: "voiceover",
+    initialInput: {
+      text: "Hello, this is a test of the MiniMax Speech 2.5 HD system.",
+      voice_setting: {
+        voice_id: "Wise_Woman",
+        speed: 1,
+        vol: 1,
+        pitch: 0,
+        english_normalization: false
+      },
+      audio_setting: {
+        sample_rate: "32000",
+        bitrate: "128000",
+        format: "mp3",
+        channel: "1"
+      },
+      output_format: "url"
+    },
+  },
+  {
     endpointId: "fal-ai/ffmpeg-api/extract-frame",
     label: "FFmpeg Extract Frame",
     description: "Extract first, middle, or last frame from videos using FFmpeg. Supports frame_type: 'first', 'middle', 'last'. Note: Time-based extraction (e.g., 'at 4 seconds') is not supported - only predefined frame positions.",

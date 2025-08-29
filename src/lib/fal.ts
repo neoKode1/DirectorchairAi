@@ -466,6 +466,20 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/minimax/voice-clone",
+    label: "MiniMax Voice Clone",
+    description: "Clone custom voices from audio samples and generate personalized TTS",
+    category: "voiceover",
+    initialInput: {
+      audio_url: "",
+      text: "Hello, this is a preview of your cloned voice! I hope you like it!",
+      model: "speech-02-hd",
+      noise_reduction: true,
+      need_volume_normalization: true,
+      accuracy: 0.8
+    },
+  },
+  {
     endpointId: "fal-ai/ffmpeg-api/extract-frame",
     label: "FFmpeg Extract Frame",
     description: "Extract first, middle, or last frame from videos using FFmpeg. Supports frame_type: 'first', 'middle', 'last'. Note: Time-based extraction (e.g., 'at 4 seconds') is not supported - only predefined frame positions.",

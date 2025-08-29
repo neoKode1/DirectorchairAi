@@ -13,15 +13,50 @@ interface MiniMaxTTSInterfaceProps {
   onGenerate: (result: any) => void;
 }
 
-// MiniMax Voice Options
+// MiniMax Voice Options - Extended List
 const MINIMAX_VOICES = [
+  // Original voices
   "Wise_Woman",
   "Young_Woman", 
   "Young_Man",
   "Old_Man",
   "Old_Woman",
   "Child_Boy",
-  "Child_Girl"
+  "Child_Girl",
+  
+  // Additional voices (you can add these as you discover them)
+  "Professional_Male",
+  "Professional_Female", 
+  "Casual_Male",
+  "Casual_Female",
+  "Narrator_Male",
+  "Narrator_Female",
+  "News_Anchor_Male",
+  "News_Anchor_Female",
+  "Storyteller_Male",
+  "Storyteller_Female",
+  "Teacher_Male",
+  "Teacher_Female",
+  "Customer_Service_Male",
+  "Customer_Service_Female",
+  "Radio_DJ_Male",
+  "Radio_DJ_Female",
+  "Podcast_Host_Male",
+  "Podcast_Host_Female",
+  "Audiobook_Male",
+  "Audiobook_Female",
+  "Commercial_Male",
+  "Commercial_Female",
+  "Documentary_Male",
+  "Documentary_Female",
+  "Cartoon_Male",
+  "Cartoon_Female",
+  "Gaming_Male",
+  "Gaming_Female",
+  "Assistant_Male",
+  "Assistant_Female",
+  "Friend_Male",
+  "Friend_Female"
 ];
 
 // Audio Settings
@@ -239,6 +274,75 @@ export const MiniMaxTTSInterface: React.FC<MiniMaxTTSInterfaceProps> = ({ onGene
     return cost.toFixed(2);
   };
 
+  const previewVoice = async (voiceId: string) => {
+    if (previewingVoice === voiceId) return; // Already previewing this voice
+    
+    setPreviewingVoice(voiceId);
+    
+    try {
+      const previewText = "Hello! This is a preview of my voice. How do I sound?";
+      
+      const generateData = {
+        text: previewText,
+        voice_setting: {
+          voice_id: voiceId,
+          speed: 1,
+          vol: 1,
+          pitch: 0,
+          english_normalization: false
+        },
+        audio_setting: {
+          sample_rate: "32000",
+          bitrate: "128000",
+          format: "mp3",
+          channel: "1"
+        },
+        output_format: "url"
+      };
+
+      console.log('🎵 [Voice Preview] Generating preview for:', voiceId);
+
+      const response = await fetch('/api/generate/minimax-tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(generateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Preview failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Voice Preview] Preview generated:', result);
+
+      if (result.audioUrl) {
+        setPreviewAudio(result.audioUrl);
+      }
+
+      toast({
+        title: "Voice Preview Ready!",
+        description: `Preview for ${voiceId.replace(/_/g, ' ')} is ready to play.`,
+      });
+
+    } catch (error) {
+      console.error('❌ [Voice Preview] Preview error:', error);
+      toast({
+        title: "Preview Failed",
+        description: error instanceof Error ? error.message : "Failed to generate voice preview.",
+        variant: "destructive",
+      });
+    } finally {
+      setPreviewingVoice(null);
+    }
+  };
+
+  const [showVoiceInfo, setShowVoiceInfo] = useState(false);
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [previewAudio, setPreviewAudio] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -333,21 +437,95 @@ export const MiniMaxTTSInterface: React.FC<MiniMaxTTSInterfaceProps> = ({ onGene
 
           {/* Voice Settings */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="voice">Voice</Label>
-              <Select value={voiceId} onValueChange={setVoiceId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a voice" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MINIMAX_VOICES.map((voice) => (
-                    <SelectItem key={voice} value={voice}>
-                      {voice.replace(/_/g, ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                         <div>
+               <div className="flex items-center justify-between">
+                 <Label htmlFor="voice">Voice</Label>
+                 <div className="flex gap-2">
+                   <Button
+                     type="button"
+                     variant="ghost"
+                     size="sm"
+                     onClick={() => setShowVoiceInfo(!showVoiceInfo)}
+                     className="text-xs"
+                   >
+                     {showVoiceInfo ? 'Hide Info' : 'Voice Info'}
+                   </Button>
+                   <Button
+                     type="button"
+                     variant="outline"
+                     size="sm"
+                     onClick={() => previewVoice(voiceId)}
+                     disabled={previewingVoice === voiceId}
+                     className="text-xs flex items-center gap-1"
+                   >
+                     {previewingVoice === voiceId ? (
+                       <>
+                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+                         Previewing...
+                       </>
+                     ) : (
+                       <>
+                         <Play className="h-3 w-3" />
+                         Preview
+                       </>
+                     )}
+                   </Button>
+                 </div>
+               </div>
+               <Select value={voiceId} onValueChange={setVoiceId}>
+                 <SelectTrigger>
+                   <SelectValue placeholder="Select a voice" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {MINIMAX_VOICES.map((voice) => (
+                     <SelectItem key={voice} value={voice}>
+                       {voice.replace(/_/g, ' ')}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+               
+               {/* Voice Preview Audio */}
+               {previewAudio && (
+                 <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                   <div className="flex items-center justify-between mb-2">
+                     <h4 className="font-medium text-sm text-green-900">
+                       Voice Preview: {voiceId.replace(/_/g, ' ')}
+                     </h4>
+                     <Button
+                       type="button"
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => setPreviewAudio(null)}
+                       className="text-xs h-6 px-2"
+                     >
+                       ×
+                     </Button>
+                   </div>
+                   <audio controls className="w-full" src={previewAudio} />
+                   <p className="text-xs text-green-700 mt-1">
+                     "Hello! This is a preview of my voice. How do I sound?"
+                   </p>
+                 </div>
+               )}
+               
+               {showVoiceInfo && (
+                 <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                   <h4 className="font-medium text-sm text-blue-900 mb-2">Voice Information:</h4>
+                   <ul className="text-xs text-blue-800 space-y-1">
+                     <li>• <strong>Built-in voices:</strong> The first 7 voices are confirmed MiniMax voices</li>
+                     <li>• <strong>Extended voices:</strong> Additional voices you can test and discover</li>
+                     <li>• <strong>Voice discovery:</strong> Try different voice names to find working ones</li>
+                     <li>• <strong>Community sources:</strong> Check MiniMax documentation and forums</li>
+                   </ul>
+                   <div className="mt-2 pt-2 border-t border-blue-300">
+                     <p className="text-xs text-blue-700">
+                       <strong>Tip:</strong> You can experiment with voice names like "Professional_Male", "Narrator_Female", etc.
+                     </p>
+                   </div>
+                 </div>
+               )}
+             </div>
 
             <div>
               <Label htmlFor="speed">Speed: {speed[0]}</Label>

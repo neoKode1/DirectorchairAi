@@ -27,6 +27,7 @@ import { MinimaxHailuo02Interface } from "@/components/model-inputs/minimax-hail
 import { ElevenLabsTTSInterface } from "@/components/model-inputs/elevenlabs-tts-interface";
 import { MiniMaxTTSInterface } from "@/components/model-inputs/minimax-tts-interface";
 import { MiniMaxVoiceCloneInterface } from "@/components/model-inputs/minimax-voice-clone-interface";
+import { SyncLipSyncInterface } from "@/components/model-inputs/sync-lipsync-interface";
 import { MessageSquare } from "lucide-react";
 
 interface ApiInfo {
@@ -381,6 +382,13 @@ export default async function ModelPage({ params }: PageProps) {
         if (modelInfo.id === "fal-ai/minimax/hailuo-02/standard/image-to-video") {
           return (
             <MinimaxHailuo02Interface
+              onGenerate={handleResult}
+            />
+          );
+        }
+        if (modelInfo.id === "fal-ai/sync-lipsync") {
+          return (
+            <SyncLipSyncInterface
               onGenerate={handleResult}
             />
           );

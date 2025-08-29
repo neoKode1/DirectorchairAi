@@ -480,6 +480,18 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/sync-lipsync",
+    label: "Sync LipSync",
+    description: "Advanced lip sync with multiple sync modes and model versions",
+    category: "video",
+    initialInput: {
+      model: "lipsync-1.9.0-beta",
+      video_url: "",
+      audio_url: "",
+      sync_mode: "cut_off"
+    },
+  },
+  {
     endpointId: "fal-ai/ffmpeg-api/extract-frame",
     label: "FFmpeg Extract Frame",
     description: "Extract first, middle, or last frame from videos using FFmpeg. Supports frame_type: 'first', 'middle', 'last'. Note: Time-based extraction (e.g., 'at 4 seconds') is not supported - only predefined frame positions.",

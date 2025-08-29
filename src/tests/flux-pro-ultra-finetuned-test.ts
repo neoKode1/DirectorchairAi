@@ -43,7 +43,7 @@ describe("Flux Pro Ultra Finetuned Model Configuration", () => {
       num_images: 4,
       enable_safety_checker: true,
       safety_tolerance: "medium",
-      output_format: "png",
+      output_format: "jpeg",
       aspect_ratio: "1:1",
       finetune_strength: 0.8,
     };
@@ -64,7 +64,7 @@ describe("Flux Pro Ultra Finetuned Model Configuration", () => {
       finetune_id: "test-finetune-123",
       num_images: 4,
       safety_tolerance: "medium",
-      output_format: "png",
+      output_format: "jpeg",
       aspect_ratio: "1:1",
       finetune_strength: 0.8,
     };
@@ -78,7 +78,7 @@ describe("Flux Pro Ultra Finetuned Model Configuration", () => {
     expect(validSafetyTolerances).toContain(mockPayload.safety_tolerance);
 
     // Validate output_format options
-    const validOutputFormats = ["png", "jpg"];
+    const validOutputFormats = ["jpeg", "jpg"];
     expect(validOutputFormats).toContain(mockPayload.output_format);
 
     // Validate aspect_ratio options

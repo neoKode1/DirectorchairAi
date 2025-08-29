@@ -55,7 +55,7 @@ export const PhotonInstantModelInterface: React.FC<
     num_images: 1,
     enable_safety_checker: true,
     safety_tolerance: "medium",
-    output_format: "png",
+    output_format: "jpeg",
     aspect_ratio: "1:1",
   });
 

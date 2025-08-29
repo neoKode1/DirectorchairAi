@@ -279,7 +279,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       guidance_scale: 4,
       num_images: 1,
       enable_safety_checker: true,
-      output_format: "png",
+      output_format: "jpeg",
       negative_prompt: "blurry, ugly",
       acceleration: "regular",
     },

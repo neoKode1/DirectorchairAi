@@ -36,6 +36,7 @@ export async function extractVideoThumbnail(
       },
       body: JSON.stringify({
         model: 'fal-ai/ffmpeg-api/extract-frame',
+        prompt: 'Extract frame from video', // Required by FAL API
         video_url: videoUrl,
         frame_type: frameType
       })

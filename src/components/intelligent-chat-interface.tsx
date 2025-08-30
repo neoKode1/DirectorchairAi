@@ -2194,23 +2194,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         requiresGeneration: true
       });
       
-      // Add assistant message showing animation is ready with user's preferred model
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: `🎬 **Animation Ready**: Your image is ready to be animated using ${userVideoModel}`,
-        timestamp: new Date(),
-        intent: { 
-          type: 'video', 
-          confidence: 1.0,
-          keywords: ['animate', 'video'],
-          context: 'image-to-video animation',
-          requiresGeneration: true
-        },
-        delegation: directDelegation,
-        status: 'pending',
-      };
-      setMessages(prev => [...prev, assistantMessage]);
+      // Skip the "Animation Ready" message - directly proceed to generation
       
       console.log('✅ [IntelligentChatInterface] Animation setup complete with user\'s preferred model');
       
@@ -2815,17 +2799,7 @@ Starting workflow execution...`,
             setPendingDelegation(delegation);
             startGeneration('video', 'Image-to-video animation');
             
-            // Add delegation message
-            const delegationMessage: ChatMessage = {
-              id: `delegation-${Date.now()}`,
-              type: 'assistant',
-              content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel}`,
-              timestamp: new Date(),
-              intent: videoIntent,
-              delegation: delegation,
-              status: 'pending',
-            };
-            setMessages(prev => [...prev, delegationMessage]);
+            // Skip delegation message and proceed directly to generation
             
             // Clear the uploaded image after setting up the delegation
             setUploadedImageUrls([]);
@@ -3073,17 +3047,7 @@ Starting workflow execution...`,
           setPendingDelegation(delegation);
             startGeneration('video', 'Default image-to-video animation');
           
-          // Add delegation message
-          const delegationMessage: ChatMessage = {
-            id: `delegation-${Date.now()}`,
-            type: 'assistant',
-              content: `🎬 **Animation Ready**: Your image is ready to be animated using ${videoModel} (default behavior)`,
-            timestamp: new Date(),
-              intent: videoIntent,
-            delegation: delegation,
-            status: 'pending',
-          };
-          setMessages(prev => [...prev, delegationMessage]);
+          // Skip delegation message and proceed directly to generation
           
           // Clear the uploaded image after setting up the delegation
           setUploadedImageUrls([]);
@@ -3462,16 +3426,7 @@ Starting workflow execution...`,
           const estimatedTime = currentDelegation.estimatedTime || '2-5 minutes';
           progressInterval = startVideoProgress(currentVideoModel, estimatedTime);
            
-           // Add progress bar message directly to chat
-           const progressMessage: ChatMessage = {
-             id: (Date.now() + 1).toString(),
-             type: 'assistant',
-             content: `🎬 **Generating Video**\n\nUsing ${currentVideoModel}\n\n**Estimated Time:** ${estimatedTime}`,
-             timestamp: new Date(),
-             status: 'processing',
-             isProgressMessage: true, // Add flag to identify progress messages
-           };
-           setMessages(prev => [...prev, progressMessage]);
+           // Skip adding progress message to chat - let the generation proceed silently
          } catch (error) {
            console.error('❌ [Video] Video generation error:', error);
            setGenerationProgress(null);

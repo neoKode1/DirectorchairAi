@@ -3361,6 +3361,7 @@ Starting workflow execution...`,
          
                  try {
           // Call the content generated callback instead of onGenerate
+          console.log('📞 [Video] Calling onContentGenerated with:', generationData);
           const result = await onContentGenerated(generationData);
           console.log('📞 [Video] Initial generation response sent');
           console.log('📞 [Video] Generation result:', result);
@@ -3460,6 +3461,7 @@ Starting workflow execution...`,
         console.log('🎨 [IntelligentChatInterface] FLUX LoRA generation data being sent:', generationData);
       }
       
+      console.log('📞 [IntelligentChatInterface] Calling onContentGenerated with:', generationData);
       const result = await onContentGenerated(generationData);
       console.log('📞 [IntelligentChatInterface] Content generation callback completed');
       

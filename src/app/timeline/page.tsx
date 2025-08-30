@@ -147,7 +147,8 @@ function TimelineContent() {
       if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {
         console.error('❌ [Timeline] Empty or invalid generation data received:', generationData);
         console.error('❌ [Timeline] Generation data that caused error:', generationData);
-        throw new Error('Empty or invalid generation data received. Please try again.');
+        console.error('❌ [Timeline] This usually indicates an upstream error in the intelligence core or delegation process');
+        throw new Error('Generation data is missing or empty. This may be due to an error in the AI planning process. Please try with a different prompt or image.');
       }
       
       // Validate generation data before sending
@@ -191,13 +192,33 @@ function TimelineContent() {
       
       if (!response.ok) {
         let errorMessage = `API call failed with status ${response.status}`;
+        let errorType = 'unknown';
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error('❌ [Timeline] API error response:', errorData);
+          
+          // Check for content policy violations
+          if (errorData.result?.error === 'Unprocessable Entity' || response.status === 422) {
+            // Look for content policy violation details
+            if (JSON.stringify(errorData).includes('content_policy_violation')) {
+              errorType = 'content_policy';
+              errorMessage = 'Content policy violation: The image or prompt contains material that cannot be processed. Please try with different content.';
+            } else {
+              errorType = 'validation';
+              errorMessage = 'Content validation failed: Please check your image and prompt parameters.';
+            }
+          } else {
+            errorMessage = errorData.error || errorData.message || errorData.result?.error || errorMessage;
+          }
         } catch (parseError) {
           console.error('❌ [Timeline] Failed to parse error response:', parseError);
         }
-        throw new Error(errorMessage);
+        
+        console.error('❌ [Timeline] Throwing error:', { errorType, errorMessage, status: response.status });
+        const error = new Error(errorMessage);
+        (error as any).type = errorType;
+        (error as any).status = response.status;
+        throw error;
       }
       
       const result = await response.json();

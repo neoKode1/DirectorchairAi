@@ -3,40 +3,68 @@ import { fal } from '@fal-ai/client';
 
 // Video-specific FAL proxy that handles all video generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
+    console.log(`🎬 [FAL Video Proxy] ===== VIDEO GENERATION REQUEST START [${requestId}] =====`);
+    console.log(`🎬 [FAL Video Proxy] Timestamp: ${new Date().toISOString()}`);
+    
     const body = await request.json();
     console.log('🎬 [FAL Video Proxy] Request received:', {
+      requestId,
       model: body.model,
       prompt: body.prompt?.substring(0, 100) + '...',
-      hasImage: !!body.image_url
+      hasImage: !!body.image_url,
+      imageUrl: body.image_url,
+      aspectRatio: body.aspect_ratio,
+      duration: body.duration,
+      resolution: body.resolution,
+      allKeys: Object.keys(body)
     });
 
     // Extract model and prompt - these are required
     const model = body.model || body.endpoint || body.endpointId;
     const prompt = body.prompt;
     
+    console.log(`🎬 [FAL Video Proxy] [${requestId}] Model extraction:`, {
+      originalModel: body.model,
+      fallbackEndpoint: body.endpoint,
+      fallbackEndpointId: body.endpointId,
+      finalModel: model
+    });
+    
+    console.log(`🎬 [FAL Video Proxy] [${requestId}] Prompt extraction:`, {
+      promptLength: prompt?.length || 0,
+      promptPreview: prompt?.substring(0, 200) + (prompt?.length > 200 ? '...' : ''),
+      hasPrompt: !!prompt
+    });
+    
     if (!model) {
-      console.error('❌ [FAL Video Proxy] Missing model parameter');
+      console.error(`❌ [FAL Video Proxy] [${requestId}] Missing model parameter`);
       return NextResponse.json({ 
         success: false,
-        error: "Model parameter is required" 
+        error: "Model parameter is required",
+        requestId
       }, { status: 400 });
     }
 
     if (!prompt) {
-      console.error('❌ [FAL Video Proxy] Missing prompt parameter');
+      console.error(`❌ [FAL Video Proxy] [${requestId}] Missing prompt parameter`);
       return NextResponse.json({ 
         success: false,
-        error: "Prompt parameter is required" 
+        error: "Prompt parameter is required",
+        requestId
       }, { status: 400 });
     }
 
     // Validate that image-to-video models have image_url
     if (model.includes('image-to-video') && !body.image_url) {
-      console.error('❌ [FAL Video Proxy] Missing image_url for image-to-video model:', model);
+      console.error(`❌ [FAL Video Proxy] [${requestId}] Missing image_url for image-to-video model:`, model);
       return NextResponse.json({ 
         success: false,
-        error: "image_url parameter is required for image-to-video models" 
+        error: "image_url parameter is required for image-to-video models",
+        requestId
       }, { status: 400 });
     }
     
@@ -62,10 +90,71 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const input: Record<string, any> = {
       prompt: prompt.trim()
     };
+    
+    console.log(`🎬 [FAL Video Proxy] [${requestId}] Initial input parameters:`, {
+      prompt: input.prompt,
+      modelType: model.includes('image-to-video') ? 'image-to-video' : 'text-to-video',
+      hasImageUrl: !!body.image_url
+    });
 
     // Add image_url if provided (for image-to-video)
     if (body.image_url) {
-      input.image_url = body.image_url;
+      // Convert HTTP URLs to base64 data URIs for FAL compatibility
+      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:')) {
+        console.log('🎬 [FAL Video Proxy] Converting HTTP URL to base64 for FAL compatibility:', body.image_url);
+        try {
+          // Fetch the image and convert to base64
+          const response = await fetch(body.image_url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = response.headers.get('content-type') || 'image/jpeg';
+          const dataUri = `data:${mimeType};base64,${base64}`;
+          
+          input.image_url = dataUri;
+          console.log('🎬 [FAL Video Proxy] Successfully converted to base64 data URI');
+        } catch (error) {
+          console.error('❌ [FAL Video Proxy] Failed to convert HTTP URL to base64:', error);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to process image URL for FAL compatibility'
+          }, { status: 400 });
+        }
+      } else if (body.image_url.startsWith('data:')) {
+        // Use data URIs directly
+        input.image_url = body.image_url;
+        console.log('🎬 [FAL Video Proxy] Using existing data URI');
+      } else if (body.image_url.startsWith('https://')) {
+        // Use HTTPS URLs directly
+        input.image_url = body.image_url;
+        console.log('🎬 [FAL Video Proxy] Using HTTPS URL');
+      } else {
+        // For any other URL format, try to convert to base64
+        console.log('🎬 [FAL Video Proxy] Converting unknown URL format to base64:', body.image_url);
+        try {
+          const response = await fetch(body.image_url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = response.headers.get('content-type') || 'image/jpeg';
+          const dataUri = `data:${mimeType};base64,${base64}`;
+          
+          input.image_url = dataUri;
+          console.log('🎬 [FAL Video Proxy] Successfully converted to base64 data URI');
+        } catch (error) {
+          console.error('❌ [FAL Video Proxy] Failed to convert URL to base64:', error);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to process image URL for FAL compatibility'
+          }, { status: 400 });
+        }
+      }
     }
 
     // Add video-specific parameters that FAL expects
@@ -74,8 +163,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     
     // Set duration based on model requirements
-    if (model.includes('minimax')) {
-      // Minimax models require minimum 6s
+    if (model.includes('minimax/hailuo-02')) {
+      // HALU Minimax model expects "6" or "10" (without "s" suffix)
+      input.duration = '6';
+      console.log('🎬 [FAL Video Proxy] Setting duration to 6 for HALU Minimax model');
+    } else if (model.includes('minimax')) {
+      // Other Minimax models require minimum 6s
       input.duration = '6s';
       console.log('🎬 [FAL Video Proxy] Setting duration to 6s for Minimax model (minimum requirement)');
     } else if (model.includes('luma-dream-machine/ray-2-flash')) {
@@ -89,7 +182,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     
     if (body.resolution) {
-      input.resolution = body.resolution;
+      // HALU Minimax expects "512P" or "768P" (uppercase P)
+      if (model.includes('minimax/hailuo-02')) {
+        const resolution = body.resolution.toUpperCase();
+        if (resolution === '720P') {
+          input.resolution = '768P'; // Map 720p to 768P for HALU
+        } else if (resolution === '540P' || resolution === '480P') {
+          input.resolution = '512P'; // Map lower resolutions to 512P
+        } else {
+          input.resolution = resolution;
+        }
+        console.log('🎬 [FAL Video Proxy] HALU Minimax resolution mapping:', body.resolution, '->', input.resolution);
+      } else {
+        input.resolution = body.resolution;
+      }
     }
     if (body.negative_prompt) {
       input.negative_prompt = body.negative_prompt;
@@ -252,47 +358,81 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    console.log('📦 [FAL Video Proxy] Clean FAL input parameters:', JSON.stringify(input, null, 2));
-    console.log('📦 [FAL Video Proxy] Full request body for debugging:', JSON.stringify(body, null, 2));
-    console.log('📦 [FAL Video Proxy] Model type check:', {
+    console.log(`📦 [FAL Video Proxy] [${requestId}] Final input parameters:`, JSON.stringify(input, null, 2));
+    console.log(`📦 [FAL Video Proxy] [${requestId}] Model analysis:`, {
       isLuma: model.includes('luma'),
       isImageToVideo: model.includes('image-to-video'),
+      isMinimax: model.includes('minimax'),
+      isVeo3: model.includes('veo3'),
+      isKling: model.includes('kling'),
       hasImageUrl: !!input.image_url,
-      requiredImageUrl: model.includes('image-to-video')
+      requiredImageUrl: model.includes('image-to-video'),
+      duration: input.duration,
+      resolution: input.resolution,
+      aspectRatio: input.aspect_ratio
     });
 
     // Call FAL API directly with subscription
     try {
-      console.log('🔗 [FAL Video Proxy] Calling FAL API for model:', model);
+      console.log(`🔗 [FAL Video Proxy] [${requestId}] Calling FAL API for model:`, model);
+      console.log(`🔗 [FAL Video Proxy] [${requestId}] FAL API call start time:`, new Date().toISOString());
       
       const result = await fal.subscribe(model, {
         input,
         logs: true,
         onQueueUpdate: (update: any) => {
-          console.log('📊 [FAL Video Proxy] Queue update:', update.status);
+          console.log(`📊 [FAL Video Proxy] [${requestId}] Queue update:`, {
+            status: update.status,
+            timestamp: new Date().toISOString(),
+            logs: update.logs?.length || 0
+          });
           if (update.status === "IN_PROGRESS" && update.logs) {
-            update.logs.map((log: any) => log.message).forEach(console.log);
+            update.logs.forEach((log: any) => {
+              console.log(`📊 [FAL Video Proxy] [${requestId}] Progress log:`, log.message);
+            });
           }
         },
       });
 
-      console.log('✅ [FAL Video Proxy] FAL API call successful');
-      console.log('📦 [FAL Video Proxy] Result:', result);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ [FAL Video Proxy] [${requestId}] FAL API call successful`);
+      console.log(`✅ [FAL Video Proxy] [${requestId}] Total duration: ${duration}ms`);
+      console.log(`📦 [FAL Video Proxy] [${requestId}] Result:`, {
+        requestId: result.requestId,
+        hasData: !!result.data,
+        dataKeys: result.data ? Object.keys(result.data) : [],
+        videoUrl: result.data?.video,
+        status: result.status
+      });
 
       // Return standardized response
+      console.log(`🎬 [FAL Video Proxy] [${requestId}] ===== VIDEO GENERATION REQUEST COMPLETED =====`);
+      
       return NextResponse.json({
         success: true,
         data: result.data,
         requestId: result.requestId,
         status: 'completed',
         model: model,
-        prompt: prompt // Return the original prompt for verification
+        prompt: prompt, // Return the original prompt for verification
+        duration: duration,
+        timestamp: new Date().toISOString()
       });
 
     } catch (falError: any) {
-      console.error('❌ [FAL Video Proxy] FAL API error:', falError);
-      console.error('❌ [FAL Video Proxy] FAL API error body:', JSON.stringify(falError.body, null, 2));
-      console.error('❌ [FAL Video Proxy] FAL API error status:', falError.status);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.error(`❌ [FAL Video Proxy] [${requestId}] FAL API error:`, {
+        error: falError.message,
+        status: falError.status,
+        duration: duration,
+        timestamp: new Date().toISOString()
+      });
+      console.error(`❌ [FAL Video Proxy] [${requestId}] FAL API error body:`, JSON.stringify(falError.body, null, 2));
+      console.error(`❌ [FAL Video Proxy] [${requestId}] FAL API error status:`, falError.status);
       
       // Check for specific error types and provide helpful messages
       let errorMessage = falError.message || 'Unknown FAL error';
@@ -306,23 +446,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
       
+      console.log(`🎬 [FAL Video Proxy] [${requestId}] ===== VIDEO GENERATION REQUEST FAILED =====`);
+      
       return NextResponse.json({
         success: false,
         error: errorMessage,
         details: errorDetails,
         model: model,
         prompt: input.prompt, // Use the cleaned prompt
-        originalPrompt: prompt // Keep original for debugging
+        originalPrompt: prompt, // Keep original for debugging
+        requestId: requestId,
+        duration: duration,
+        timestamp: new Date().toISOString()
       }, { status: 500 });
     }
 
   } catch (error: any) {
-    console.error('❌ [FAL Video Proxy] Error:', error);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.error(`❌ [FAL Video Proxy] [${requestId}] General error:`, {
+      error: error.message,
+      stack: error.stack,
+      duration: duration,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log(`🎬 [FAL Video Proxy] [${requestId}] ===== VIDEO GENERATION REQUEST ERROR =====`);
     
     return NextResponse.json({
       success: false,
       error: "Failed to process video generation request",
       details: error.message || 'Unknown error',
+      requestId: requestId,
+      duration: duration,
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

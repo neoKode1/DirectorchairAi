@@ -1,15 +1,20 @@
-import { createFalClient, type FalClientRequest } from '@fal-ai/client';
+import { fal } from '@fal-ai/client';
 
-// Client-side FAL configuration
-export const falClient = createFalClient({
-  // Use relative path for proxy URL to ensure it works in all environments
-  proxyUrl: process.env.NEXT_PUBLIC_FAL_PROXY_URL || '/api/fal',
-  // Don't include credentials on the client side since we're using a proxy
-  requestMiddleware: (request: FalClientRequest) => {
-    // Add any custom headers or modifications here
-    return request;
+// Environment-aware configuration function
+function configureFalClient() {
+  // Only run on client side
+  if (typeof window !== 'undefined') {
+    fal.config({
+      proxyUrl: '/api/fal/proxy'
+    });
   }
-});
+}
+
+// Initialize configuration
+configureFalClient();
+
+// Export the configured client for compatibility
+export const falClient = fal;
 
 // Re-export endpoint types and IDs
 export type { FalEndpointId } from './fal.server';

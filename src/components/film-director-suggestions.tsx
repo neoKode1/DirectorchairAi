@@ -31,7 +31,7 @@ import { intelligenceCore, type CinematicSuggestion } from '@/lib/intelligence-c
 interface FilmDirectorSuggestionsProps {
   currentPrompt: string;
   onSuggestionClick: (suggestion: string) => void;
-  contentType?: 'image' | 'video' | 'audio';
+  contentType?: 'image' | 'video' | 'audio' | 'lipsync';
   className?: string;
   lastGeneratedPrompt?: string; // Add this prop to pass the last generated prompt
   onStyleCommand?: (command: string) => void; // Add callback for style commands

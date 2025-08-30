@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Poll the FAL.ai API for task status
-    const response = await fetch(`https://fal.run/fal-ai/queue/${taskId}`, {
+    // Poll the FAL.ai API for task status using the current queue endpoint
+    const response = await fetch(`https://queue.fal.run/fal-ai/queue/${taskId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Key ${falKey}`,

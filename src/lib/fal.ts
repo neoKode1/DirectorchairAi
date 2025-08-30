@@ -1,21 +1,14 @@
 "use client";
 
-import { createFalClient } from "@fal-ai/client";
+import { fal } from "@fal-ai/client";
 
-// Create a client that uses our proxy for all FAL endpoints
-export const falClient = createFalClient({
-  proxyUrl: "/api/fal/proxy",  // Use our server proxy endpoint
+// Configure the global FAL client using the latest recommended pattern
+fal.config({
+  proxyUrl: "/api/fal/proxy",
 });
 
-// Configure the global FAL client to use our proxy
-if (typeof window !== 'undefined') {
-  // Client-side configuration
-  import("@fal-ai/client").then(({ fal }) => {
-    fal.config({
-      proxyUrl: "/api/fal/proxy",
-    });
-  });
-}
+// Create a client using the standard configuration (for legacy compatibility)
+export const falClient = fal;
 
 export type InputAsset =
   | "video"
@@ -34,6 +27,8 @@ export type ApiInfo = {
   inputAsset?: InputAsset[];
   initialInput?: Record<string, unknown>;
   inputMap?: Record<string, string>;
+  supportsMultipleImages?: boolean; // New property to track multi-image capability
+  maxImages?: number; // Maximum number of images supported
 };
 
 export const STYLE_PRESETS = [
@@ -204,6 +199,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       output_format: "jpeg",
       enhance_prompt: true,
       raw: false,
+      safety_tolerance: "2",
     },
   },
   {
@@ -220,6 +216,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       output_format: "jpeg",
       safety_tolerance: "2",
       enhance_prompt: true,
+      num_inference_steps: 28,
     },
   },
   {
@@ -241,8 +238,8 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
   {
     endpointId: "fal-ai/nano-banana/edit",
-    label: "Nano Banana Edit",
-    description: "Advanced image-to-image editing model for precise modifications, style transfers, and creative transformations with high fidelity",
+    label: "Nano Banana Edit (Advanced Controls)",
+    description: "Advanced image editing with fine-grained controls (strength, guidance scale) for precise modifications. Perfect for users who want detailed control over editing parameters and artistic style adjustments.",
     category: "image",
     inputAsset: ["image"],
     initialInput: {
@@ -256,13 +253,15 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
   {
     endpointId: "fal-ai/gemini-25-flash-image/edit",
-    label: "Gemini 2.5 Flash Image Edit",
-    description: "Google's state-of-the-art image generation and editing model with advanced multi-image editing capabilities",
+    label: "Gemini 2.5 Flash (Multi-Image Optimized)",
+    description: "Google's latest multi-image editing model optimized for blending multiple reference images. Streamlined API with powerful multi-image capabilities. Best for combining and blending multiple photos into cohesive edits. Can work with single images but designed for multiple image scenarios.",
     category: "image",
     inputAsset: ["image"],
+    supportsMultipleImages: true, // Enable multi-image support
+    maxImages: 5, // Support up to 5 images
     initialInput: {
       prompt: "Edit this image with creative modifications",
-      image_urls: [],
+      image_urls: ["https://example.com/sample-image.jpg"], // Single image example
       num_images: 1,
     },
   },
@@ -280,8 +279,9 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
       enable_safety_checker: true,
       output_format: "jpeg",
-      negative_prompt: "blurry, ugly",
+      negative_prompt: "blurry, ugly, low quality",
       acceleration: "regular",
+      sync_mode: false,
     },
   },
 
@@ -301,6 +301,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       resolution: "720p",
       generate_audio: true,
       negative_prompt: "blurry, low quality, distorted",
+      seed: undefined,
     },
   },
   {
@@ -315,6 +316,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       duration: "5s",
       resolution: "1080p",
       negative_prompt: "blurry, low quality, distorted",
+      seed: undefined,
     },
   },
   {
@@ -354,6 +356,8 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       aspect_ratio: "16:9",
       duration: "5s",
       loop: false,
+      resolution: "720p",
+      negative_prompt: "blurry, low quality, distorted",
     },
   },
   {
@@ -368,6 +372,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       duration: "5s",
       resolution: "540p",
       loop: false,
+      negative_prompt: "blurry, low quality, distorted",
     },
   },
   {

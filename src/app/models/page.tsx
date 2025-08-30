@@ -56,8 +56,8 @@ export default function ModelsPage() {
     if (modelId.includes('stable-diffusion')) return '/gemini-color.png'; // Stable Diffusion
     if (modelId.includes('dreamina')) return '/bytedance-color.webp'; // Dreamina
     if (modelId.includes('flux')) return '/flux.png'; // Flux models
-    if (modelId.includes('nano-banana')) return '/flux.png'; // Nano Banana
-    if (modelId.includes('gemini')) return '/gemini-color.png'; // Gemini
+    if (modelId.includes('nano-banana')) return '/flux.png'; // Nano Banana (Advanced Controls)
+    if (modelId.includes('gemini')) return '/gemini-color.png'; // Gemini 2.5 Flash (Multi-Image)
     if (modelId.includes('ideogram')) return '/ideogram.png'; // Ideogram
     
     // Video models

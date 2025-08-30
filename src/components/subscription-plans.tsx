@@ -10,12 +10,21 @@ import {
 import { button as Button } from "@/components/ui/button";
 import { loadStripe } from "@stripe/stripe-js";
 
+// Get environment variables with fallbacks and validation
+const getEnvVar = (key: string, fallback: string = '') => {
+  if (typeof window !== 'undefined') {
+    // Client-side: env vars are available at build time
+    return (window as any).__env?.[key] || fallback;
+  }
+  return fallback;
+};
+
 const SUBSCRIPTION_TIERS = {
   BASIC: {
     name: "Basic Plan",
     price: 1.99,
     credits: 50,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID,
+    priceId: getEnvVar('NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID', 'price_basic_fallback'),
     features: [
       "50 credits per month",
       "Basic AI image generation",
@@ -27,7 +36,7 @@ const SUBSCRIPTION_TIERS = {
     name: "Pro Plan",
     price: 5.99,
     credits: 150,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
+    priceId: getEnvVar('NEXT_PUBLIC_STRIPE_PRO_PRICE_ID', 'price_pro_fallback'),
     features: [
       "150 credits per month",
       "Advanced AI generation",
@@ -40,7 +49,7 @@ const SUBSCRIPTION_TIERS = {
     name: "Premium Plan",
     price: 10.99,
     credits: 400,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID,
+    priceId: getEnvVar('NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID', 'price_premium_fallback'),
     features: [
       "400 credits per month",
       "Premium AI generation",

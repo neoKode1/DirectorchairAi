@@ -38,9 +38,10 @@ export const IMAGE_NEGATIVE_PROMPT = DEFAULT_NEGATIVE_PROMPT + ", jpeg artifacts
 /**
  * Get negative prompt based on content type
  */
-export function getNegativePrompt(contentType: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification' = 'image'): string {
+export function getNegativePrompt(contentType: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification' | 'lipsync' = 'image'): string {
   switch (contentType) {
     case 'video':
+    case 'lipsync':
       return VIDEO_NEGATIVE_PROMPT;
     case 'image':
     case 'voiceover':

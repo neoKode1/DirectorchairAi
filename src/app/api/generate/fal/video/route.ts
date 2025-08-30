@@ -10,8 +10,24 @@ if (!process.env.FAL_KEY) {
 export const runtime = "edge";
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
+    console.log(`🎬 [FAL Video Generate] ===== VIDEO GENERATION REQUEST START [${requestId}] =====`);
+    console.log(`🎬 [FAL Video Generate] Timestamp: ${new Date().toISOString()}`);
+    
     const body = await request.json();
+    console.log(`🎬 [FAL Video Generate] [${requestId}] Request received:`, {
+      model: body.model,
+      prompt: body.prompt?.substring(0, 100) + '...',
+      hasImage: !!body.image_url,
+      imageUrl: body.image_url,
+      aspectRatio: body.aspect_ratio,
+      stylePresetId: body.style_preset_id,
+      styleReferenceUrl: body.style_reference_url,
+      allKeys: Object.keys(body)
+    });
     const {
       model,
       prompt,
@@ -97,12 +113,25 @@ export async function POST(request: Request) {
         ...otherParams
       };
 
+      console.log(`🎬 [FAL Video Generate] [${requestId}] Calling Hunyuan model with input:`, input);
+      
       const result = await subscribeToModel("hunyuan", {
         input,
         logs: true,
       });
 
-      return NextResponse.json(result);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ [FAL Video Generate] [${requestId}] Hunyuan generation successful`);
+      console.log(`✅ [FAL Video Generate] [${requestId}] Total duration: ${duration}ms`);
+      console.log(`🎬 [FAL Video Generate] [${requestId}] ===== VIDEO GENERATION REQUEST COMPLETED =====`);
+      
+      return NextResponse.json({
+        ...result,
+        requestId: requestId,
+        duration: duration
+      });
     }
 
     if (model === "fal-ai/minimax/video-01-live/image-to-video") {
@@ -122,17 +151,36 @@ export async function POST(request: Request) {
         ...otherParams
       };
 
+      console.log(`🎬 [FAL Video Generate] [${requestId}] Calling Minimax I2V model with input:`, input);
+      
       const result = await subscribeToModel("minimax-i2v", {
         input,
         logs: true,
         onQueueUpdate: (update: any) => {
+          console.log(`📊 [FAL Video Generate] [${requestId}] Minimax I2V progress:`, {
+            status: update.status,
+            logs: update.logs?.length || 0
+          });
           if (update.status === "IN_PROGRESS") {
-            console.log("Generation progress:", update.logs);
+            update.logs?.forEach((log: any) => {
+              console.log(`📊 [FAL Video Generate] [${requestId}] Progress log:`, log.message);
+            });
           }
         },
       });
 
-      return NextResponse.json(result);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ [FAL Video Generate] [${requestId}] Minimax I2V generation successful`);
+      console.log(`✅ [FAL Video Generate] [${requestId}] Total duration: ${duration}ms`);
+      console.log(`🎬 [FAL Video Generate] [${requestId}] ===== VIDEO GENERATION REQUEST COMPLETED =====`);
+      
+      return NextResponse.json({
+        ...result,
+        requestId: requestId,
+        duration: duration
+      });
     }
 
     if (model === "fal-ai/minimax/video-01-subject-reference") {
@@ -156,27 +204,63 @@ export async function POST(request: Request) {
         ...otherParams
       };
 
+      console.log(`🎬 [FAL Video Generate] [${requestId}] Calling Minimax Subject model with input:`, input);
+      
       const result = await subscribeToModel("minimax-subject", {
         input,
         logs: true,
         onQueueUpdate: (update: any) => {
+          console.log(`📊 [FAL Video Generate] [${requestId}] Minimax Subject progress:`, {
+            status: update.status,
+            logs: update.logs?.length || 0
+          });
           if (update.status === "IN_PROGRESS") {
-            console.log("Generation progress:", update.logs);
+            update.logs?.forEach((log: any) => {
+              console.log(`📊 [FAL Video Generate] [${requestId}] Progress log:`, log.message);
+            });
           }
         },
       });
 
-      return NextResponse.json(result);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ [FAL Video Generate] [${requestId}] Minimax Subject generation successful`);
+      console.log(`✅ [FAL Video Generate] [${requestId}] Total duration: ${duration}ms`);
+      console.log(`🎬 [FAL Video Generate] [${requestId}] ===== VIDEO GENERATION REQUEST COMPLETED =====`);
+      
+      return NextResponse.json({
+        ...result,
+        requestId: requestId,
+        duration: duration
+      });
     }
 
+    console.log(`❌ [FAL Video Generate] [${requestId}] Unsupported model:`, model);
     return NextResponse.json(
-      { error: "Unsupported model" },
+      { error: "Unsupported model", requestId: requestId },
       { status: 400 }
     );
-  } catch (error) {
-    console.error("Error in video generation:", error);
+  } catch (error: any) {
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.error(`❌ [FAL Video Generate] [${requestId}] Error in video generation:`, {
+      error: error.message,
+      stack: error.stack,
+      duration: duration,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log(`🎬 [FAL Video Generate] [${requestId}] ===== VIDEO GENERATION REQUEST ERROR =====`);
+    
     return NextResponse.json(
-      { error: "Failed to generate video" },
+      { 
+        error: "Failed to generate video", 
+        requestId: requestId,
+        duration: duration,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

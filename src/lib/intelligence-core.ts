@@ -19,13 +19,14 @@ import { getNegativePrompt } from './negative-prompts';
 
 // Core Intelligence System Types
 export interface UserIntent {
-  type: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification';
+  type: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification' | 'lipsync';
   confidence: number;
   keywords: string[];
   context: string;
   requiresGeneration: boolean;
   imageUrl?: string;
   referenceImage?: string;
+  aspectRatio?: string;
 }
 
 export interface ModelCapability {
@@ -37,6 +38,7 @@ export interface ModelCapability {
   limitations: string[];
   bestFor: string[];
   efficiency: 'high' | 'medium' | 'low';
+  inputAsset?: string[];
 }
 
 export interface TaskDelegation {
@@ -45,12 +47,12 @@ export interface TaskDelegation {
   confidence: number;
   estimatedTime: string;
   parameters: Record<string, any>;
-  intent: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification';
+  intent: 'image' | 'video' | 'audio' | 'voiceover' | 'text' | 'analysis' | 'clarification' | 'lipsync';
 }
 
 export interface WorkflowStep {
   id: string;
-  type: 'image' | 'video' | 'audio' | 'text';
+  type: 'image' | 'video' | 'audio' | 'text' | 'lipsync';
   prompt: string;
   model: string;
   description: string;
@@ -93,7 +95,7 @@ export interface CinematicSuggestion {
   parameterMapping: Record<string, any>;
   workflowTrigger?: string;
   requiresConfirmation: boolean;
-  compatibleModes: ('image' | 'video' | 'audio')[];
+  compatibleModes: ('image' | 'video' | 'audio' | 'lipsync')[];
 }
 
 export interface SuggestionExecutionResult {
@@ -107,7 +109,7 @@ export interface SuggestionExecutionResult {
 
 export interface InteractiveSuggestionContext {
   currentPrompt: string;
-  contentType: 'image' | 'video' | 'audio';
+  contentType: 'image' | 'video' | 'audio' | 'lipsync';
   userContext: string[];
   lastGeneratedContent?: any;
 }
@@ -236,7 +238,7 @@ export class IntelligenceCore {
       },
       workflowTrigger: undefined,
       requiresConfirmation: false,
-      compatibleModes: ['image', 'video']
+      compatibleModes: ['image', 'video', 'lipsync']
     });
 
     this.suggestionMappings.set('dutch angle', {
@@ -252,7 +254,7 @@ export class IntelligenceCore {
       },
       workflowTrigger: undefined,
       requiresConfirmation: false,
-      compatibleModes: ['image', 'video']
+      compatibleModes: ['image', 'video', 'lipsync']
     });
 
     this.suggestionMappings.set('close-up', {
@@ -268,7 +270,7 @@ export class IntelligenceCore {
       },
       workflowTrigger: undefined,
       requiresConfirmation: false,
-      compatibleModes: ['image', 'video']
+      compatibleModes: ['image', 'video', 'lipsync']
     });
 
     // Workflow Triggers
@@ -526,7 +528,7 @@ export class IntelligenceCore {
   }
 
   // Get all available suggestions for the UI
-  public getAvailableSuggestions(contentType: 'image' | 'video' | 'audio'): CinematicSuggestion[] {
+  public getAvailableSuggestions(contentType: 'image' | 'video' | 'audio' | 'lipsync'): CinematicSuggestion[] {
     const suggestions: CinematicSuggestion[] = [];
     
     for (const suggestion of this.suggestionMappings.values()) {
@@ -782,7 +784,7 @@ export class IntelligenceCore {
   /**
    * Analyzes user input to determine intent and required actions
    */
-  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video' | 'audio', hasUploadedImage?: boolean): Promise<UserIntent> {
+  public async analyzeUserIntent(userInput: string, forcedContentType?: 'image' | 'video' | 'audio' | 'lipsync', hasUploadedImage?: boolean, aspectRatio?: string): Promise<UserIntent> {
     console.log('🔍 [IntelligenceCore] Analyzing user intent:', userInput);
     console.log('🔍 [IntelligenceCore] Forced content type:', forcedContentType);
     const lowerInput = userInput.toLowerCase();
@@ -963,6 +965,7 @@ export class IntelligenceCore {
       keywords,
       context,
       requiresGeneration,
+      aspectRatio: aspectRatio, // Pass the aspect ratio from UI controls
     };
 
     // Apply Claude AI enhancement if enabled
@@ -1780,12 +1783,24 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               );
             }
             if (!selectedModel) {
-              // Default to Nano Banana Edit, but also consider Gemini and Qwen
-              selectedModel = this.getModelCapabilities().find(model => 
-                model.endpointId === 'fal-ai/nano-banana/edit' || 
-                model.endpointId === 'fal-ai/gemini-25-flash-image/edit' ||
-                model.endpointId === 'fal-ai/qwen-image-edit'
-              );
+              // Check if we have an image available for image-to-image models
+              const hasImage = intent.imageUrl && intent.imageUrl.trim() !== '';
+              
+              if (hasImage) {
+                // Default to Nano Banana Edit, but also consider Gemini and Qwen for image editing
+                selectedModel = this.getModelCapabilities().find(model => 
+                  model.endpointId === 'fal-ai/nano-banana/edit' || 
+                  model.endpointId === 'fal-ai/gemini-25-flash-image/edit' ||
+                  model.endpointId === 'fal-ai/qwen-image-edit'
+                );
+              } else {
+                // For text-to-image generation, use a text-to-image model instead
+                console.log('⚠️ [IntelligenceCore] No image available for image editing, falling back to text-to-image model');
+                selectedModel = this.getModelCapabilities().find(model => 
+                  model.endpointId === 'fal-ai/flux-pro/v1.1-ultra' ||
+                  model.endpointId === 'fal-ai/stable-diffusion-v35-large'
+                );
+              }
             }
             break;
           case 'extract-frame':
@@ -1941,8 +1956,10 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     const imageFileName = intent.imageUrl;
     const lastGeneratedImageUrl = this.lastGeneratedImageUrl;
     
+    console.log('📋 [IntelligenceCore] Intent imageUrl:', intent.imageUrl);
     console.log('📋 [IntelligenceCore] Has image upload:', hasImageUpload);
     console.log('📋 [IntelligenceCore] Has last generated image:', hasLastGeneratedImage);
+    console.log('📋 [IntelligenceCore] Image file name:', imageFileName);
     
     // Store the original prompt for comparison
     const originalPrompt = userPrompt;
@@ -1968,13 +1985,23 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       console.error('❌ [IntelligenceCore] Prompt enhancement failed, using original prompt:', error);
     }
 
-    // Extract aspect ratio from prompt if specified
-    const aspectRatioMatch = userPrompt.match(/aspect ratio:\s*([^\]]+)/i);
-    const aspectRatio = aspectRatioMatch ? aspectRatioMatch[1].trim() : '16:9';
+    // Use passed aspect ratio or extract from prompt if specified
+    let finalAspectRatio = '16:9'; // Default
     
-    // Validate aspect ratio format
-    const validAspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16'];
-    const finalAspectRatio = validAspectRatios.includes(aspectRatio) ? aspectRatio : '16:9';
+    if (intent.aspectRatio) {
+      // Use aspect ratio passed from UI controls
+      finalAspectRatio = intent.aspectRatio;
+      console.log('📋 [IntelligenceCore] Using aspect ratio from UI controls:', finalAspectRatio);
+    } else {
+      // Extract aspect ratio from prompt if specified
+      const aspectRatioMatch = userPrompt.match(/aspect ratio:\s*([^\]]+)/i);
+      const extractedAspectRatio = aspectRatioMatch ? aspectRatioMatch[1].trim() : '16:9';
+      
+      // Validate aspect ratio format
+      const validAspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16'];
+      finalAspectRatio = validAspectRatios.includes(extractedAspectRatio) ? extractedAspectRatio : '16:9';
+      console.log('📋 [IntelligenceCore] Using aspect ratio from prompt:', finalAspectRatio);
+    }
 
     // Get appropriate negative prompt based on content type
     const defaultNegativePrompt = getNegativePrompt(intent.type);
@@ -1991,13 +2018,20 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       // Check if imageFileName is actually a base64 data URL (from quick generate)
       if (imageFileName.startsWith('data:')) {
         baseParams.image_url = imageFileName;
+        console.log('📋 [IntelligenceCore] Using base64 data URL for image');
+      } else if (imageFileName.startsWith('http://') || imageFileName.startsWith('https://')) {
+        // For full URLs, use them directly
+        baseParams.image_url = imageFileName;
+        console.log('📋 [IntelligenceCore] Using full URL for image:', imageFileName);
       } else {
         // For uploaded images, we need to construct the URL
         baseParams.image_url = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/uploads/${imageFileName}`;
+        console.log('📋 [IntelligenceCore] Constructed URL for uploaded image:', baseParams.image_url);
       }
     } else if (hasLastGeneratedImage && lastGeneratedImageUrl) {
       // For last generated images, use the direct URL
       baseParams.image_url = lastGeneratedImageUrl;
+      console.log('📋 [IntelligenceCore] Using last generated image URL:', lastGeneratedImageUrl);
     } else if (this.lastGeneratedImageUrl) {
       // Use the stored last generated image URL from the intelligence core
       baseParams.image_url = this.lastGeneratedImageUrl;
@@ -2008,6 +2042,13 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     console.log('📋 [IntelligenceCore] User prompt:', userPrompt);
     console.log('📋 [IntelligenceCore] Has image upload:', hasImageUpload);
     console.log('📋 [IntelligenceCore] Has last generated image:', hasLastGeneratedImage);
+    
+    // Validate that image-to-image models have an image_url
+    const requiresImage = model.inputAsset && model.inputAsset.includes('image');
+    if (requiresImage && !baseParams.image_url) {
+      console.error('❌ [IntelligenceCore] Model requires image but no image_url provided:', model.endpointId);
+      throw new Error(`Model ${model.label} requires an image but none was provided. Please upload an image first.`);
+    }
     
     // Return clean, FAL-compatible parameters based on model category
     switch (model.category) {
@@ -2023,12 +2064,22 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
 
       case 'video':
         // Video generation models - minimal parameters for FAL compatibility
-        return {
-          ...baseParams,
-          duration: "8s",
-          resolution: "720p",
-          negative_prompt: defaultNegativePrompt
-        };
+        // Check if this is HALU Minimax model and use correct parameters
+        if (model.endpointId === 'fal-ai/minimax/hailuo-02/standard/image-to-video') {
+          return {
+            ...baseParams,
+            duration: "6", // HALU expects "6" or "10" without "s" suffix
+            resolution: "768P", // HALU expects "512P" or "768P"
+            negative_prompt: defaultNegativePrompt
+          };
+        } else {
+          return {
+            ...baseParams,
+            duration: "8s",
+            resolution: "720p",
+            negative_prompt: defaultNegativePrompt
+          };
+        }
 
       case 'music':
         // Music generation models - minimal parameters for FAL compatibility
@@ -2975,6 +3026,102 @@ How would you like to proceed?`,
    */
   public getLastGeneratedImage(): string | null {
     return this.lastGeneratedImageUrl;
+  }
+
+  /**
+   * Detects if a model supports multiple images and returns UI configuration
+   * This drives the interface behavior based on model capabilities
+   */
+  public getModelUIConfiguration(modelId: string): {
+    supportsMultipleImages: boolean;
+    maxImages: number;
+    shouldShowMultiImageUpload: boolean;
+  } {
+    console.log('🎯 [IntelligenceCore] Getting UI configuration for model:', modelId);
+    
+    // Find the model in available endpoints
+    const model = AVAILABLE_ENDPOINTS.find(ep => ep.endpointId === modelId);
+    
+    if (!model) {
+      console.log('⚠️ [IntelligenceCore] Model not found, using default single-image configuration');
+      return {
+        supportsMultipleImages: false,
+        maxImages: 1,
+        shouldShowMultiImageUpload: false
+      };
+    }
+    
+    const config = {
+      supportsMultipleImages: model.supportsMultipleImages || false,
+      maxImages: model.maxImages || 1,
+      shouldShowMultiImageUpload: model.supportsMultipleImages || false
+    };
+    
+    console.log('🎯 [IntelligenceCore] UI Configuration for', modelId, ':', config);
+    return config;
+  }
+
+  /**
+   * Determines the optimal upload interface based on user intent and model selection
+   * This is the key method that drives the UI behavior
+   */
+  public getOptimalUploadInterface(userInput: string, selectedModelId?: string): {
+    interfaceType: 'single' | 'multi';
+    maxImages: number;
+    reason: string;
+  } {
+    console.log('🎯 [IntelligenceCore] Determining optimal upload interface');
+    console.log('🎯 [IntelligenceCore] User input:', userInput);
+    console.log('🎯 [IntelligenceCore] Selected model:', selectedModelId);
+    
+    // If no model is selected yet, analyze the user input for intent
+    if (!selectedModelId) {
+      // Check if user explicitly mentions multiple images
+      const multiImageKeywords = [
+        'multiple images', 'several images', 'many images', 'multiple photos',
+        'blend images', 'combine images', 'merge images', 'multiple pictures',
+        'several photos', 'many photos', 'multiple reference', 'several reference'
+      ];
+      
+      const hasMultiImageIntent = multiImageKeywords.some(keyword => 
+        userInput.toLowerCase().includes(keyword)
+      );
+      
+      if (hasMultiImageIntent) {
+        console.log('🎯 [IntelligenceCore] Multi-image intent detected from user input');
+        return {
+          interfaceType: 'multi',
+          maxImages: 5,
+          reason: 'User explicitly mentioned multiple images'
+        };
+      }
+      
+      // Default to single image until model is selected
+      return {
+        interfaceType: 'single',
+        maxImages: 1,
+        reason: 'No model selected, defaulting to single image'
+      };
+    }
+    
+    // Model is selected, check its capabilities
+    const modelConfig = this.getModelUIConfiguration(selectedModelId);
+    
+    if (modelConfig.supportsMultipleImages) {
+      console.log('🎯 [IntelligenceCore] Model supports multiple images, enabling multi-image interface');
+      return {
+        interfaceType: 'multi',
+        maxImages: modelConfig.maxImages,
+        reason: `Model ${selectedModelId} supports up to ${modelConfig.maxImages} images`
+      };
+    }
+    
+    console.log('🎯 [IntelligenceCore] Model supports single image only');
+    return {
+      interfaceType: 'single',
+      maxImages: 1,
+      reason: `Model ${selectedModelId} supports single image only`
+    };
   }
 }
 

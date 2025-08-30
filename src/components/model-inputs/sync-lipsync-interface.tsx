@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { button as Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Play, Download, Video, Audio, Settings } from 'lucide-react';
+import { Upload, Play, Download, Video, Settings } from 'lucide-react';
+import { Volume2 as Audio } from 'lucide-react';
 
 interface SyncLipSyncInterfaceProps {
   onGenerate: (result: any) => void;

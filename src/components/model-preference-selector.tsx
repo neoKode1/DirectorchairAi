@@ -213,16 +213,16 @@ export function ModelPreferenceSelector({
             className
           )}
         >
-          <Settings className="w-4 h-4 mr-2" />
-          Model Preferences
+          <Settings className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Model Preferences</span>
           {isComplete ? (
-            <Check className="w-4 h-4 ml-2 text-success" />
+            <Check className="w-4 h-4 sm:ml-2 text-success" />
           ) : (
-            <AlertCircle className="w-4 h-4 ml-2 text-warning" />
+            <AlertCircle className="w-4 h-4 sm:ml-2 text-warning" />
           )}
           <Badge 
             variant="secondary" 
-            className="ml-2 badge-enhanced"
+            className="ml-2 badge-enhanced hidden sm:inline-flex"
           >
             {status.selected}/{status.total}
           </Badge>

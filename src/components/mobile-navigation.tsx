@@ -12,7 +12,8 @@ import {
   Settings,
   Menu,
   X,
-  Calendar
+  Calendar,
+  Music
 } from "lucide-react";
 import { button as Button } from "@/components/ui/button";
 
@@ -42,6 +43,12 @@ export function MobileNavigation({ className }: MobileNavigationProps) {
       href: "/models",
       icon: Image,
       active: pathname.startsWith("/models")
+    },
+    {
+      name: "Audio",
+      href: "/audio-generation",
+      icon: Music,
+      active: pathname === "/audio-generation"
     },
     {
       name: "Gallery",
@@ -164,6 +171,7 @@ export function MobileTopNavigation({ className }: MobileNavigationProps) {
     if (pathname === "/") return "Home";
     if (pathname === "/timeline") return "AI Studio";
     if (pathname.startsWith("/models")) return "Models";
+    if (pathname === "/audio-generation") return "Audio Studio";
     if (pathname === "/gallery") return "Gallery";
     return "DirectorchairAI";
   };
@@ -240,6 +248,15 @@ export function MobileTopNavigation({ className }: MobileNavigationProps) {
               >
                 <Image className="w-4 h-4" />
                 <span className="mobile-text-sm">Models</span>
+              </Link>
+              
+              <Link
+                href="/audio-generation"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors mobile-touch-target"
+                onClick={toggleMenu}
+              >
+                <Music className="w-4 h-4" />
+                <span className="mobile-text-sm">Audio Studio</span>
               </Link>
               
               <Link

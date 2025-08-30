@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { button as Button } from '@/components/ui/button';
@@ -18,10 +18,13 @@ import {
   Clock,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { contentStorage, type StoredContent } from '@/lib/content-storage';
+import { getVideoThumbnailWithCache, downloadVideoWithFrame, downloadVideo } from '@/lib/video-thumbnail';
+import { useToast } from '@/hooks/use-toast';
 
 interface GalleryItem {
   id: string;
@@ -30,6 +33,7 @@ interface GalleryItem {
   title: string;
   prompt: string;
   timestamp: Date;
+  thumbnailUrl?: string; // For video thumbnails
   metadata?: {
     width?: number;
     height?: number;
@@ -53,11 +57,40 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   onAnimate,
   useLocalStorage = true
 }) => {
+  const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [localItems, setLocalItems] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [videoThumbnails, setVideoThumbnails] = useState<Record<string, string>>({});
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  // Generate video thumbnails for video items
+  const generateVideoThumbnails = useCallback(async (items: GalleryItem[]) => {
+    const videoItems = items.filter(item => item.type === 'video');
+    if (videoItems.length === 0) return;
+
+    console.log('🎬 [GalleryView] Generating thumbnails for', videoItems.length, 'videos');
+    
+    for (const videoItem of videoItems) {
+      // Skip if we already have a thumbnail for this video
+      if (videoThumbnails[videoItem.id]) continue;
+      
+      try {
+        const thumbnailUrl = await getVideoThumbnailWithCache(videoItem.url, 'last');
+        if (thumbnailUrl) {
+          setVideoThumbnails(prev => ({
+            ...prev,
+            [videoItem.id]: thumbnailUrl
+          }));
+          console.log('🎬 [GalleryView] Generated thumbnail for video:', videoItem.title);
+        }
+      } catch (error) {
+        console.error('❌ [GalleryView] Failed to generate thumbnail for video:', videoItem.title, error);
+      }
+    }
+  }, [videoThumbnails]);
 
   // Load items from localStorage if enabled
   useEffect(() => {
@@ -81,11 +114,46 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       setLocalItems(filteredItems);
       setIsLoading(false);
       console.log('📂 [GalleryView] Loaded', filteredItems.length, 'items from localStorage (filtered from', savedContent.length, 'total)');
+      
+      // Generate thumbnails for video items
+      generateVideoThumbnails(filteredItems);
     } else if (propItems) {
       setLocalItems(propItems);
       setIsLoading(false);
+      
+      // Generate thumbnails for video items
+      generateVideoThumbnails(propItems);
     }
-  }, [useLocalStorage, propItems]);
+  }, [useLocalStorage, propItems, generateVideoThumbnails]);
+
+  // Listen for new content generation to trigger thumbnail updates
+  useEffect(() => {
+    const handleContentGenerated = (event: CustomEvent) => {
+      const { type, url, id } = event.detail;
+      
+      // If it's a video, generate a thumbnail for it
+      if (type === 'video' && url && id) {
+        console.log('🎬 [GalleryView] New video detected, generating thumbnail for:', id);
+        getVideoThumbnailWithCache(url, 'last').then(thumbnailUrl => {
+          if (thumbnailUrl) {
+            setVideoThumbnails(prev => ({
+              ...prev,
+              [id]: thumbnailUrl
+            }));
+            console.log('🎬 [GalleryView] Generated thumbnail for new video:', id);
+          }
+        }).catch(error => {
+          console.error('❌ [GalleryView] Failed to generate thumbnail for new video:', error);
+        });
+      }
+    };
+
+    window.addEventListener('content-generated', handleContentGenerated as EventListener);
+    
+    return () => {
+      window.removeEventListener('content-generated', handleContentGenerated as EventListener);
+    };
+  }, []);
 
   // Use either local items or prop items
   const items = useLocalStorage ? localItems : (propItems || []);
@@ -144,6 +212,68 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const handleAnimate = (e: React.MouseEvent, item: GalleryItem) => {
     e.stopPropagation();
     onAnimate?.(item);
+  };
+
+  // Handle download with frame extraction for videos
+  const handleDownload = async (item: GalleryItem) => {
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    
+    try {
+      if (item.type === 'video') {
+        console.log('📥 [GalleryView] Starting video download with frame extraction');
+        await downloadVideoWithFrame(item.url, item.title);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded video and last frame for "${item.title}"`,
+        });
+      } else if (item.type === 'image') {
+        // Simple image download
+        const response = await fetch(item.url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${item.title.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded "${item.title}"`,
+        });
+      } else if (item.type === 'audio') {
+        // Simple audio download
+        const response = await fetch(item.url);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${item.title.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_')}.mp3`;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded "${item.title}"`,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [GalleryView] Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "Failed to download content",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -261,12 +391,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 )}
                 {item.type === 'video' && (
                   <>
-                    <video
-                      src={item.url}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      muted
-                      preload="metadata"
-                    />
+                    {videoThumbnails[item.id] ? (
+                      // Use extracted thumbnail if available
+                      <img
+                        src={videoThumbnails[item.id]}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      // Fallback to video element if thumbnail not ready
+                      <video
+                        src={item.url}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        muted
+                        preload="metadata"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                       <Play className="w-8 h-8 text-white" />
                     </div>
@@ -303,7 +444,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       variant="secondary"
                       size="sm"
                       className="btn-secondary bg-white/90 text-black border-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(item);
+                      }}
+                      disabled={isDownloading}
+                      title={item.type === 'video' ? 'Download video + last frame' : 'Download'}
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -468,6 +614,55 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         </span>
                       )}
                     </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {/* Download Button - Available for all content types */}
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDownload(selectedItem);
+                      }}
+                      disabled={isDownloading}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {isDownloading ? 'Downloading...' : selectedItem.type === 'video' ? 'Download + Frame' : 'Download'}
+                    </Button>
+                    
+                    {selectedItem.type === 'image' && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onItemClick?.(selectedItem);
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        {onAnimate && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onAnimate?.(selectedItem);
+                            }}
+                          >
+                            <Zap className="w-4 h-4 mr-2" />
+                            Animate
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

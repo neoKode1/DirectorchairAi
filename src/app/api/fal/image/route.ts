@@ -8,7 +8,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('🖼️ [FAL Image Proxy] Request received:', {
       model: body.model,
       prompt: body.prompt?.substring(0, 100) + '...',
-      hasImage: !!body.image_url
+      hasImage: !!body.image_url,
+      imageUrl: body.image_url
     });
 
     // Extract model and prompt - these are required
@@ -38,7 +39,64 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Add image_url if provided (for image-to-image)
     if (body.image_url) {
-      input.image_url = body.image_url;
+      // Convert HTTP URLs to base64 data URIs for FAL compatibility
+      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:')) {
+        console.log('🖼️ [FAL Image Proxy] Converting HTTP URL to base64 for FAL compatibility:', body.image_url);
+        try {
+          // Fetch the image and convert to base64
+          const response = await fetch(body.image_url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = response.headers.get('content-type') || 'image/jpeg';
+          const dataUri = `data:${mimeType};base64,${base64}`;
+          
+          input.image_url = dataUri;
+          console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');
+          console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);
+          console.log('🖼️ [FAL Image Proxy] Data URI starts with data:', dataUri.startsWith('data:'));
+        } catch (error) {
+          console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL to base64:', error);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to process image URL for FAL compatibility'
+          }, { status: 400 });
+        }
+      } else if (body.image_url.startsWith('data:')) {
+        // Use data URIs directly
+        input.image_url = body.image_url;
+        console.log('🖼️ [FAL Image Proxy] Using existing data URI');
+      } else if (body.image_url.startsWith('https://')) {
+        // Use HTTPS URLs directly
+        input.image_url = body.image_url;
+        console.log('🖼️ [FAL Image Proxy] Using HTTPS URL');
+      } else {
+        // For any other URL format, try to convert to base64
+        console.log('🖼️ [FAL Image Proxy] Converting unknown URL format to base64:', body.image_url);
+        try {
+          const response = await fetch(body.image_url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          
+          const arrayBuffer = await response.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          const mimeType = response.headers.get('content-type') || 'image/jpeg';
+          const dataUri = `data:${mimeType};base64,${base64}`;
+          
+          input.image_url = dataUri;
+          console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');
+        } catch (error) {
+          console.error('❌ [FAL Image Proxy] Failed to convert URL to base64:', error);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to process image URL for FAL compatibility'
+          }, { status: 400 });
+        }
+      }
     }
 
     // Add image data if provided (for base64 images)
@@ -93,6 +151,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       if (body.safety_tolerance) {
         input.safety_tolerance = body.safety_tolerance;
+      }
+      
+      // Ensure required parameters have default values for FLUX Pro models
+      if (!input.num_inference_steps) {
+        input.num_inference_steps = 30;
+      }
+      if (!input.guidance_scale) {
+        input.guidance_scale = 7.5;
+      }
+      if (!input.num_images) {
+        input.num_images = 1;
+      }
+      if (!input.output_format) {
+        input.output_format = "jpeg";
       }
     }
 
@@ -192,6 +264,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.guidance_scale !== undefined) {
         input.guidance_scale = body.guidance_scale;
       }
+      
+      // Ensure required parameters have default values for Stable Diffusion models
+      if (!input.num_inference_steps) {
+        input.num_inference_steps = 28;
+      }
+      if (!input.guidance_scale) {
+        input.guidance_scale = 3.5;
+      }
+      if (!input.num_images) {
+        input.num_images = 1;
+      }
+      if (!input.output_format) {
+        input.output_format = "jpeg";
+      }
+      if (!input.enable_safety_checker) {
+        input.enable_safety_checker = true;
+      }
     }
 
     if (model.includes('dreamina')) {
@@ -231,9 +320,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (model.includes('nano-banana/edit')) {
-      if (body.image_urls) {
+      console.log('🔧 [FAL Image Proxy] Processing Nano Banana Edit (Advanced Controls) model parameters');
+      
+      // Nano Banana supports advanced controls for fine-grained editing
+      // Handle image URLs for Nano Banana - it expects image_urls array
+      if (body.image_urls && body.image_urls.length > 0) {
+        // Use provided image_urls array
         input.image_urls = body.image_urls;
+      } else if (body.image_url) {
+        // Convert single image_url to image_urls array
+        input.image_urls = [body.image_url];
+        console.log('🔧 [FAL Image Proxy] Converted single image_url to image_urls array for Nano Banana');
+      } else {
+        // No images provided
+        input.image_urls = [];
+        console.log('🔧 [FAL Image Proxy] No images provided for Nano Banana model');
       }
+      
       if (body.num_images !== undefined) {
         input.num_images = body.num_images;
       }
@@ -246,28 +349,74 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.guidance_scale !== undefined) {
         input.guidance_scale = body.guidance_scale;
       }
+      
+      // Validate that at least one image is provided
+      if (!input.image_urls || input.image_urls.length === 0) {
+        console.error('❌ [FAL Image Proxy] Nano Banana Edit requires at least one image');
+        return NextResponse.json({
+          success: false,
+          error: 'Nano Banana Edit requires at least one image'
+        }, { status: 400 });
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Nano Banana Edit input parameters:', input);
+      console.log('🔧 [FAL Image Proxy] Nano Banana image_urls count:', input.image_urls.length);
     }
 
     if (model.includes('gemini-25-flash-image/edit')) {
-      console.log('🔧 [FAL Image Proxy] Processing Gemini model parameters');
+      console.log('🔧 [FAL Image Proxy] Processing Gemini 2.5 Flash (Multi-Image Optimized) model parameters');
       console.log('🔧 [FAL Image Proxy] Body received:', body);
       
       // Clear all existing properties and set only Gemini-supported parameters
+      // Gemini is optimized for multi-image editing with streamlined API
       Object.keys(input).forEach(key => delete input[key]);
       input.prompt = body.prompt || prompt;
-      input.image_urls = body.image_urls || [];
+      
+      // Handle image URLs for Gemini - it expects image_urls array
+      // IMPORTANT: Gemini 2.5 Flash is designed for multiple images but can work with single image
+      if (body.image_urls && body.image_urls.length > 0) {
+        // Use provided image_urls array
+        input.image_urls = body.image_urls;
+        console.log('🔧 [FAL Image Proxy] Using provided image_urls array for Gemini');
+      } else if (body.image_url) {
+        // Convert single image_url to image_urls array for Gemini compatibility
+        input.image_urls = [body.image_url];
+        console.log('🔧 [FAL Image Proxy] Converted single image_url to image_urls array for Gemini:', body.image_url);
+      } else if (input.image_url) {
+        // Use the already processed image_url from earlier conversion
+        input.image_urls = [input.image_url];
+        console.log('🔧 [FAL Image Proxy] Using already processed image_url for Gemini:', input.image_url);
+      } else {
+        // No images provided
+        input.image_urls = [];
+        console.log('🔧 [FAL Image Proxy] No images provided for Gemini model');
+      }
+      
       input.num_images = body.num_images !== undefined ? body.num_images : 1;
       
-      console.log('🔧 [FAL Image Proxy] Gemini input parameters (cleaned):', input);
+      // Validate that at least one image is provided
+      if (!input.image_urls || input.image_urls.length === 0) {
+        console.error('❌ [FAL Image Proxy] Gemini 2.5 Flash requires at least one image');
+        return NextResponse.json({
+          success: false,
+          error: 'Gemini 2.5 Flash requires at least one image'
+        }, { status: 400 });
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Gemini 2.5 Flash input parameters (cleaned):', input);
+      console.log('🔧 [FAL Image Proxy] Gemini image_urls count:', input.image_urls.length);
+      console.log('🔧 [FAL Image Proxy] Gemini image_urls[0]:', input.image_urls[0]);
     }
 
     if (model.includes('qwen-image-edit')) {
       console.log('🔧 [FAL Image Proxy] Processing Qwen Image Edit model parameters');
       
       // Qwen Image Edit expects image_url (singular), not image_urls
-      if (body.image_url) {
+      // Note: input.image_url is already set and converted from the earlier processing
+      // Only set it if it's not already set (from image_urls conversion)
+      if (!input.image_url && body.image_url) {
         input.image_url = body.image_url;
-      } else if (body.image_urls && body.image_urls.length > 0) {
+      } else if (!input.image_url && body.image_urls && body.image_urls.length > 0) {
         // If image_urls is provided, use the first one as image_url
         input.image_url = body.image_urls[0];
         console.log('🔧 [FAL Image Proxy] Converted image_urls[0] to image_url for Qwen model');
@@ -276,6 +425,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Remove image_urls if it exists to avoid conflicts
       if (input.image_urls) {
         delete input.image_urls;
+      }
+      
+      // Validate that image_url is present and properly formatted
+      if (!input.image_url) {
+        console.error('❌ [FAL Image Proxy] Qwen Image Edit requires image_url parameter');
+        return NextResponse.json({
+          success: false,
+          error: 'Qwen Image Edit requires image_url parameter'
+        }, { status: 400 });
       }
       
       // Add Qwen-specific parameters according to FAL documentation
@@ -298,7 +456,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.image_size = body.image_size;
       }
       
-      console.log('🔧 [FAL Image Proxy] Qwen Image Edit input parameters:', input);
+      // Ensure required parameters have default values
+      if (!input.num_inference_steps) {
+        input.num_inference_steps = 30;
+      }
+      if (!input.guidance_scale) {
+        input.guidance_scale = 4;
+      }
+      if (!input.num_images) {
+        input.num_images = 1;
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Qwen Image Edit final input parameters:', input);
+      console.log('🔧 [FAL Image Proxy] Qwen Image Edit image_url type:', typeof input.image_url);
+      console.log('🔧 [FAL Image Proxy] Qwen Image Edit image_url starts with data:', input.image_url?.startsWith('data:'));
+      console.log('🔧 [FAL Image Proxy] Qwen Image Edit image_url starts with https:', input.image_url?.startsWith('https:'));
     }
 
     if (model.includes('ffmpeg-api/extract-frame')) {
@@ -326,6 +498,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log('📦 [FAL Image Proxy] Clean FAL input parameters:', input);
     console.log('📦 [FAL Image Proxy] Input JSON:', JSON.stringify(input, null, 2));
+    console.log('📦 [FAL Image Proxy] Final image_url type:', typeof input.image_url);
+    console.log('📦 [FAL Image Proxy] Final image_url starts with data:', input.image_url?.startsWith('data:'));
+    console.log('📦 [FAL Image Proxy] Final image_url starts with https:', input.image_url?.startsWith('https:'));
+    console.log('📦 [FAL Image Proxy] Final image_url starts with http:', input.image_url?.startsWith('http:'));
 
     // Call FAL API directly with subscription
     try {

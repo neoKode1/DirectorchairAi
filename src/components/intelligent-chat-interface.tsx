@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 import { 
   Send, 
   Mic, 
@@ -47,6 +48,8 @@ import { contentStorage } from '@/lib/content-storage';
 
 import { useToast } from '@/hooks/use-toast';
 import FrameContainer from '@/components/frame-container';
+import { MultiImageUpload } from '@/components/multi-image-upload';
+import { VoiceSelector } from '@/components/voice-selector';
 
 interface ChatMessage {
   id: string;
@@ -228,8 +231,8 @@ const ModelStatusBar = ({ className }: { className?: string }) => {
     else if (modelId.includes('imagen4')) baseName = 'Google Imagen 4';
     else if (modelId.includes('stable-diffusion')) baseName = 'Stable Diffusion 3.5';
     else if (modelId.includes('dreamina')) baseName = 'Dreamina v3.1';
-    else if (modelId.includes('nano-banana')) baseName = 'Nano Banana';
-    else if (modelId.includes('gemini-25-flash-image')) baseName = 'Gemini 2.5 Flash';
+    else if (modelId.includes('nano-banana')) baseName = 'Nano Banana (Advanced Controls)';
+    else if (modelId.includes('gemini-25-flash-image')) baseName = 'Gemini 2.5 Flash (Multi-Image)';
     else if (modelId.includes('qwen-image-edit')) baseName = 'Qwen Image Edit';
     else if (modelId.includes('ideogram/character')) baseName = 'Ideogram Character';
     else if (modelId.includes('ffmpeg-api')) baseName = 'Frame Extractor';
@@ -285,8 +288,8 @@ const ModelStatusBar = ({ className }: { className?: string }) => {
     if (modelId.includes('stable-diffusion')) return '/gemini-color.png'; // Stable Diffusion
     if (modelId.includes('dreamina')) return '/bytedance-color.webp'; // Dreamina
     if (modelId.includes('flux')) return '/flux.png'; // Flux models
-    if (modelId.includes('nano-banana')) return '/flux.png'; // Nano Banana
-    if (modelId.includes('gemini')) return '/gemini-color.png'; // Gemini
+    if (modelId.includes('nano-banana')) return '/flux.png'; // Nano Banana (Advanced Controls)
+    if (modelId.includes('gemini')) return '/gemini-color.png'; // Gemini 2.5 Flash (Multi-Image)
     if (modelId.includes('ideogram')) return '/ideogram.png'; // Ideogram
     
     // Video models
@@ -411,7 +414,7 @@ export function IntelligentChatInterface({
   // Unified generation state management
   const [generationState, setGenerationState] = useState<{
     isActive: boolean;
-    type: 'image' | 'video' | 'style' | 'workflow' | 'audio' | null;
+    type: 'image' | 'video' | 'style' | 'workflow' | 'audio' | 'lipsync' | null;
     startTime: Date | null;
     currentTask: string | null;
   }>({
@@ -425,7 +428,7 @@ export function IntelligentChatInterface({
   const [pendingDelegation, setPendingDelegation] = useState<TaskDelegation | null>(null);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [lastGeneratedImagePrompt, setLastGeneratedImagePrompt] = useState<string | null>(null);
-  const [showSmartControls, setShowSmartControls] = useState(true);
+  const [showSmartControls, setShowSmartControls] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null);
   const [currentDelegation, setCurrentDelegation] = useState<TaskDelegation | null>(null);
@@ -447,7 +450,7 @@ export function IntelligentChatInterface({
 
   // Intent selection state
   const [showIntentSelection, setShowIntentSelection] = useState(false);
-  const [uploadedImageForIntent, setUploadedImageForIntent] = useState<string | null>(null);
+
   const [selectedIntent, setSelectedIntent] = useState<'animate' | 'edit' | 'style' | 'create-image' | 'create-video' | null>(null);
   const [intentValidation, setIntentValidation] = useState<{
     isValid: boolean;
@@ -461,7 +464,7 @@ export function IntelligentChatInterface({
   const [showFrameContainer, setShowFrameContainer] = useState(false);
 
   // Generation state helper functions
-  const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow' | 'audio', task: string) => {
+  const startGeneration = (type: 'image' | 'video' | 'style' | 'workflow' | 'audio' | 'lipsync', task: string) => {
     console.log(`🚀 [Generation State] Starting ${type} generation: ${task}`);
     setGenerationState({
       isActive: true,
@@ -740,7 +743,7 @@ export function IntelligentChatInterface({
   const handleIntentSelection = async (intent: 'animate' | 'edit' | 'style' | 'create-image' | 'create-video') => {
     UserInteractionMonitor.log('intent_selection', {
       selectedIntent: intent,
-      hasUploadedImage: !!uploadedImageForIntent,
+              hasUploadedImage: uploadedImageUrls.length > 0,
       timestamp: Date.now()
     });
     
@@ -755,11 +758,7 @@ export function IntelligentChatInterface({
     if (validation.isValid) {
       // Hide intent selection and proceed to prompt input
       setShowIntentSelection(false);
-      setUploadedImageForIntent(null);
-      
-      // Set the uploaded image for processing
-      setUploadedImage(uploadedImageForIntent);
-      setImagePreview(uploadedImageForIntent);
+
       
       toast({
         title: "Intent Confirmed",
@@ -782,11 +781,8 @@ export function IntelligentChatInterface({
     setShowIntentSelection(false);
     setSelectedIntent(null);
     setIntentValidation(null);
-    setUploadedImageForIntent(null);
-    
-    // Clear any uploaded image
-    setUploadedImage(null);
-    setImagePreview(null);
+    // Clear any uploaded images
+    setUploadedImageUrls([]);
   };
 
   // Handle paste functionality
@@ -1217,8 +1213,8 @@ export function IntelligentChatInterface({
     voiceover: null,
   });
   const [isInitialized, setIsInitialized] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<File | string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Unified multi-array image upload system (replaces old state)
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('1:1');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1228,8 +1224,9 @@ export function IntelligentChatInterface({
   // Removed delegation override state - no longer needed with intent-driven workflow
   
   // Add state for content type selection
-  const [contentType, setContentType] = useState<'image' | 'video' | 'audio'>('image');
+  const [contentType, setContentType] = useState<'image' | 'video' | 'audio' | 'lipsync'>('image');
   const [audioToggle, setAudioToggle] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('Rachel'); // Default to ElevenLabs Rachel
 
   // Add workflow execution state
   const [currentWorkflow, setCurrentWorkflow] = useState<any>(null);
@@ -1941,8 +1938,12 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         }
       };
       
-      // Add the content message to the chat
-      setMessages(prev => [...prev, contentMessage]);
+      // Add the content message to the chat and remove any progress messages
+      setMessages(prev => {
+        // Remove progress messages and add the new content message
+        const withoutProgress = prev.filter(msg => !msg.isProgressMessage);
+        return [...withoutProgress, contentMessage];
+      });
       
       // Save content to gallery storage
       const contentToSave = {
@@ -2031,12 +2032,8 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         imageUrlLength: imageUrl?.length
       });
       
-      // Set the uploaded image
-      setUploadedImage(imageUrl);
-      setImagePreview(imageUrl);
-      
-      // Set the uploaded image for intent selection
-      setUploadedImageForIntent(imageUrl);
+      // Set the uploaded image (add to multi-image array)
+      setUploadedImageUrls([imageUrl]);
       
       // Show intent selection modal immediately
       console.log('🎯 [Intent Selection] Showing intent selection modal for injected image');
@@ -2257,7 +2254,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
     
     UserInteractionMonitor.log('form_submit', {
       hasText: !!userInput.trim(),
-      hasImage: !!uploadedImage,
+              hasImage: uploadedImageUrls.length > 0,
       textLength: userInput.trim().length,
       chatMode,
       selectedIntent,
@@ -2319,7 +2316,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
 
     try {
       // Check if we need to show intent selection for text-only input
-      if (chatMode === 'gen' && !uploadedImage && !selectedIntent && inputText.trim()) {
+      if (chatMode === 'gen' && uploadedImageUrls.length === 0 && !selectedIntent && inputText.trim()) {
         console.log('🎯 [Intent Selection] Text-only input detected, showing intent selection');
         setShowIntentSelection(true);
         setIsProcessing(false);
@@ -2444,7 +2441,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         console.log('🔄 [Workflow] Detected workflow request:', inputText);
         
         // Create workflow
-        const intent = await intelligenceCore.analyzeUserIntent(inputText, contentType);
+        const intent = await intelligenceCore.analyzeUserIntent(inputText, contentType as 'image' | 'video' | 'audio' | 'lipsync');
         
         const delegation = await intelligenceCore.selectOptimalModel(intent);
         const workflow = {
@@ -2547,7 +2544,7 @@ Starting workflow execution...`,
           // Set parameters for text-to-speech generation
           delegation.parameters = {
             text: userInput.trim(),
-            voice_id: 'pNInz6obpgDQGcFmaJgB', // Default ElevenLabs voice ID (Rachel)
+            voice_id: selectedVoice, // Use the selected voice from the dropdown
             model_id: 'eleven_turbo_v2',
             output_format: 'mp3'
           };
@@ -2560,7 +2557,7 @@ Starting workflow execution...`,
           const delegationMessage: ChatMessage = {
             id: `delegation-${Date.now()}`,
             type: 'assistant',
-            content: `🎵 **Audio Generation Ready**: Ready to create audio using ${voiceModel}`,
+            content: `🎵 **Audio Generation Ready**: Ready to create audio using ${voiceModel} with voice "${selectedVoice}"`,
             timestamp: new Date(),
             intent: audioIntent,
             delegation: delegation,
@@ -2587,24 +2584,87 @@ Starting workflow execution...`,
       }
     }
     
+    // Check if lip sync generation is requested
+    if (contentType === 'lipsync') {
+      console.log('🎬 [IntelligentChatInterface] Processing lip sync generation request');
+      
+      try {
+        // Check if we have both video and audio
+        if (uploadedImageUrls.length === 0) {
+          throw new Error('Please upload a video file for lip sync.');
+        }
+        
+        // For lip sync, we need to show a special interface
+        // This will be handled by the SyncLipSyncInterface component
+        const lipsyncIntent = await intelligenceCore.analyzeUserIntent(userInput, 'lipsync', undefined, selectedAspectRatio);
+        
+        // Create a delegation for lip sync
+        const delegation: TaskDelegation = {
+          modelId: 'fal-ai/sync-lipsync',
+          reason: 'Lip synchronization with uploaded video',
+          confidence: 0.95,
+          estimatedTime: '60s',
+          parameters: {
+            model: 'lipsync-1.9.0-beta',
+            video_url: uploadedImageUrls[0], // Use the uploaded video
+            audio_url: '', // Will be set by user
+            sync_mode: 'cut_off'
+          },
+          intent: 'video'
+        };
+        
+        // Set the pending delegation
+        setPendingDelegation(delegation);
+        startGeneration('lipsync', 'Lip sync generation');
+        
+        // Add delegation message
+        const delegationMessage: ChatMessage = {
+          id: `delegation-${Date.now()}`,
+          type: 'assistant',
+          content: `🎬 **Lip Sync Ready**: Your video is ready for lip synchronization. Please provide an audio file to sync with.`,
+          timestamp: new Date(),
+          intent: lipsyncIntent,
+          delegation: delegation,
+          status: 'pending',
+        };
+        setMessages(prev => [...prev, delegationMessage]);
+        
+        // Continue with the generation process
+        currentDelegation = delegation;
+        
+      } catch (error) {
+        console.error('❌ [IntelligentChatInterface] Lip sync generation error:', error);
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: `❌ **Lip Sync Error**: ${error instanceof Error ? error.message : 'Failed to process lip sync request.'}`,
+          timestamp: new Date(),
+          status: 'error',
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        return;
+      }
+    }
+    
     // Start generation state tracking
     startGeneration('image', 'Regular generation process');
     
     try {
       // Check if there's an uploaded image and user provided a prompt, OR if user wants to create from text
-      if ((uploadedImage && userInput.trim()) || (selectedIntent && (selectedIntent === 'create-image' || selectedIntent === 'create-video') && userInput.trim())) {
+      if ((uploadedImageUrls.length > 0 && userInput.trim()) || (selectedIntent && (selectedIntent === 'create-image' || selectedIntent === 'create-video') && userInput.trim())) {
         console.log('🖼️ [IntelligentChatInterface] Uploaded image detected with user prompt');
         console.log('🎯 [IntelligentChatInterface] Selected intent:', selectedIntent);
         console.log('🎯 [IntelligentChatInterface] Show intent selection:', showIntentSelection);
-        console.log('🎯 [IntelligentChatInterface] Uploaded image for intent:', uploadedImageForIntent);
+        console.log('🎯 [IntelligentChatInterface] Uploaded image for intent:', uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : 'None');
         
-        // Check if intent selection is needed
-        if (!selectedIntent) {
-          console.log('⚠️ [IntelligentChatInterface] No intent selected, showing intent selection modal');
+        // Check if intent selection is needed - ALWAYS show intent selection when image is uploaded
+        if (uploadedImageUrls.length > 0 && !selectedIntent) {
+          console.log('⚠️ [IntelligentChatInterface] Image uploaded but no intent selected, showing intent selection modal');
           setShowIntentSelection(true);
-          // Convert uploadedImage to string if it's a File
-          const imageUrl = typeof uploadedImage === 'string' ? uploadedImage : uploadedImageForIntent;
-          setUploadedImageForIntent(imageUrl);
+          setSelectedIntent(null);
+          setIntentValidation(null);
+          // Use the first uploaded image
+          const imageUrl = uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null;
           return; // Don't proceed with generation until intent is selected
         }
         
@@ -2619,24 +2679,34 @@ Starting workflow execution...`,
 
         const preferences = JSON.parse(saved);
         console.log('🔍 [IntelligentChatInterface] Parsed preferences (line 2375):', preferences);
+        console.log('🔍 [IntelligentChatInterface] User preferred image model:', preferences.image);
+        console.log('🔍 [IntelligentChatInterface] User preferred video model:', preferences.video);
         
         // Use the selected intent from the modal instead of guessing from text
         if (selectedIntent === 'edit') {
           console.log('✏️ [IntelligentChatInterface] Detected image editing request');
           
-          // Use the user's preferred image model or nano-banana/edit
+          // Use the user's preferred image model or nano-banana/edit (Advanced Controls)
           const imageModel = preferences.image || 'fal-ai/nano-banana/edit';
           console.log('🔍 [IntelligentChatInterface] Using image model:', imageModel);
+          console.log('🔍 [IntelligentChatInterface] User preferred image model from preferences:', preferences.image);
+          console.log('🔍 [IntelligentChatInterface] Final image model to use:', imageModel);
           
           // Get delegation for image editing
-          const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          const intent = await intelligenceCore.analyzeUserIntent(userInput, 'image', undefined, selectedAspectRatio);
+          
+          // Set the image URL in the intent if we have uploaded images
+          if (uploadedImageUrls.length > 0) {
+            intent.imageUrl = uploadedImageUrls[0];
+            console.log('🖼️ [IntelligentChatInterface] Set image URL in intent for editing:', intent.imageUrl);
+          }
           console.log('🔍 [IntelligentChatInterface] Intent analysis result:', intent);
           const delegation = await intelligenceCore.selectOptimalModel(intent);
           console.log('🔍 [IntelligentChatInterface] Delegation result:', delegation);
             
             if (delegation) {
               console.log('✅ [IntelligentChatInterface] Delegation created successfully');
-              // Override the model to use the user's preference or nano-banana/edit
+              // Override the model to use the user's preference or nano-banana/edit (Advanced Controls)
               delegation.modelId = imageModel;
               delegation.reason = 'Image-to-image editing with user prompt';
             
@@ -2653,14 +2723,9 @@ Starting workflow execution...`,
               const primaryFile = primaryImage[0];
               const primaryUrl = await compressImage(primaryFile, 1920, 1920, 0.8);
               imageUrls.push(primaryUrl);
-            } else if (uploadedImage) {
-              // Handle uploadedImage which can be string or File
-              if (typeof uploadedImage === 'string') {
-                imageUrls.push(uploadedImage);
-              } else {
-                const uploadedUrl = await compressImage(uploadedImage, 1920, 1920, 0.8);
-                imageUrls.push(uploadedUrl);
-              }
+            } else if (uploadedImageUrls.length > 0) {
+              // Handle multiple uploaded images - use URLs directly
+              imageUrls.push(...uploadedImageUrls);
             }
             
             // Add style reference image if available
@@ -2670,37 +2735,17 @@ Starting workflow execution...`,
               imageUrls.push(styleUrl);
             }
             
-            // Determine model-specific parameters
-            let modelParameters: any = {};
+                        // Universal model parameters - works for all models
+            const apiImageUrls = getImageUrlsForAPI();
+            const modelParameters = {
+              // Use image_urls for multi-image models, image_url for single-image models
+              ...(apiImageUrls.length > 1 ? { image_urls: apiImageUrls } : { image_url: apiImageUrls[0] }),
+              prompt: enhancedPrompt,
+              num_images: 1
+            };
             
-            // Add model-specific parameters
-            if (imageModel === 'fal-ai/nano-banana/edit') {
-              modelParameters = {
-                image_urls: imageUrls,
-                prompt: enhancedPrompt,
-                num_images: 1,
-                output_format: "jpeg",
-                strength: 0.9,
-                guidance_scale: 7.5
-              };
-            } else if (imageModel === 'fal-ai/gemini-25-flash-image/edit') {
-              // Gemini model only accepts these specific parameters - no extra fields
-              modelParameters = {
-                image_urls: imageUrls,
-                prompt: enhancedPrompt,
-                num_images: 1
-              };
-              
-              // Remove any extra parameters that might have been added by the intelligence core
-              console.log('🔧 [IntelligentChatInterface] Using Gemini model - ensuring clean parameters');
-      } else {
-              // Default fallback
-              modelParameters = {
-                image_urls: imageUrls,
-                prompt: enhancedPrompt,
-                num_images: 1
-              };
-            }
+            console.log('🔧 [IntelligentChatInterface] Universal model parameters:', modelParameters);
+            console.log('🔧 [IntelligentChatInterface] Image URLs:', imageUrls);
             
             // Completely replace the delegation parameters to avoid conflicts
             delegation.parameters = modelParameters;
@@ -2727,8 +2772,7 @@ Starting workflow execution...`,
             setMessages(prev => [...prev, delegationMessage]);
             
             // Clear the uploaded image after setting up the delegation
-            setUploadedImage(null);
-            setImagePreview(null);
+            setUploadedImageUrls([]);
             
             // Continue with the generation process
             currentDelegation = delegation;
@@ -2745,7 +2789,14 @@ Starting workflow execution...`,
           const videoModel = preferences.video || videoModelToUse;
         
         // Get delegation from intelligence core for video generation
-          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video', undefined, selectedAspectRatio);
+          
+          // Set the image URL in the intent if we have uploaded images
+          if (uploadedImageUrls.length > 0) {
+            videoIntent.imageUrl = uploadedImageUrls[0];
+            console.log('🖼️ [IntelligentChatInterface] Set image URL in intent for animation:', videoIntent.imageUrl);
+          }
+          
           const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
         
         if (delegation) {
@@ -2753,10 +2804,10 @@ Starting workflow execution...`,
             delegation.modelId = videoModel;
           delegation.reason = 'Image-to-video animation with user prompt';
           
-          // Add the image_url parameter for video generation
+          // Add the image_url parameter for video generation (use first image if multiple)
           delegation.parameters = {
             ...delegation.parameters,
-            image_url: uploadedImage,
+            image_url: getPrimaryImageUrl(),
             prompt: userInput.trim()
           };
             
@@ -2777,8 +2828,7 @@ Starting workflow execution...`,
             setMessages(prev => [...prev, delegationMessage]);
             
             // Clear the uploaded image after setting up the delegation
-            setUploadedImage(null);
-            setImagePreview(null);
+            setUploadedImageUrls([]);
             
             // Continue with the generation process
             currentDelegation = delegation;
@@ -2790,15 +2840,22 @@ Starting workflow execution...`,
           console.log('🎨 [IntelligentChatInterface] ===== STYLE TRANSFER INTENT START =====');
           console.log('🎨 [IntelligentChatInterface] Handling style transfer intent');
           console.log('🎨 [IntelligentChatInterface] User input:', userInput);
-          console.log('🎨 [IntelligentChatInterface] Uploaded image:', uploadedImage);
-          console.log('🎨 [IntelligentChatInterface] Uploaded image type:', typeof uploadedImage);
+          console.log('🎨 [IntelligentChatInterface] Uploaded images count:', uploadedImageUrls.length);
+          console.log('🎨 [IntelligentChatInterface] First uploaded image:', uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : 'None');
           
           // Use FLUX LoRA for style transfer
           const styleModel = 'fal-ai/flux-krea-lora/image-to-image';
           console.log('🎨 [IntelligentChatInterface] Using style model:', styleModel);
           
           // Get delegation from intelligence core for style transfer
-          const styleIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+          const styleIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image', undefined, selectedAspectRatio);
+          
+          // Set the image URL in the intent if we have uploaded images
+          if (uploadedImageUrls.length > 0) {
+            styleIntent.imageUrl = uploadedImageUrls[0];
+            console.log('🖼️ [IntelligentChatInterface] Set image URL in intent for style transfer:', styleIntent.imageUrl);
+          }
+          
           console.log('🎨 [IntelligentChatInterface] Style intent analysis result:', styleIntent);
           const delegation = await intelligenceCore.selectOptimalModel(styleIntent);
           console.log('🎨 [IntelligentChatInterface] Style delegation result:', delegation);
@@ -2810,17 +2867,18 @@ Starting workflow execution...`,
             
             // Only use parameters valid for FLUX LoRA model
             console.log('🎨 [IntelligentChatInterface] Setting FLUX LoRA parameters');
-            console.log('🎨 [IntelligentChatInterface] Uploaded image for style transfer:', uploadedImage);
+            console.log('🎨 [IntelligentChatInterface] Uploaded image for style transfer:', uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : 'None');
             console.log('🎨 [IntelligentChatInterface] User prompt for style transfer:', userInput.trim());
             
             // For FLUX LoRA, we need to convert the image to base64 for direct upload
             let imageData: string | { data: string; mime_type: string } | null = null;
-            if (uploadedImage && typeof uploadedImage === 'string' && uploadedImage.startsWith('blob:')) {
+            const firstImage = uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null;
+            if (firstImage && typeof firstImage === 'string' && firstImage.startsWith('blob:')) {
               console.log('🎨 [IntelligentChatInterface] Converting blob URL to base64 for FLUX LoRA');
               
               try {
                 // Convert blob URL to base64
-                const response = await fetch(uploadedImage);
+                const response = await fetch(firstImage);
                 const blob = await response.blob();
                 
                 // Convert blob to base64
@@ -2849,15 +2907,15 @@ Starting workflow execution...`,
                 console.error('❌ [IntelligentChatInterface] Failed to convert image for FLUX LoRA:', error);
                 throw new Error('Failed to process image for style transfer. Please try again.');
               }
-            } else if (uploadedImage && typeof uploadedImage === 'string') {
+            } else if (firstImage && typeof firstImage === 'string') {
               // If it's already a URL, use it as is
-              imageData = uploadedImage;
+              imageData = firstImage;
             } else {
               throw new Error('No valid image provided for style transfer');
             }
             
             delegation.parameters = {
-              image: imageData,
+              image_url: imageData,
               prompt: userInput.trim(),
               strength: 0.85,
               num_inference_steps: 28,
@@ -2884,8 +2942,7 @@ Starting workflow execution...`,
             setMessages(prev => [...prev, delegationMessage]);
             
             // Clear the uploaded image after setting up the delegation
-            setUploadedImage(null);
-            setImagePreview(null);
+            setUploadedImageUrls([]);
             
             // Continue with the generation process
             currentDelegation = delegation;
@@ -2900,7 +2957,7 @@ Starting workflow execution...`,
           const imageModel = preferences.image || 'fal-ai/imagen4/preview';
           
           // Get delegation from intelligence core for image generation
-          const imageIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image');
+                      const imageIntent = await intelligenceCore.analyzeUserIntent(userInput, 'image', undefined, selectedAspectRatio);
           const delegation = await intelligenceCore.selectOptimalModel(imageIntent);
           
           if (delegation) {
@@ -2945,7 +3002,7 @@ Starting workflow execution...`,
           const videoModel = preferences.video || videoModelToUse;
         
         // Get delegation from intelligence core for video generation
-          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video', undefined, selectedAspectRatio);
           const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
         
         if (delegation) {
@@ -2957,8 +3014,14 @@ Starting workflow execution...`,
             delegation.parameters = {
               prompt: userInput.trim(),
               aspect_ratio: '16:9',
-              duration: '5s',
-              resolution: '1080p'
+              // Use correct parameters for HALU Minimax
+              ...(videoModel === 'fal-ai/minimax/hailuo-02/standard/image-to-video' ? {
+                duration: '6', // HALU expects "6" or "10" without "s" suffix
+                resolution: '768P' // HALU expects "512P" or "768P"
+              } : {
+                duration: '5s',
+                resolution: '1080p'
+              })
             };
             
             // Set the pending delegation
@@ -2991,7 +3054,7 @@ Starting workflow execution...`,
           const videoModel = preferences.video || videoModelToUse;
           
           // Get delegation from intelligence core for video generation
-          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video');
+          const videoIntent = await intelligenceCore.analyzeUserIntent(userInput, 'video', undefined, selectedAspectRatio);
           const delegation = await intelligenceCore.selectOptimalModel(videoIntent);
           
           if (delegation) {
@@ -3002,7 +3065,7 @@ Starting workflow execution...`,
           // Add the image_url parameter for video generation
           delegation.parameters = {
             ...delegation.parameters,
-            image_url: uploadedImage,
+            image_url: getPrimaryImageUrl(),
             prompt: userInput.trim()
           };
           
@@ -3023,8 +3086,7 @@ Starting workflow execution...`,
           setMessages(prev => [...prev, delegationMessage]);
           
           // Clear the uploaded image after setting up the delegation
-          setUploadedImage(null);
-          setImagePreview(null);
+          setUploadedImageUrls([]);
           
           // Continue with the generation process
           currentDelegation = delegation;
@@ -3128,11 +3190,17 @@ Starting workflow execution...`,
         console.log('🔍 [IntelligentChatInterface] Has style image uploaded:', hasStyleImageUploaded);
         
         // Check if we have an uploaded image for smart action detection
-        const hasUploadedImage = hasStyleImageUploaded || !!uploadedImage;
+        const hasUploadedImage = hasStyleImageUploaded || uploadedImageUrls.length > 0;
         console.log('🔍 [IntelligentChatInterface] Has uploaded image for action detection:', hasUploadedImage);
         
         // First analyze the intent with the current content type and image upload status
-        const intent = await intelligenceCore.analyzeUserIntent(userInput, contentType, hasUploadedImage);
+        const intent = await intelligenceCore.analyzeUserIntent(userInput, contentType, hasUploadedImage, selectedAspectRatio);
+        
+        // Set the image URL in the intent if we have uploaded images
+        if (uploadedImageUrls.length > 0) {
+          intent.imageUrl = uploadedImageUrls[0];
+          console.log('🖼️ [IntelligentChatInterface] Set image URL in intent:', intent.imageUrl);
+        }
         console.log('📊 [IntelligentChatInterface] Intent analysis result:', intent);
         
         // Then select the optimal model based on the intent
@@ -3175,14 +3243,43 @@ Starting workflow execution...`,
       // Prepare generation data
       console.log('🔍 [IntelligentChatInterface] Preparing generation data...');
       console.log('🔍 [IntelligentChatInterface] Current delegation:', currentDelegation);
+      
+      // Validate currentDelegation before proceeding
+      if (!currentDelegation) {
+        console.error('❌ [IntelligentChatInterface] Current delegation is null or undefined');
+        throw new Error('No delegation available for generation. Please try again.');
+      }
+      
+      if (!currentDelegation.parameters) {
+        console.error('❌ [IntelligentChatInterface] Current delegation parameters are null or undefined');
+        throw new Error('Delegation parameters are missing. Please try again.');
+      }
+      
+      // Validate that required parameters exist
+      if (!currentDelegation.parameters.prompt && !currentDelegation.parameters.image_url) {
+        console.error('❌ [IntelligentChatInterface] Missing required parameters (prompt or image_url):', currentDelegation.parameters);
+        throw new Error('Missing required parameters (prompt or image_url) for generation.');
+      }
+      
+      if (!currentDelegation.modelId) {
+        console.error('❌ [IntelligentChatInterface] Missing modelId in delegation:', currentDelegation);
+        throw new Error('Missing model ID for generation.');
+      }
+      
       console.log('🔍 [IntelligentChatInterface] Delegation parameters:', currentDelegation.parameters);
       console.log('🔍 [IntelligentChatInterface] Delegation modelId:', currentDelegation.modelId);
       console.log('🔍 [IntelligentChatInterface] Delegation intent:', currentDelegation.intent);
       console.log('🔍 [IntelligentChatInterface] Video model to use:', videoModelToUse);
       
+      // Debug uploaded images
+      console.log('🖼️ [IntelligentChatInterface] Uploaded images array:', uploadedImageUrls);
+      console.log('🖼️ [IntelligentChatInterface] Uploaded images count:', uploadedImageUrls.length);
+      console.log('🖼️ [IntelligentChatInterface] First uploaded image URL:', uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : 'None');
+      console.log('🖼️ [IntelligentChatInterface] Delegation parameters image_url:', currentDelegation.parameters?.image_url);
+      
       const generationData: Record<string, any> = {
         model: currentDelegation.intent === 'video' ? videoModelToUse : currentDelegation.modelId,
-        prompt: currentDelegation.parameters.prompt,
+        prompt: currentDelegation.parameters.prompt || userInput.trim(), // Fallback to user input if prompt is missing
         ...currentDelegation.parameters,
       };
       
@@ -3201,6 +3298,23 @@ Starting workflow execution...`,
       // Ensure the model field is correctly set for the API
       if (!generationData.model) {
         generationData.model = currentDelegation.modelId;
+      }
+      
+      // Ensure prompt is set
+      if (!generationData.prompt) {
+        generationData.prompt = userInput.trim();
+        console.log('🔍 [IntelligentChatInterface] Set fallback prompt:', generationData.prompt);
+      }
+      
+      // Final validation of generationData
+      if (!generationData.model) {
+        console.error('❌ [IntelligentChatInterface] Missing model in generation data after construction');
+        throw new Error('Missing model in generation data');
+      }
+      
+      if (!generationData.prompt && !generationData.image_url) {
+        console.error('❌ [IntelligentChatInterface] Missing prompt and image_url in generation data after construction');
+        throw new Error('Missing prompt and image_url in generation data');
       }
       
       console.log('🔍 [IntelligentChatInterface] Delegation validation:', {
@@ -3281,14 +3395,72 @@ Starting workflow execution...`,
            throw new Error(`Video model ${videoModelToUse} is not available`);
          }
          
-         try {
-           // Call the content generated callback instead of onGenerate
-           const result = await onContentGenerated(generationData);
-           console.log('📞 [Video] Initial generation response sent');
-           
-           // Start progress tracking for video generation
-           const estimatedTime = currentDelegation.estimatedTime || '2-5 minutes';
-           progressInterval = startVideoProgress(currentVideoModel, estimatedTime);
+                 try {
+          // Call the content generated callback instead of onGenerate
+          const result = await onContentGenerated(generationData);
+          console.log('📞 [Video] Initial generation response sent');
+          console.log('📞 [Video] Generation result:', result);
+          
+          // Check if result contains video data and dispatch content-generated event
+          // Handle different possible response structures
+          let videoUrl = null;
+          let videoDuration = null;
+          let videoResolution = null;
+          
+          if (result && result.videoUrl && result.videoUrl.url) {
+            // FAL Video Proxy structure: result.videoUrl.url
+            videoUrl = result.videoUrl.url;
+            videoDuration = result.videoUrl.duration;
+            videoResolution = result.videoUrl.resolution;
+          } else if (result && result.success && result.data && result.data.video) {
+            // Alternative structure: result.data.video.url
+            videoUrl = result.data.video.url;
+            videoDuration = result.data.video.duration;
+            videoResolution = result.data.video.resolution;
+          } else if (result && result.video && result.video.url) {
+            // Direct video structure: result.video.url
+            videoUrl = result.video.url;
+            videoDuration = result.video.duration;
+            videoResolution = result.video.resolution;
+          }
+          
+          if (videoUrl) {
+            console.log('🎬 [Video] Dispatching content-generated event for video:', videoUrl);
+            
+            const videoEvent = new CustomEvent('content-generated', {
+              detail: {
+                id: Date.now().toString(),
+                type: 'video',
+                url: videoUrl,
+                title: `Generated Video - ${new Date().toLocaleTimeString()}`,
+                prompt: generationData.prompt,
+                timestamp: new Date(),
+                metadata: {
+                  format: 'mp4',
+                  duration: videoDuration,
+                  resolution: videoResolution,
+                  model: generationData.model
+                }
+              }
+            });
+            window.dispatchEvent(videoEvent);
+            
+            // Remove the progress message since we have the actual video now
+            setMessages(prev => prev.filter(msg => !msg.isProgressMessage));
+            
+            console.log('🎬 [Video] Video event dispatched successfully and progress message removed');
+          } else {
+            console.log('⚠️ [Video] No video URL found in result, will use polling. Result structure:', {
+              hasVideoUrl: !!result?.videoUrl,
+              hasDataVideo: !!(result?.success && result?.data && result?.data.video),
+              hasDirectVideo: !!(result?.video),
+              result: result
+            });
+          }
+          
+          // Start progress tracking for video generation
+          const estimatedTime = currentDelegation.estimatedTime || '2-5 minutes';
+          progressInterval = startVideoProgress(currentVideoModel, estimatedTime);
            
            // Add progress bar message directly to chat
            const progressMessage: ChatMessage = {
@@ -3878,72 +4050,108 @@ Starting workflow execution...`,
     }
   }, []);
 
-  // Handle file upload with compression
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Unified image upload handler - works for all models
   const handleImageUpload = useCallback(async (file: File) => {
-    UserInteractionMonitor.log('image_upload', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      timestamp: Date.now()
-    });
+    console.log('📁 [IntelligentChatInterface] Multi-array image upload handler');
     
-    console.log('🖼️ [IntelligentChatInterface] Image uploaded:', file.name);
-    
-    try {
-      // Compress the image to fit within API limits
-      const compressedImageUrl = await compressImage(file, 1920, 1920, 0.8);
-      
-      // Store the compressed image URL for intent selection
-      setUploadedImageForIntent(compressedImageUrl);
-      setImagePreview(compressedImageUrl);
-      
-      // Add a user message indicating the image was uploaded
-      const userMessage = {
-        id: Date.now().toString(),
-        type: 'user' as const,
-        content: `[Image uploaded: ${file.name}]`,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-
-      // Show intent selection instead of immediately processing
-      setShowIntentSelection(true);
-      setSelectedIntent(null);
-      setIntentValidation(null);
-
-    toast({
-      title: "Image Uploaded!",
-        description: `${file.name} is ready. Please select what you want to do with this image.`,
-    });
-      
-      console.log('✅ [IntelligentChatInterface] Image compressed and uploaded successfully');
-      
-    } catch (error) {
-      console.error('❌ [IntelligentChatInterface] Error compressing image:', error);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: "Image Upload Failed",
-        description: "Failed to process the uploaded image. Please try again.",
+        title: "Invalid File",
+        description: "Please select an image file (JPEG, PNG, WebP).",
         variant: "destructive",
       });
+      return;
     }
-  }, [toast]);
 
+    // Validate file size (8MB limit)
+    const maxSize = 8 * 1024 * 1024; // 8MB
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: "Image must be smaller than 8MB. Please compress or resize your image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Upload to server to get URL
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image to server');
+      }
+
+      const result = await response.json();
+      const imageUrl = result.url;
+
+      // Add URL to array
+      setUploadedImageUrls(prev => [...prev, imageUrl]);
+      
+      // Show success message
+      const imageCount = uploadedImageUrls.length + 1;
+      const message = imageCount === 1
+        ? `${file.name} uploaded successfully.`
+        : `${file.name} added. You now have ${imageCount} images ready.`;
+      
+      toast({ 
+        title: "Image Uploaded!", 
+        description: message 
+      });
+      
+    } catch (error) {
+      console.error('❌ [IntelligentChatInterface] Image upload failed:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  }, [toast, uploadedImageUrls.length]);
+
+  // Unified image removal handler
+  const handleRemoveImage = useCallback((index?: number) => {
+    if (index !== undefined) {
+      // Remove specific image
+      setUploadedImageUrls(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Clear all images
+      setUploadedImageUrls([]);
+    }
+  }, []);
+
+  // Unified file selection handler
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        handleImageUpload(file);
+      });
     }
   }, [handleImageUpload]);
 
-  const handleRemoveImage = useCallback(() => {
-    setUploadedImage(null);
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-    console.log('🗑️ [IntelligentChatInterface] Image removed');
-  }, []);
+  // Get image URLs for API calls (works for all models)
+  const getImageUrlsForAPI = useCallback((): string[] => {
+    return uploadedImageUrls;
+  }, [uploadedImageUrls]);
+
+  // Get primary image URL (for single-image models)
+  const getPrimaryImageUrl = useCallback((): string | null => {
+    return uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null;
+  }, [uploadedImageUrls]);
 
   const handleStyleCommand = useCallback((command: string) => {
     console.log('🎨 [IntelligentChatInterface] Style command received:', command);
@@ -3982,8 +4190,8 @@ Starting workflow execution...`,
     if (files && files.length > 0) {
       const file = files[0];
       setPrimaryImage(files);
-      setUploadedImageForIntent(URL.createObjectURL(file));
-      setImagePreview(URL.createObjectURL(file));
+      // Use the unified image upload handler instead
+      handleImageUpload(file);
       
       // Add a user message indicating the image was uploaded
       const userMessage = {
@@ -3996,9 +4204,11 @@ Starting workflow execution...`,
       setMessages(prev => [...prev, userMessage]);
 
       // Show intent selection
+      console.log('🎯 [IntelligentChatInterface] Setting showIntentSelection to true');
       setShowIntentSelection(true);
       setSelectedIntent(null);
       setIntentValidation(null);
+      console.log('🎯 [IntelligentChatInterface] Intent selection should now be visible');
 
       toast({
         title: "Primary Image Uploaded!",
@@ -4025,8 +4235,7 @@ Starting workflow execution...`,
     console.log('🗑️ [Frame System] Primary image removed');
     setPrimaryImage(null);
     setStyleImage(null); // Also remove style image when primary is removed
-    setUploadedImageForIntent(null);
-    setImagePreview(null);
+    setUploadedImageUrls([]);
     setShowFrameContainer(false);
   }, []);
 
@@ -4308,7 +4517,7 @@ Available commands:
   const handleQuickGenerate = useCallback(async () => {
     console.log('⚡ [IntelligentChatInterface] Quick Generate button clicked');
     
-    if (!uploadedImage) {
+          if (uploadedImageUrls.length === 0) {
       toast({
         title: "No Image Uploaded",
         description: "Please upload an image first to use Quick Generate.",
@@ -4330,30 +4539,12 @@ Available commands:
     setIsProcessing(true);
 
     try {
-      // Get the image URL - if it's already a compressed string, use it directly
-      let imageUrl: string;
-      
-      if (typeof uploadedImage === 'string') {
-        // Already a compressed base64 string
-        imageUrl = uploadedImage;
-        console.log('✅ [IntelligentChatInterface] Using compressed image, length:', imageUrl.length);
-      } else {
-        // Convert File to base64 data URL for FAL.ai compatibility
-        console.log('📤 [IntelligentChatInterface] Converting image to base64 for FAL.ai...');
-        imageUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const result = e.target?.result as string;
-            console.log('✅ [IntelligentChatInterface] Image converted to base64, length:', result.length);
-            resolve(result);
-          };
-          reader.onerror = (e) => {
-            console.error('❌ [IntelligentChatInterface] Failed to convert image to base64:', e);
-            reject(new Error('Failed to convert image to base64'));
-          };
-          reader.readAsDataURL(uploadedImage);
-        });
+      // Get the image URL from uploaded images
+      const imageUrl = uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : null;
+      if (!imageUrl) {
+        throw new Error('No image available for quick generation');
       }
+      console.log('✅ [IntelligentChatInterface] Using uploaded image for quick generation');
 
       // Generate default animation prompt based on image filename and type
       const defaultPrompts = [
@@ -4368,108 +4559,95 @@ Available commands:
       
       console.log('⚡ [IntelligentChatInterface] Quick generate with prompt:', randomPrompt);
 
-      // Create user message for quick generation with base64 image metadata
+      // Create user message for quick generation
       const userMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'user',
-        content: `${randomPrompt} [Image uploaded: ${imageUrl} - requesting image-to-video animation]`,
+        content: randomPrompt,
         timestamp: new Date(),
         attachments: [{
           type: 'image',
-          name: typeof uploadedImage === 'object' ? uploadedImage.name : 'compressed_image.jpg',
-          size: typeof uploadedImage === 'object' ? uploadedImage.size : imageUrl.length,
-          preview: imagePreview
+          name: 'uploaded_image.jpg',
+          size: uploadedImageUrls.length > 0 ? uploadedImageUrls[0].length : 0,
+          preview: uploadedImageUrls.length > 0 ? uploadedImageUrls[0] : ''
         }]
       };
 
-      console.log('👤 [IntelligentChatInterface] Creating quick gen user message:', userMessage);
+      console.log('👤 [Quick Gen] Creating user message:', userMessage);
       setMessages(prev => [...prev, userMessage]);
 
-      // Use the unified API endpoint for all models
-      const apiEndpoint = '/api/generate';
-      const generateData: any = {
-        model: modelPreferences.video,
-        prompt: randomPrompt.trim(),
-        image_url: imageUrl,
-        aspect_ratio: "16:9",
-        duration: "5s",
-        resolution: "540p",
-        loop: false,
-      };
-
-      // Add uploaded image info if available
-      if (uploadedImage) {
-        if (typeof uploadedImage === 'object') {
-          generateData.name = uploadedImage.name;
-          generateData.size = uploadedImage.size;
-        } else {
-          generateData.name = 'compressed_image.jpg';
-          generateData.size = uploadedImage.length;
+      // Work exactly like handleAnimationFromButton - use the user's preferred video model directly
+      // First try to use in-memory preferences (updated by event listener), then fall back to localStorage
+      let userVideoModel = 'fal-ai/kling-video/v2.1/master/image-to-video'; // Default fallback
+      
+      if (modelPreferences.video && modelPreferences.video !== 'none') {
+        userVideoModel = modelPreferences.video;
+        console.log('⚡ [Quick Gen] Using in-memory video model preference:', userVideoModel);
+      } else {
+        // Fallback to localStorage if in-memory preference is not available
+        const saved = localStorage.getItem('narrative-model-preferences');
+        if (saved) {
+          try {
+            const preferences = JSON.parse(saved);
+            if (preferences.video && preferences.video !== 'none') {
+              userVideoModel = preferences.video;
+              console.log('⚡ [Quick Gen] Using localStorage video model preference:', userVideoModel);
+            } else {
+              console.log('⚡ [Quick Gen] No video preference set, using default:', userVideoModel);
+            }
+          } catch (error) {
+            console.error('❌ [Quick Gen] Failed to parse video preferences:', error);
+          }
         }
       }
-
-      // Adjust parameters based on selected model
-      if (modelPreferences.video === 'fal-ai/veo3/fast') {
-        generateData.duration = "8s";
-        generateData.resolution = "720p";
-        generateData.enhance_prompt = true;
-        generateData.auto_fix = true;
-        generateData.generate_audio = true;
-      } else if (modelPreferences.video === 'fal-ai/minimax/hailuo-02/standard/image-to-video') {
-        generateData.duration = "6s";
-        generateData.prompt_optimizer = true;
-        generateData.resolution = "768P";
-      } else if (modelPreferences.video?.includes('minimax')) {
-        generateData.num_frames = 24;
-        generateData.fps = 8;
-        generateData.style_strength = 0.8;
-        delete generateData.duration;
-        delete generateData.resolution;
-      } else if (modelPreferences.video === 'fal-ai/kling-video/v2.1/master/image-to-video') {
-        generateData.duration = "5s";
-        generateData.negative_prompt = "blur, distort, and low quality";
-        generateData.cfg_scale = 0.5;
+      
+      // Validate that the user's preferred model exists in available endpoints
+      const videoModels = AVAILABLE_ENDPOINTS.filter((model: ApiInfo) => model.category === 'video');
+      const modelExists = videoModels.some((model: ApiInfo) => model.endpointId === userVideoModel);
+      
+      if (!modelExists) {
+        console.error('❌ [Quick Gen] User\'s preferred video model not found:', userVideoModel);
+        userVideoModel = 'fal-ai/kling-video/v2.1/master/image-to-video'; // Fallback to default
+        console.log('⚡ [Quick Gen] Falling back to default model:', userVideoModel);
       }
-
-      console.log('🎯 [IntelligentChatInterface] Quick gen API call:', apiEndpoint, generateData);
-
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(generateData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API call failed with status ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('📦 [IntelligentChatInterface] Quick gen API response:', result);
-
-      // Create success message
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: `✅ **Gen komplete**`,
-        timestamp: new Date(),
-        status: 'completed',
+      
+      // Create a direct delegation using the user's preferred model (same as handleAnimationFromButton)
+      const directDelegation: TaskDelegation = {
+        modelId: userVideoModel,
+        intent: 'video',
+        reason: 'Quick Generate using user\'s preferred model',
+        confidence: 1.0,
+        estimatedTime: '2-5 minutes',
+        parameters: {
+          prompt: randomPrompt,
+          image_url: imageUrl,
+          aspect_ratio: '16:9',
+          duration: '5s'
+        }
       };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // Clear uploaded image after successful processing
-      if (uploadedImage) {
-        console.log('🗑️ [IntelligentChatInterface] Clearing uploaded image after quick gen');
-        handleRemoveImage();
-      }
-
-      toast({
-        title: "Quick Generate Complete!",
-        description: "Your video has been generated successfully.",
+      
+      console.log('🎯 [Quick Gen] Created direct delegation:', directDelegation);
+      
+      // Set up the delegation for immediate generation
+      setPendingDelegation(directDelegation);
+      setCurrentIntent({ 
+        type: 'video', 
+        confidence: 1.0,
+        keywords: ['quick', 'generate', 'animation'],
+        context: 'Quick video generation from uploaded image',
+        requiresGeneration: true,
+        imageUrl: imageUrl
       });
+      
+      // Clear uploaded image after setting up the delegation
+      if (uploadedImageUrls.length > 0) {
+        console.log('🗑️ [Quick Gen] Clearing uploaded image after setting up delegation');
+        setUploadedImageUrls([]);
+      }
+      
+      // Start generation using handleRegularGeneration (same workflow as Animate button)
+      console.log('⚡ [Quick Gen] Starting generation via handleRegularGeneration');
+      await handleRegularGeneration(randomPrompt);
 
     } catch (error) {
       console.error('❌ [IntelligentChatInterface] Error during quick generate:', error);
@@ -4492,7 +4670,7 @@ Available commands:
     } finally {
       setIsProcessing(false);
     }
-  }, [uploadedImage, imagePreview, modelPreferences.video, toast, handleRemoveImage]);
+      }, [uploadedImageUrls, modelPreferences.video, handleRegularGeneration]);
 
   const checkModelRequirements = (delegation: TaskDelegation): string | null => {
     console.log('🔍 [IntelligentChatInterface] Checking model requirements');
@@ -5208,12 +5386,8 @@ Available commands:
            // Complete the progress
            completeVideoProgress();
            
-           // Update the progress message to show completion
-           setMessages(prev => prev.map(msg => 
-             msg.isProgressMessage 
-               ? { ...msg, content: '✅ **Video Generation Complete!**', status: 'completed' as const }
-               : msg
-           ));
+           // Remove the progress message since we'll show the actual video
+           setMessages(prev => prev.filter(msg => !msg.isProgressMessage));
           
           // Handle the completed video result
           if (result.video) {
@@ -5384,27 +5558,130 @@ Available commands:
     console.log('📝 [Input Debug] User input changed:', userInput);
   }, [userInput]);
 
+  // Listen for gallery item clicks to add images to chat
+  useEffect(() => {
+    const handleAddImageToChat = (event: CustomEvent) => {
+      console.log('🖼️ [Gallery] Adding image to chat:', event.detail);
+      const { imageUrl, prompt, title, action } = event.detail;
+      
+      // Add the image to uploaded images
+      setUploadedImageUrls([imageUrl]);
+      
+      // Set the user input with the original prompt
+      if (prompt) {
+        setUserInput(prompt);
+      }
+      
+      // Set the appropriate intent based on the action and auto-trigger generation
+      if (action === 'edit') {
+        setSelectedIntent('edit');
+        console.log('🖼️ [Gallery] Auto-triggering image edit generation');
+        
+        // Auto-trigger generation after a short delay to ensure state is updated
+        setTimeout(async () => {
+          try {
+            // Create user message for the edit action
+            const userMessage: ChatMessage = {
+              id: Date.now().toString(),
+              type: 'user',
+              content: prompt || 'Edit this image',
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, userMessage]);
+            
+            // Trigger the generation process
+            await handleRegularGeneration(prompt || 'Edit this image');
+          } catch (error) {
+            console.error('❌ [Gallery] Error auto-triggering edit generation:', error);
+          }
+        }, 100);
+        
+      } else if (action === 'animate') {
+        setSelectedIntent('animate');
+        console.log('🖼️ [Gallery] Auto-triggering image animation generation');
+        
+        // Auto-trigger generation after a short delay to ensure state is updated
+        setTimeout(async () => {
+          try {
+            // Create user message for the animate action
+            const userMessage: ChatMessage = {
+              id: Date.now().toString(),
+              type: 'user',
+              content: prompt || 'Animate this image with cinematic motion',
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, userMessage]);
+            
+            // Trigger the generation process
+            await handleRegularGeneration(prompt || 'Animate this image with cinematic motion');
+          } catch (error) {
+            console.error('❌ [Gallery] Error auto-triggering animation generation:', error);
+          }
+        }, 100);
+      }
+      
+      console.log('🖼️ [Gallery] Image added to chat interface for', action);
+    };
+
+    window.addEventListener('add-image-to-chat', handleAddImageToChat as EventListener);
+    
+    return () => {
+      window.removeEventListener('add-image-to-chat', handleAddImageToChat as EventListener);
+    };
+  }, []);
+
+  // State for dynamic upload interface
+  const [uploadInterfaceConfig, setUploadInterfaceConfig] = useState<{
+    interfaceType: 'single' | 'multi';
+    maxImages: number;
+    reason: string;
+  }>({
+    interfaceType: 'single',
+    maxImages: 1,
+    reason: 'Default single image interface'
+  });
+
+  // Update upload interface when model selection or user input changes
+  const updateUploadInterface = useCallback(async (input: string, modelId?: string) => {
+    console.log('🎯 [IntelligentChatInterface] Updating upload interface');
+    console.log('🎯 [IntelligentChatInterface] Input:', input);
+    console.log('🎯 [IntelligentChatInterface] Model ID:', modelId);
+    
+    const config = intelligenceCore.getOptimalUploadInterface(input, modelId);
+    console.log('🎯 [IntelligentChatInterface] New upload interface config:', config);
+    
+    setUploadInterfaceConfig(config);
+    
+    // If switching from multi to single, clear extra images
+    if (config.interfaceType === 'single' && uploadedImageUrls.length > 1) {
+      console.log('🎯 [IntelligentChatInterface] Switching to single image, clearing extra images');
+      setUploadedImageUrls(prev => prev.slice(0, 1));
+    }
+  }, [intelligenceCore, uploadedImageUrls.length]);
+
   return (
     <div className={`flex flex-col h-full glass rounded-lg overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 p-6 border-b border-border/50 glass-light">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Brain className="w-6 h-6 text-primary" />
-            <h2 className="text-heading font-semibold">DirectorchairAI</h2>
+      <div className="flex items-center justify-between gap-2 p-4 sm:p-6 border-b border-border/50 glass-light">
+        {/* Left side - Title and Smart Delegation */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+            <h2 className="text-heading font-semibold truncate">DirectorchairAI</h2>
           </div>
-          <Badge variant="outline" className="badge-enhanced">
+          <Badge variant="outline" className="badge-enhanced hidden sm:flex">
             <Zap className="w-3 h-3 mr-1" />
             Smart Delegation
           </Badge>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* Home Button */}
+        {/* Right side - Controls */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Home Button - Hidden on mobile */}
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 rounded-full hover:bg-accent/50"
+            className="h-8 w-8 p-0 rounded-full hover:bg-accent/50 hidden sm:flex"
             asChild
           >
             <Link href="/">
@@ -5412,8 +5689,8 @@ Available commands:
             </Link>
           </Button>
 
-          {/* Chat Mode Toggle */}
-          <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 rounded-lg p-1">
+          {/* Chat Mode Toggle - Compact on mobile */}
+          <div className="flex items-center gap-1 bg-background/60 backdrop-blur-sm border border-border/50 rounded-lg p-1">
             <Button
               variant={chatMode === 'chat' ? 'default' : 'ghost'}
               size="sm"
@@ -5424,14 +5701,14 @@ Available commands:
                 console.log('🔄 [Chat Mode] Current messages count:', messages.length);
                 console.log('🔄 [Chat Mode] Is processing:', isProcessing);
                 setChatMode('chat');
-                setShowSmartControls(true); // Show smart controls in chat mode
+                // Don't automatically show smart controls - let user decide
                 console.log('🔄 [Chat Mode] Mode set to chat');
-                console.log('🔄 [Chat Mode] Smart controls enabled for chat mode');
+                console.log('🔄 [Chat Mode] Smart controls state unchanged - user controls visibility');
               }}
-              className="flex items-center gap-2 text-xs transition-all duration-200"
+              className="flex items-center gap-1 text-xs transition-all duration-200 px-2"
             >
               <Bot className="w-3 h-3" />
-              Chat
+              <span className="hidden sm:inline">Chat</span>
             </Button>
             <Button
               variant={chatMode === 'gen' ? 'default' : 'ghost'}
@@ -5446,42 +5723,43 @@ Available commands:
                 console.log('🔄 [Chat Mode] Mode set to gen');
                 console.log('🔄 [Chat Mode] Smart controls hidden for gen mode (automation active)');
               }}
-              className="flex items-center gap-2 text-xs transition-all duration-200"
+              className="flex items-center gap-1 text-xs transition-all duration-200 px-2"
             >
               <Sparkles className="w-3 h-3" />
-              Gen
+              <span className="hidden sm:inline">Gen</span>
             </Button>
           </div>
           
-          {/* Smart Controls Toggle Button */}
+          {/* Smart Controls Toggle Button - Icon only on mobile */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowSmartControls(!showSmartControls)}
-            className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border-border/50 hover:bg-background/80 transition-all duration-200"
+            className="flex items-center gap-1 bg-background/60 backdrop-blur-sm border-border/50 hover:bg-background/80 transition-all duration-200 px-2"
           >
             {showSmartControls ? (
               <>
                 <Eye className="w-4 h-4" />
-                <span className="text-sm">Hide Controls</span>
+                <span className="hidden sm:inline text-sm">Hide</span>
               </>
             ) : (
               <>
                 <EyeOff className="w-4 h-4" />
-                <span className="text-sm">Show Controls</span>
+                <span className="hidden sm:inline text-sm">Show</span>
               </>
             )}
           </Button>
         
-                <ModelPreferenceSelector 
-          onPreferencesChange={handleModelPreferencesChange}
-          className="flex-shrink-0"
-        />
+          {/* Model Preference Selector - Compact on mobile */}
+          <ModelPreferenceSelector 
+            onPreferencesChange={handleModelPreferencesChange}
+            className="flex-shrink-0"
+          />
+        </div>
       </div>
 
       {/* Model Status Bar */}
       <ModelStatusBar className="cursor-pointer hover:bg-background/95" />
-      </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -5543,7 +5821,7 @@ Available commands:
           <div className="bg-background border border-border rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">
-                {uploadedImageForIntent 
+                {uploadedImageUrls.length > 0 
                   ? "What would you like to do with this image?" 
                   : "What would you like to create?"
                 }
@@ -5562,7 +5840,7 @@ Available commands:
               {INTENT_OPTIONS.filter(option => {
                 // If there's an uploaded image, show all options
                 // If no uploaded image, only show create options
-                return uploadedImageForIntent ? true : !option.requiresUpload;
+                return uploadedImageUrls.length > 0 ? true : !option.requiresUpload;
               }).map((option) => {
                 const Icon = option.icon;
                 return (
@@ -5613,19 +5891,57 @@ Available commands:
               </div>
             )}
 
-            {/* Image Preview - Only show if there's an uploaded image */}
-            {uploadedImageForIntent && (
-              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                <div className="text-sm font-medium mb-2">Image Preview:</div>
-                <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
-                  <img
-                    src={uploadedImageForIntent}
-                    alt="Uploaded image"
-                    className="w-full h-full object-cover"
-                  />
+            {/* Multi-Image Upload Component */}
+                    <div className="mt-4">
+          {uploadInterfaceConfig.interfaceType === 'multi' ? (
+            <MultiImageUpload
+              uploadedImages={uploadedImageUrls}
+              imagePreviews={uploadedImageUrls}
+              onImageUpload={handleImageUpload}
+              onImageRemove={handleRemoveImage}
+              onClearAll={() => handleRemoveImage()}
+              maxImages={uploadInterfaceConfig.maxImages}
+            />
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Upload Image</Label>
+                <div className="text-xs text-muted-foreground">
+                  {uploadInterfaceConfig.reason}
                 </div>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="flex-1"
+                />
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </Button>
+              </div>
+              {uploadedImageUrls.length > 0 && (
+                <div className="relative">
+                  <img
+                    src={uploadedImageUrls[0]}
+                    alt="Uploaded image"
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    onClick={() => handleRemoveImage(0)}
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
           </div>
         </div>
       )}
@@ -5743,35 +6059,78 @@ Available commands:
               </div>
             </div>
             <div className="text-caption text-muted-foreground">
-              Generating: {contentType === 'image' ? 'Images' : contentType === 'video' ? 'Videos' : 'Audio'}
+              Generating: {contentType === 'image' ? 'Images' : contentType === 'video' ? 'Videos' : contentType === 'audio' ? 'Audio' : 'Lip Sync'}
             </div>
           </div>
         </div>
 
-        {/* Audio Toggle - Coming Soon */}
+        {/* Audio Toggle - Active */}
         <div className="border-t border-border/50 glass-light p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-body font-medium">Audio Generation:</span>
-              <div className="flex bg-secondary rounded-lg p-1 opacity-50 cursor-not-allowed">
+              <div className="flex bg-secondary rounded-lg p-1">
                 <button
-                  disabled
-                  className="px-6 py-2 rounded-md text-sm font-medium text-muted-foreground cursor-not-allowed"
+                  onClick={() => {
+                    setContentType('audio');
+                    // Track user selection to override automatic optimization
+                    smartControlsAgent.userSelectsControl('contentType', 'audio');
+                    console.log('👤 [SmartControls] User manually selected content type: audio');
+                  }}
+                  className={`px-6 py-2 rounded-md text-sm font-medium transition-enhanced focus-ring ${
+                    contentType === 'audio'
+                      ? 'bg-primary text-primary-foreground shadow-soft'
+                      : 'text-secondary-foreground hover:text-foreground hover-lift'
+                  }`}
                 >
                   🎵 TTS (Basic)
                 </button>
                 <button
-                  disabled
-                  className="px-6 py-2 rounded-md text-sm font-medium text-muted-foreground cursor-not-allowed"
+                  onClick={() => {
+                    setContentType('lipsync');
+                    // Track user selection to override automatic optimization
+                    smartControlsAgent.userSelectsControl('contentType', 'lipsync');
+                    console.log('👤 [SmartControls] User manually selected content type: lipsync');
+                  }}
+                  className={`px-6 py-2 rounded-md text-sm font-medium transition-enhanced focus-ring ${
+                    contentType === 'lipsync'
+                      ? 'bg-primary text-primary-foreground shadow-soft'
+                      : 'text-secondary-foreground hover:text-foreground hover-lift'
+                  }`}
                 >
-                  🖼️ Image/Video
+                  🎬 Lip Sync
                 </button>
               </div>
             </div>
             <div className="text-caption text-muted-foreground">
-              Coming Soon
+              {contentType === 'audio' ? 'Text-to-Speech' : contentType === 'lipsync' ? 'Lip Synchronization' : 'Select Audio Type'}
             </div>
           </div>
+          
+          {/* Voice Selector - Show when audio is selected */}
+          {(contentType === 'audio' || contentType === 'lipsync') && (
+            <div className="mt-4 flex items-center gap-4">
+              <Label htmlFor="voice-selector" className="text-sm font-medium">
+                Voice:
+              </Label>
+              <VoiceSelector
+                id="voice-selector"
+                value={selectedVoice}
+                onValueChange={setSelectedVoice}
+                placeholder="Choose a voice..."
+                className="min-w-[200px]"
+              />
+              <div className="text-xs text-muted-foreground">
+                {selectedVoice && (
+                  <span>
+                    {selectedVoice.includes('ElevenLabs') ? '🎤 ElevenLabs' : 
+                     selectedVoice.includes('MiniMax') ? '🤖 MiniMax' : 
+                     selectedVoice.includes('PlayHT') ? '🎵 PlayHT' : '🎤 Voice'}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
            </>
          )}
@@ -5924,18 +6283,18 @@ Available commands:
               )}
 
               {/* Image Preview - Only show when not using frame system */}
-              {imagePreview && !showFrameContainer && (
+              {uploadedImageUrls.length > 0 && !showFrameContainer && (
                 <div className="p-4 border-b border-gray-300/30">
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <img 
-                        src={imagePreview} 
+                        src={uploadedImageUrls[0]} 
                         alt="Upload preview" 
                         className="w-16 h-16 object-cover rounded-lg border border-gray-300"
                       />
                       <button
                         type="button"
-                        onClick={handleRemoveImage}
+                        onClick={() => handleRemoveImage(0)}
                         className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
                       >
                         <X className="w-3 h-3" />
@@ -5945,7 +6304,7 @@ Available commands:
                       <div className="flex items-center gap-2">
                         <ImageIcon className="w-4 h-4 text-green-600" />
                          <span className="text-sm font-medium text-foreground">
-                          {uploadedImage ? (typeof uploadedImage === 'object' ? uploadedImage.name : 'Compressed Image') : 'Image'}
+                          {uploadedImageUrls.length > 0 ? 'Compressed Image' : 'Image'}
                         </span>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                           Ready to process
@@ -5988,7 +6347,7 @@ Available commands:
                   placeholder={
                     chatMode === 'chat' 
                       ? "Ask me about film techniques, director styles, or creative concepts..." 
-                      : uploadedImage 
+                      : uploadedImageUrls[0] 
                         ? "Describe how you want to animate or edit this image..." 
                         : `Describe what you want to create (${contentType === 'image' ? 'image' : 'video'}) or drag & drop an image to animate or edit...`
                   }
@@ -6012,7 +6371,7 @@ Available commands:
                 </Button>
 
                 {/* Quick Gen Button - only show when image is uploaded */}
-                {uploadedImage && (
+                {uploadedImageUrls.length > 0 && (
                   <Button
                     type="button"
                     size="sm"
@@ -6104,7 +6463,7 @@ Available commands:
             <div className="text-center mt-4">
               <p className="text-caption text-muted-foreground">
                 Press <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd> to send, <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift + Enter</kbd> for new line
-                {chatMode === 'gen' && !uploadedImage && (
+                {chatMode === 'gen' && uploadedImageUrls.length === 0 && (
                   <>
                     {' • '}
                     <span>Drag & drop images to animate or edit</span>

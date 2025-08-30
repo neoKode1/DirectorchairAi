@@ -255,7 +255,7 @@ function TimelineContent() {
         {/* Collapsible Right Panel - Content Display with Tabs */}
         <CollapsibleContentPanel 
           defaultExpanded={false}
-          panelWidth="600px"
+          panelWidth="min(600px, 90vw)"
           className="glass"
         >
           {/* Tab Navigation */}
@@ -310,8 +310,50 @@ function TimelineContent() {
               <GalleryView 
                 className="h-full"
                 useLocalStorage={true}
-                onItemClick={(item) => console.log('Gallery item clicked:', item)}
-                onAnimate={(item) => console.log('Animate item:', item)}
+                onItemClick={(item) => {
+                  console.log('Gallery item clicked:', item);
+                  // Add the image to the chat interface for editing
+                  if (item.type === 'image') {
+                    // Dispatch a custom event to add the image to the chat interface
+                    const event = new CustomEvent('add-image-to-chat', {
+                      detail: {
+                        imageUrl: item.url,
+                        prompt: item.prompt,
+                        title: item.title,
+                        action: 'edit'
+                      }
+                    });
+                    window.dispatchEvent(event);
+                    
+                    // Close the gallery panel
+                    const panelEvent = new CustomEvent('contentPanelStateChange', {
+                      detail: { isExpanded: false }
+                    });
+                    window.dispatchEvent(panelEvent);
+                  }
+                }}
+                onAnimate={(item) => {
+                  console.log('Animate item:', item);
+                  // Add the image to the chat interface for animation
+                  if (item.type === 'image') {
+                    // Dispatch a custom event to add the image to the chat interface
+                    const event = new CustomEvent('add-image-to-chat', {
+                      detail: {
+                        imageUrl: item.url,
+                        prompt: item.prompt,
+                        title: item.title,
+                        action: 'animate'
+                      }
+                    });
+                    window.dispatchEvent(event);
+                    
+                    // Close the gallery panel
+                    const panelEvent = new CustomEvent('contentPanelStateChange', {
+                      detail: { isExpanded: false }
+                    });
+                    window.dispatchEvent(panelEvent);
+                  }
+                }}
               />
             ) : activeTab === 'storage' ? (
               <StorageManager className="h-full" />

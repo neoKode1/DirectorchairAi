@@ -56,15 +56,15 @@ export function CollapsibleContentPanel({
         onKeyDown={handleKeyDown}
         className={cn(
           "fixed top-1/2 -translate-y-1/2 z-50 flex items-center justify-center",
-          "w-8 h-16 bg-background/95 backdrop-blur border border-border/50 rounded-l-lg",
+          "w-8 h-16 sm:w-8 sm:h-16 bg-background/95 backdrop-blur border border-border/50 rounded-l-lg",
           "hover:bg-background hover:scale-105 transition-all duration-300 ease-in-out",
           "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
           "shadow-lg hover:shadow-xl",
-          "cursor-pointer select-none",
+          "cursor-pointer select-none touch-manipulation",
           isExpanded ? "right-[400px]" : "right-0"
         )}
         style={{ 
-          right: isExpanded ? `calc(${panelWidth} - 8px)` : "0px"
+          right: isExpanded ? `calc(min(${panelWidth}, 90vw) - 8px)` : "0px"
         }}
         aria-label={isExpanded ? "Collapse panel" : "Expand panel"}
         title={isExpanded ? "Collapse panel" : "Expand panel"}
@@ -86,8 +86,16 @@ export function CollapsibleContentPanel({
           isExpanded ? "translate-x-0" : "translate-x-full",
           className
         )}
-        style={{ width: panelWidth }}
+        style={{ width: `min(${panelWidth}, 90vw)` }}
       >
+        {/* Mobile Close Button - Only visible on mobile */}
+        <button
+          onClick={togglePanel}
+          className="sm:hidden absolute top-4 right-4 z-10 w-8 h-8 bg-background/80 backdrop-blur border border-border/50 rounded-full flex items-center justify-center hover:bg-background transition-all duration-200"
+          aria-label="Close panel"
+        >
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
         {children}
       </div>
     </>

@@ -1,14 +1,24 @@
 // This file should only be imported by server components/routes
-import { createFalClient } from '@fal-ai/client';
+import { fal } from '@fal-ai/client';
 
-if (!process.env.FAL_KEY && process.env.NODE_ENV === 'production') {
-  throw new Error('FAL_KEY is not set in environment variables');
+// Validate FAL_KEY in all environments, provide helpful error messages
+if (!process.env.FAL_KEY) {
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const errorMessage = isDevelopment
+    ? 'FAL_KEY is not set in environment variables. Please set it in your .env.local file for development.'
+    : 'FAL_KEY is not set in environment variables. Please configure it in your production environment.';
+  
+  console.warn(`⚠️ [FAL Server] ${errorMessage}`);
+  
+  // In production, throw error. In development, allow with warning
+  if (!isDevelopment) {
+    throw new Error(errorMessage);
+  }
 }
 
-// Initialize the client with your API key - this should only happen server-side
-const fal = createFalClient({
+// Configure the FAL client with credentials - this should only happen server-side
+fal.config({
   credentials: process.env.FAL_KEY,
-  proxyUrl: '/api/fal', // Use a proxy endpoint for client-side requests
 });
 
 // Server-side only configuration for FAL endpoints

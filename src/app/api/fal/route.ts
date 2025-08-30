@@ -10,7 +10,7 @@ const keyPrefix = process.env.FAL_KEY.substring(0, 8);
 console.log(`🔑 [FAL API] Using FAL_KEY starting with: ${keyPrefix}...`);
 
 // Then import client after env check
-import { createFalClient } from '@fal-ai/client';
+import { fal } from '@fal-ai/client';
 
 export const runtime = "edge";
 
@@ -20,7 +20,7 @@ interface FalError extends Error {
 }
 
 // Initialize the FAL client with credentials
-const fal = createFalClient({
+fal.config({
   credentials: process.env.FAL_KEY,
 });
 

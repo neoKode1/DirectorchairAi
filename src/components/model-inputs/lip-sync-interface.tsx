@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { button as Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Play, Download, Video, Audio } from 'lucide-react';
+import { Upload, Play, Download, Video, Volume2, Music } from 'lucide-react';
+import { AudioGenerationInterface } from '../audio-generation-interface';
 
 interface LipSyncInterfaceProps {
   onGenerate: (result: any) => void;
@@ -32,6 +34,28 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedAudioUrl, setUploadedAudioUrl] = useState(audioUrl || "");
+  const [syncMode, setSyncMode] = useState("cut_off");
+  const [activeTab, setActiveTab] = useState("upload");
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null);
+
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+
+  const uploadVideoToServer = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    const response = await fetch('/api/upload-video', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload video');
+    }
+
+    const result = await response.json();
+    return result.url;
+  };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -45,8 +69,7 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
         return;
       }
       
-      // For now, we'll use a placeholder URL
-      // In a real implementation, you'd upload the video to your server
+      setVideoFile(file);
       setVideoUrl(URL.createObjectURL(file));
       
       toast({
@@ -95,6 +118,21 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
     return result.url;
   };
 
+  const handleAudioGenerated = (audioUrl: string, audioData: any) => {
+    console.log('🎵 [LipSync] Audio generated:', audioUrl);
+    setGeneratedAudioUrl(audioUrl);
+    toast({
+      title: "Audio Ready for Lip Sync",
+      description: "Generated audio is now available for lip sync generation.",
+    });
+  };
+
+  const handleAudioSelected = (audioUrl: string) => {
+    console.log('🎵 [LipSync] Audio selected:', audioUrl);
+    setGeneratedAudioUrl(audioUrl);
+    setActiveTab("upload"); // Switch to upload tab to show the selected audio
+  };
+
   const handleGenerate = async () => {
     if (!videoUrl) {
       toast({
@@ -105,10 +143,11 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
       return;
     }
 
-    if (!uploadedAudioUrl && !audioFile) {
+    const finalAudioUrl = uploadedAudioUrl || generatedAudioUrl;
+    if (!finalAudioUrl && !audioFile) {
       toast({
         title: "Audio Required",
-        description: "Please upload an audio file or use generated audio.",
+        description: "Please upload an audio file or generate audio first.",
         variant: "destructive",
       });
       return;
@@ -117,22 +156,29 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
     setIsGenerating(true);
 
     try {
-      let finalAudioUrl = uploadedAudioUrl;
+      let finalVideoUrl = videoUrl;
+      let finalAudioUrl = uploadedAudioUrl || generatedAudioUrl;
 
-      // If we have an audio file, upload it first
+      // Upload video file if we have one
+      if (videoFile) {
+        finalVideoUrl = await uploadVideoToServer(videoFile);
+      }
+
+      // Upload audio file if we have one
       if (audioFile) {
         finalAudioUrl = await uploadAudioToServer(audioFile);
       }
 
       const generateData = {
-        model: selectedModel,
-        video_url: videoUrl,
-        audio_url: finalAudioUrl
+        model: selectedModel === "fal-ai/sync-lipsync" ? "lipsync-1.9.0-beta" : undefined,
+        video_url: finalVideoUrl,
+        audio_url: finalAudioUrl,
+        sync_mode: syncMode
       };
 
       console.log('🎬 [Lip Sync] Generating with:', generateData);
 
-      const response = await fetch('/api/generate/fal/lipsync', {
+      const response = await fetch('/api/generate/sync-lipsync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,50 +266,104 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
             )}
           </div>
 
-          {/* Audio Upload or Selection */}
+          {/* Sync Mode Selection */}
           <div>
-            <Label htmlFor="audio">Audio File</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                id="audio"
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioUpload}
-                className="flex-1"
-              />
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Audio className="h-4 w-4" />
-                Upload
-              </Button>
-            </div>
-            
-            {uploadedAudioUrl && (
-              <div className="mt-2 p-2 bg-muted rounded">
-                <p className="text-sm text-muted-foreground mb-2">Audio selected:</p>
-                <audio controls className="w-full" src={uploadedAudioUrl} />
-              </div>
-            )}
+            <Label htmlFor="sync-mode">Sync Mode</Label>
+            <Select value={syncMode} onValueChange={setSyncMode}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select sync mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cut_off">Cut Off - Match shorter duration</SelectItem>
+                <SelectItem value="loop">Loop - Loop shorter content</SelectItem>
+                <SelectItem value="bounce">Bounce - Bounce effect for longer content</SelectItem>
+                <SelectItem value="silence">Silence - Add silence to shorter content</SelectItem>
+                <SelectItem value="remap">Remap - Intelligent timing remapping</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {audioUrl && !uploadedAudioUrl && (
-              <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                <p className="text-sm text-blue-700 mb-2">Generated audio available:</p>
-                <audio controls className="w-full" src={audioUrl} />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setUploadedAudioUrl(audioUrl)}
-                  className="mt-2"
-                >
-                  Use This Audio
-                </Button>
-              </div>
-            )}
+          {/* Audio Section */}
+          <div>
+            <Label>Audio Source</Label>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">Upload Audio</TabsTrigger>
+                <TabsTrigger value="generate">Generate Audio</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="space-y-4">
+                <div>
+                  <Label htmlFor="audio">Upload Audio File</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="audio"
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioUpload}
+                      className="flex-1"
+                    />
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <Volume2 className="h-4 w-4" />
+                      Upload
+                    </Button>
+                  </div>
+                  
+                  {uploadedAudioUrl && (
+                    <div className="mt-2 p-2 bg-muted rounded">
+                      <p className="text-sm text-muted-foreground mb-2">Audio selected:</p>
+                      <audio controls className="w-full" src={uploadedAudioUrl} />
+                    </div>
+                  )}
+
+                  {audioUrl && !uploadedAudioUrl && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-700 mb-2">Generated audio available:</p>
+                      <audio controls className="w-full" src={audioUrl} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUploadedAudioUrl(audioUrl)}
+                        className="mt-2"
+                      >
+                        Use This Audio
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="generate" className="space-y-4">
+                <AudioGenerationInterface
+                  onAudioGenerated={handleAudioGenerated}
+                  onAudioSelected={handleAudioSelected}
+                  showDownloadButton={true}
+                  showUseInLipSync={false}
+                  showUseInVideo={false}
+                />
+                
+                {generatedAudioUrl && (
+                  <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                    <p className="text-sm text-green-700 mb-2">Generated audio ready for lip sync:</p>
+                    <audio controls className="w-full" src={generatedAudioUrl} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadedAudioUrl(generatedAudioUrl)}
+                      className="mt-2"
+                    >
+                      Use This Generated Audio
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
-            disabled={isGenerating || !videoUrl || (!uploadedAudioUrl && !audioFile)}
+            disabled={isGenerating || !videoUrl || (!uploadedAudioUrl && !generatedAudioUrl && !audioFile)}
             className="w-full"
           >
             {isGenerating ? (
@@ -280,10 +380,12 @@ export const LipSyncInterface: React.FC<LipSyncInterfaceProps> = ({ onGenerate, 
           <div className="p-4 bg-muted rounded-lg">
             <h4 className="font-medium mb-2">Instructions:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Upload a video file (MP4, MOV, AVI)</li>
-              <li>• Upload an audio file or use generated TTS audio</li>
-              <li>• The model will synchronize lip movement with audio</li>
-              <li>• Supported audio formats: MP3, WAV, M4A</li>
+              <li>• Upload a video file (MP4, MOV, AVI, WebM) with clear facial features</li>
+              <li>• Upload your own audio file or use generated TTS audio</li>
+              <li>• Choose sync mode based on your content duration needs</li>
+              <li>• Supported audio formats: MP3, WAV, M4A, AAC</li>
+              <li>• Maximum file size: 100MB for videos, 50MB for audio</li>
+              <li>• The model will synchronize lip movement with your audio</li>
             </ul>
           </div>
         </CardContent>

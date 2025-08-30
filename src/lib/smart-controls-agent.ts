@@ -8,7 +8,7 @@ export interface SmartControlState {
     lastUserSelection: Date | null;
   };
   contentType: {
-    value: 'image' | 'video';
+    value: 'image' | 'video' | 'audio' | 'lipsync';
     isUserSelected: boolean;
     lastUserSelection: Date | null;
   };
@@ -26,7 +26,7 @@ export interface SmartControlState {
 
 export interface SmartAnalysisResult {
   recommendedAspectRatio: string;
-  recommendedContentType: 'image' | 'video';
+  recommendedContentType: 'image' | 'video' | 'audio' | 'lipsync';
   recommendedResolution: string;
   recommendedStyle: string;
   confidence: number;

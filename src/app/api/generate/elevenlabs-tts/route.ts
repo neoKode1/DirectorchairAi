@@ -1,102 +1,61 @@
-import { fal } from "@fal-ai/client";
-import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { createGenerationHandler, commonValidations } from "@/lib/api-handlers";
+import { getVoiceId, createVoiceSettings } from "@/lib/voice-mappings";
 
-export async function POST(request: Request) {
-  try {
-    console.log('🎤 [ElevenLabs TTS API] Starting TTS generation request');
-    
-    const { 
-      text, 
-      voice, 
-      stability, 
-      similarity_boost, 
-      style, 
-      speed, 
-      timestamps, 
-      previous_text, 
-      next_text, 
-      language_code 
-    } = await request.json();
-
-    console.log('📋 [ElevenLabs TTS API] Request parameters:', {
-      text: text?.substring(0, 100) + '...',
-      voice,
-      stability,
-      similarity_boost,
-      style,
-      speed,
-      timestamps,
-      has_previous_text: !!previous_text,
-      has_next_text: !!next_text,
-      language_code
-    });
-
-    // Validate required parameters
-    if (!text) {
-      console.error('❌ [ElevenLabs TTS API] Missing text');
-      return NextResponse.json(
-        { error: 'Text is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!voice) {
-      console.error('❌ [ElevenLabs TTS API] Missing voice');
-      return NextResponse.json(
-        { error: 'Voice is required' },
-        { status: 400 }
-      );
-    }
-
-    // Build input object with only provided parameters
-    const input: any = {
-      text: text.trim(),
-      voice,
-    };
-
-    // Add optional parameters only if they are provided
-    if (stability !== undefined) input.stability = stability;
-    if (similarity_boost !== undefined) input.similarity_boost = similarity_boost;
-    if (style !== undefined) input.style = style;
-    if (speed !== undefined) input.speed = speed;
-    if (timestamps !== undefined) input.timestamps = timestamps;
-    if (previous_text) input.previous_text = previous_text;
-    if (next_text) input.next_text = next_text;
-    if (language_code) input.language_code = language_code;
-
-    console.log('🎯 [ElevenLabs TTS API] Calling FAL.AI with input:', input);
-
-    const result = await fal.subscribe("fal-ai/elevenlabs/tts/multilingual-v2", {
-      input,
-      logs: true,
-      onQueueUpdate: (update: any) => {
-        if (update.status === "IN_PROGRESS") {
-          update.logs.map((log: any) => log.message).forEach(console.log);
-        }
-      },
-    });
-
-    console.log('✅ [ElevenLabs TTS API] Generation completed successfully');
-    console.log('📦 [ElevenLabs TTS API] Result:', result);
-
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      requestId: result.requestId,
-      audioUrl: result.data?.audio?.url,
-    });
-
-  } catch (error) {
-    console.error('❌ [ElevenLabs TTS API] Generation error:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate speech',
-        details: errorMessage 
-      },
-      { status: 500 }
-    );
+// Validation function for ElevenLabs TTS
+function validateElevenLabsInput(input: any) {
+  // Validate text
+  const textValidation = commonValidations.validateText(input);
+  if (!textValidation.isValid) {
+    return textValidation;
   }
+
+  // Validate voice
+  if (!input.voice) {
+    return { isValid: false, error: 'Voice is required' };
+  }
+
+  return { isValid: true };
 }
+
+// Transform input for ElevenLabs API
+function transformElevenLabsInput(input: any) {
+  const { text, voice, stability, similarity_boost, style, speed, timestamps, previous_text, next_text, language_code } = input;
+  
+  // Get voice ID with fallback
+  const { voiceId, isFallback } = getVoiceId(voice);
+  console.log('🎤 [ElevenLabs TTS] Voice mapping:', { voice, voiceId, isFallback });
+
+  // Create voice settings
+  const voice_settings = createVoiceSettings({
+    stability,
+    similarity_boost,
+    style,
+    speed
+  });
+
+  // Build transformed input
+  const transformedInput: any = {
+    text: text.trim(),
+    voice_id: voiceId,
+    model_id: "eleven_turbo_v2",
+    voice_settings
+  };
+
+  // Add optional parameters only if provided
+  if (timestamps !== undefined) transformedInput.timestamps = timestamps;
+  if (previous_text) transformedInput.previous_text = previous_text;
+  if (next_text) transformedInput.next_text = next_text;
+  if (language_code) transformedInput.language_code = language_code;
+
+  return transformedInput;
+}
+
+// Create the handler using our shared pattern
+export const POST = createGenerationHandler({
+  endpoint: "fal-ai/elevenlabs/tts/turbo-v2.5",
+  modelName: "ElevenLabs TTS",
+  validateInput: validateElevenLabsInput,
+  transformInput: transformElevenLabsInput,
+  enableLogs: true
+});

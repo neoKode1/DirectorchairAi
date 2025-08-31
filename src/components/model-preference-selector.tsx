@@ -29,7 +29,8 @@ import {
   Check,
   AlertCircle,
   Info,
-  X
+  X,
+  Film
 } from 'lucide-react';
 import { AVAILABLE_ENDPOINTS, type ApiInfo } from '@/lib/fal';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ interface ModelPreferences {
   video: string | null;
   music: string | null;
   voiceover: string | null;
+  lipsync: string | null;
 }
 
 interface ModelPreferenceSelectorProps {
@@ -57,6 +59,7 @@ export function ModelPreferenceSelector({
     video: null,
     music: null,
     voiceover: null,
+    lipsync: null,
   });
 
   // Group models by category
@@ -83,6 +86,7 @@ export function ModelPreferenceSelector({
           video: parsedPreferences.video === 'none' ? null : parsedPreferences.video,
           music: parsedPreferences.music === 'none' ? null : parsedPreferences.music,
           voiceover: parsedPreferences.voiceover === 'none' ? null : parsedPreferences.voiceover,
+          lipsync: parsedPreferences.lipsync === 'none' ? null : parsedPreferences.lipsync,
         };
         
         console.log('📋 [ModelPreferenceSelector] Cleaned preferences:', cleanedPreferences);
@@ -105,6 +109,7 @@ export function ModelPreferenceSelector({
         video: 'fal-ai/kling-video/v2.1/master/image-to-video', // Default to Kling Master v2.1 I2V
         music: null,
         voiceover: null,
+        lipsync: 'fal-ai/sync-lipsync', // Default to Sync LipSync
       };
       
       setPreferences(defaultPreferences);
@@ -165,6 +170,8 @@ export function ModelPreferenceSelector({
         return <Music className="w-4 h-4" />;
       case 'voiceover':
         return <Mic className="w-4 h-4" />;
+      case 'lipsync':
+        return <Film className="w-4 h-4" />;
       default:
         return <Settings className="w-4 h-4" />;
     }
@@ -180,6 +187,8 @@ export function ModelPreferenceSelector({
         return 'text-green-400';
       case 'voiceover':
         return 'text-orange-400';
+      case 'lipsync':
+        return 'text-red-400';
       default:
         return 'text-gray-400';
     }

@@ -252,6 +252,7 @@ export default async function ModelPage({ params }: PageProps) {
         video: null,
         music: null,
         voiceover: null,
+        lipsync: null,
       };
 
       // Set the current model as preferred for its category
@@ -260,6 +261,7 @@ export default async function ModelPage({ params }: PageProps) {
         'video': 'video',
         'music': 'music',
         'voiceover': 'voiceover',
+        'lipsync': 'lipsync',
       };
 
       const preferenceKey = categoryMap[category];
@@ -386,14 +388,6 @@ export default async function ModelPage({ params }: PageProps) {
             />
           );
         }
-        if (modelInfo.id === "fal-ai/sync-lipsync") {
-          return (
-            <SyncLipSyncInterface
-              onGenerate={handleResult}
-            />
-          );
-        }
-
         return (
           <VideoModelInterface modelInfo={modelInfo} onSubmit={handleResult} />
         );
@@ -450,6 +444,19 @@ export default async function ModelPage({ params }: PageProps) {
         }
         return (
           <AudioModelInterface modelInfo={modelInfo} onSubmit={handleResult} />
+        );
+      case "lipsync":
+        if (modelInfo.id === "fal-ai/sync-lipsync") {
+          return (
+            <SyncLipSyncInterface
+              onGenerate={handleResult}
+            />
+          );
+        }
+        return (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Lip sync interface not available for this model.</p>
+          </div>
         );
       default:
         return (

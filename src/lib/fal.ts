@@ -23,7 +23,7 @@ export type ApiInfo = {
   endpointId: string;
   label: string;
   description: string;
-  category: "image" | "video" | "music" | "voiceover";
+  category: "image" | "video" | "music" | "voiceover" | "lipsync";
   inputAsset?: InputAsset[];
   initialInput?: Record<string, unknown>;
   inputMap?: Record<string, string>;
@@ -488,7 +488,8 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     endpointId: "fal-ai/sync-lipsync",
     label: "Sync LipSync",
     description: "Advanced lip sync with multiple sync modes and model versions",
-    category: "video",
+    category: "lipsync",
+    inputAsset: ["video", "audio"],
     initialInput: {
       model: "lipsync-1.9.0-beta",
       video_url: "",

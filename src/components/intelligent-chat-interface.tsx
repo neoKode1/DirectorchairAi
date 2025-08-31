@@ -170,11 +170,13 @@ const ModelStatusBar = ({ className }: { className?: string }) => {
     video: string | null;
     music: string | null;
     voiceover: string | null;
+    lipsync: string | null;
   }>({
     image: null,
     video: null,
     music: null,
     voiceover: null,
+    lipsync: null,
   });
 
   const loadPreferences = useCallback(() => {
@@ -187,6 +189,7 @@ const ModelStatusBar = ({ className }: { className?: string }) => {
           video: parsedPreferences.video === 'none' ? null : parsedPreferences.video,
           music: parsedPreferences.music === 'none' ? null : parsedPreferences.music,
           voiceover: parsedPreferences.voiceover === 'none' ? null : parsedPreferences.voiceover,
+          lipsync: parsedPreferences.lipsync === 'none' ? null : parsedPreferences.lipsync,
         });
       } catch (error) {
         console.error('Failed to load model preferences:', error);
@@ -1211,14 +1214,17 @@ export function IntelligentChatInterface({
     video: null,
     music: null,
     voiceover: null,
+    lipsync: null,
   });
   const [isInitialized, setIsInitialized] = useState(false);
   // Unified multi-array image upload system (replaces old state)
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [uploadedVideoUrls, setUploadedVideoUrls] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('1:1');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Removed delegation override state - no longer needed with intent-driven workflow
@@ -1807,6 +1813,7 @@ Click any of these options to continue the workflow, or start a new request.`,
           video: parsedPreferences.video || 'fal-ai/kling-video/v2.1/master/image-to-video', // Default to Kling Master v2.1 I2V
           music: parsedPreferences.music || null,
           voiceover: parsedPreferences.voiceover || null,
+          lipsync: parsedPreferences.lipsync || 'fal-ai/sync-lipsync', // Default to Sync LipSync
         };
         
         console.log('📋 [IntelligentChatInterface] Validated preferences:', preferences);
@@ -1818,6 +1825,7 @@ Click any of these options to continue the workflow, or start a new request.`,
           video: 'fal-ai/kling-video/v2.1/master/image-to-video', // Default to Kling Master v2.1 I2V
           music: null,
           voiceover: null,
+          lipsync: 'fal-ai/sync-lipsync', // Default to Sync LipSync
         };
       }
     } else {
@@ -1827,6 +1835,7 @@ Click any of these options to continue the workflow, or start a new request.`,
         video: 'fal-ai/kling-video/v2.1/master/image-to-video', // Default to Kling Master v2.1 I2V
         music: null,
         voiceover: null,
+        lipsync: 'fal-ai/sync-lipsync', // Default to Sync LipSync
       };
       
       // Save the default preferences to localStorage
@@ -3995,13 +4004,16 @@ Starting workflow execution...`,
 
     const files = Array.from(e.dataTransfer.files);
     const imageFile = files.find(file => file.type.startsWith('image/'));
+    const videoFile = files.find(file => file.type.startsWith('video/'));
 
     if (imageFile) {
       handleImageUpload(imageFile);
+    } else if (videoFile) {
+      handleVideoUpload(videoFile);
     } else {
       toast({
         title: "Invalid File Type",
-        description: "Please upload an image file (PNG, JPG, JPEG, GIF, WebP)",
+        description: "Please upload an image file (PNG, JPG, JPEG, GIF, WebP) or video file (MP4, MOV, AVI, WebM)",
         variant: "destructive",
       });
     }
@@ -4094,6 +4106,74 @@ Starting workflow execution...`,
     }
   }, [toast, uploadedImageUrls.length]);
 
+  // Unified video upload handler
+  const handleVideoUpload = useCallback(async (file: File) => {
+    console.log('🎬 [IntelligentChatInterface] Video upload handler');
+    
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please select a video file (MP4, MOV, AVI, WebM).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (limit to 100MB for videos)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      toast({
+        title: "File Too Large",
+        description: "Video file must be smaller than 100MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      console.log('🎬 [IntelligentChatInterface] Uploading video to server...');
+      console.log('🎬 [IntelligentChatInterface] Video file size:', file.size, 'bytes');
+
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const uploadResponse = await fetch('/api/upload-video', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload video to server');
+      }
+
+      const result = await uploadResponse.json();
+      const videoUrl = result.url;
+      setUploadedVideoUrls(prev => [...prev, videoUrl]);
+
+      console.log('✅ [IntelligentChatInterface] Video uploaded successfully:', videoUrl);
+      
+      toast({
+        title: "Video Uploaded!",
+        description: `${file.name} uploaded successfully. You can now use it for lip sync or other video operations.`,
+      });
+
+      // Auto-switch to lipsync content type when video is uploaded
+      setContentType('lipsync');
+      
+    } catch (error) {
+      console.error('❌ [IntelligentChatInterface] Video upload failed:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload video. Please try again with a different video file.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  }, [toast, uploadedVideoUrls.length]);
+
   // Unified image removal handler
   const handleRemoveImage = useCallback((index?: number) => {
     if (index !== undefined) {
@@ -4105,15 +4185,40 @@ Starting workflow execution...`,
     }
   }, []);
 
+  // Unified video removal handler
+  const handleRemoveVideo = useCallback((index?: number) => {
+    if (index !== undefined) {
+      // Remove specific video
+      setUploadedVideoUrls(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // Clear all videos
+      setUploadedVideoUrls([]);
+    }
+  }, []);
+
   // Unified file selection handler
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       Array.from(files).forEach(file => {
-        handleImageUpload(file);
+        if (file.type.startsWith('image/')) {
+          handleImageUpload(file);
+        } else if (file.type.startsWith('video/')) {
+          handleVideoUpload(file);
+        }
       });
     }
-  }, [handleImageUpload]);
+  }, [handleImageUpload, handleVideoUpload]);
+
+  // Video file selection handler
+  const handleVideoFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        handleVideoUpload(file);
+      });
+    }
+  }, [handleVideoUpload]);
 
   // Get image URLs for API calls (works for all models)
   const getImageUrlsForAPI = useCallback((): string[] => {
@@ -5914,6 +6019,48 @@ Available commands:
             </div>
           )}
         </div>
+
+        {/* Video Upload Section */}
+        {uploadedVideoUrls.length > 0 && (
+          <div className="mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Uploaded Videos
+                </Label>
+                <Button
+                  onClick={() => handleRemoveVideo()}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Clear All
+                </Button>
+              </div>
+              <div className="grid gap-2">
+                {uploadedVideoUrls.map((videoUrl, index) => (
+                  <div key={index} className="relative">
+                    <video
+                      src={videoUrl}
+                      className="w-full h-32 object-cover rounded-lg border bg-black"
+                      controls
+                      preload="metadata"
+                    />
+                    <Button
+                      onClick={() => handleRemoveVideo(index)}
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
           </div>
         </div>
       )}
@@ -6127,8 +6274,8 @@ Available commands:
                 <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
                   <div className="text-center">
                     <Upload className="w-12 h-12 text-primary mx-auto mb-3" />
-                    <p className="text-subheading font-semibold text-primary">Drop your image here</p>
-                    <p className="text-caption text-muted-foreground">to animate it with AI</p>
+                    <p className="text-subheading font-semibold text-primary">Drop your image or video here</p>
+                    <p className="text-caption text-muted-foreground">to animate, edit, or sync with AI</p>
                   </div>
                 </div>
               )}
@@ -6398,7 +6545,7 @@ Available commands:
                   )}
                 </Button>
                 
-                {/* Upload Button */}
+                {/* Upload Buttons */}
                 <Button
                   type="button"
                   variant="outline"
@@ -6408,7 +6555,18 @@ Available commands:
                   disabled={isProcessing}
                   title="Upload image to animate or edit"
                 >
-                  <Upload className="w-4 h-4 text-muted-foreground" />
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => videoInputRef.current?.click()}
+                  className="h-10 w-10 p-0 rounded-full bg-secondary hover:bg-secondary/80 border-border focus-ring transition-enhanced"
+                  disabled={isProcessing}
+                  title="Upload video for lip sync or editing"
+                >
+                  <Video className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 <Button
                   type="submit"
@@ -6451,12 +6609,19 @@ Available commands:
             </div>
           </form>
 
-          {/* Hidden File Input */}
+          {/* Hidden File Inputs */}
           <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
+            className="hidden"
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideoFileSelect}
             className="hidden"
           />
         </div>

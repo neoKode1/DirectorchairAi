@@ -10,7 +10,7 @@ import {
 interface ModelSelectorProps {
   selectedModel: string;
   onModelChange: (modelId: string) => void;
-  category?: "video" | "image" | "music" | "voiceover";
+  category?: "video" | "image" | "music" | "voiceover" | "lipsync";
 }
 
 export function ModelSelector({

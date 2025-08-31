@@ -91,6 +91,7 @@ export default function ModelsPage() {
         video: null,
         music: null,
         voiceover: null,
+        lipsync: null,
       };
 
       // Set the current model as preferred for its category
@@ -99,6 +100,7 @@ export default function ModelsPage() {
         'video': 'video',
         'music': 'music',
         'voiceover': 'voiceover',
+        'lipsync': 'lipsync',
       };
 
       const preferenceKey = categoryMap[model.category];

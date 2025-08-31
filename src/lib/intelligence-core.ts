@@ -146,6 +146,7 @@ export class IntelligenceCore {
       video: null,
       music: null,
       voiceover: null,
+      lipsync: null,
     };
     
     this.suggestionMappings = new Map();
@@ -858,6 +859,10 @@ export class IntelligenceCore {
         console.log('🔍 [IntelligenceCore] ✅ Found voiceover keywords');
         type = 'voiceover';
         confidence = 0.9;
+      } else if (this.containsLipsyncKeywords(lowerInput)) {
+        console.log('🔍 [IntelligenceCore] ✅ Found lipsync keywords');
+        type = 'lipsync';
+        confidence = 0.95;
       } else if (this.containsTextKeywords(lowerInput)) {
         console.log('🔍 [IntelligenceCore] ✅ Found text keywords');
         type = 'text';
@@ -1118,6 +1123,19 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       'audiobook', 'podcast', 'voice actor', 'voice talent', 'voice recording'
     ];
     return voiceWords.some(word => input.includes(word));
+  }
+
+  private containsLipsyncKeywords(input: string): boolean {
+    const lipsyncWords = [
+      'lip sync', 'lipsync', 'lip-sync', 'sync lips', 'synchronize lips', 'mouth sync',
+      'facial sync', 'voice sync', 'audio sync', 'sync audio', 'sync voice',
+      'match lips', 'lip movement', 'mouth movement', 'dubbing', 'voice match',
+      'sync speech', 'speech sync', 'lip animation', 'facial animation',
+      'wav2lip', 'sync-lipsync', 'lip synchronization'
+    ];
+    const found = lipsyncWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking lipsync keywords:', { input, lipsyncWords, found });
+    return found;
   }
 
   private containsTextKeywords(input: string): boolean {
@@ -1851,6 +1869,9 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
           case 'voiceover':
             preferredModelId = this.modelPreferences.voiceover;
             break;
+          case 'lipsync':
+            preferredModelId = this.modelPreferences.lipsync;
+            break;
         }
 
         console.log('🎯 [IntelligenceCore] Preferred model for', intent.type, ':', preferredModelId);
@@ -2564,6 +2585,7 @@ How would you like to proceed?`,
     video: string | null;
     music: string | null;
     voiceover: string | null;
+    lipsync: string | null;
   }): void {
     this.modelPreferences = preferences;
     console.log('📋 [IntelligenceCore] Model preferences updated:', preferences);

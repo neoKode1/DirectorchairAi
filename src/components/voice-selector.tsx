@@ -228,15 +228,38 @@ export function VoiceSelector({
       const result = await response.json();
       console.log('✅ [Voice Preview] Preview generated:', result);
 
+      // Handle different response structures from different APIs
+      let audioUrl = null;
+      
       if (result.audioUrl) {
-        console.log('🎵 [Voice Preview] Setting audio URL:', result.audioUrl);
-        setPreviewAudio(result.audioUrl);
+        // Direct audioUrl (MiniMax format)
+        audioUrl = result.audioUrl;
+      } else if (result.data?.audio_url) {
+        // ElevenLabs format: result.data.audio_url
+        audioUrl = result.data.audio_url;
+      } else if (result.data?.audio?.url) {
+        // Alternative format: result.data.audio.url
+        audioUrl = result.data.audio.url;
+      } else if (result.data?.url) {
+        // Simple format: result.data.url
+        audioUrl = result.data.url;
+      }
+
+      if (audioUrl) {
+        console.log('🎵 [Voice Preview] Setting audio URL:', audioUrl);
+        setPreviewAudio(audioUrl);
         toast({
           title: "Voice Preview Ready!",
           description: `Preview for ${voiceName} is ready to play.`,
         });
       } else {
-        console.error('❌ [Voice Preview] No audioUrl in result:', result);
+        console.error('❌ [Voice Preview] No audio URL found in result:', result);
+        console.error('❌ [Voice Preview] Available data keys:', result.data ? Object.keys(result.data) : 'No data object');
+        toast({
+          title: "Preview Failed",
+          description: "Audio URL not found in the response.",
+          variant: "destructive",
+        });
       }
 
     } catch (error) {
@@ -251,8 +274,10 @@ export function VoiceSelector({
     }
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     console.log('🎵 [Voice Preview] Play/Pause clicked, audioRef:', !!audioRef.current, 'isPlaying:', isPlaying);
+    console.log('🎵 [Voice Preview] Audio element src:', audioRef.current?.src);
+    console.log('🎵 [Voice Preview] Audio element readyState:', audioRef.current?.readyState);
     
     if (audioRef.current) {
       if (isPlaying) {
@@ -260,19 +285,41 @@ export function VoiceSelector({
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-        console.log('🎵 [Voice Preview] Playing audio');
-        audioRef.current.play().catch(error => {
+        console.log('🎵 [Voice Preview] Attempting to play audio');
+        try {
+          // Ensure the audio is loaded
+          if (audioRef.current.readyState < 2) {
+            console.log('🎵 [Voice Preview] Audio not ready, loading...');
+            audioRef.current.load();
+            await new Promise((resolve) => {
+              const handleCanPlay = () => {
+                audioRef.current?.removeEventListener('canplay', handleCanPlay);
+                resolve(true);
+              };
+              audioRef.current?.addEventListener('canplay', handleCanPlay);
+            });
+          }
+          
+          await audioRef.current.play();
+          setIsPlaying(true);
+          console.log('✅ [Voice Preview] Audio playing successfully');
+        } catch (error) {
           console.error('❌ [Voice Preview] Play error:', error);
           toast({
             title: "Playback Error",
-            description: "Failed to play audio preview.",
+            description: `Failed to play audio preview: ${error instanceof Error ? error.message : 'Unknown error'}`,
             variant: "destructive",
           });
-        });
-        setIsPlaying(true);
+          setIsPlaying(false);
+        }
       }
     } else {
       console.error('❌ [Voice Preview] No audio element found');
+      toast({
+        title: "Audio Error",
+        description: "Audio player not initialized.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -395,17 +442,31 @@ export function VoiceSelector({
            <span className="text-xs text-blue-600">
              Click play to hear: {previewAudio.substring(0, 30)}...
            </span>
-           <audio
-             ref={audioRef}
-             src={previewAudio}
-             onEnded={handleAudioEnded}
-             onPlay={handleAudioPlay}
-             onPause={handleAudioPause}
-             onError={(e) => console.error('❌ [Voice Preview] Audio error:', e)}
-             onLoadStart={() => console.log('🎵 [Voice Preview] Audio loading started')}
-             onCanPlay={() => console.log('🎵 [Voice Preview] Audio can play')}
-             className="hidden"
-           />
+                     <audio
+            ref={audioRef}
+            src={previewAudio}
+            onEnded={handleAudioEnded}
+            onPlay={handleAudioPlay}
+            onPause={handleAudioPause}
+            onError={(e) => {
+              console.error('❌ [Voice Preview] Audio element error:', e);
+              console.error('❌ [Voice Preview] Audio element error details:', {
+                error: e.currentTarget.error,
+                networkState: e.currentTarget.networkState,
+                readyState: e.currentTarget.readyState,
+                src: e.currentTarget.src
+              });
+            }}
+            onLoadStart={() => console.log('🎵 [Voice Preview] Audio loading started')}
+            onLoadedData={() => console.log('🎵 [Voice Preview] Audio data loaded')}
+            onCanPlay={() => console.log('🎵 [Voice Preview] Audio can play')}
+            onCanPlayThrough={() => console.log('🎵 [Voice Preview] Audio can play through')}
+            onSuspend={() => console.log('🎵 [Voice Preview] Audio loading suspended')}
+            onAbort={() => console.log('🎵 [Voice Preview] Audio loading aborted')}
+            preload="metadata"
+            crossOrigin="anonymous"
+            className="hidden"
+          />
          </div>
        )}
       

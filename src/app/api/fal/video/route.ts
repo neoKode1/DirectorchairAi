@@ -239,12 +239,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     if (model.includes('seedance')) {
+      console.log('🎬 [FAL Video Proxy] Processing Seed Dance model, applying specific parameter handling');
+      
       if (body.camera_fixed !== undefined) {
         input.camera_fixed = body.camera_fixed;
       }
       if (body.enable_safety_checker !== undefined) {
         input.enable_safety_checker = body.enable_safety_checker;
       }
+      
+      // Seed Dance duration will be handled at the end to override other model processing
     }
 
     // Luma-specific parameters
@@ -365,12 +369,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       isMinimax: model.includes('minimax'),
       isVeo3: model.includes('veo3'),
       isKling: model.includes('kling'),
+      isSeedance: model.includes('seedance'),
       hasImageUrl: !!input.image_url,
       requiredImageUrl: model.includes('image-to-video'),
       duration: input.duration,
       resolution: input.resolution,
       aspectRatio: input.aspect_ratio
     });
+
+    // Final parameter adjustments - Seed Dance duration override (must be last)
+    if (model.includes('seedance') && input.duration) {
+      let durationValue = input.duration.toString();
+      // Remove 's' suffix if present (Seed Dance is the only model that needs duration without 's')
+      if (durationValue.endsWith('s')) {
+        durationValue = durationValue.slice(0, -1);
+        console.log(`🎬 [FAL Video Proxy] [${requestId}] Seed Dance detected: removing 's' suffix from duration`);
+      }
+      
+      // Validate against permitted values for Seed Dance
+      const permittedDurations = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+      if (permittedDurations.includes(durationValue)) {
+        input.duration = durationValue;
+        console.log(`🎬 [FAL Video Proxy] [${requestId}] Seed Dance duration finalized:`, durationValue);
+      } else {
+        // Default to '5' if invalid
+        input.duration = '5';
+        console.log(`🎬 [FAL Video Proxy] [${requestId}] Invalid Seed Dance duration, defaulting to: 5`);
+      }
+    }
 
     // Call FAL API directly with subscription
     try {

@@ -278,12 +278,14 @@ The Models Page provides a comprehensive interface for exploring and selecting A
 - **Claude AI Integration**: Advanced conversational AI for film direction guidance
 
 ### Performance Optimization
-- **Image Compression**: Automatic compression for optimal API compatibility
-- **Background Processing**: Non-blocking background operations
-- **Memory Management**: Efficient memory usage and cleanup
-- **Caching**: Smart caching of frequently used data
+- **Automatic Image Compression**: All uploaded images compressed to 1920x1920 max with 80% quality for optimal API compatibility
+- **Video Thumbnail Caching**: Smart caching of extracted video frames with localStorage persistence
+- **Background Processing**: Non-blocking background operations with comprehensive logging
+- **Memory Management**: Efficient memory usage and cleanup with automatic resource management
+- **Caching**: Smart caching of frequently used data and video thumbnails
 - **Lazy Loading**: Optimized loading of components and resources
 - **Token Management**: Optimized token usage for AI model interactions
+- **Model-Specific Optimization**: Automatic parameter adjustment for each AI model's requirements
 
 ### Security & Privacy
 - **Local Storage**: All content stored locally in your browser
@@ -421,6 +423,18 @@ For support and questions:
 - **Plugin System**: Extensible plugin architecture
 
 ### Recent Updates
+
+#### v2.1.0 - Enhanced Reliability & User Experience
+- **Automatic Image Compression**: All uploaded images are automatically compressed to meet API requirements (1920x1920 max)
+- **Enhanced Error Handling**: Improved error messages for content policy violations and API errors
+- **Video Thumbnail Extraction**: Automatic thumbnail generation from video last frames for gallery cards
+- **Video Download with Frames**: Download videos with extracted last frame as separate files
+- **Comprehensive Logging**: Detailed logging system for debugging video generation and frame extraction
+- **Model-Specific Parameter Handling**: Fixed Seed Dance duration parameters and other model-specific requirements
+- **Progress Message Cleanup**: Removed redundant progress messages for cleaner chat interface
+- **FFmpeg Integration**: Fixed frame extraction API with proper parameter handling
+
+#### Previous Updates
 - **Models Page Redesign**: Complete redesign with PNG icons, full-screen background, and improved navigation
 - **Sidebar Enhancement**: Reduced blur and improved readability with actual model PNG icons
 - **Audio Toggle**: Coming soon audio generation toggle in smart controls (disabled for future implementation)

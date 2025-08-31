@@ -4037,20 +4037,35 @@ Starting workflow execution...`,
     setIsUploading(true);
 
     try {
-      // Upload to server to get URL
-      const formData = new FormData();
-      formData.append('file', file);
+      console.log('🖼️ [IntelligentChatInterface] Compressing image to ensure API compatibility...');
+      console.log('🖼️ [IntelligentChatInterface] Original file size:', file.size, 'bytes');
+      
+      // Compress image to ensure it meets API requirements (1920x1920 max)
+      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.8);
+      
+      // Convert compressed data URL back to File for upload
+      const response = await fetch(compressedDataUrl);
+      const blob = await response.blob();
+      const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+      
+      console.log('✅ [IntelligentChatInterface] Image compressed successfully');
+      console.log('🖼️ [IntelligentChatInterface] Compressed file size:', compressedFile.size, 'bytes');
+      console.log('🖼️ [IntelligentChatInterface] Size reduction:', ((file.size - compressedFile.size) / file.size * 100).toFixed(1) + '%');
 
-      const response = await fetch('/api/upload', {
+      // Upload compressed image to server to get URL
+      const formData = new FormData();
+      formData.append('file', compressedFile);
+
+      const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload image to server');
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload compressed image to server');
       }
 
-      const result = await response.json();
+      const result = await uploadResponse.json();
       const imageUrl = result.url;
 
       // Add URL to array
@@ -4068,10 +4083,10 @@ Starting workflow execution...`,
       });
       
     } catch (error) {
-      console.error('❌ [IntelligentChatInterface] Image upload failed:', error);
+      console.error('❌ [IntelligentChatInterface] Image upload/compression failed:', error);
       toast({
         title: "Upload Failed",
-        description: "Failed to upload image. Please try again.",
+        description: "Failed to compress and upload image. Please try again with a different image.",
         variant: "destructive",
       });
     } finally {

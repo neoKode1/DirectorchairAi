@@ -317,11 +317,13 @@ The Models Page provides a comprehensive interface for exploring and selecting A
    ```
 
 3. **Set up environment variables**
-   Create a `.env.local` file in the root directory:
+   Create a `.env.local` file in the root directory with just these two variables:
    ```env
    FAL_KEY=your_fal_ai_key_here
    ANTHROPIC_API_KEY=your_anthropic_key_here
    ```
+   
+   **That's it!** No other environment variables are required for basic deployment.
 
 4. **Run the development server**
    ```bash
@@ -333,13 +335,17 @@ The Models Page provides a comprehensive interface for exploring and selecting A
 
 ### Environment Setup
 
-#### Required API Keys
+#### Required API Keys (Minimal Deployment)
 - **FAL_KEY**: Get your free API key from [FAL.ai](https://fal.ai/)
 - **ANTHROPIC_API_KEY**: Get your API key from [Anthropic](https://console.anthropic.com/)
 
-#### Optional Configuration
+That's it! No other environment variables are required for basic functionality.
+
+#### Optional Configuration (Advanced Features)
 - **NEXT_PUBLIC_APP_URL**: Your application URL (for production)
-- **NEXTAUTH_SECRET**: Secret for authentication (if using auth features)
+- **NEXTAUTH_SECRET**: Secret for authentication (auto-generated in development)
+- **GOOGLE_CLIENT_ID** & **GOOGLE_CLIENT_SECRET**: For Google OAuth (optional)
+- **Stripe Environment Variables**: Only needed if you want to enable subscription features
 
 ### Development Commands
 

@@ -1,7 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import Stripe from "stripe";
 // Placeholder type for subscription tiers
 type SubscriptionTier = "free" | "pro" | "enterprise";
 
@@ -14,7 +13,6 @@ declare module "next-auth" {
       image?: string | null;
       credits: number;
       subscriptionTier: SubscriptionTier;
-      stripeCustomerId?: string | null;
     };
   }
 
@@ -23,13 +21,10 @@ declare module "next-auth" {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-    stripeCustomerId?: string | null;
   }
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-01-27.acacia",
-});
+// Stripe integration removed for minimal deployment
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -58,7 +53,7 @@ export const authOptions: NextAuthOptions = {
       })
     ] : []),
   ],
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || "dev-secret-only-for-development",
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -78,22 +73,7 @@ export const authOptions: NextAuthOptions = {
       }
     }
   },
-  events: {
-    createUser: async ({ user }) => {
-      if (!user.email) return;
-      
-      // Create a Stripe customer
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          userId: user.id,
-        },
-      });
-
-      // Store customer ID in JWT token
-      user.stripeCustomerId = customer.id;
-    },
-  },
+  // Stripe events removed for minimal deployment
   callbacks: {
     async redirect({ url, baseUrl }) {
       // If the url is /app, allow it

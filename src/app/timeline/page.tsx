@@ -7,7 +7,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { useRef, useEffect, useState, Suspense } from "react";
 import dynamic from 'next/dynamic';
 import { Toaster } from "@/components/ui/toaster";
-import { useGenerationLimit } from "@/hooks/use-generation-limit";
+
 import Head from 'next/head';
 import VideoModelInterface from "@/components/model-inputs/video-model-interface";
 import { AudioModelInterface } from "@/components/model-inputs/audio-model-interface";
@@ -93,7 +93,7 @@ function TimelineContent() {
   const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
   const keyDialogOpen = useVideoProjectStore((s) => s.keyDialogOpen);
   const setKeyDialogOpen = useVideoProjectStore((s) => s.setKeyDialogOpen);
-  const { incrementCount } = useGenerationLimit();
+
 
   useEffect(() => {
     setMounted(true);
@@ -160,9 +160,7 @@ function TimelineContent() {
         throw new Error('Missing prompt or image_url in generation data');
       }
       
-      // Increment generation count
-      await incrementCount();
-      console.log('✅ [Timeline] Count incremented successfully');
+      // Generation count removed for minimal deployment
       
       // Use the unified generation API for all FAL models
       const apiEndpoint = '/api/generate';

@@ -17,7 +17,6 @@ export async function GET(req: NextRequest) {
     image: session.user.image,
     credits: session.user.credits,
     subscriptionTier: session.user.subscriptionTier,
-    stripeCustomerId: session.user.stripeCustomerId,
   });
 }
 
@@ -46,6 +45,5 @@ export async function PUT(req: NextRequest) {
     image: session.user.image,
     credits: session.user.credits,
     subscriptionTier: session.user.subscriptionTier,
-    stripeCustomerId: session.user.stripeCustomerId,
   });
 } 

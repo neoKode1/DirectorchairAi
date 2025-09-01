@@ -18,8 +18,7 @@ import { Toaster } from "./ui/toaster";
 import { ExportDialog } from "./export-dialog";
 import LeftPanel from "./left-panel";
 import { KeyDialog } from "./key-dialog";
-import { useGenerationLimit } from "@/hooks/use-generation-limit";
-import { SubscriptionDialog } from "./subscription-dialog";
+
 import { FloatingChat } from './FloatingChat';
 
 type AppProps = {
@@ -46,8 +45,7 @@ export function App({ projectId }: AppProps) {
   const [isExportDialogOpen, setExportDialogOpen] = useState(false);
   const [keyDialog, setKeyDialog] = useState(false);
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
-  const { showSubscription, setShowSubscription, incrementCount } =
-    useGenerationLimit();
+
 
   // Handle client-side mounting
   useLayoutEffect(() => {
@@ -61,7 +59,7 @@ export function App({ projectId }: AppProps) {
   };
 
   const handleGenerate = async () => {
-    await incrementCount();
+    // Generation handling simplified for minimal deployment
   };
 
   const handleVideoLoad = () => {
@@ -121,10 +119,7 @@ export function App({ projectId }: AppProps) {
                 onOpenChange={handleOnSheetOpenChange}
                 selectedMediaId={selectedMediaId ?? ""}
               />
-              <SubscriptionDialog
-                open={showSubscription}
-                onOpenChange={setShowSubscription}
-              />
+
             </div>
           </div>
         </VideoProjectStoreContext.Provider>

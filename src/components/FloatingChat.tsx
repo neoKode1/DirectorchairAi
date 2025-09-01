@@ -17,7 +17,7 @@ export function FloatingChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "👋 Hi! I'm your Narrative assistant. How can I help you today?"
+      content: "👋 Hi! I'm your DirectorchairAI assistant. How can I help you today?"
     }
   ]);
   const [input, setInput] = useState('');

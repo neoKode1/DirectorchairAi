@@ -85,7 +85,7 @@ export default function ModelsPage() {
   const handleUseInChat = (model: typeof AVAILABLE_ENDPOINTS[0]) => {
     try {
       // Load current preferences
-      const saved = localStorage.getItem('narrative-model-preferences');
+      const saved = localStorage.getItem('directorchair-model-preferences');
       let preferences = saved ? JSON.parse(saved) : {
         image: null,
         video: null,
@@ -106,7 +106,7 @@ export default function ModelsPage() {
       const preferenceKey = categoryMap[model.category];
       if (preferenceKey) {
         preferences[preferenceKey] = model.endpointId;
-        localStorage.setItem('narrative-model-preferences', JSON.stringify(preferences));
+        localStorage.setItem('directorchair-model-preferences', JSON.stringify(preferences));
         
         // Dispatch event to notify chat interface
         window.dispatchEvent(new CustomEvent('model-preferences-changed', {

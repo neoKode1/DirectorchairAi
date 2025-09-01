@@ -180,7 +180,7 @@ const ModelStatusBar = ({ className }: { className?: string }) => {
   });
 
   const loadPreferences = useCallback(() => {
-    const saved = localStorage.getItem('narrative-model-preferences');
+    const saved = localStorage.getItem('directorchair-model-preferences');
     if (saved) {
       try {
         const parsedPreferences = JSON.parse(saved);
@@ -539,7 +539,7 @@ export function IntelligentChatInterface({
   const validateIntentWithPreferences = async (intent: 'animate' | 'edit' | 'style' | 'create-image' | 'create-video') => {
     console.log('🔍 [Intent Validation] Validating intent:', intent);
     
-    const saved = localStorage.getItem('narrative-model-preferences');
+    const saved = localStorage.getItem('directorchair-model-preferences');
     if (!saved) {
       return {
         isValid: false,
@@ -671,7 +671,7 @@ export function IntelligentChatInterface({
     console.log('🔄 [IntelligentChatInterface] Starting video model sync...');
     console.log('🔄 [IntelligentChatInterface] Current video model:', currentVideoModel);
     
-    const saved = localStorage.getItem('narrative-model-preferences');
+    const saved = localStorage.getItem('directorchair-model-preferences');
     console.log('🔄 [IntelligentChatInterface] Saved preferences from localStorage:', saved);
     
     if (saved) {
@@ -1365,7 +1365,7 @@ Start describing your creative vision and I'll provide director-level guidance t
       intelligenceCore.setModelPreferences(newPreferences);
       
       // Save to localStorage
-      localStorage.setItem('narrative-model-preferences', JSON.stringify(newPreferences));
+      localStorage.setItem('directorchair-model-preferences', JSON.stringify(newPreferences));
       
       // Show toast notification
       toast({
@@ -1799,7 +1799,7 @@ Click any of these options to continue the workflow, or start a new request.`,
 
   // Load saved model preferences from localStorage and set defaults
   useEffect(() => {
-    const saved = localStorage.getItem('narrative-model-preferences');
+    const saved = localStorage.getItem('directorchair-model-preferences');
     let preferences: ModelPreferences;
     
     if (saved) {
@@ -1839,7 +1839,7 @@ Click any of these options to continue the workflow, or start a new request.`,
       };
       
       // Save the default preferences to localStorage
-      localStorage.setItem('narrative-model-preferences', JSON.stringify(preferences));
+      localStorage.setItem('directorchair-model-preferences', JSON.stringify(preferences));
       console.log('💾 [IntelligentChatInterface] Saved default model preferences to localStorage');
     }
     
@@ -2149,7 +2149,7 @@ Ready to create something amazing? Just tell me what you have in mind! 🎬✨`,
         }
       }
       // Get user's preferred video model from preferences
-      const saved = localStorage.getItem('narrative-model-preferences');
+      const saved = localStorage.getItem('directorchair-model-preferences');
       let userVideoModel = 'fal-ai/kling-video/v2.1/master/image-to-video'; // Default fallback
       
       if (saved) {
@@ -2517,7 +2517,7 @@ Starting workflow execution...`,
       
       try {
         // Get the saved preferences to determine which model to use
-        const saved = localStorage.getItem('narrative-model-preferences');
+        const saved = localStorage.getItem('directorchair-model-preferences');
         if (!saved) {
           throw new Error('No model preferences found. Please set your preferred models first.');
         }
@@ -2662,7 +2662,7 @@ Starting workflow execution...`,
         }
         
         // Get the saved preferences to determine which model to use
-        const saved = localStorage.getItem('narrative-model-preferences');
+        const saved = localStorage.getItem('directorchair-model-preferences');
         console.log('🔍 [IntelligentChatInterface] Saved preferences from localStorage (line 2370):', saved);
         
         if (!saved) {
@@ -4662,7 +4662,7 @@ Available commands:
         console.log('⚡ [Quick Gen] Using in-memory video model preference:', userVideoModel);
       } else {
         // Fallback to localStorage if in-memory preference is not available
-        const saved = localStorage.getItem('narrative-model-preferences');
+        const saved = localStorage.getItem('directorchair-model-preferences');
         if (saved) {
           try {
             const preferences = JSON.parse(saved);

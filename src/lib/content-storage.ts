@@ -41,7 +41,7 @@ export interface ContentStorageStats {
 
 export class ContentStorageManager {
   private static instance: ContentStorageManager;
-  private storageKey = 'narrative-generated-content';
+  private storageKey = 'directorchair-generated-content';
   private version = '1.0.0';
   private maxStorageSize = 50 * 1024 * 1024; // 50MB limit
   private maxItems = 1000; // Maximum number of items to store

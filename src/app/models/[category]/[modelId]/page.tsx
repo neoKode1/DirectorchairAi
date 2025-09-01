@@ -246,7 +246,7 @@ export default async function ModelPage({ params }: PageProps) {
   const handleUseInChat = () => {
     try {
       // Load current preferences
-      const saved = localStorage.getItem('narrative-model-preferences');
+      const saved = localStorage.getItem('directorchair-model-preferences');
       let preferences = saved ? JSON.parse(saved) : {
         image: null,
         video: null,
@@ -267,7 +267,7 @@ export default async function ModelPage({ params }: PageProps) {
       const preferenceKey = categoryMap[category];
       if (preferenceKey) {
         preferences[preferenceKey] = decodedModelId;
-        localStorage.setItem('narrative-model-preferences', JSON.stringify(preferences));
+        localStorage.setItem('directorchair-model-preferences', JSON.stringify(preferences));
         
         // Dispatch event to notify chat interface
         window.dispatchEvent(new CustomEvent('model-preferences-changed', {

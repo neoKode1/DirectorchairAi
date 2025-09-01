@@ -47,8 +47,8 @@ export interface SessionStats {
 
 export class SessionStorageManager {
   private static instance: SessionStorageManager;
-  private storageKey = 'narrative-session-storage';
-  private sessionsKey = 'narrative-sessions';
+  private storageKey = 'directorchair-session-storage';
+  private sessionsKey = 'directorchair-sessions';
   private version = '1.0.0';
   private maxStorageSize = 100 * 1024 * 1024; // 100MB limit
   private maxSessions = 50; // Maximum number of sessions

@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { createFalClient } from "@fal-ai/client";
 
-if (!process.env.FAL_KEY) {
-  throw new Error("FAL_KEY environment variable is not set");
-}
-
-const fal = createFalClient({
-  credentials: process.env.FAL_KEY,
-});
+// Only validate FAL_KEY at runtime, not during build
+const getFalClient = () => {
+  if (!process.env.FAL_KEY) {
+    throw new Error("FAL_KEY environment variable is not set");
+  }
+  return createFalClient({
+    credentials: process.env.FAL_KEY,
+  });
+};
 
 export async function POST(request: Request) {
   try {
+    const fal = getFalClient();
     const { image_url, audio_url, model } = await request.json();
 
     if (model !== "fal-ai/wav2lip") {

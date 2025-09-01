@@ -6,18 +6,21 @@ interface QueueUpdate {
   logs: Array<{ message: string }>;
 }
 
-if (!process.env.FAL_KEY) {
-  throw new Error("FAL_KEY environment variable not set");
-}
-
-const fal = createFalClient({
-  credentials: process.env.FAL_KEY,
-});
+// Only validate FAL_KEY at runtime, not during build
+const getFalClient = () => {
+  if (!process.env.FAL_KEY) {
+    throw new Error("FAL_KEY environment variable not set");
+  }
+  return createFalClient({
+    credentials: process.env.FAL_KEY,
+  });
+};
 
 export const runtime = "edge";
 
 export async function POST(req: Request) {
   try {
+    const fal = getFalClient();
     const body = await req.json();
     const { prompt, image_size, style, colors, style_id } = body;
 

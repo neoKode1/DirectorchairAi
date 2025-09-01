@@ -52,7 +52,7 @@ export const StorageManager: React.FC<StorageManagerProps> = ({
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `narrative-content-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `directorchair-content-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

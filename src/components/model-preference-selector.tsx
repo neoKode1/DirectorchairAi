@@ -74,7 +74,7 @@ export function ModelPreferenceSelector({
   // Load preferences from localStorage
   useEffect(() => {
     console.log('🔄 [ModelPreferenceSelector] Loading preferences from localStorage...');
-    const saved = localStorage.getItem('narrative-model-preferences');
+    const saved = localStorage.getItem('directorchair-model-preferences');
     if (saved) {
       try {
         const parsedPreferences = JSON.parse(saved);
@@ -115,7 +115,7 @@ export function ModelPreferenceSelector({
       setPreferences(defaultPreferences);
       
       // Save default preferences to localStorage
-      localStorage.setItem('narrative-model-preferences', JSON.stringify(defaultPreferences));
+      localStorage.setItem('directorchair-model-preferences', JSON.stringify(defaultPreferences));
       console.log('💾 [ModelPreferenceSelector] Saved default preferences to localStorage');
       
       // Call onPreferencesChange with defaults
@@ -130,7 +130,7 @@ export function ModelPreferenceSelector({
   const savePreferences = useCallback((newPreferences: ModelPreferences) => {
     console.log('💾 [ModelPreferenceSelector] Saving new preferences:', newPreferences);
     setPreferences(newPreferences);
-    localStorage.setItem('narrative-model-preferences', JSON.stringify(newPreferences));
+    localStorage.setItem('directorchair-model-preferences', JSON.stringify(newPreferences));
     console.log('💾 [ModelPreferenceSelector] Preferences saved to localStorage');
     onPreferencesChange?.(newPreferences);
     console.log('💾 [ModelPreferenceSelector] onPreferencesChange callback called');

@@ -3,9 +3,7 @@ import { fal, subscribeToModel } from "@/lib/fal.server";
 import { getAspectRatioDimensions, isAspectRatioSupported } from "@/lib/utils";
 import { STYLE_PRESETS, getModelStyleSupport } from "@/lib/fal";
 
-if (!process.env.FAL_KEY) {
-  throw new Error("FAL_KEY environment variable is not set");
-}
+// FAL_KEY validation moved to runtime in POST function
 
 export const runtime = "edge";
 
@@ -14,6 +12,14 @@ export async function POST(request: Request) {
   const requestId = Math.random().toString(36).substring(7);
   
   try {
+    // Check FAL_KEY at runtime
+    if (!process.env.FAL_KEY) {
+      console.error('❌ [FAL Video Generate] FAL_KEY environment variable is not set');
+      return NextResponse.json(
+        { error: 'FAL_KEY environment variable is not configured' },
+        { status: 500 }
+      );
+    }
     console.log(`🎬 [FAL Video Generate] ===== VIDEO GENERATION REQUEST START [${requestId}] =====`);
     console.log(`🎬 [FAL Video Generate] Timestamp: ${new Date().toISOString()}`);
     

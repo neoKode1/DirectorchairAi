@@ -87,16 +87,14 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.sub!;
         session.user.credits = token.credits as number || 0;
-        session.user.subscriptionTier = token.subscriptionTier as SubscriptionTier || "FREE";
-        session.user.stripeCustomerId = token.stripeCustomerId as string;
+        session.user.subscriptionTier = token.subscriptionTier as SubscriptionTier || "free";
       }
       return session;
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.credits = 0;
-        token.subscriptionTier = "FREE";
-        token.stripeCustomerId = user.stripeCustomerId;
+        token.subscriptionTier = "free";
       }
 
       if (trigger === "update" && session) {

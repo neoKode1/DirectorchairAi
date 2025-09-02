@@ -35,8 +35,11 @@ export async function POST(req: Request) {
       model,
     });
 
+    // Get FAL client at runtime
+    const falClient = fal();
+
     // Call the fal.ai API
-    const result = await fal.subscribe("fal-ai/musicgen", {
+    const result = await falClient.subscribe("fal-ai/musicgen", {
       input: {
         prompt,
         duration: duration || 8,

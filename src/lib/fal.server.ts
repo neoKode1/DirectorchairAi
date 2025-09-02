@@ -1,25 +1,29 @@
 // This file should only be imported by server components/routes
 import { fal } from '@fal-ai/client';
 
-// Validate FAL_KEY in all environments, provide helpful error messages
-if (!process.env.FAL_KEY) {
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  const errorMessage = isDevelopment
-    ? 'FAL_KEY is not set in environment variables. Please set it in your .env.local file for development.'
-    : 'FAL_KEY is not set in environment variables. Please configure it in your production environment.';
-  
-  console.warn(`⚠️ [FAL Server] ${errorMessage}`);
-  
-  // In production, throw error. In development, allow with warning
-  if (!isDevelopment) {
-    throw new Error(errorMessage);
+// Only validate FAL_KEY at runtime, not during build
+const getFalClient = () => {
+  if (!process.env.FAL_KEY) {
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const errorMessage = isDevelopment
+      ? 'FAL_KEY is not set in environment variables. Please set it in your .env.local file for development.'
+      : 'FAL_KEY is not set in environment variables. Please configure it in your production environment.';
+    
+    console.warn(`⚠️ [FAL Server] ${errorMessage}`);
+    
+    // In production, throw error. In development, allow with warning
+    if (!isDevelopment) {
+      throw new Error(errorMessage);
+    }
   }
-}
 
-// Configure the FAL client with credentials - this should only happen server-side
-fal.config({
-  credentials: process.env.FAL_KEY,
-});
+  // Configure the FAL client with credentials - this should only happen server-side
+  fal.config({
+    credentials: process.env.FAL_KEY,
+  });
+
+  return fal;
+};
 
 // Server-side only configuration for FAL endpoints
 export const FAL_ENDPOINTS = {
@@ -62,14 +66,17 @@ export function getFalEndpointId(shortId: FalEndpointId): string {
 
 // Helper function to run a model - server-side only
 export async function runModel(modelId: FalEndpointId, input: any) {
+  const falClient = getFalClient();
   const endpoint = getFalEndpointId(modelId);
-  return await fal.run(endpoint, input);
+  return await falClient.run(endpoint, input);
 }
 
 // Helper function to subscribe to a model - server-side only
 export async function subscribeToModel(modelId: FalEndpointId, options: any) {
+  const falClient = getFalClient();
   const endpoint = getFalEndpointId(modelId);
-  return await fal.subscribe(endpoint, options);
+  return await falClient.subscribe(endpoint, options);
 }
 
-export { fal }; 
+// Export the fal client getter instead of the configured instance
+export { getFalClient as fal }; 

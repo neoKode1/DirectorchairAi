@@ -7,8 +7,9 @@ import { ToastProvider } from "@/components/ui/toast";
 import { useRef, useEffect, useState, Suspense } from "react";
 import dynamic from 'next/dynamic';
 import { Toaster } from "@/components/ui/toaster";
+import { ErrorBoundary } from "@/components/error-boundary";
 
-import Head from 'next/head';
+// Remove next/head import - not supported in App Router
 import VideoModelInterface from "@/components/model-inputs/video-model-interface";
 import { AudioModelInterface } from "@/components/model-inputs/audio-model-interface";
 import { IntelligentChatInterface } from "@/components/intelligent-chat-interface";
@@ -411,13 +412,7 @@ function TimelineContent() {
 
 export default function TimelinePage() {
   return (
-    <>
-      <Head>
-        <meta
-          name="format-detection"
-          content="telephone=no, date=no, email=no, address=no"
-        />
-      </Head>
+    <ErrorBoundary>
       <ToastProvider>
         <QueryClientProvider client={queryClient}>
           <Suspense fallback={<LoadingSpinner />}>
@@ -433,6 +428,6 @@ export default function TimelinePage() {
           {/* Content filtering removed - user has full control over prompts */}
         </QueryClientProvider>
       </ToastProvider>
-    </>
+    </ErrorBoundary>
   );
 } 

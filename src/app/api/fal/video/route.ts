@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 
+// Helper function to get dimensions from aspect ratio
+function getAspectRatioDimensions(aspectRatio: string): { width: number; height: number } | null {
+  const ratios: Record<string, { width: number; height: number }> = {
+    '1:1': { width: 1024, height: 1024 },
+    '16:9': { width: 1920, height: 1080 },
+    '9:16': { width: 1080, height: 1920 },
+    '4:3': { width: 1440, height: 1080 },
+    '3:4': { width: 1080, height: 1440 },
+    '21:9': { width: 2560, height: 1080 },
+    '9:21': { width: 1080, height: 2560 },
+  };
+  
+  return ratios[aspectRatio] || null;
+}
+
 // Video-specific FAL proxy that handles all video generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
@@ -229,6 +244,53 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (model.includes('kling')) {
       if (body.cfg_scale !== undefined) {
         input.cfg_scale = body.cfg_scale;
+      }
+      
+      // Kling models require specific parameters
+      console.log('🎬 [FAL Video Proxy] Processing Kling model, applying specific parameter handling');
+      
+      // Ensure required parameters for Kling models
+      if (model.includes('image-to-video')) {
+        if (!body.image_url) {
+          console.error(`❌ [FAL Video Proxy] [${requestId}] Kling image-to-video model requires image_url`);
+          return NextResponse.json({ 
+            success: false,
+            error: "image_url parameter is required for Kling image-to-video models",
+            details: "Kling image-to-video models require an input image to generate video from",
+            requestId
+          }, { status: 400 });
+        }
+        
+        // Kling models only support these specific parameters
+        // Remove any unsupported parameters that might cause 422 errors
+        const klingSupportedParams = ['prompt', 'image_url', 'duration', 'negative_prompt', 'cfg_scale'];
+        
+        // Clean the input to only include supported parameters
+        const cleanedInput: Record<string, any> = {};
+        klingSupportedParams.forEach(param => {
+          if (input[param] !== undefined) {
+            cleanedInput[param] = input[param];
+          }
+        });
+        
+        // Set defaults for Kling models
+        if (!cleanedInput.duration) {
+          cleanedInput.duration = "5";
+        }
+        if (!cleanedInput.negative_prompt) {
+          cleanedInput.negative_prompt = "blur, distort, and low quality";
+        }
+        if (!cleanedInput.cfg_scale) {
+          cleanedInput.cfg_scale = 0.5;
+        }
+        
+        // Replace the input with cleaned version
+        Object.keys(input).forEach(key => {
+          delete input[key];
+        });
+        Object.assign(input, cleanedInput);
+        
+        console.log(`🎬 [FAL Video Proxy] [${requestId}] Kling model cleaned input parameters:`, input);
       }
     }
 
@@ -464,7 +526,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       let errorMessage = falError.message || 'Unknown FAL error';
       let errorDetails = 'Unknown error occurred';
       
-      if (falError.body?.detail) {
+      if (falError.status === 422) {
+        errorMessage = 'Validation Error';
+        
+        // Parse FAL API validation errors
+        if (falError.body?.detail && Array.isArray(falError.body.detail)) {
+          const validationErrors = falError.body.detail;
+          const errorMessages = validationErrors.map((err: any) => {
+            if (err.type === 'image_too_large') {
+              return `Image too large: ${err.ctx?.max_width || 1920}x${err.ctx?.max_height || 1920} pixels max`;
+            } else if (err.type === 'missing_field') {
+              return `Missing required field: ${err.loc?.join('.') || 'unknown'}`;
+            } else if (err.type === 'value_error') {
+              return `Invalid value for ${err.loc?.join('.') || 'field'}: ${err.msg || 'invalid value'}`;
+            } else {
+              return `${err.type}: ${err.msg || 'validation error'}`;
+            }
+          });
+          
+          errorDetails = errorMessages.join('; ');
+        } else if (falError.body?.error) {
+          errorDetails = falError.body.error;
+        } else {
+          errorDetails = 'The request parameters are invalid. Please check your input and try again.';
+        }
+        
+        console.error(`❌ [FAL Video Proxy] [${requestId}] Validation error details:`, falError.body);
+      } else if (falError.body?.detail) {
         const errorDetail = falError.body.detail[0];
         if (errorDetail?.type === 'image_too_large') {
           errorMessage = 'Image too large for this model';

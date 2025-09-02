@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Output configuration to prevent static generation issues
+  output: 'standalone',
+  
   images: {
     remotePatterns: [
       {
@@ -67,6 +70,15 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
+
+  // Prevent static generation of API routes during build
+  async generateStaticParams() {
+    return [];
+  },
+
+  // Disable static generation for problematic routes
+  trailingSlash: false,
+  poweredByHeader: false,
 };
 
 export default nextConfig;

@@ -60,7 +60,6 @@ const nextConfig = {
   },
 
   // Build optimizations
-  swcMinify: true,
   compress: true,
   
   // Handle client-side errors gracefully

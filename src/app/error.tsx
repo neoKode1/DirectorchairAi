@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Error({
   error,
@@ -37,12 +38,10 @@ export default function Error({
           >
             Try again
           </Button>
-          <Button
-            onClick={() => window.location.href = '/timeline'}
-            variant="outline"
-            className="w-full"
-          >
-            Go to Timeline
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/timeline">
+              Go to Timeline
+            </Link>
           </Button>
         </div>
       </div>

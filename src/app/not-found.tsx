@@ -18,12 +18,10 @@ export default function NotFound() {
               Go to Timeline
             </Link>
           </Button>
-          <Button
-            onClick={() => window.history.back()}
-            variant="outline"
-            className="w-full"
-          >
-            Go back
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/">
+              Go Home
+            </Link>
           </Button>
         </div>
       </div>

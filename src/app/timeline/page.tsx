@@ -1,26 +1,16 @@
 "use client";
 
-import { Timeline } from "@/components/video/timeline";
-import { useVideoProjectStore, VideoProjectStoreContext } from "@/data/store";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToastProvider } from "@/components/ui/toast";
-import { useRef, useEffect, useState, Suspense } from "react";
-import dynamic from 'next/dynamic';
+import { useState, useEffect, useRef, Suspense } from "react";
+import { SimpleChatInterface } from "@/components/simple-chat-interface";
+import { GalleryView } from "@/components/gallery-view";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
-
-// Remove next/head import - not supported in App Router
-import VideoModelInterface from "@/components/model-inputs/video-model-interface";
-import { AudioModelInterface } from "@/components/model-inputs/audio-model-interface";
-import { IntelligentChatInterface } from "@/components/intelligent-chat-interface";
-import { GeneratedContentDisplay } from "@/components/generated-content-display";
-import { GalleryView } from "@/components/gallery-view";
-import { StorageManager } from "@/components/storage-manager";
-import { SessionManager } from "@/components/session-manager";
-import { MobileNavigation } from "@/components/mobile-navigation";
-import { CollapsibleContentPanel } from "@/components/collapsible-content-panel";
-import { UserInteractionMonitor } from "@/components/user-interaction-monitor";
-// Content filtering removed - user has full control over prompts
+import { ToastProvider } from "@/components/ui/toast";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Download, Edit, Trash2, Video } from "lucide-react";
+import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
+import { useToast } from "@/hooks/use-toast";
+import { ImageSelector, type ImageSelection } from "@/components/image-selector";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -42,113 +32,174 @@ const LoadingSpinner = () => (
   </div>
 );
 
-// Dynamic imports with loading states
-const Header = dynamic(() => import("@/components/header"), { 
-  ssr: false,
-  loading: () => <div className="h-[56px]" /> 
-});
-
-const LeftPanel = dynamic(() => import("@/components/left-panel"), { 
-  ssr: false,
-  loading: () => <div className="w-[300px] bg-background" />
-});
-
-const VideoPreview = dynamic(() => import("@/components/video-preview"), { 
-  ssr: false,
-  loading: () => <div className="flex-1 bg-black" />
-});
-
-const BottomBar = dynamic(() => import("@/components/bottom-bar"), { 
-  ssr: false,
-  loading: () => <div className="h-[100px] bg-background" />
-});
-
-const RightPanel = dynamic(() => import("@/components/right-panel"), { 
-  ssr: false,
-  loading: () => <div className="w-[300px] bg-background" />
-});
-
-const ProjectDialog = dynamic(() => import("@/components/project-dialog").then(mod => mod.ProjectDialog), { 
-  ssr: false 
-});
-
-const ExportDialog = dynamic(() => import("@/components/export-dialog").then(mod => mod.ExportDialog), { 
-  ssr: false 
-});
-
-const KeyDialog = dynamic(() => import("@/components/key-dialog").then(mod => mod.KeyDialog), { 
-  ssr: false 
-});
-
-const MediaGallerySheet = dynamic(() => import("@/components/media-gallery").then(mod => mod.MediaGallerySheet), { 
-  ssr: false 
-});
-
 function TimelineContent() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'gallery' | 'storage' | 'sessions'>('content');
-  const [activeSessionId, setActiveSessionId] = useState<string | undefined>();
-  const [contentPanelExpanded, setContentPanelExpanded] = useState(false);
-  const [contentPanelWidth, setContentPanelWidth] = useState("600px");
-  const selectedMediaId = useVideoProjectStore((s) => s.selectedMediaId);
-  const setSelectedMediaId = useVideoProjectStore((s) => s.setSelectedMediaId);
-  const keyDialogOpen = useVideoProjectStore((s) => s.keyDialogOpen);
-  const setKeyDialogOpen = useVideoProjectStore((s) => s.setKeyDialogOpen);
+  const [generatedContent, setGeneratedContent] = useState<any[]>([]);
+  const [isGalleryCollapsed, setIsGalleryCollapsed] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Listen for content panel state changes
-  useEffect(() => {
-    const handleContentPanelChange = (event: CustomEvent) => {
-      setContentPanelExpanded(event.detail.isExpanded);
-      setContentPanelWidth(event.detail.panelWidth);
-    };
-
-    window.addEventListener('contentPanelStateChange', handleContentPanelChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('contentPanelStateChange', handleContentPanelChange as EventListener);
-    };
-  }, []);
-
-  // Handle URL parameters for tab switching
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('sessions')) {
-        setActiveTab('sessions');
-      }
+  const handleEditImage = (imageUrl: string) => {
+    // Call the injectImage function that's exposed on the window object
+    if ((window as any).injectImageToChat) {
+      (window as any).injectImageToChat(imageUrl);
     }
-  }, []);
-
-  const handleOnSheetOpenChange = (open: boolean) => {
-    if (!open) setSelectedMediaId(null);
   };
+
+  const handleAnimateImage = (imageUrl: string) => {
+    // Inject the image and set a flag to force video generation
+    if ((window as any).injectImageToChat) {
+      (window as any).injectImageToChat(imageUrl);
+      // Set a flag to force video generation
+      if ((window as any).setForceVideoGeneration) {
+        (window as any).setForceVideoGeneration(true);
+      }
+      // Add a small delay to ensure the image is injected first
+      setTimeout(() => {
+        if ((window as any).setChatInput) {
+          // Only set a default prompt if the user hasn't already entered one
+          const currentInput = (window as any).getChatInput ? (window as any).getChatInput() : '';
+          if (!currentInput || currentInput.trim() === '') {
+            (window as any).setChatInput("Animate this character with smooth motion");
+          }
+        }
+      }, 200);
+    }
+  };
+
+  const handleImageSelection = (selection: ImageSelection) => {
+    console.log('🎯 [Timeline] Image selection completed:', selection);
+    
+    // Inject the cropped image into the chat interface
+    if (typeof window !== 'undefined' && (window as any).injectImageToChat) {
+      (window as any).injectImageToChat(selection.croppedDataUrl);
+      
+      // Set an intelligent prompt for AI analysis
+      const analysisPrompt = "Analyze this image selection and recreate it perfectly. Focus on the visual elements, style, and composition of this specific portion.";
+      if (typeof window !== 'undefined' && (window as any).setChatInput) {
+        (window as any).setChatInput(analysisPrompt);
+      }
+      
+      // Show toast notification
+      toast({
+        title: "Image Selection Ready",
+        description: "The selected area has been injected into the chat for AI analysis. Press Generate to recreate it.",
+        duration: 4000,
+      });
+    }
+  };
+
+  // Handle download with frame extraction for videos (matching gallery functionality)
+  const handleDownload = async (url: string, title: string, type: 'image' | 'video') => {
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    
+    try {
+      if (type === 'video') {
+        console.log('📥 [Timeline] Starting video download with frame extraction');
+        await downloadVideoWithFrame(url, title);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded video and last frame for "${title}"`,
+        });
+      } else if (type === 'image') {
+        // Simple image download
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${title || 'image'}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded image "${title}"`,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [Timeline] Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download the file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (contentAreaRef.current) {
+      // Use multiple requestAnimationFrame calls to ensure DOM is fully updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (contentAreaRef.current) {
+            // Scroll to the very bottom with a small buffer
+            const scrollHeight = contentAreaRef.current.scrollHeight;
+            const clientHeight = contentAreaRef.current.clientHeight;
+            const maxScrollTop = scrollHeight - clientHeight;
+            
+            console.log('📜 [Timeline] Scrolling to bottom:', {
+              scrollHeight,
+              clientHeight,
+              maxScrollTop,
+              currentScrollTop: contentAreaRef.current.scrollTop
+            });
+            
+            contentAreaRef.current.scrollTo({
+              top: maxScrollTop + 50, // Add 50px buffer to ensure we see everything
+              behavior: 'smooth'
+            });
+            
+            // Fallback: ensure we're at the bottom after a short delay
+            setTimeout(() => {
+              if (contentAreaRef.current) {
+                const currentScrollTop = contentAreaRef.current.scrollTop;
+                const newScrollHeight = contentAreaRef.current.scrollHeight;
+                const newMaxScrollTop = newScrollHeight - contentAreaRef.current.clientHeight;
+                
+                // If we're not at the bottom, scroll again
+                if (currentScrollTop < newMaxScrollTop - 100) {
+                  console.log('📜 [Timeline] Fallback scroll needed:', {
+                    currentScrollTop,
+                    newMaxScrollTop,
+                    difference: newMaxScrollTop - currentScrollTop
+                  });
+                  
+                  contentAreaRef.current.scrollTo({
+                    top: newMaxScrollTop + 50,
+                    behavior: 'smooth'
+                  });
+                }
+              }
+            }, 200);
+          }
+        });
+      });
+    }
+  };
+
 
     const handleGenerate = async (generationData: any): Promise<any> => {
     try {
       console.log('🚀 [Timeline] ===== GENERATION START =====');
       console.log('🚀 [Timeline] Generation data received:', generationData);
-      console.log('📊 [Timeline] Generation data type:', typeof generationData);
-      console.log('📊 [Timeline] Generation data keys:', generationData ? Object.keys(generationData) : 'null/undefined');
-      console.log('📊 [Timeline] Generation data details:', {
-        model: generationData?.model,
-        endpointId: generationData?.endpointId,
-        parameters: generationData,
-        timestamp: new Date().toISOString()
-      });
-      console.log('📦 [Timeline] Enhanced prompt in generation data:', generationData?.prompt);
-      console.log('📦 [Timeline] Structured prompt for display:', generationData?.structuredPromptForDisplay);
-      console.log('📦 [Timeline] Generation data stringified:', JSON.stringify(generationData, null, 2));
       
       // Validate that generationData is not empty or null
       if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {
         console.error('❌ [Timeline] Empty or invalid generation data received:', generationData);
-        console.error('❌ [Timeline] Generation data that caused error:', generationData);
-        console.error('❌ [Timeline] This usually indicates an upstream error in the intelligence core or delegation process');
         throw new Error('Generation data is missing or empty. This may be due to an error in the AI planning process. Please try with a different prompt or image.');
       }
       
@@ -161,8 +212,6 @@ function TimelineContent() {
         throw new Error('Missing prompt or image_url in generation data');
       }
       
-      // Generation count removed for minimal deployment
-      
       // Use the unified generation API for all FAL models
       const apiEndpoint = '/api/generate';
       
@@ -171,6 +220,7 @@ function TimelineContent() {
         model: generationData.model || generationData.endpointId,
         prompt: generationData.prompt,
         image_url: generationData.image_url,
+        image_urls: generationData.image_urls,
         aspect_ratio: generationData.aspect_ratio,
         duration: generationData.duration,
         resolution: generationData.resolution,
@@ -222,8 +272,75 @@ function TimelineContent() {
       
       const result = await response.json();
       console.log('📦 [Timeline] API response:', result);
+      console.log('📦 [Timeline] Video data check:', {
+        hasDataVideo: !!result.data?.video,
+        hasDataVideos: !!result.data?.videos,
+        hasVideos: !!result.videos,
+        dataVideo: result.data?.video,
+        dataVideos: result.data?.videos
+      });
       
-      // Show success message
+      // Create content object for both display and storage
+      const contentToStore = {
+        ...result,
+        // Flatten the API response structure for easier display
+        images: result.data?.images || result.images || [],
+        videos: result.data?.videos || result.data?.video ? [result.data.video] : result.videos || [],
+        timestamp: new Date().toISOString(),
+        prompt: generationData.prompt,
+        model: cleanGenerationData.model
+      };
+      
+      console.log('📦 [Timeline] Content to store:', {
+        rawResult: result,
+        resultData: result.data,
+        resultVideo: result.data?.video,
+        resultVideos: result.data?.videos,
+        images: contentToStore.images,
+        videos: contentToStore.videos,
+        imagesLength: contentToStore.images?.length,
+        videosLength: contentToStore.videos?.length,
+        firstVideo: contentToStore.videos?.[0],
+        firstVideoUrl: contentToStore.videos?.[0]?.url
+      });
+      
+      // Add to generated content for display in center panel
+      setGeneratedContent(prev => [...prev, contentToStore]);
+      
+      // Scroll to bottom to show the new content (wait for DOM update)
+      setTimeout(() => {
+        scrollToBottom();
+      }, 500);
+      
+      // Store in localStorage for gallery using contentStorage
+      if (typeof window !== 'undefined') {
+        const { contentStorage } = await import('@/lib/content-storage');
+        const newContent = {
+          id: `generated-${Date.now()}`,
+          type: (contentToStore.images?.length > 0 ? 'image' : 'video') as 'image' | 'video',
+          url: contentToStore.images?.[0]?.url || contentToStore.videos?.[0]?.url,
+          title: contentToStore.prompt?.substring(0, 50) + '...' || 'Generated Content',
+          prompt: contentToStore.prompt,
+          timestamp: new Date(),
+          metadata: {
+            format: contentToStore.model,
+            // Store additional info in a way that doesn't conflict with the interface
+          }
+        };
+        console.log('💾 [Timeline] Adding content to storage:', {
+          newContent,
+          contentToStore,
+          videoUrl: contentToStore.videos?.[0]?.url,
+          imageUrl: contentToStore.images?.[0]?.url,
+          type: newContent.type
+        });
+        
+        contentStorage.addContent(newContent);
+        
+        // Trigger a custom event to notify GalleryView to refresh
+        window.dispatchEvent(new CustomEvent('contentUpdated'));
+      }
+      
       console.log('✅ [Timeline] Generation completed successfully');
       
       // Return the result so it can be displayed in the chat
@@ -232,7 +349,6 @@ function TimelineContent() {
     } catch (error) {
       console.error('❌ [Timeline] Generation error:', error);
       console.error('❌ [Timeline] Generation data that caused error:', generationData);
-      // The error will be handled by the calling component
       throw error;
     }
   };
@@ -242,170 +358,223 @@ function TimelineContent() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
-      {/* Background Video */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        src="/91b9d7be-bb33-4df3-af75-85c7bc3f9d79.mp4"
-      />
-
-      {/* Overlay with animated gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/30 to-background/40 animate-gradient" />
-
-      {/* Content Container */}
-      <div className="relative z-20 mobile-timeline">
-        {/* Left Panel - Chat Interface */}
-        <div 
-          className="mobile-timeline-chat transition-all duration-300 ease-in-out"
-          style={{
-            width: contentPanelExpanded ? `calc(100% - ${contentPanelWidth})` : '100%'
-          }}
-        >
-          <IntelligentChatInterface 
+    <div className="h-screen flex bg-white">
+      {/* Left Column - Chat Interface (Yellow section from screenshot) */}
+      <div className="w-80 border-r border-gray-200 flex flex-col">
+        <SimpleChatInterface 
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}
             onGenerationComplete={() => console.log('Generation complete')}
+          onImageInjected={() => console.log('Image injection ready')}
           />
         </div>
         
-        {/* Collapsible Right Panel - Content Display with Tabs */}
-        <CollapsibleContentPanel 
-          defaultExpanded={false}
-          panelWidth="min(600px, 90vw)"
-          className="glass"
-        >
-          {/* Tab Navigation */}
-          <div className="flex items-center border-b border-border/50">
+      {/* Center Column - Dynamic Content Display (Green section from screenshot) */}
+      <div className="flex-1 flex flex-col">
+        <div ref={contentAreaRef} className="flex-1 p-4 overflow-y-auto">
+          <div className="space-y-6">
+            
+            {generatedContent.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
+                  <p className="text-gray-500">Start a conversation to generate content</p>
+                </div>
+              </div>
+            ) : (
+              generatedContent.map((content, index) => (
+                <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {content.prompt}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {new Date(content.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  
+                  {content.images && content.images.length > 0 ? (
+                    <div className="space-y-4">
+                      {content.images.map((image: any, imgIndex: number) => (
+                        <div key={imgIndex} className="relative group">
+                          <ImageSelector
+                            imageUrl={image.url}
+                            onSelectionComplete={handleImageSelection}
+                            className="w-full"
+                          >
+                            <img 
+                              src={image.url} 
+                              alt={content.prompt}
+                              className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
+                            />
+                          </ImageSelector>
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <div className="flex space-x-2 pointer-events-auto">
+                              <button
+                                onClick={() => handleEditImage(image.url)}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span className="text-sm">Edit</span>
+                              </button>
             <button
-              onClick={() => setActiveTab('content')}
-              className={`flex-1 mobile-px py-3 sm:py-4 mobile-text-xs sm:text-sm font-medium transition-enhanced focus-ring mobile-touch-target ${
-                activeTab === 'content'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              Recent Content
+                                onClick={() => handleAnimateImage(image.url)}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Video className="w-4 h-4" />
+                                <span className="text-sm">Generate video</span>
             </button>
             <button
-              onClick={() => setActiveTab('gallery')}
-              className={`flex-1 mobile-px py-3 sm:py-4 mobile-text-xs sm:text-sm font-medium transition-enhanced focus-ring mobile-touch-target ${
-                activeTab === 'gallery'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              Gallery
+                                onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm">
+                                  {isDownloading ? 'Downloading...' : 'Download'}
+                                </span>
+            </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : content.videos && content.videos.length > 0 ? (
+                    <div className="space-y-4">
+                      {content.videos.map((video: any, vidIndex: number) => {
+                        console.log('🎬 [Timeline] Rendering video:', {
+                          video,
+                          videoUrl: video?.url,
+                          videoType: typeof video,
+                          videoKeys: Object.keys(video || {})
+                        });
+                        return (
+                        <div key={vidIndex} className="relative group">
+                          <video 
+                            src={video.url} 
+                            controls
+                            className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
+                            preload="metadata"
+                            playsInline
+                          />
+                          <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                            Video
+                          </div>
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <div className="flex space-x-2 pointer-events-auto">
+            <button
+                                onClick={() => handleEditImage(video.url)}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Edit className="w-4 h-4" />
+                                <span className="text-sm">Edit</span>
             </button>
             <button
-              onClick={() => setActiveTab('storage')}
-              className={`flex-1 mobile-px py-3 sm:py-4 mobile-text-xs sm:text-sm font-medium transition-enhanced focus-ring mobile-touch-target ${
-                activeTab === 'storage'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              Storage
+                                onClick={() => handleDownload(video.url, `video-${Date.now()}`, 'video')}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm">
+                                  {isDownloading ? 'Downloading...' : 'Download + Frame'}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 text-sm">No media content generated</div>
+                  )}
+                  
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Model: {content.model}</span>
+                    <div className="flex space-x-2">
+                      <button className="text-gray-400 hover:text-gray-600 text-sm">
+                        Share
+                      </button>
+                      <button className="text-gray-400 hover:text-gray-600 text-sm">
+                        Delete
             </button>
-            <button
-              onClick={() => setActiveTab('sessions')}
-              className={`flex-1 mobile-px py-3 sm:py-4 mobile-text-xs sm:text-sm font-medium transition-enhanced focus-ring mobile-touch-target ${
-                activeTab === 'sessions'
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              Sessions
-            </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-          
-          {/* Tab Content */}
-          <div className="h-[calc(100%-57px)]">
-            {activeTab === 'content' ? (
-              <GeneratedContentDisplay className="h-full" sessionId={activeSessionId} />
-            ) : activeTab === 'gallery' ? (
+        </div>
+      </div>
+
+      {/* Right Column - Gallery (Reference section from screenshot) */}
+      <div className={`relative border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
+        isGalleryCollapsed ? 'w-12' : 'w-64'
+      }`}>
+        {/* Collapse/Expand Button */}
+        <button
+          onClick={() => setIsGalleryCollapsed(!isGalleryCollapsed)}
+          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-l-lg px-2 py-4 shadow-sm hover:shadow-md transition-shadow"
+          title={isGalleryCollapsed ? 'Expand Gallery' : 'Collapse Gallery'}
+        >
+          <svg 
+            className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+              isGalleryCollapsed ? 'rotate-180' : ''
+            }`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
+        {!isGalleryCollapsed && (
+          <>
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-sm font-medium text-gray-900">Gallery</h2>
+            </div>
+            <div className="flex-1 overflow-y-auto">
               <GalleryView 
                 className="h-full"
                 useLocalStorage={true}
                 onItemClick={(item) => {
-                  console.log('Gallery item clicked:', item);
-                  // Add the image to the chat interface for editing
+                  console.log('Gallery item clicked for editing:', item);
                   if (item.type === 'image') {
-                    // Dispatch a custom event to add the image to the chat interface
-                    const event = new CustomEvent('add-image-to-chat', {
-                      detail: {
-                        imageUrl: item.url,
-                        prompt: item.prompt,
-                        title: item.title,
-                        action: 'edit'
-                      }
-                    });
-                    window.dispatchEvent(event);
-                    
-                    // Close the gallery panel
-                    const panelEvent = new CustomEvent('contentPanelStateChange', {
-                      detail: { isExpanded: false }
-                    });
-                    window.dispatchEvent(panelEvent);
+                    handleEditImage(item.url);
                   }
                 }}
                 onAnimate={(item) => {
                   console.log('Animate item:', item);
-                  // Add the image to the chat interface for animation
                   if (item.type === 'image') {
-                    // Dispatch a custom event to add the image to the chat interface
-                    const event = new CustomEvent('add-image-to-chat', {
-                      detail: {
-                        imageUrl: item.url,
-                        prompt: item.prompt,
-                        title: item.title,
-                        action: 'animate'
-                      }
-                    });
-                    window.dispatchEvent(event);
-                    
-                    // Close the gallery panel
-                    const panelEvent = new CustomEvent('contentPanelStateChange', {
-                      detail: { isExpanded: false }
-                    });
-                    window.dispatchEvent(panelEvent);
+                    handleAnimateImage(item.url);
                   }
                 }}
               />
-            ) : activeTab === 'storage' ? (
-              <StorageManager className="h-full" />
-            ) : (
-              <SessionManager 
-                className="h-full" 
-                onSessionChange={setActiveSessionId}
-                onSessionCreate={(session) => {
-                  setActiveSessionId(session.id);
-                  setActiveTab('content');
-                }}
-              />
-            )}
           </div>
-        </CollapsibleContentPanel>
-        
-        <Toaster />
-        {mounted && (
-          <>
-            <ProjectDialog />
-            <ExportDialog />
-            <KeyDialog open={keyDialogOpen} onOpenChange={setKeyDialogOpen} />
-            {selectedMediaId && (
-              <MediaGallerySheet 
-                selectedMediaId={selectedMediaId} 
-                open={!!selectedMediaId} 
-                onOpenChange={handleOnSheetOpenChange}
-              />
-            )}
           </>
         )}
+        
+        {/* Gallery Tab when collapsed */}
+        {isGalleryCollapsed && (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="transform -rotate-90 text-xs font-medium text-gray-500 whitespace-nowrap">
+              Gallery
+            </div>
+          </div>
+        )}
       </div>
+
+
+      <Toaster />
     </div>
   );
 }
@@ -418,14 +587,6 @@ export default function TimelinePage() {
           <Suspense fallback={<LoadingSpinner />}>
             <TimelineContent />
           </Suspense>
-          
-          {/* Mobile Navigation */}
-          <MobileNavigation />
-          
-          {/* User Interaction Monitor */}
-          <UserInteractionMonitor />
-          
-          {/* Content filtering removed - user has full control over prompts */}
         </QueryClientProvider>
       </ToastProvider>
     </ErrorBoundary>

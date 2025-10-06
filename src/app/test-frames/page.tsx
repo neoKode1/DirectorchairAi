@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import FrameContainer from '@/components/frame-container';
+// import FrameContainer from '@/components/frame-container'; // Removed - component deleted
 
 export default function TestFramesPage() {
   const [primaryImage, setPrimaryImage] = useState<FileList | null>(null);
@@ -37,14 +37,18 @@ export default function TestFramesPage() {
           <h2 className="text-xl font-semibold text-white mb-4">Frame Container Test</h2>
           
           <div className="relative h-32 bg-gray-700 rounded-lg p-4">
-            <FrameContainer
+            {/* <FrameContainer
               onPrimaryImageUpload={handlePrimaryImageUpload}
               onStyleImageUpload={handleStyleImageUpload}
               onPrimaryImageRemove={handlePrimaryImageRemove}
               onStyleImageRemove={handleStyleImageRemove}
               primaryImage={primaryImage}
               styleImage={styleImage}
-            />
+            /> Removed - component deleted */}
+            <div className="text-center py-8 text-gray-500">
+              <p>Frame Container component has been removed during cleanup.</p>
+              <p>This page is no longer functional.</p>
+            </div>
           </div>
         </div>
 

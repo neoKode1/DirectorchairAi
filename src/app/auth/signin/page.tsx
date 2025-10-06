@@ -4,7 +4,7 @@ import { button as Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
-import { AvailableModelsShowcase } from "@/components/model-icons";
+// import { AvailableModelsShowcase } from "@/components/model-icons"; // Removed - component deleted
 
 export default function SignInPage() {
   const handleSignIn = () => {
@@ -75,7 +75,7 @@ export default function SignInPage() {
           
           {/* Model Icons Showcase */}
           <div className="mt-12">
-            <AvailableModelsShowcase className="text-white" />
+            {/* <AvailableModelsShowcase className="text-white" /> Removed - component deleted */}
           </div>
         </div>
 

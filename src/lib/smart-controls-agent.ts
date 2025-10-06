@@ -62,7 +62,7 @@ export class SmartControlsAgent {
   private getDefaultState(): SmartControlState {
     return {
       aspectRatio: {
-        value: '1:1',
+        value: '16:9',
         isUserSelected: false,
         lastUserSelection: null
       },
@@ -177,7 +177,7 @@ export class SmartControlsAgent {
       return '4:3';
     }
     
-    return '1:1'; // Default for images
+    return '16:9'; // Default for images
   }
 
   private detectOptimalResolution(prompt: string, isVideo: boolean): string {

@@ -933,6 +933,13 @@ export class IntelligenceCore {
         confidence = 0.8;
       }
     }
+    // Special case for character-movie integration requests
+    else if (this.containsCharacterMovieKeywords(lowerInput)) {
+      console.log('🔍 [IntelligenceCore] ✅ Found character-movie integration request, treating as image generation');
+      requiresGeneration = true;
+      type = 'image';
+      confidence = 0.95; // High confidence for character-movie requests
+    }
     // Special case for director-specific prompts (e.g., "Directed by Rob Zombie")
     else if (lowerInput.includes('directed by') || this.containsDirectorNames(lowerInput)) {
       console.log('🔍 [IntelligenceCore] ✅ Found director-specific prompt, treating as image generation');
@@ -1050,6 +1057,17 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       if (input.includes(type)) keywords.push(type);
     });
 
+    // Character and movie integration keywords
+    const characterMovieTerms = [
+      'character', 'put', 'place', 'movie', 'film', 'scene', 'shot', 'in that',
+      'into', 'within', 'movie scene', 'film scene', 'cinematic scene', 'movie shot',
+      'film shot', 'character in', 'put character', 'place character', 'character movie',
+      'put the character', 'place the character', 'character in movie', 'character in film'
+    ];
+    characterMovieTerms.forEach(term => {
+      if (input.includes(term)) keywords.push(term);
+    });
+
     // Style indicators
     const styleTerms = ['realistic', 'artistic', 'cinematic', 'professional', 'casual', 'modern', 'vintage'];
     styleTerms.forEach(style => {
@@ -1085,6 +1103,19 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     ];
     const found = imageWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking image keywords:', { input, imageWords, found });
+    return found;
+  }
+
+  private containsCharacterMovieKeywords(input: string): boolean {
+    const characterMovieWords = [
+      'put the character', 'place the character', 'character in movie', 'character in film',
+      'put character in', 'place character in', 'character in that movie', 'character in that film',
+      'put him in', 'put her in', 'place him in', 'place her in', 'put them in', 'place them in',
+      'movie scene', 'film scene', 'cinematic scene', 'movie shot', 'film shot',
+      'character movie', 'character film', 'character scene', 'character shot'
+    ];
+    const found = characterMovieWords.some(phrase => input.toLowerCase().includes(phrase.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking character-movie keywords:', { input, characterMovieWords, found });
     return found;
   }
 
@@ -1386,19 +1417,16 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                                           intent.context.toLowerCase().includes('dynamic camera');
             
             if (isMultipleAngleRequest) {
-              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Seedance for advanced camera control');
-              // Prioritize Seedance for multiple angle shot variations
-              selectedModel = textToVideoModels.find(model => model.endpointId.includes('seedance')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
+              // Prioritize Veo 3 for multiple angle shot variations
+              selectedModel = textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              textToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master')) ||
                              textToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard')) ||
                              textToVideoModels[0];
             } else {
-              console.log('🎬 [IntelligenceCore] Standard text-to-video generation, prioritizing Luma Ray 2 as default');
-              // Prioritize Luma Ray 2 as default, then other models
-              selectedModel = textToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Standard text-to-video generation, prioritizing Veo 3 as default');
+              // Prioritize Veo 3 as default, then other models
+              selectedModel = textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              textToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master')) ||
                              textToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard')) ||
                              textToVideoModels[0];
@@ -1412,41 +1440,29 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                                           intent.context.toLowerCase().includes('dynamic camera');
             
             if (isMultipleAngleRequest) {
-              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Seedance for advanced camera control');
-              // Prioritize Seedance for multiple angle shot variations
-              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('seedance')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2-flash/image-to-video')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
+              // Prioritize Veo 3 for multiple angle shot variations
+              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video')) ||
                              imageToVideoModels[0];
             } else {
-              console.log('🎬 [IntelligenceCore] Standard image-to-video animation, prioritizing Luma Ray 2 Flash as default');
+              console.log('🎬 [IntelligenceCore] Standard image-to-video animation, prioritizing Veo 3 as default');
               console.log('🎬 [IntelligenceCore] Available image-to-video models:', imageToVideoModels.map(m => m.endpointId));
               
-              // Check if Luma Ray 2 Flash is available
-              const ray2FlashModel = imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2-flash/image-to-video'));
-              console.log('🎬 [IntelligenceCore] Luma Ray 2 Flash model found:', ray2FlashModel?.endpointId);
-              
               // Check each model in the fallback chain
-              const lumaRay2Model = imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2'));
               const veo3Model = imageToVideoModels.find(model => model.endpointId.includes('veo3'));
               const klingModel = imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video'));
               const minimaxModel = imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video'));
               
               console.log('🎬 [IntelligenceCore] Fallback models found:', {
-                ray2Flash: ray2FlashModel?.endpointId,
-                lumaRay2: lumaRay2Model?.endpointId,
                 veo3: veo3Model?.endpointId,
                 kling: klingModel?.endpointId,
                 minimax: minimaxModel?.endpointId
               });
               
-              // Prioritize Luma Ray 2 Flash as default for image-to-video, then other models
-              selectedModel = ray2FlashModel ||
-                             lumaRay2Model ||
-                             veo3Model ||
+              // Prioritize Veo 3 as default for image-to-video, then other models
+              selectedModel = veo3Model ||
                              klingModel ||
                              minimaxModel ||
                              imageToVideoModels[0];

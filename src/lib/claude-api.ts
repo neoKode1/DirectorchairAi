@@ -72,10 +72,8 @@ export class ClaudeAPI {
 - **Kling v2.1 Master (I2V)**: Enhanced quality and motion realism for image-to-video (5 seconds)
 - **Kling v2.1 Master (T2V)**: Text-to-video generation with professional quality (5 seconds)
 - **Luma Ray 2**: Large-scale video generation with realistic visuals and coherent motion (5 seconds)
-- **Luma Ray 2 Flash (I2V)**: Fast image-to-video generation (540p, 5 seconds)
+- **Veo 3 (I2V)**: Google DeepMind's latest state-of-the-art video generation model (720p/1080p, 8 seconds)
 - **Minimax Hailuo 02 Standard (I2V)**: High-quality image-to-video generation (768p, 6 seconds)
-- **Minimax Hailuo 02 Standard (T2V)**: Text-to-video generation (768p, 6 seconds)
-- **Seedance 1.0 Pro (I2V)**: High-quality image-to-video with multiple angle shot variations (1080p, 5 seconds)
 
 **Audio/Voice Models:**
 - **ElevenLabs TTS Turbo v2.5**: High-quality text-to-speech with natural voice synthesis
@@ -85,11 +83,21 @@ export class ClaudeAPI {
 - **Style Reference**: Upload images to influence the style of generated content
 - **Director-Specific Enhancement**: Prompts are enhanced using director techniques and styles
 - **Multiple Variants**: Image generation creates 4 variants for selection
+- **Character Integration**: Seamlessly place characters into movie scenes and cinematic shots
+- **Content Variations**: Generate 4 variations (close-up, detail, low-angle, random) with one click
 - **Voice Input**: Use microphone for hands-free prompt creation
 - **Chat Mode**: Conversational AI for brainstorming and film discussion
 - **Generation Mode**: AI-powered content creation with smart controls
 
 **CRITICAL: You MUST maintain conversation context and remember what you and the user have been discussing. Always reference previous parts of the conversation when relevant. If the user asks about something that was already discussed, acknowledge that context and continue the discussion naturally. Never act as if you don't remember what was just talked about.**
+
+**Character-Movie Integration Workflow:**
+When users say things like "put the character in that movie" or "place the character in that scene":
+1. **Acknowledge the request** and confirm you understand they want to integrate a character into a movie scene
+2. **Use Nano Banana Edit** as the default model for character integration (it's already set as default)
+3. **Generate the scene** with the character placed in the movie context
+4. **Offer variations** - mention that they can use the "Vary" button to get 4 different shot types (close-up, detail, low-angle, random)
+5. **Be specific** about the cinematic approach you're taking
 
 Your responses should be:
 - **Conversational and engaging** - like talking to a knowledgeable friend
@@ -99,6 +107,7 @@ Your responses should be:
 - **Educational** - teach users about filmmaking concepts efficiently
 - **Encouraging** - inspire creativity and experimentation
 - **Model-aware** - when users ask about capabilities, explain which models are best for their needs
+- **Character-focused** - when handling character requests, be specific about shot composition and cinematic techniques
 
 
 
@@ -309,12 +318,12 @@ Apply your director's knowledge to create a cinematic, professional-grade prompt
                  return `For images: Google Imagen 4 (highest quality), Stable Diffusion 3.5 Large (improved quality & typography), Dreamina v3.1 (superior aesthetics), Flux Pro 1.1 Ultra (professional), Flux Kontext (with reference image), FLUX LoRA (style transfer), Ideogram Character (consistent characters).`;
                }
       if (lowerInput.includes('video') || lowerInput.includes('animation')) {
-        return `For videos: Veo3 (best quality), Kling v2.1 (realistic motion), Luma Ray 2 (coherent motion), Seedance Pro (multiple angles).`;
+        return `For videos: Veo 3 (best quality), Kling v2.1 (realistic motion), Minimax Hailuo 02 (high quality).`;
       }
       if (lowerInput.includes('audio') || lowerInput.includes('voice') || lowerInput.includes('speech')) {
         return `For audio: ElevenLabs TTS Turbo v2.5 for natural text-to-speech synthesis.`;
       }
-                                  return `Available: 7 image models (Imagen 4, Stable Diffusion 3.5, Dreamina, Flux, Kontext, LoRA, Character), 9 video models (Veo3, Kling, Luma, Minimax, Seedance), 1 audio model (ElevenLabs TTS).`;
+                                  return `Available: 7 image models (Imagen 4, Stable Diffusion 3.5, Dreamina, Flux, Kontext, LoRA, Character), 3 video models (Veo 3, Kling, Minimax), 1 audio model (ElevenLabs TTS).`;
     }
     
     if (lowerInput.includes('prompt') && (lowerInput.includes('horror') || lowerInput.includes('monster') || lowerInput.includes('rat'))) {

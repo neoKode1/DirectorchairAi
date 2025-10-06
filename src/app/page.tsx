@@ -2,7 +2,7 @@
 
 import { button as Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AvailableModelsShowcase } from "@/components/model-icons";
+// import { AvailableModelsShowcase } from "@/components/model-icons"; // Removed - component deleted
 import Link from "next/link";
 import { ArrowRight, Sparkles, Video, Image, Music, Mic, Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="relative z-20 mobile-container py-12 sm:py-16 lg:py-20">
           <div className="text-center space-y-6 sm:space-y-8">
             <h1 className="mobile-text-4xl sm:text-6xl lg:text-8xl font-black text-foreground leading-tight drop-shadow-lg">
-              DirectorchairAI
+              DirectorChair AI
             </h1>
             
             <p className="mobile-text-lg sm:text-2xl lg:text-3xl font-semibold text-muted-foreground mobile-container-sm">
@@ -209,7 +209,7 @@ export default function HomePage() {
       {/* AI Models Showcase */}
       <div className="mobile-py bg-muted/20 relative z-20">
         <div className="mobile-container">
-          <AvailableModelsShowcase />
+          {/* <AvailableModelsShowcase /> Removed - component deleted */}
         </div>
       </div>
 
@@ -268,7 +268,7 @@ export default function HomePage() {
       <footer className="mobile-py border-t border-border/30 relative z-20 bg-background/40">
         <div className="mobile-container text-center">
           <p className="mobile-text-sm text-muted-foreground">
-            © 2024 DirectorchairAI. All rights reserved. Built by DeeptechAi.
+            © 2024 DirectorChair AI. All rights reserved. Built by DeeptechAi.
           </p>
         </div>
       </footer>

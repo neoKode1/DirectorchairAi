@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+// import Header from "@/components/header"; // Removed - component deleted
 import { button as Button } from "@/components/ui/button";
 // Placeholder function for fetching shared videos
 async function fetchSharedVideo(id: string) {
@@ -101,7 +101,7 @@ export default async function SharePage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      <Header />
+      {/* <Header /> Removed - component deleted */}
       <main className="flex overflow-hidden h-full">
         <div className="container mx-auto py-8 h-full">
           <div className="flex flex-col gap-8 items-center justify-center h-full">

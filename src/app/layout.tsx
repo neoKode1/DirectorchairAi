@@ -4,14 +4,14 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-import { AuthProvider } from "@/components/providers/session-provider";
+// import { AuthProvider } from "@/components/providers/session-provider"; // Removed - component deleted
 
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DirectorchairAI - AI Video Studio",
+  title: "DirectorChair AI - AI Video Studio",
   description: "Create stunning videos with AI",
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({
         )}
         suppressHydrationWarning
       >
-        <AuthProvider>
+        {/* <AuthProvider> Removed - component deleted */}
           <div className="flex flex-col min-h-screen">
             <header className="mobile-header border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="mobile-container flex h-16 sm:h-18 lg:h-20 max-w-screen-2xl items-center">
@@ -39,7 +39,7 @@ export default function RootLayout({
                     href="/"
                     className="mr-4 sm:mr-6 flex items-center space-x-2 hover:opacity-80 mobile-touch-target"
                   >
-                    <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorchairAI</h1>
+                    <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorChair AI</h1>
                   </Link>
                   <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
                     <Link
@@ -58,7 +58,7 @@ export default function RootLayout({
           </div>
           <Analytics />
           <SpeedInsights />
-        </AuthProvider>
+        {/* </AuthProvider> */}
       </body>
     </html>
   );

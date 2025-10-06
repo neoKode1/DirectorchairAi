@@ -151,7 +151,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "image",
     initialInput: {
       prompt: "A beautiful landscape with mountains and sunset",
-      aspect_ratio: "1:1",
       num_images: 1,
     },
   },
@@ -186,6 +185,21 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/bytedance/seedream/v4/edit",
+    label: "Seedream 4.0 Edit",
+    description: "New-generation image creation model by ByteDance that integrates image generation and image editing capabilities into a single, unified architecture",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 4,
+    initialInput: {
+      prompt: "Dress the model in the clothes and hat. Add a cat to the scene and change the background to a Victorian era building.",
+      num_images: 1,
+      max_images: 1,
+      enable_safety_checker: true,
+    },
+  },
+  {
     endpointId: "fal-ai/flux-pro/v1.1-ultra",
     label: "Flux Pro 1.1 Ultra",
     description: "Professional-grade image generation with ultra quality and advanced features",
@@ -194,7 +208,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       prompt: "A beautiful landscape with mountains and sunset",
       num_inference_steps: 30,
       guidance_scale: 7.5,
-      aspect_ratio: "1:1",
       num_images: 1,
       output_format: "jpeg",
       enhance_prompt: true,
@@ -287,36 +300,20 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
 
   // Video Generation Models
   {
-    endpointId: "fal-ai/veo3/fast",
-    label: "Google Veo3 Fast",
-    description: "Google's latest video generation model with exceptional quality and realism",
+    endpointId: "fal-ai/veo3/image-to-video",
+    label: "Veo 3",
+    description: "Google DeepMind's latest state-of-the-art video generation model for animating images",
     category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
+    inputAsset: ["image"], // Image-to-video only
+    supportsMultipleImages: false,
+    maxImages: 1,
     initialInput: {
-      prompt: "A cinematic scene with smooth camera movement",
+      prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
+      image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
       aspect_ratio: "16:9",
-      duration: "5s",
-      enhance_prompt: true,
-      auto_fix: true,
-      resolution: "720p",
+      duration: "8s",
       generate_audio: true,
-      negative_prompt: "blurry, low quality, distorted",
-      seed: undefined,
-    },
-  },
-  {
-    endpointId: "fal-ai/veo3/standard",
-    label: "Google Veo3 Standard",
-    description: "Google Veo3 standard model for high-quality video generation",
-    category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
-    initialInput: {
-      prompt: "A professional video with natural motion",
-      aspect_ratio: "16:9",
-      duration: "5s",
-      resolution: "1080p",
-      negative_prompt: "blurry, low quality, distorted",
-      seed: undefined,
+      resolution: "720p",
     },
   },
   {
@@ -327,54 +324,12 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with realistic motion",
-      duration: "5s",
-      negative_prompt: "blur, distort, and low quality",
-      cfg_scale: 0.5,
-    },
-  },
-  {
-    endpointId: "fal-ai/kling-video/v2.1/master/text-to-video",
-    label: "Kling v2.1 Master (T2V)",
-    description: "Text-to-video generation with Kling v2.1 Master model",
-    category: "video",
-    initialInput: {
-      prompt: "A cinematic scene with professional quality",
-      duration: "5s",
+      duration: "5",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },
   },
 
-  {
-    endpointId: "fal-ai/luma-dream-machine/ray-2",
-    label: "Luma Ray 2",
-    description: "Large-scale video generative model capable of creating realistic visuals with natural, coherent motion",
-    category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
-    initialInput: {
-      prompt: "A cinematic scene with professional quality",
-      aspect_ratio: "16:9",
-      duration: "5s",
-      loop: false,
-      resolution: "720p",
-      negative_prompt: "blurry, low quality, distorted",
-    },
-  },
-  {
-    endpointId: "fal-ai/luma-dream-machine/ray-2-flash/image-to-video",
-    label: "Luma Ray 2 Flash (I2V)",
-    description: "Fast image-to-video generation with Luma's latest Ray 2 Flash model",
-    category: "video",
-    inputAsset: ["image"],
-    initialInput: {
-      prompt: "Animate this image with smooth motion",
-      aspect_ratio: "16:9",
-      duration: "5s",
-      resolution: "540p",
-      loop: false,
-      negative_prompt: "blurry, low quality, distorted",
-    },
-  },
   {
     endpointId: "fal-ai/minimax/hailuo-02/standard/image-to-video",
     label: "Minimax Hailuo 02 Standard (I2V)",
@@ -383,35 +338,9 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with cinematic motion",
-      duration: "6s",
+      duration: "6",
       prompt_optimizer: true,
       resolution: "768P",
-    },
-  },
-  {
-    endpointId: "fal-ai/minimax/hailuo-02/standard/text-to-video",
-    label: "Minimax Hailuo 02 Standard (T2V)",
-    description: "Text-to-video generation with Minimax Hailuo 02 model",
-    category: "video",
-    initialInput: {
-      prompt: "A cinematic scene with professional quality",
-      duration: "6s",
-      prompt_optimizer: true,
-      resolution: "768P",
-    },
-  },
-  {
-    endpointId: "fal-ai/bytedance/seedance/v1/pro/image-to-video",
-    label: "Seedance 1.0 Pro (I2V)",
-    description: "High-quality image-to-video generation with multiple angle shot variations and advanced motion control",
-    category: "video",
-    inputAsset: ["image"],
-    initialInput: {
-      prompt: "Animate this image with cinematic motion and multiple camera angles",
-      resolution: "1080p",
-      duration: "5s",
-      camera_fixed: false,
-      enable_safety_checker: true,
     },
   },
   {

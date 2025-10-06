@@ -71,11 +71,19 @@ export const useQueue = () => {
         createdAt: new Date(),
       };
 
-      setRequests(prev => [...prev, newRequest]);
+      console.log('🔄 [Queue] Adding new request:', newRequest);
+      setRequests(prev => {
+        const updated = [...prev, newRequest];
+        console.log('🔄 [Queue] Updated requests array:', updated.map(req => ({ id: req.requestId, status: req.status })));
+        return updated;
+      });
 
       // Start polling if not already polling
       if (!isPolling) {
+        console.log('🔄 [Queue] Starting polling for new request');
         startPolling();
+      } else {
+        console.log('🔄 [Queue] Polling already active');
       }
 
       console.log('✅ [Queue] Request submitted successfully:', requestId);
@@ -169,7 +177,11 @@ export const useQueue = () => {
       req.status === 'IN_QUEUE' || req.status === 'IN_PROGRESS'
     );
 
+    console.log('🔄 [Queue] All requests:', requests.map(req => ({ id: req.requestId, status: req.status })));
+    console.log('🔄 [Queue] Active requests:', activeRequests.length);
+
     if (activeRequests.length === 0) {
+      console.log('🔄 [Queue] No active requests, stopping polling');
       stopPolling();
       return;
     }
@@ -216,7 +228,11 @@ export const useQueue = () => {
 
   // Start polling
   const startPolling = useCallback(() => {
-    if (isPolling) return;
+    console.log('🔄 [Queue] startPolling called, isPolling:', isPolling);
+    if (isPolling) {
+      console.log('🔄 [Queue] Already polling, skipping');
+      return;
+    }
 
     setIsPolling(true);
     console.log('🔄 [Queue] Starting polling...');
@@ -226,6 +242,7 @@ export const useQueue = () => {
 
     // Then poll every 3 seconds
     pollingIntervalRef.current = setInterval(pollStatus, 3000);
+    console.log('🔄 [Queue] Polling interval set:', pollingIntervalRef.current);
   }, [isPolling, pollStatus]);
 
   // Stop polling

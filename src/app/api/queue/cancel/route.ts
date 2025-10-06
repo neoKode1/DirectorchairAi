@@ -25,8 +25,7 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
-
+    // Handle response based on status code
     if (response.status === 202) {
       console.log('✅ [Queue] Cancellation requested successfully:', requestId);
       return NextResponse.json({
@@ -40,6 +39,13 @@ export async function PUT(request: NextRequest) {
         message: 'Request has already been completed and cannot be cancelled'
       }, { status: 400 });
     } else {
+      // Try to parse JSON, but handle non-JSON responses
+      try {
+        const data = await response.json();
+        console.log('⚠️ [Queue] Unexpected response:', data);
+      } catch (jsonError) {
+        console.log('⚠️ [Queue] Non-JSON response received');
+      }
       throw new Error(`Unexpected response status: ${response.status}`);
     }
 

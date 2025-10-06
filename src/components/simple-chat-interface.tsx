@@ -21,8 +21,11 @@ import {
   FileImage,
   CloudUpload,
   Settings,
-  Monitor
+  Monitor,
+  Clock
 } from 'lucide-react';
+import { useQueue } from '@/hooks/useQueue';
+import { QueueStatusModal } from '@/components/queue-status-modal';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -63,9 +66,20 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
+  const [showQueueModal, setShowQueueModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  // Queue system
+  const {
+    requests: queueRequests,
+    isPolling,
+    submitRequest,
+    cancelRequest,
+    removeRequest,
+    getActiveCount
+  } = useQueue();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,6 +148,51 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
     localStorage.setItem('directorchair-settings', JSON.stringify(settings));
   }, [aspectRatio, resolution, preferredVideoModel]);
+
+  // Handle queue completion
+  useEffect(() => {
+    const completedRequests = queueRequests.filter(req => req.status === 'COMPLETED' && req.result);
+    
+    completedRequests.forEach(request => {
+      console.log('🎉 [Chat] Queue request completed:', request.requestId, request.result);
+      
+      // Process the result and call onContentGenerated to update the UI
+      if (request.result) {
+        onContentGenerated({ data: request.result }).then(() => {
+          // Add success message to chat
+          const successMessage = {
+            id: (Date.now() + Math.random()).toString(),
+            type: 'assistant' as const,
+            content: request.result?.images?.[0] ? 
+              `✅ Generated image successfully! Check the center panel and gallery.` : 
+              request.result?.videos?.[0] ? 
+                `✅ Generated video successfully! Check the center panel and gallery.` :
+                `✅ Generation completed successfully!`,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, successMessage]);
+          
+          // Track the last generated image for future references
+          if (request.result?.images?.[0]) {
+            setLastGeneratedImage(request.result.images[0].url);
+            
+            // Show floating suggestions for images (image-to-video workflow)
+            showFloatingSuggestions([
+              "Animate this character walking",
+              "Make video of this character dancing", 
+              "Bring this character to life",
+              "Animate the image with motion",
+              "Create a cinematic video of this character"
+            ]);
+          }
+          
+          onGenerationComplete?.();
+        }).catch(error => {
+          console.error('Error processing completed queue result:', error);
+        });
+      }
+    });
+  }, [queueRequests, onContentGenerated, onGenerationComplete]);
 
   const processFiles = useCallback((files: FileList) => {
     Array.from(files).forEach(file => {
@@ -402,9 +461,25 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         videoKeywords: videoKeywords.filter(keyword => userInput.toLowerCase().includes(keyword))
       });
 
-      let result;
+      // Submit to queue instead of direct generation
       try {
-        result = await onContentGenerated(generationData);
+        const requestId = await submitRequest(generationData.model, generationData, userInput.trim());
+        console.log('✅ [Chat] Request submitted to queue:', requestId);
+        
+        // Update the generation type message to show it's queued
+        const queuedMessage = {
+          id: (Date.now() + 0.5).toString(),
+          type: 'assistant' as const,
+          content: wantsVideo 
+            ? `🎬 Video generation queued! Check the queue status.`
+            : `🖼️ Image generation queued! Check the queue status.`,
+          timestamp: new Date()
+        };
+        setMessages(prev => prev.slice(0, -1).concat([queuedMessage]));
+        
+        // Don't set isGenerating to false here - let the queue handle completion
+        return; // Exit early since we're using the queue
+        
       } catch (error: any) {
         // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
         if (error.message?.includes('content policy') && 
@@ -420,47 +495,27 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             model: 'fal-ai/bytedance/seedream/v4/edit'
           };
           
-          result = await onContentGenerated(fallbackGenerationData);
+          try {
+            const requestId = await submitRequest(fallbackGenerationData.model, fallbackGenerationData, userInput.trim());
+            console.log('✅ [Chat] Fallback request submitted to queue:', requestId);
+            
+            const queuedMessage = {
+              id: (Date.now() + 0.5).toString(),
+              type: 'assistant' as const,
+              content: `🖼️ Image generation queued (using fallback model)! Check the queue status.`,
+              timestamp: new Date()
+            };
+            setMessages(prev => prev.slice(0, -1).concat([queuedMessage]));
+            return;
+          } catch (fallbackError) {
+            throw fallbackError;
+          }
         } else {
           throw error; // Re-throw if it's not a content policy issue or not the right model
         }
       }
       
-      // Add assistant response
-      const images = result.data?.images || result.images || [];
-      const videos = result.data?.videos || result.videos || [];
-      
-      const assistantMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant' as const,
-        content: images?.[0] ? 
-          `✅ Generated image successfully! Check the center panel and gallery.` : 
-          videos?.[0] ? 
-            `✅ Generated video successfully! Check the center panel and gallery.` :
-            `✅ Generation completed successfully!`,
-        timestamp: new Date()
-        // Removed media property - generated content goes to center panel and gallery, not chat
-      };
-
-      // Track the last generated image for future references
-      if (images?.[0]) {
-        setLastGeneratedImage(images[0].url);
-        
-        setMessages(prev => [...prev, assistantMessage]);
-        
-        // Show floating suggestions for images (image-to-video workflow)
-        showFloatingSuggestions([
-          "Animate this character walking",
-          "Make video of this character dancing", 
-          "Bring this character to life",
-          "Animate the image with motion",
-          "Create a cinematic video of this character"
-        ]);
-      } else {
-        setMessages(prev => [...prev, assistantMessage]);
-      }
-      
-      onGenerationComplete?.();
+      // Queue system handles completion - no need for result processing here
     } catch (error) {
       console.error('Generation error:', error);
       const errorMessage = {
@@ -839,8 +894,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <span>Supports: JPG, PNG, WebP</span>
           </div>
 
-          {/* Settings Button */}
-          <div className="flex justify-center mt-3">
+          {/* Settings and Queue Buttons */}
+          <div className="flex justify-center gap-2 mt-3">
             <Dialog open={showSettings} onOpenChange={setShowSettings}>
               <DialogTrigger asChild>
                 <Button 
@@ -912,6 +967,17 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Queue Status Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs"
+              onClick={() => setShowQueueModal(true)}
+            >
+              <Clock className="w-3 h-3 mr-1" />
+              Queue {getActiveCount() > 0 && `(${getActiveCount()})`}
+            </Button>
           </div>
         </form>
 
@@ -962,6 +1028,15 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           </div>
         </div>
       )}
+
+      {/* Queue Status Modal */}
+      <QueueStatusModal
+        isOpen={showQueueModal}
+        onClose={() => setShowQueueModal(false)}
+        requests={queueRequests}
+        onCancelRequest={cancelRequest}
+        onRemoveRequest={removeRequest}
+      />
     </div>
   );
 };

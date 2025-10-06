@@ -229,6 +229,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'animate', 'animation', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie',
       'walking', 'running', 'dancing', 'jumping', 'flying', 'swimming', 'driving', 'riding',
       'camera movement', 'camera shot', 'camera pan', 'camera zoom', 'tracking shot', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
+      'tracking dolly shot', 'dolly shot', 'dolly', 'tracking', 'dolly in', 'dolly out', 'push in', 'pull out',
       'transition', 'morphing', 'transforming', 'changing', 'evolving', 'progressing',
       'action sequence', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
       'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer',
@@ -242,13 +243,23 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       userInput.toLowerCase().includes(trigger)
     );
     
-    const hasVideoKeywords = videoKeywords.some(keyword => 
+    const matchedVideoKeywords = videoKeywords.filter(keyword => 
       userInput.toLowerCase().includes(keyword)
     );
+    const hasVideoKeywords = matchedVideoKeywords.length > 0;
     
     // Only generate video if there are explicit video triggers or clear video keywords
     // Don't default to video just because a video model is selected
     const wantsVideo = hasVideoTrigger || hasVideoKeywords;
+    
+    console.log('🎬 [Chat] Video detection:', {
+      userInput: userInput.toLowerCase(),
+      hasVideoTrigger,
+      hasVideoKeywords,
+      matchedVideoKeywords,
+      wantsVideo,
+      preferredVideoModel
+    });
 
     // Detect if user is referencing a previously generated image or injected image
     const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this', 'generate video', 'create video', 'animate', 'make video'];

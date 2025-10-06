@@ -148,6 +148,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    // Handle Seedance model specific parameters
+    if (model.includes('seedance')) {
+      // Seedance expects duration as a number (3, 4, 5, etc.) not a string with 's'
+      // Default to 5 seconds for simplicity
+      input.duration = 5;
+    }
+
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
     console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);

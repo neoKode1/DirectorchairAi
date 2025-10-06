@@ -9,6 +9,9 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useQueue } from "@/hooks/useQueue";
+import { Download, Edit, Trash2 } from "lucide-react";
+import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
+import { useToast } from "@/hooks/use-toast";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -34,7 +37,9 @@ function TimelineContent() {
   const [mounted, setMounted] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [isGalleryCollapsed, setIsGalleryCollapsed] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const contentAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Queue system
   const {
@@ -67,14 +72,89 @@ function TimelineContent() {
     }
   };
 
+  // Handle download with frame extraction for videos (matching gallery functionality)
+  const handleDownload = async (url: string, title: string, type: 'image' | 'video') => {
+    if (isDownloading) return;
+    
+    setIsDownloading(true);
+    
+    try {
+      if (type === 'video') {
+        console.log('📥 [Timeline] Starting video download with frame extraction');
+        await downloadVideoWithFrame(url, title);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded video and last frame for "${title}"`,
+        });
+      } else if (type === 'image') {
+        // Simple image download
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${title || 'image'}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        toast({
+          title: "Download Complete!",
+          description: `Downloaded image "${title}"`,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [Timeline] Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download the file. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const scrollToBottom = () => {
     if (contentAreaRef.current) {
-      contentAreaRef.current.scrollTo({
-        top: contentAreaRef.current.scrollHeight,
-        behavior: 'smooth'
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        if (contentAreaRef.current) {
+          contentAreaRef.current.scrollTo({
+            top: contentAreaRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
       });
     }
   };
+
+  // Auto-scroll when queue status changes (loading modal appears/disappears)
+  useEffect(() => {
+    const activeCount = getActiveCount();
+    if (activeCount > 0) {
+      // Scroll to bottom when loading starts (3D modal appears)
+      console.log('🎬 [Timeline] Queue active, scrolling to show 3D loading modal');
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
+    }
+  }, [queueRequests.length, getActiveCount()]);
+
+  // Also scroll when new content is added to the queue
+  useEffect(() => {
+    const activeRequests = queueRequests.filter(req => 
+      req.status === 'IN_QUEUE' || req.status === 'IN_PROGRESS'
+    );
+    if (activeRequests.length > 0) {
+      console.log('🎬 [Timeline] New queue request detected, scrolling to show loading');
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [queueRequests]);
 
   const handleGenerate = async (generationData: any): Promise<any> => {
     try {
@@ -187,10 +267,10 @@ function TimelineContent() {
       // Add to generated content for display in center panel
       setGeneratedContent(prev => [...prev, contentToStore]);
       
-      // Scroll to bottom to show the new content
+      // Scroll to bottom to show the new content (wait for DOM update)
       setTimeout(() => {
         scrollToBottom();
-      }, 100);
+      }, 300);
       
       // Store in localStorage for gallery using contentStorage
       if (typeof window !== 'undefined') {
@@ -279,15 +359,24 @@ function TimelineContent() {
                             className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <div className="flex space-x-3">
+                            <div className="flex space-x-2">
                               <button 
                                 onClick={() => handleEditImage(image.url)}
-                                className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-lg"
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
                               >
-                                Edit
+                                <Edit className="w-4 h-4" />
+                                <span className="text-sm">Edit</span>
                               </button>
-                              <button className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-lg">
-                                Download
+                              <button 
+                                onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm">
+                                  {isDownloading ? 'Downloading...' : 'Download'}
+                                </span>
                               </button>
                             </div>
                           </div>
@@ -309,20 +398,31 @@ function TimelineContent() {
                             src={video.url} 
                             controls
                             className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
+                            preload="metadata"
+                            playsInline
                           />
                           <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm font-medium">
                             Video
                           </div>
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <div className="flex space-x-3">
+                            <div className="flex space-x-2">
                               <button 
                                 onClick={() => handleEditImage(video.url)}
-                                className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-lg"
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
                               >
-                                Edit
+                                <Edit className="w-4 h-4" />
+                                <span className="text-sm">Edit</span>
                               </button>
-                              <button className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 shadow-lg">
-                                Download
+                              <button 
+                                onClick={() => handleDownload(video.url, `video-${Date.now()}`, 'video')}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Download className="w-4 h-4" />
+                                <span className="text-sm">
+                                  {isDownloading ? 'Downloading...' : 'Download + Frame'}
+                                </span>
                               </button>
                             </div>
                           </div>

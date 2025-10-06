@@ -53,9 +53,13 @@ function TimelineContent() {
   };
 
   const handleAnimateImage = (imageUrl: string) => {
-    // Inject the image and automatically add an animation prompt
+    // Inject the image and set a flag to force video generation
     if ((window as any).injectImageToChat) {
       (window as any).injectImageToChat(imageUrl);
+      // Set a flag to force video generation
+      if ((window as any).setForceVideoGeneration) {
+        (window as any).setForceVideoGeneration(true);
+      }
       // Add a small delay to ensure the image is injected first
       setTimeout(() => {
         if ((window as any).setChatInput) {
@@ -382,15 +386,15 @@ function TimelineContent() {
                                 <Edit className="w-4 h-4" />
                                 <span className="text-sm">Edit</span>
                               </button>
-                              <button
+            <button
                                 onClick={() => handleAnimateImage(image.url)}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Video className="w-4 h-4" />
                                 <span className="text-sm">Generate video</span>
-                              </button>
-                              <button
+            </button>
+            <button
                                 onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
@@ -399,7 +403,7 @@ function TimelineContent() {
                                 <span className="text-sm">
                                   {isDownloading ? 'Downloading...' : 'Download'}
                                 </span>
-                              </button>
+            </button>
                             </div>
                           </div>
                         </div>

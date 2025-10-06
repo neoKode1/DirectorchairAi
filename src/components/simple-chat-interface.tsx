@@ -64,6 +64,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
+  const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -300,6 +301,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       (window as any).setChatInput = setUserInput;
       // Store the getChatInput function for getting current input
       (window as any).getChatInput = () => userInput;
+      // Store the setForceVideoGeneration function for forcing video generation
+      (window as any).setForceVideoGeneration = setForceVideoGeneration;
     }
   }, [onImageInjected, userInput]);
 
@@ -371,9 +374,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     );
     const hasVideoKeywords = matchedVideoKeywords.length > 0;
     
-    // Only generate video if there are explicit video triggers
+    // Only generate video if there are explicit video triggers OR if forced by Generate Video button
     // This preserves the conversational image editing workflow
-    const wantsVideo = hasVideoTrigger;
+    const wantsVideo = hasVideoTrigger || forceVideoGeneration;
     
     console.log('🎬 [Chat] Video detection:', {
       userInput: userInput.toLowerCase(),
@@ -382,6 +385,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       matchedVideoKeywords,
       wantsVideo,
       preferredVideoModel,
+      forceVideoGeneration,
       videoTriggers: videoTriggers.filter(trigger => userInput.toLowerCase().includes(trigger))
     });
 
@@ -546,6 +550,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         };
         setMessages(prev => prev.slice(0, -1).concat([successMessage]));
         
+        // Reset force video generation flag
+        setForceVideoGeneration(false);
+        
         // Track the last generated image for future references
         if (result?.data?.images?.[0]) {
           setLastGeneratedImage(result.data.images[0].url);
@@ -614,6 +621,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               timestamp: new Date()
             };
             setMessages(prev => prev.slice(0, -1).concat([successMessage]));
+            
+            // Reset force video generation flag
+            setForceVideoGeneration(false);
             
             // Track the last generated image for future references
             if (result?.data?.images?.[0]) {

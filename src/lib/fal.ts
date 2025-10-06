@@ -308,7 +308,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     label: "Google Veo3 Fast",
     description: "Google's latest video generation model with exceptional quality and realism",
     category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
+    inputAsset: ["image"], // Image-to-video only
     initialInput: {
       prompt: "A cinematic scene with smooth camera movement",
       aspect_ratio: "16:9",
@@ -326,7 +326,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     label: "Google Veo3 Standard",
     description: "Google Veo3 standard model for high-quality video generation",
     category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
+    inputAsset: ["image"], // Image-to-video only
     initialInput: {
       prompt: "A professional video with natural motion",
       aspect_ratio: "16:9",
@@ -349,25 +349,13 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       cfg_scale: 0.5,
     },
   },
-  {
-    endpointId: "fal-ai/kling-video/v2.1/master/text-to-video",
-    label: "Kling v2.1 Master (T2V)",
-    description: "Text-to-video generation with Kling v2.1 Master model",
-    category: "video",
-    initialInput: {
-      prompt: "A cinematic scene with professional quality",
-      duration: "5",
-      negative_prompt: "blur, distort, and low quality",
-      cfg_scale: 0.5,
-    },
-  },
 
   {
     endpointId: "fal-ai/luma-dream-machine/ray-2",
     label: "Luma Ray 2",
     description: "Large-scale video generative model capable of creating realistic visuals with natural, coherent motion",
     category: "video",
-    inputAsset: ["image"], // Support both text-to-video and image-to-video
+    inputAsset: ["image"], // Image-to-video only
     initialInput: {
       prompt: "A cinematic scene with professional quality",
       aspect_ratio: "16:9",
@@ -400,18 +388,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with cinematic motion",
-      duration: "6",
-      prompt_optimizer: true,
-      resolution: "768P",
-    },
-  },
-  {
-    endpointId: "fal-ai/minimax/hailuo-02/standard/text-to-video",
-    label: "Minimax Hailuo 02 Standard (T2V)",
-    description: "Text-to-video generation with Minimax Hailuo 02 model",
-    category: "video",
-    initialInput: {
-      prompt: "A cinematic scene with professional quality",
       duration: "6",
       prompt_optimizer: true,
       resolution: "768P",

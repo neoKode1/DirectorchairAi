@@ -225,11 +225,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     const videoKeywords = [
       'animate', 'animation', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie',
       'walking', 'running', 'dancing', 'jumping', 'flying', 'swimming', 'driving', 'riding',
-      'camera', 'shot', 'scene', 'sequence', 'timeline', 'duration', 'seconds', 'minutes',
-      'tracking', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
+      'camera movement', 'camera shot', 'camera pan', 'camera zoom', 'tracking shot', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
       'transition', 'morphing', 'transforming', 'changing', 'evolving', 'progressing',
-      'action', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
-      'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer'
+      'action sequence', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
+      'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer',
+      'duration', 'seconds', 'minutes', 'timeline', 'sequence'
     ];
     
     // Special trigger words that force video generation
@@ -243,10 +243,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       userInput.toLowerCase().includes(keyword)
     );
     
-    // If user has a video model selected and uses any video-related terms, default to video
-    const wantsVideo = hasVideoTrigger || hasVideoKeywords || 
-      (preferredVideoModel && preferredVideoModel !== 'none' && 
-       (hasVideoKeywords || userInput.toLowerCase().includes('with') || userInput.toLowerCase().includes('show')));
+    // Only generate video if there are explicit video triggers or clear video keywords
+    // Don't default to video just because a video model is selected
+    const wantsVideo = hasVideoTrigger || hasVideoKeywords;
 
     // Detect if user is referencing a previously generated image
     const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this'];
@@ -367,7 +366,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         allSettings: { aspectRatio, resolution, preferredVideoModel },
         userAspectRatio: aspectRatio,
         userResolution: resolution,
-        detectionReason: hasVideoTrigger ? 'explicit trigger' : hasVideoKeywords ? 'video keywords' : 'default image'
+        detectionReason: hasVideoTrigger ? 'explicit trigger' : hasVideoKeywords ? 'video keywords' : 'default image',
+        userInput: userInput,
+        hasVideoTrigger,
+        hasVideoKeywords,
+        videoKeywords: videoKeywords.filter(keyword => userInput.toLowerCase().includes(keyword))
       });
 
       let result;

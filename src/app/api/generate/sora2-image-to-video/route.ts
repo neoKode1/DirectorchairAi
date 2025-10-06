@@ -74,16 +74,21 @@ export async function POST(request: NextRequest) {
       ...(api_key && { api_key })
     };
 
-    // Submit request to Sora 2
-    const result = await fal.subscribe("fal-ai/sora-2/image-to-video", {
-      input,
-      logs: true,
-      onQueueUpdate: (update: any) => {
-        if (update.status === "IN_PROGRESS") {
-          console.log('🎬 [Sora 2 I2V] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
-        }
-      },
-    });
+    // Submit request to Sora 2 with timeout handling
+    const result = await Promise.race([
+      fal.subscribe("fal-ai/sora-2/image-to-video", {
+        input,
+        logs: true,
+        onQueueUpdate: (update: any) => {
+          if (update.status === "IN_PROGRESS") {
+            console.log('🎬 [Sora 2 I2V] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
+          }
+        },
+      }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sora 2 generation timeout after 4 minutes')), 4 * 60 * 1000)
+      )
+    ]) as any;
 
     console.log('✅ [Sora 2 I2V] Generation completed:', {
       requestId: result.requestId,

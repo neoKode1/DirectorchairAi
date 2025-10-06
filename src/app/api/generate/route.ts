@@ -404,21 +404,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       model: body.model
     });
 
-    // Call FAL API directly
+    // Call FAL API directly with timeout handling
     let result;
     try {
-      result = await fal.subscribe(model, {
-        input,
-        logs: true,
-        onQueueUpdate: (update: any) => {
-          console.log(`📊 [Generate API] [${requestId}] Queue update:`, update.status);
-          if (update.logs) {
-            update.logs.forEach((log: any) => {
-              console.log(`📊 [Generate API] [${requestId}] Queue log:`, log.message);
-            });
-          }
-        },
-      });
+      // Add timeout for video generation models (longer timeout)
+      const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax');
+      const timeoutDuration = isVideoModel ? 4 * 60 * 1000 : 2 * 60 * 1000; // 4 minutes for video, 2 minutes for images
+      
+      result = await Promise.race([
+        fal.subscribe(model, {
+          input,
+          logs: true,
+          onQueueUpdate: (update: any) => {
+            console.log(`📊 [Generate API] [${requestId}] Queue update:`, update.status);
+            if (update.logs) {
+              update.logs.forEach((log: any) => {
+                console.log(`📊 [Generate API] [${requestId}] Queue log:`, log.message);
+              });
+            }
+          },
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Generation timeout after ${timeoutDuration / 1000 / 60} minutes`)), timeoutDuration)
+        )
+      ]) as any;
 
       console.log(`✅ [Generate API] [${requestId}] FAL API call successful`);
       console.log(`📦 [Generate API] [${requestId}] Result:`, result);
@@ -445,6 +454,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error(`❌ [Generate API] [${requestId}] FAL API error:`, falError);
       console.error(`❌ [Generate API] [${requestId}] Error status:`, falError.status);
       console.error(`❌ [Generate API] [${requestId}] Error body:`, falError.body);
+      
+      // Handle timeout errors specifically
+      if (falError.message && falError.message.includes('timeout')) {
+        console.log(`⏰ [Generate API] [${requestId}] Generation timeout detected`);
+        return NextResponse.json({
+          success: false,
+          error: 'Generation timeout',
+          message: 'The generation request timed out. Video generation can take several minutes. Please try again with a shorter duration or try again later.',
+          details: falError.message,
+          status: 504,
+          model: model,
+          timestamp: new Date().toISOString()
+        }, { status: 504 });
+      }
       
       const endTime = Date.now();
       const duration = endTime - startTime;

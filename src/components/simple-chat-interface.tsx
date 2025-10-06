@@ -47,6 +47,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       url: string;
       filename?: string;
     };
+    suggestions?: string[];
   }>>([]);
   
   const [userInput, setUserInput] = useState('');
@@ -57,6 +58,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isDragActive, setIsDragActive] = useState(false);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [floatingSuggestions, setFloatingSuggestions] = useState<string[]>([]);
+  const [showFloatingDialog, setShowFloatingDialog] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
@@ -219,10 +222,31 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (!userInput.trim() && uploadedImages.length === 0) return;
 
     // Detect if user wants video generation based on keywords
-    const videoKeywords = ['animate', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie'];
-    const wantsVideo = videoKeywords.some(keyword => 
+    const videoKeywords = [
+      'animate', 'animation', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie',
+      'walking', 'running', 'dancing', 'jumping', 'flying', 'swimming', 'driving', 'riding',
+      'camera', 'shot', 'scene', 'sequence', 'timeline', 'duration', 'seconds', 'minutes',
+      'tracking', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
+      'transition', 'morphing', 'transforming', 'changing', 'evolving', 'progressing',
+      'action', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
+      'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer'
+    ];
+    
+    // Special trigger words that force video generation
+    const videoTriggers = ['make video', 'create video', 'generate video', 'video of', 'animate this', 'make it move'];
+    
+    const hasVideoTrigger = videoTriggers.some(trigger => 
+      userInput.toLowerCase().includes(trigger)
+    );
+    
+    const hasVideoKeywords = videoKeywords.some(keyword => 
       userInput.toLowerCase().includes(keyword)
     );
+    
+    // If user has a video model selected and uses any video-related terms, default to video
+    const wantsVideo = hasVideoTrigger || hasVideoKeywords || 
+      (preferredVideoModel && preferredVideoModel !== 'none' && 
+       (hasVideoKeywords || userInput.toLowerCase().includes('with') || userInput.toLowerCase().includes('show')));
 
     // Detect if user is referencing a previously generated image
     const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this'];
@@ -243,6 +267,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
+    
+    // Add a helpful message about what type of generation is happening
+    const generationTypeMessage = {
+      id: (Date.now() + 0.5).toString(),
+      type: 'assistant' as const,
+      content: wantsVideo 
+        ? `🎬 Generating video with ${preferredVideoModel || 'selected video model'}...`
+        : `🖼️ Generating image...`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, generationTypeMessage]);
+    
     setUserInput('');
     setUploadedImages([]);
     setIsGenerating(true);
@@ -330,7 +366,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         preferredVideoModel,
         allSettings: { aspectRatio, resolution, preferredVideoModel },
         userAspectRatio: aspectRatio,
-        userResolution: resolution
+        userResolution: resolution,
+        detectionReason: hasVideoTrigger ? 'explicit trigger' : hasVideoKeywords ? 'video keywords' : 'default image'
       });
 
       let result;
@@ -376,9 +413,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       // Track the last generated image for future references
       if (images?.[0]) {
         setLastGeneratedImage(images[0].url);
+        
+        setMessages(prev => [...prev, assistantMessage]);
+        
+        // Show floating suggestions for images
+        showFloatingSuggestions([
+          "Make video of this character walking",
+          "Animate this character dancing", 
+          "Create a cinematic shot of this character",
+          "Show this character in motion",
+          "Generate a tracking shot of this character"
+        ]);
+      } else {
+        setMessages(prev => [...prev, assistantMessage]);
       }
-
-      setMessages(prev => [...prev, assistantMessage]);
+      
       onGenerationComplete?.();
     } catch (error) {
       console.error('Generation error:', error);
@@ -411,6 +460,39 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setUserInput(suggestion);
+    // Auto-submit the suggestion
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSubmit(fakeEvent);
+    }, 100);
+  };
+
+  const showFloatingSuggestions = (suggestions: string[]) => {
+    setFloatingSuggestions(suggestions);
+    setShowFloatingDialog(true);
+    
+    // Auto-hide after 8 seconds
+    setTimeout(() => {
+      setShowFloatingDialog(false);
+      // Clear suggestions after animation
+      setTimeout(() => {
+        setFloatingSuggestions([]);
+      }, 300);
+    }, 8000);
+  };
+
+  const handleFloatingSuggestionClick = (suggestion: string) => {
+    setUserInput(suggestion);
+    setShowFloatingDialog(false);
+    // Auto-submit the suggestion
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+      handleSubmit(fakeEvent);
+    }, 100);
   };
 
   const handleVary = async (imageUrl: string, prompt: string) => {
@@ -543,6 +625,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] ${message.type === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg p-3`}>
                 <p className="text-sm">{message.content}</p>
+                
+                
                 {message.media && (
                   <div className="mt-2">
                     {message.media.type === 'image' ? (
@@ -817,6 +901,39 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           Chat Mode can make mistakes. Double check responses.
         </p>
       </div>
+
+      {/* Floating Suggestions Dialog */}
+      {showFloatingDialog && floatingSuggestions.length > 0 && (
+        <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
+          showFloatingDialog ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}>
+          <div className="bg-white border border-gray-200 rounded-xl shadow-2xl p-4 max-w-md mx-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-800">💡 Quick Actions</h3>
+              <button
+                onClick={() => setShowFloatingDialog(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {floatingSuggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleFloatingSuggestionClick(suggestion)}
+                  className="w-full text-left text-sm bg-blue-50 hover:bg-blue-100 text-blue-800 px-3 py-2 rounded-lg transition-colors cursor-pointer border border-blue-200 hover:border-blue-300"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Click any suggestion to animate your image
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

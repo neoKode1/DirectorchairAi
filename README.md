@@ -1,14 +1,14 @@
-# DirectorchairAI
+# DirectorChair AI
 
 **AI-Powered Media Studio with Film Director Intelligence**
 
 Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance with automated smart controls.
 
-![DirectorchairAI Screenshot](https://raw.githubusercontent.com/neoKode1/DirectorchairAi/main/public/Screenshot%20(2159).webp)
+![DirectorChair AI Screenshot](https://raw.githubusercontent.com/neoKode1/DirectorchairAi/main/public/Screenshot%20(2159).webp)
 
 ## 🎬 Demo Video
 
-Watch DirectorchairAI in action:
+Watch DirectorChair AI in action:
 
 <div align="center">
   <a href="https://youtu.be/tssJN3-TwvI?si=16X4QB_AZXq0NgAq">
@@ -16,294 +16,121 @@ Watch DirectorchairAI in action:
   </a>
 </div>
 
-*Click the badge above to watch the full demo video showcasing DirectorchairAI's capabilities*
+*Click the badge above to watch the full demo video showcasing DirectorChair AI's capabilities*
 
 ## 🚀 Features
 
-### Core AI Capabilities
-- **Intelligent Chat Interface**: Natural language interaction with AI that understands film direction
-- **Multi-Model Generation**: Support for images, videos, audio, and voiceovers
-- **Auteur Engine**: Film director-style prompt enhancement with genre-specific styling
-- **Smart Controls Agent**: Automated parameter optimization with background intelligence
-- **Real-time Generation**: Live progress tracking and content preview
-- **Collapsible Content Panel**: Dynamic content management with smooth slide animations
-- **Prompt Copy Functionality**: Clickable prompts with one-click clipboard copying
-- **Intent-Driven Workflow**: Clear intent selection for image editing, animation, and style transfer
-- **User Interaction Monitoring**: Comprehensive logging and analytics for user experience insights
+### 🎨 **Revolutionary Three-Column Interface**
+- **Left Column - Chat Interface**: Natural language interaction with drag & drop image support
+- **Center Column - Dynamic Content Display**: Auto-scrolling content area showing generated media
+- **Right Column - Collapsible Gallery**: Smart content gallery with fullscreen viewing and actions
+- **Seamless Integration**: All three columns work together for a unified creative workflow
 
-### Intent-Driven Workflow
-- **Intent Selection Modal**: Clear options for Edit, Animate, Style Transfer, Create Image, and Create Video
-- **Model Preference Validation**: Automatic validation against user's preferred models
-- **Smart Intent Detection**: AI-powered intent analysis with user confirmation
-- **Seamless Workflow**: Smooth transitions between intent selection and generation
-- **User Guidance**: Clear prompts and suggestions for optimal results
-- **Frame System**: Two-slot image input system for primary image + optional style reference
-- **Drag & Drop Support**: Intuitive drag and drop for both primary and style images
-- **Dynamic UI**: Style reference slot appears only after primary image is uploaded
+### 💬 **Enhanced Chat Interface**
+- **Drag & Drop Integration**: Invisible drop zone directly in text input for seamless image uploads
+- **Keyboard Support**: Press Enter to submit prompts (just like any chat app)
+- **Smart Image Context**: Chat remembers your last generated image for iterative editing
+- **Floating Suggestions**: Auto-dissolving suggestion prompts after successful image generation
+- **Settings Integration**: Built-in settings modal for aspect ratio, resolution, and video model preferences
+- **Local Storage**: All chat history and settings persist across sessions
 
-### Smart Controls Agent
-- **Automatic Parameter Optimization**: Background agent analyzes prompts and optimizes settings
-- **User Preference Learning**: Remembers user choices and respects manual overrides
-- **Intelligent Aspect Ratio Selection**: Automatically chooses optimal aspect ratios
-- **Content Type Detection**: Smart detection of image vs video intent
-- **Resolution Optimization**: Automatic resolution selection based on model requirements
-- **Style Enhancement**: Background style analysis and enhancement
-- **Seamless Integration**: Works automatically without user intervention
-- **Audio Toggle**: Coming soon text-to-speech generation toggle (disabled for future implementation)
+### 🎬 **Advanced Image-to-Video Workflow**
+- **6 Image-to-Video Models**: Luma Ray 2 Flash, Kling v2.1 Master, Minimax Hailuo 02, Wan Pro, Seedance 1.0 Pro, Wan 2.5 Preview
+- **Smart Video Detection**: Intelligent keyword detection for video generation intent
+- **One-Click Animation**: Animate button in gallery automatically injects image and fills animation prompt
+- **Model Preferences**: Set your preferred video model in settings for consistent results
+- **Content Policy Fallback**: Automatic fallback from Nano Banana Edit to Seedream 4.0 Edit for policy violations
 
-### Content Management & Storage
-- **Automatic Content Saving**: All generations automatically saved to localStorage
-- **Content Gallery**: Organized storage and management of generated content
-- **Storage Manager**: Export, import, and manage your content library
-- **Session Management**: Create and manage different creative sessions
-- **Persistent Storage**: Content survives page reloads and browser restarts
-- **Image Compression**: Automatic image resizing for optimal API compatibility
-- **Edit Button Integration**: One-click image editing from content panel
+### 🖼️ **Intelligent Gallery System**
+- **Fullscreen Viewing**: Click any content to view in fullscreen with action buttons
+- **Three Action Buttons**: Download, Edit, and Animate buttons for each piece of content
+- **Auto-Scroll Content**: Center content area automatically scrolls to show newly generated content
+- **Collapsible Design**: Gallery slides away to maximize content viewing area
+- **Local Storage**: All generated content automatically saved and organized
+- **Delete Functionality**: Remove unwanted content with one click
 
-### Enhanced User Experience
-- **Dual Mode Interface**: Chat mode for conversation, Gen mode for focused generation
-- **Auto-Hide Smart Controls**: Clean interface in generation mode with background automation
-- **Clickable Prompts**: One-click copying of suggested prompts to clipboard
-- **Visual Feedback**: Toast notifications and progress indicators
-- **Error Handling**: Comprehensive error messages and recovery options
-- **Model Preference Sync**: Automatic synchronization across all interface elements
-- **Centered Action Buttons**: Improved visual alignment and user interface
-- **User Interaction Dashboard**: Real-time monitoring and analytics
+### 🎯 **Smart Content Management**
+- **Automatic Saving**: All generated content saved to browser localStorage
+- **Content Persistence**: Survives page reloads and browser restarts
+- **Gallery Integration**: Generated content appears in both center display and right gallery
+- **Edit Workflow**: Click Edit button to inject image back into chat for modifications
+- **Animation Workflow**: Click Animate button to automatically set up video generation
 
-### Mobile Optimization
-- **Responsive Design**: Fully optimized for mobile devices with touch-friendly interfaces
-- **Mobile Navigation**: Bottom navigation bar with quick access to key features
-- **Touch Targets**: All interactive elements meet mobile accessibility standards (44px minimum)
-- **Mobile-First Layout**: Adaptive layouts that work seamlessly across all screen sizes
-- **Safe Area Support**: Proper handling of device safe areas and notches
-- **Mobile Animations**: Smooth, performance-optimized animations for mobile devices
-- **Mobile Typography**: Responsive text sizing that scales appropriately
-- **Mobile Grid Systems**: Flexible grid layouts that adapt to screen size
+### 🤖 **AI Models Supported**
 
-### AI Models Supported
-
-#### Image Generation
-- **FLUX Pro 1.1 Ultra**: Professional-grade image generation
-- **Stable Diffusion 3.5 Large**: Advanced stable diffusion model
+#### **Image Generation Models**
 - **Google Imagen 4**: Google's highest quality image generation
-- **Dreamina v3.1**: Enhanced image generation with artistic styles
-- **FLUX LoRA**: Image-to-image transformation with style transfer
-- **Ideogram Character**: Character consistency for visual content
-- **Nano Banana Edit**: Advanced image-to-image editing with precise modifications
-- **Gemini 2.5 Flash Image Edit**: Google's state-of-the-art image editing with multi-image support
+- **Stable Diffusion 3.5 Large**: Advanced stable diffusion with improved typography
+- **Dreamina v3.1**: Superior picture effects with diverse styles
+- **Flux Pro 1.1 Ultra**: Professional-grade image generation
+- **Flux Pro Kontext**: Context-aware editing and manipulation
+- **Flux LoRA Image-to-Image**: High-performance style transfer
+- **Nano Banana Edit**: Advanced image editing with precise controls
+- **Gemini 2.5 Flash Image Edit**: Google's multi-image editing model
+- **Qwen Image Edit**: Superior text editing capabilities
+- **Seedream 4.0 Edit**: ByteDance's unified image generation and editing
 
-#### Video Generation
-- **Google Veo3 Fast**: Cost-effective video generation ($0.25/second)
-- **Google Veo3 Standard**: High-quality video generation
-- **Kling v2.1 Master**: Professional video generation with advanced features
-- **Luma Ray 2**: Natural motion video generation
-- **Luma Ray 2 Flash**: Fast image-to-video generation with automatic compression
-- **Minimax Hailuo 02**: Enhanced motion and smoothness
-- **Seedance 1.0 Pro**: Multiple angle shot variations
+#### **Image-to-Video Models** (6 Total)
+- **Luma Ray 2 Flash**: Fast image-to-video with smooth motion
+- **Kling v2.1 Master**: Enhanced quality and motion realism
+- **Minimax Hailuo 02**: High-quality image-to-video generation
+- **Wan Pro**: 6-second 1080p video generation (30 FPS)
+- **Seedance 1.0 Pro**: Multiple angle shot variations with advanced motion control
+- **Wan 2.5 Preview**: Flexible 5-10 second duration with prompt expansion
 
-#### Audio & Voice
+#### **Audio & Voice Models**
 - **ElevenLabs TTS Turbo v2.5**: High-quality text-to-speech
-- **Stable Audio**: High-quality audio generation
-- **Minimax Music**: AI-powered music generation
+- **MiniMax Speech 2.5 HD**: Advanced AI text-to-speech
+- **MiniMax Voice Clone**: Custom voice cloning from audio samples
+- **Sync LipSync**: Advanced lip sync with multiple modes
 
-### Advanced Features
-- **Voice Input**: Speak to the AI with microphone support and comprehensive diagnostics
-- **Style Analysis**: Upload reference images for style extraction
-- **Prompt Enhancement**: AI-powered prompt improvement with director insights
-- **Custom LoRA Support**: Hard-coded custom styles (Cinema, Cinematic, Koala)
-- **Content Filtering**: Intelligent content policy compliance
-- **Cost Estimation**: Real-time cost tracking for AI model usage
-- **Export Options**: Multiple format support for generated content
-- **Image-to-Video Animation**: Seamless animation from generated images
-- **Parameter Validation**: Automatic validation and correction of generation parameters
-- **User Interaction Analytics**: Comprehensive logging and monitoring system
-- **Frame System**: Advanced two-slot image input for complex editing workflows
-- **Multi-Image Support**: Support for primary image + style reference combinations
-- **Model-Specific Optimization**: Automatic parameter optimization for each AI model
+### 🔧 **Technical Excellence**
+- **Unified API**: Single `/api/generate` endpoint handles all FAL model calls
+- **Smart Fallback System**: Automatic retry with different models for content policy violations
+- **Parameter Optimization**: Model-specific parameter handling for optimal results
+- **Error Recovery**: Comprehensive error handling with user-friendly messages
+- **Performance Optimization**: Efficient memory usage and background processing
+- **TypeScript**: Full type safety throughout the application
 
-## 🖼️ Frame System
-
-The Frame System is an advanced image input interface that enables complex editing workflows with multiple image inputs:
-
-### Two-Slot Design
-- **Primary Image Slot**: Upload your main image for editing
-- **Style Reference Slot**: Optionally upload a style reference image
-- **Dynamic UI**: Style slot appears only after primary image is uploaded
-- **Visual Feedback**: Clear preview of uploaded images with drag & drop support
-
-### Supported Models
-- **Nano Banana Edit**: Advanced image-to-image editing with precise control
-- **Gemini 2.5 Flash Image Edit**: Google's state-of-the-art multi-image editing
-- **FLUX LoRA**: Style transfer with reference image support
-
-### Workflow
-1. **Toggle Frame System**: Click "Show Frames" to enable the interface
-2. **Upload Primary Image**: Drag & drop or click to upload your main image
-3. **Add Style Reference** (Optional): Upload a reference image for style guidance
-4. **Select Intent**: Choose "Edit" for image editing or "Style" for style transfer
-5. **Generate**: Let the AI process both images for enhanced results
-
-### Use Cases
-- **Style Transfer**: Use reference images to apply specific artistic styles
-- **Complex Editing**: Combine multiple images for sophisticated edits
-- **Consistency**: Maintain visual consistency across multiple images
-- **Creative Exploration**: Experiment with different style combinations
-
-## 🎬 Auteur Engine
-
-The Auteur Engine is a sophisticated prompt enhancement system that applies film director aesthetics to your AI generations:
-
-### Supported Directors
-- **Christopher Nolan**: IMAX-style cinematography with dramatic angles
-- **Wes Anderson**: Symmetrical composition and distinctive color palettes
-- **Denis Villeneuve**: Epic wide shots and atmospheric lighting
-- **David Fincher**: Precise geometric composition and controlled lighting
-- **Martin Scorsese**: Dynamic tracking shots and urban realism
-- **Quentin Tarantino**: Stylized violence and pop culture references
-- **Stanley Kubrick**: Perfect symmetry and clinical precision
-- **Alfred Hitchcock**: Suspenseful atmosphere and psychological tension
-- **Akira Kurosawa**: Epic scale and human drama
-- **And many more...**
-
-### Genre-Specific Styling
-The system automatically detects content genre and applies appropriate director styles:
-- **Action**: Dynamic camera movements and high-energy composition
-- **Drama**: Intimate close-ups and emotional lighting
-- **Horror**: Atmospheric tension and psychological elements
-- **Sci-Fi**: Futuristic aesthetics and technological themes
-- **Comedy**: Bright lighting and playful composition
-
-## 🤖 Smart Controls Agent
-
-The Smart Controls Agent is an intelligent background system that automatically optimizes your generation parameters:
-
-### Automatic Optimization
-- **Aspect Ratio Selection**: Analyzes prompts and selects optimal aspect ratios
-- **Content Type Detection**: Automatically determines image vs video intent
-- **Resolution Optimization**: Chooses appropriate resolutions for each model
-- **Style Enhancement**: Applies cinematic styling automatically
-- **Parameter Validation**: Ensures all parameters meet model requirements
-
-### User Preference Learning
-- **Manual Override Respect**: Remembers when users manually select settings
-- **Temporary Override**: Respects manual choices for a set duration
-- **Learning Algorithm**: Adapts to user preferences over time
-- **Background Operation**: Works seamlessly without interrupting workflow
-
-### Integration Features
-- **Seamless Operation**: No user intervention required
-- **Performance Optimization**: Efficient background processing
-- **Error Recovery**: Automatic fallback to safe defaults
-- **Cross-Model Compatibility**: Works with all supported AI models
-
-## 📱 Mobile Experience
-
-### Responsive Design
-- **Adaptive Layouts**: Content automatically adjusts to screen size
+### 📱 **Mobile-First Design**
+- **Responsive Layout**: Three-column layout adapts perfectly to mobile screens
 - **Touch Optimization**: All buttons and controls optimized for touch interaction
-- **Mobile Navigation**: Intuitive bottom navigation with quick access
-- **Gesture Support**: Swipe and tap gestures for enhanced interaction
+- **Mobile Navigation**: Intuitive navigation with touch-friendly targets
+- **Performance Optimized**: Smooth animations and transitions on mobile devices
 
-### Mobile-Specific Features
-- **Bottom Navigation**: Easy access to Home, Chat, Models, and Gallery
-- **Touch-Friendly Controls**: All interactive elements sized for mobile
-- **Mobile-Optimized Animations**: Smooth, performance-optimized transitions
-- **Responsive Typography**: Text that scales appropriately for mobile screens
+## 🎯 **Quick Start Guide**
 
-## 🎨 Models Page
+### **Basic Workflow**
+1. **Start Chatting**: Type your creative vision in the left chat panel
+2. **Upload Images** (Optional): Drag & drop images directly into the text input
+3. **Generate Content**: Press Enter or click Generate to create your media
+4. **View Results**: Content appears in center panel and auto-scrolls into view
+5. **Edit or Animate**: Use gallery buttons to edit images or create videos
+6. **Save & Organize**: All content automatically saved to your personal gallery
 
-The Models Page provides a comprehensive interface for exploring and selecting AI models:
+### **Advanced Features**
+- **Settings**: Click Settings button to configure aspect ratio, resolution, and video model preferences
+- **Floating Suggestions**: After image generation, helpful animation suggestions appear and auto-dissolve
+- **Gallery Actions**: Download, Edit, or Animate any content from the fullscreen gallery view
+- **Smart Detection**: System automatically detects if you want video generation based on keywords
+- **Model Fallback**: If content is rejected, system automatically tries alternative models
 
-### Visual Design
-- **Full-Screen Background**: Immersive Gen4.png background covering the entire viewport
-- **PNG Icon Integration**: Each model uses its actual PNG icon as the full card background
-- **Reduced Sidebar Blur**: Improved readability with minimal blur effects
-- **Responsive Grid**: Adaptive grid layout that works on all screen sizes
-- **Hover Effects**: Subtle glow and scale effects for interactive feedback
+### **Pro Tips**
+- **Use "Animate" keywords**: Words like "walking", "dancing", "camera movement" trigger video generation
+- **Set Video Preferences**: Choose your preferred video model in Settings for consistent results
+- **Iterative Editing**: Edit button injects images back into chat for easy modifications
+- **Floating Suggestions**: Click any suggestion to automatically set up video generation
+- **Keyboard Shortcuts**: Press Enter to submit prompts quickly
 
-### Navigation Features
-- **Category Organization**: Models organized by Image, Video, and Voice categories
-- **Clickable Cards**: Each model card navigates to its specific interface
-- **Use in Chat Button**: Quick access to set model as preferred and redirect to chat
-- **Sidebar Navigation**: Clean sidebar with actual model PNG icons and readable text
-- **Model Preferences**: Automatic synchronization with user's preferred models
+## 🚀 **Getting Started**
 
-### Model Categories
-- **Image Models**: 9 models including Google Imagen 4, Stable Diffusion 3.5, Flux Pro, Gemini 2.5 Flash
-- **Video Models**: 8 models including Google Veo3, Kling v2.1, Luma Ray 2, Minimax Hailuo 02
-- **Voice Models**: ElevenLabs TTS Turbo v2.5 for text-to-speech generation
-
-## 🎯 Usage Guide
-
-### Getting Started
-1. **Choose Your Mode**: Select "Chat" for conversation or "Gen" for focused generation
-2. **Set Model Preferences**: Configure your preferred AI models for each content type
-3. **Describe Your Vision**: Use natural language to describe what you want to create
-4. **Select Intent**: Choose Edit, Animate, Style Transfer, Create Image, or Create Video
-5. **Use Frame System** (Optional): Upload primary image + optional style reference for advanced editing
-6. **Let AI Optimize**: The Smart Controls Agent automatically optimizes parameters
-7. **Generate Content**: Click generate and watch your content come to life
-
-### Advanced Features
-- **Edit Button**: Click the Edit button on any generated image to modify it
-- **Copy Prompts**: Click any suggested prompt to copy it to your clipboard
-- **Manual Override**: Use "Show Controls" to manually adjust settings when needed
-- **Style Reference**: Upload reference images for style transfer
-- **Voice Input**: Use your microphone to describe your vision
-- **Content Animation**: Animate generated images with one click
-- **Monitor Usage**: Use the Monitor button to view interaction analytics
-- **Frame System**: Toggle "Show Frames" to access advanced two-slot image input
-- **Multi-Image Editing**: Upload primary image + style reference for complex edits
-- **Model Comparison**: Test different models (Nano Banana vs Gemini) for best results
-
-### Tips for Best Results
-- **Be Descriptive**: Provide detailed descriptions for better results
-- **Use Director References**: Mention specific directors or styles
-- **Trust the Agent**: Let the Smart Controls Agent optimize parameters
-- **Experiment**: Try different prompts and styles to discover new possibilities
-- **Save Favorites**: Use the content panel to save and organize your best work
-- **Use Intent Selection**: Choose the right intent for your desired outcome
-- **Leverage Frame System**: Use primary + style reference for complex editing workflows
-- **Compare Models**: Test Nano Banana Edit vs Gemini for different editing styles
-- **Use Style References**: Upload reference images to guide the editing process
-
-## 🔧 Technical Features
-
-### API Integration
-- **FAL.ai Integration**: Direct integration with FAL.ai's model ecosystem
-- **Dedicated Routes**: Separate API routes for video and image generation
-- **Parameter Validation**: Automatic validation and correction of API parameters
-- **Error Handling**: Comprehensive error handling with user-friendly messages
-- **Timeout Management**: Intelligent timeout handling for long-running generations
-- **Claude AI Integration**: Advanced conversational AI for film direction guidance
-
-### Performance Optimization
-- **Automatic Image Compression**: All uploaded images compressed to 1920x1920 max with 80% quality for optimal API compatibility
-- **Video Thumbnail Caching**: Smart caching of extracted video frames with localStorage persistence
-- **Background Processing**: Non-blocking background operations with comprehensive logging
-- **Memory Management**: Efficient memory usage and cleanup with automatic resource management
-- **Caching**: Smart caching of frequently used data and video thumbnails
-- **Lazy Loading**: Optimized loading of components and resources
-- **Token Management**: Optimized token usage for AI model interactions
-- **Model-Specific Optimization**: Automatic parameter adjustment for each AI model's requirements
-
-### Security & Privacy
-- **Local Storage**: All content stored locally in your browser
-- **No Data Collection**: No user data sent to external servers
-- **Secure API Calls**: Secure communication with AI model APIs
-- **Content Filtering**: Built-in content policy compliance
-- **Environment Variables**: Secure API key management
-
-## 🚀 Getting Started
-
-### Prerequisites
+### **Prerequisites**
 - **Node.js**: Version 18 or higher
 - **Modern web browser**: Chrome, Firefox, Safari, Edge
 - **Internet connection**: For AI model access
-- **FAL.ai API key**: For full functionality (optional but recommended)
-- **Anthropic API key**: For advanced chat features (optional)
+- **FAL.ai API key**: For full functionality
 
-### Installation
+### **Installation**
 
 1. **Clone the repository**
    ```bash
@@ -317,13 +144,11 @@ The Models Page provides a comprehensive interface for exploring and selecting A
    ```
 
 3. **Set up environment variables**
-   Create a `.env.local` file in the root directory with just these two variables:
+   Create a `.env.local` file in the root directory:
    ```env
    FAL_KEY=your_fal_ai_key_here
    ANTHROPIC_API_KEY=your_anthropic_key_here
    ```
-   
-   **That's it!** No other environment variables are required for basic deployment.
 
 4. **Run the development server**
    ```bash
@@ -333,21 +158,13 @@ The Models Page provides a comprehensive interface for exploring and selecting A
 5. **Open your browser**
    Navigate to `http://localhost:3000`
 
-### Environment Setup
+### **Environment Setup**
 
-#### Required API Keys (Minimal Deployment)
+#### **Required API Keys**
 - **FAL_KEY**: Get your free API key from [FAL.ai](https://fal.ai/)
 - **ANTHROPIC_API_KEY**: Get your API key from [Anthropic](https://console.anthropic.com/)
 
-That's it! No other environment variables are required for basic functionality.
-
-#### Optional Configuration (Advanced Features)
-- **NEXT_PUBLIC_APP_URL**: Your application URL (for production)
-- **NEXTAUTH_SECRET**: Secret for authentication (auto-generated in development)
-- **GOOGLE_CLIENT_ID** & **GOOGLE_CLIENT_SECRET**: For Google OAuth (optional)
-- **Stripe Environment Variables**: Only needed if you want to enable subscription features
-
-### Development Commands
+### **Development Commands**
 
 ```bash
 # Start development server
@@ -369,93 +186,81 @@ npm run format
 npm run lint
 ```
 
-## 🏗️ Project Structure
+## 🏗️ **Project Structure**
 
 ```
 src/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── timeline/          # Main application page
-│   └── layout.tsx         # Root layout
-├── components/            # React components
-│   ├── ui/               # UI components (buttons, cards, etc.)
-│   ├── intelligent-chat-interface.tsx
-│   ├── generated-content-display.tsx
-│   └── user-interaction-monitor.tsx
-├── lib/                  # Utility libraries
-│   ├── claude-api.ts     # Claude AI integration
-│   ├── intelligence-core.ts
-│   └── content-storage.ts
-└── types/                # TypeScript type definitions
+├── app/                           # Next.js app directory
+│   ├── api/                      # API routes
+│   │   └── generate/             # Unified generation endpoint
+│   ├── timeline/                 # Main three-column application
+│   └── layout.tsx                # Root layout
+├── components/                   # React components
+│   ├── ui/                      # UI components (buttons, cards, etc.)
+│   ├── simple-chat-interface.tsx # Enhanced chat interface
+│   ├── gallery-view.tsx         # Smart gallery with actions
+│   └── content-storage.ts       # Local storage management
+├── lib/                         # Utility libraries
+│   ├── fal.ts                   # FAL model configurations
+│   └── content-storage.ts       # Content persistence
+└── types/                       # TypeScript type definitions
 ```
 
-## 🤝 Contributing
+## 🎬 **Recent Updates**
+
+### **v3.0.0 - Revolutionary UI Redesign**
+- **Three-Column Layout**: Complete redesign with chat, content, and gallery columns
+- **6 New Image-to-Video Models**: Added Wan Pro, Seedance 1.0 Pro, and Wan 2.5 Preview
+- **Enhanced Chat Interface**: Drag & drop, keyboard support, floating suggestions
+- **Smart Gallery System**: Fullscreen viewing with Download, Edit, and Animate buttons
+- **Auto-Scroll Content**: Center area automatically scrolls to show new content
+- **Collapsible Gallery**: Gallery slides away to maximize content viewing
+- **Settings Integration**: Built-in modal for aspect ratio, resolution, and video model preferences
+- **Content Persistence**: All chat history, settings, and generated content saved locally
+- **Smart Video Detection**: Intelligent keyword detection for video generation
+- **Fallback System**: Automatic retry with alternative models for content policy violations
+
+### **v2.1.0 - Enhanced Reliability & User Experience**
+- **Automatic Image Compression**: All uploaded images compressed for optimal API compatibility
+- **Enhanced Error Handling**: Improved error messages for content policy violations
+- **Video Thumbnail Extraction**: Automatic thumbnail generation for gallery cards
+- **Video Download with Frames**: Download videos with extracted frames
+- **Comprehensive Logging**: Detailed logging system for debugging
+- **Model-Specific Parameter Handling**: Fixed parameter requirements for all models
+
+## 🤝 **Contributing**
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Guidelines
-- **TypeScript**: All code should be written in TypeScript
+### **Development Guidelines**
+- **TypeScript**: All code written in TypeScript
 - **React**: Use functional components with hooks
 - **Tailwind CSS**: Use Tailwind for styling
 - **Testing**: Write tests for new features
 - **Documentation**: Update documentation for new features
 
-### Code Style
-- **Prettier**: Code formatting
-- **ESLint**: Code linting
-- **TypeScript**: Strict type checking
-- **Conventional Commits**: Use conventional commit messages
-
-## 📄 License
+## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 🆘 **Support**
 
 For support and questions:
 - **Documentation**: Check our [Documentation](docs/)
 - **Issues**: Open an [Issue](https://github.com/neoKode1/DirectorchairAi/issues)
 - **Discussions**: Join our [Discussions](https://github.com/neoKode1/DirectorchairAi/discussions)
-- **Discord**: Join our [Discord Community](https://discord.gg/directorchair)
 
-## 🎬 Roadmap
+## 🎬 **Roadmap**
 
-### Upcoming Features
+### **Upcoming Features**
 - **Advanced Video Editing**: Timeline-based video editing capabilities
 - **Collaborative Sessions**: Real-time collaboration features
 - **Advanced Analytics**: Detailed usage analytics and insights
 - **Mobile App**: Native mobile applications
-- **API Documentation**: Comprehensive API documentation
 - **Plugin System**: Extensible plugin architecture
-
-### Recent Updates
-
-#### v2.1.0 - Enhanced Reliability & User Experience
-- **Automatic Image Compression**: All uploaded images are automatically compressed to meet API requirements (1920x1920 max)
-- **Enhanced Error Handling**: Improved error messages for content policy violations and API errors
-- **Video Thumbnail Extraction**: Automatic thumbnail generation from video last frames for gallery cards
-- **Video Download with Frames**: Download videos with extracted last frame as separate files
-- **Comprehensive Logging**: Detailed logging system for debugging video generation and frame extraction
-- **Model-Specific Parameter Handling**: Fixed Seed Dance duration parameters and other model-specific requirements
-- **Progress Message Cleanup**: Removed redundant progress messages for cleaner chat interface
-- **FFmpeg Integration**: Fixed frame extraction API with proper parameter handling
-
-#### Previous Updates
-- **Models Page Redesign**: Complete redesign with PNG icons, full-screen background, and improved navigation
-- **Sidebar Enhancement**: Reduced blur and improved readability with actual model PNG icons
-- **Audio Toggle**: Coming soon audio generation toggle in smart controls (disabled for future implementation)
-- **F Key Fix**: Disabled F key fullscreen to allow typing "F" in chat input
-- **Frame System**: Advanced two-slot image input system for complex editing workflows
-- **Gemini 2.5 Flash Image Edit**: New Google model with multi-image support
-- **Nano Banana Edit**: Enhanced image editing with precise parameter control
-- **Intent-Driven Workflow**: Clear intent selection for better user experience
-- **User Interaction Monitoring**: Comprehensive analytics and logging
-- **Edit Button Integration**: One-click image editing from content panel
-- **Chat Response Fixes**: Improved chat interface with full response display
-- **Mobile Optimization**: Enhanced mobile experience and responsiveness
 
 ---
 
-**DirectorchairAI** - Where AI meets cinematic creativity 🎬✨
+**DirectorChair AI** - Where AI meets cinematic creativity 🎬✨
 
 *Built with Next.js, React, TypeScript, and Tailwind CSS*

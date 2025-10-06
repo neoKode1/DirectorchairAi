@@ -408,33 +408,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/wan-pro/image-to-video",
-    label: "Wan Pro (I2V)",
-    description: "Generate a 6-second 1080p video (at 30 FPS) from an image and text using an enhanced version of Wan 2.1",
-    category: "video",
-    inputAsset: ["image"],
-    initialInput: {
-      prompt: "A stylish character walks with smooth motion and natural movement",
-      image_url: "",
-      enable_safety_checker: true,
-    },
-  },
-  {
-    endpointId: "fal-ai/wan-25-preview/image-to-video",
-    label: "Wan 2.5 Preview (I2V)",
-    description: "Generate a video from an image using WAN 2.5 image-to-video model with 480p/1080p resolutions and 5-10 second duration",
-    category: "video",
-    inputAsset: ["image"],
-    initialInput: {
-      prompt: "The character stands with determination, camera slowly moves closer highlighting their presence",
-      image_url: "",
-      resolution: "1080p",
-      duration: "5",
-      negative_prompt: "low resolution, error, worst quality, low quality, defects",
-      enable_prompt_expansion: true,
-    },
-  },
-  {
     endpointId: "fal-ai/ideogram/character",
     label: "Ideogram Character",
     description: "Generate consistent character appearances across multiple images with maintained facial features, proportions, and distinctive traits for cohesive storytelling and branding",

@@ -902,9 +902,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Ray 2 Flash (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/bytedance/seedance/v1/pro/image-to-video">Seedance 1.0 Pro (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview (Image-to-Video)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">

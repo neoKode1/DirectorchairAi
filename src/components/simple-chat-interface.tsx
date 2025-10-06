@@ -232,8 +232,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'duration', 'seconds', 'minutes', 'timeline', 'sequence'
     ];
     
-    // Special trigger words that force video generation
-    const videoTriggers = ['make video', 'create video', 'generate video', 'video of', 'animate this', 'make it move'];
+    // Special trigger words that force video generation (image-to-video only)
+    const videoTriggers = ['make video', 'create video', 'generate video', 'video of', 'animate this', 'make it move', 'animate the image', 'bring to life'];
     
     const hasVideoTrigger = videoTriggers.some(trigger => 
       userInput.toLowerCase().includes(trigger)
@@ -309,7 +309,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             const errorMessage = {
               id: (Date.now() + 1).toString(),
               type: 'assistant' as const,
-              content: `⚠️ Please select a video model in Settings before generating videos. Click the Settings button below to choose your preferred video model.`,
+              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
               timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -331,7 +331,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             const errorMessage = {
               id: (Date.now() + 1).toString(),
               type: 'assistant' as const,
-              content: `⚠️ Please select a video model in Settings before generating videos. Click the Settings button below to choose your preferred video model.`,
+              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
               timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
@@ -419,13 +419,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         
         setMessages(prev => [...prev, assistantMessage]);
         
-        // Show floating suggestions for images
+        // Show floating suggestions for images (image-to-video workflow)
         showFloatingSuggestions([
-          "Make video of this character walking",
-          "Animate this character dancing", 
-          "Create a cinematic shot of this character",
-          "Show this character in motion",
-          "Generate a tracking shot of this character"
+          "Animate this character walking",
+          "Make video of this character dancing", 
+          "Bring this character to life",
+          "Animate the image with motion",
+          "Create a cinematic video of this character"
         ]);
       } else {
         setMessages(prev => [...prev, assistantMessage]);
@@ -870,18 +870,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None (prompt to select)</SelectItem>
-                        <SelectItem value="fal-ai/luma-dream-machine/ray-2">Luma Dream Machine Ray 2</SelectItem>
                         <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Ray 2 Flash (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/veo3/fast">Veo 3 Fast</SelectItem>
-                        <SelectItem value="fal-ai/veo3/standard">Veo 3 Standard</SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.1/master/text-to-video">Kling v2.1 Master (Text-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/text-to-video">Minimax Hailuo 02 (Text-to-Video)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
-                      If no model is selected, you'll be prompted to choose one when generating videos.
+                      Image-to-video models only. You'll be prompted to choose one when animating images.
                     </p>
                   </div>
                 </div>
@@ -932,7 +927,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              Click any suggestion to animate your image
+              Click any suggestion to animate your image with video
             </p>
           </div>
         </div>

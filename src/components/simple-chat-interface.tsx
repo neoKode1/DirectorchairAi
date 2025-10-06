@@ -298,8 +298,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       (window as any).injectImageToChat = injectImage;
       // Store the setUserInput function for setting chat input
       (window as any).setChatInput = setUserInput;
+      // Store the getChatInput function for getting current input
+      (window as any).getChatInput = () => userInput;
     }
-  }, [onImageInjected]);
+  }, [onImageInjected, userInput]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -813,12 +815,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Default</SelectItem>
-                  <SelectItem value="fal-ai/luma-dream-machine/ray-2">Luma Ray 2</SelectItem>
-                  <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Flash</SelectItem>
-                  <SelectItem value="fal-ai/veo3/fast">Veo 3 Fast</SelectItem>
-                  <SelectItem value="fal-ai/veo3/standard">Veo 3 Standard</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1</SelectItem>
-                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo</SelectItem>
+                  <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

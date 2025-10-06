@@ -59,7 +59,11 @@ function TimelineContent() {
       // Add a small delay to ensure the image is injected first
       setTimeout(() => {
         if ((window as any).setChatInput) {
-          (window as any).setChatInput("Animate this character with smooth motion");
+          // Only set a default prompt if the user hasn't already entered one
+          const currentInput = (window as any).getChatInput ? (window as any).getChatInput() : '';
+          if (!currentInput || currentInput.trim() === '') {
+            (window as any).setChatInput("Animate this character with smooth motion");
+          }
         }
       }, 200);
     }

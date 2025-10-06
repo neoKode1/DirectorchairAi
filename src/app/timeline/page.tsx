@@ -142,14 +142,51 @@ function TimelineContent() {
 
   const scrollToBottom = () => {
     if (contentAreaRef.current) {
-      // Use requestAnimationFrame to ensure DOM is updated
+      // Use multiple requestAnimationFrame calls to ensure DOM is fully updated
       requestAnimationFrame(() => {
-        if (contentAreaRef.current) {
-          contentAreaRef.current.scrollTo({
-            top: contentAreaRef.current.scrollHeight,
-            behavior: 'smooth'
-          });
-        }
+        requestAnimationFrame(() => {
+          if (contentAreaRef.current) {
+            // Scroll to the very bottom with a small buffer
+            const scrollHeight = contentAreaRef.current.scrollHeight;
+            const clientHeight = contentAreaRef.current.clientHeight;
+            const maxScrollTop = scrollHeight - clientHeight;
+            
+            console.log('📜 [Timeline] Scrolling to bottom:', {
+              scrollHeight,
+              clientHeight,
+              maxScrollTop,
+              currentScrollTop: contentAreaRef.current.scrollTop
+            });
+            
+            contentAreaRef.current.scrollTo({
+              top: maxScrollTop + 50, // Add 50px buffer to ensure we see everything
+              behavior: 'smooth'
+            });
+            
+            // Fallback: ensure we're at the bottom after a short delay
+            setTimeout(() => {
+              if (contentAreaRef.current) {
+                const currentScrollTop = contentAreaRef.current.scrollTop;
+                const newScrollHeight = contentAreaRef.current.scrollHeight;
+                const newMaxScrollTop = newScrollHeight - contentAreaRef.current.clientHeight;
+                
+                // If we're not at the bottom, scroll again
+                if (currentScrollTop < newMaxScrollTop - 100) {
+                  console.log('📜 [Timeline] Fallback scroll needed:', {
+                    currentScrollTop,
+                    newMaxScrollTop,
+                    difference: newMaxScrollTop - currentScrollTop
+                  });
+                  
+                  contentAreaRef.current.scrollTo({
+                    top: newMaxScrollTop + 50,
+                    behavior: 'smooth'
+                  });
+                }
+              }
+            }, 200);
+          }
+        });
       });
     }
   };
@@ -273,7 +310,7 @@ function TimelineContent() {
       // Scroll to bottom to show the new content (wait for DOM update)
       setTimeout(() => {
         scrollToBottom();
-      }, 300);
+      }, 500);
       
       // Store in localStorage for gallery using contentStorage
       if (typeof window !== 'undefined') {

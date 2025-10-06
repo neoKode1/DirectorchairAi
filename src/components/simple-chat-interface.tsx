@@ -354,7 +354,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'animate this image', 'make this move', 'bring this to life',
       'create animation', 'make animation', 'generate animation',
       'turn into video', 'convert to video', 'make a video',
-      'animate with', 'animate using', 'animate the character',
+      'animate with', 'animate using', 'animate the character', 'animate this character',
       'make the character', 'bring the character', 'animate the scene',
       // Cinematic shot triggers
       'tracking dolly shot', 'low-angle tracking dolly shot', 'low-angle shot',
@@ -381,7 +381,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       hasVideoKeywords,
       matchedVideoKeywords,
       wantsVideo,
-      preferredVideoModel
+      preferredVideoModel,
+      videoTriggers: videoTriggers.filter(trigger => userInput.toLowerCase().includes(trigger))
     });
 
     // Detect if user is referencing a previously generated image or injected image
@@ -435,9 +436,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       if (imageToUse) {
         // Image editing/generation with image (uploaded or referenced)
         if (wantsVideo) {
+          console.log('🎬 [Chat] Video generation requested, checking model selection:', {
+            preferredVideoModel,
+            hasPreferredModel: preferredVideoModel && preferredVideoModel !== 'none'
+          });
           // Check if user has a preferred video model selected
           if (preferredVideoModel && preferredVideoModel !== 'none') {
             model = preferredVideoModel;
+            console.log('🎬 [Chat] Using preferred video model:', model);
           } else {
             // Prompt user to select a video model
             const errorMessage = {
@@ -493,6 +499,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       // Set the current model for the spinning icon
       setCurrentModel(model);
+
+      console.log('🎯 [Chat] Final model selection:', {
+        selectedModel: model,
+        wantsVideo,
+        preferredVideoModel,
+        hasImage: !!imageToUse
+      });
 
       console.log('🎯 [Chat] Final generation data:', {
         ...generationData,

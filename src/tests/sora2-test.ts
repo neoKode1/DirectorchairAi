@@ -52,9 +52,9 @@ async function testSora2WithCustomParams() {
         duration: 8,
       },
       logs: true,
-      onQueueUpdate: (update) => {
+      onQueueUpdate: (update: any) => {
         if (update.status === "IN_PROGRESS") {
-          console.log('🎬 [Sora 2 Custom Test] Progress:', update.logs?.map(log => log.message).join('\n'));
+          console.log('🎬 [Sora 2 Custom Test] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
         }
       },
     });
@@ -91,9 +91,9 @@ async function testSora2WithAPIKey() {
         api_key: process.env.OPENAI_API_KEY, // Use your OpenAI API key if available
       },
       logs: true,
-      onQueueUpdate: (update) => {
+      onQueueUpdate: (update: any) => {
         if (update.status === "IN_PROGRESS") {
-          console.log('🎬 [Sora 2 API Key Test] Progress:', update.logs?.map(log => log.message).join('\n'));
+          console.log('🎬 [Sora 2 API Key Test] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
         }
       },
     });

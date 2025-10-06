@@ -155,6 +155,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.duration = 5;
     }
 
+    // Handle Minimax Hailuo-02 model specific parameters
+    if (model.includes('minimax/hailuo-02')) {
+      // Minimax Hailuo-02 only accepts duration: '6' or '10' (strings)
+      // Default to 6 seconds
+      input.duration = '6';
+      
+      // Minimax Hailuo-02 only accepts resolution: '512P' or '768P'
+      // Convert 1080p to 768P, others to 512P
+      if (body.resolution === '1080p') {
+        input.resolution = '768P';
+      } else {
+        input.resolution = '512P';
+      }
+    }
+
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
     console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);

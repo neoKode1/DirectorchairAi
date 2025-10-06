@@ -400,7 +400,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with cinematic motion",
-      duration: "6s",
+      duration: "6",
       prompt_optimizer: true,
       resolution: "768P",
     },
@@ -412,7 +412,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "video",
     initialInput: {
       prompt: "A cinematic scene with professional quality",
-      duration: "6s",
+      duration: "6",
       prompt_optimizer: true,
       resolution: "768P",
     },

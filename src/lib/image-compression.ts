@@ -267,6 +267,61 @@ export async function compressImageFromUrl(
 }
 
 /**
+ * Compress a base64 data URI if it's too large
+ * This handles images that are already in base64 format from the frontend
+ */
+export async function compressBase64DataUri(
+  dataUri: string,
+  options: CompressionOptions = {}
+): Promise<string> {
+  try {
+    console.log('🗜️ [ImageCompression] Processing base64 data URI for compression');
+    
+    // Extract the base64 data from the data URI
+    const base64Match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+    if (!base64Match) {
+      throw new Error('Invalid data URI format');
+    }
+    
+    const mimeType = base64Match[1];
+    const base64Data = base64Match[2];
+    
+    // Convert base64 to buffer
+    const inputBuffer = Buffer.from(base64Data, 'base64');
+    const originalSize = inputBuffer.length;
+    
+    console.log('📊 [ImageCompression] Base64 data URI size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
+    
+    // If image is small enough, return as-is
+    if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+      console.log('✅ [ImageCompression] Base64 data URI is small enough, no compression needed');
+      return dataUri;
+    }
+    
+    // Compress the image
+    const result = await compressImage(inputBuffer, options);
+    
+    // Convert back to base64 data URI
+    const compressedBase64 = result.buffer.toString('base64');
+    const compressedDataUri = `data:image/${result.format};base64,${compressedBase64}`;
+    
+    const compressionRatio = ((originalSize - result.size) / originalSize * 100).toFixed(1);
+    console.log('🗜️ [ImageCompression] Base64 data URI compressed:', {
+      originalSize: (originalSize / 1024 / 1024).toFixed(2) + 'MB',
+      compressedSize: (result.size / 1024 / 1024).toFixed(2) + 'MB',
+      compressionRatio: compressionRatio + '%'
+    });
+    
+    return compressedDataUri;
+    
+  } catch (error) {
+    console.error('❌ [ImageCompression] Error compressing base64 data URI:', error);
+    // Return original if compression fails
+    return dataUri;
+  }
+}
+
+/**
  * Check if an image needs compression based on size
  */
 export function needsCompression(buffer: Buffer, maxSizeBytes: number = 5 * 1024 * 1024): boolean {

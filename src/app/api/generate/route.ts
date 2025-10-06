@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
-import { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';
+import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions } from '@/lib/image-compression';
 
-// Helper function to convert localhost URLs to base64 data URIs with compression
-async function convertLocalhostToBase64(url: string): Promise<string> {
-  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
-    try {
-      console.log('🔄 [Generate API] Converting localhost URL to base64 with compression:', url);
+// Helper function to process images with compression (handles both URLs and base64 data URIs)
+async function processImageWithCompression(imageData: string): Promise<string> {
+  try {
+    console.log('🔄 [Generate API] Processing image with compression:', imageData.substring(0, 100) + '...');
+    
+    // Handle base64 data URIs
+    if (imageData.startsWith('data:')) {
+      console.log('📊 [Generate API] Processing base64 data URI');
+      const compressionOptions = getOptimalCompressionOptions(0); // Will be determined from actual size
+      return await compressBase64DataUri(imageData, compressionOptions);
+    }
+    
+    // Handle HTTP URLs
+    if (imageData.startsWith('http://localhost:') || imageData.startsWith('http://127.0.0.1:') || imageData.startsWith('https://')) {
+      console.log('🔄 [Generate API] Converting HTTP URL to base64 with compression:', imageData);
       
       // First, fetch the image to check its size
-      const response = await fetch(url);
+      const response = await fetch(imageData);
       if (!response.ok) {
         throw new Error(`Failed to fetch image: ${response.status}`);
       }
@@ -30,14 +40,16 @@ async function convertLocalhostToBase64(url: string): Promise<string> {
       // For larger images, use compression
       console.log('🗜️ [Generate API] Image is large, applying compression');
       const compressionOptions = getOptimalCompressionOptions(originalSize);
-      return await compressImageFromUrl(url, compressionOptions);
-      
-    } catch (error) {
-      console.error('❌ [Generate API] Failed to convert localhost URL to base64:', error);
-      return url; // Return original URL if conversion fails
+      return await compressImageFromUrl(imageData, compressionOptions);
     }
+    
+    // Return as-is if not a recognized format
+    return imageData;
+    
+  } catch (error) {
+    console.error('❌ [Generate API] Failed to process image:', error);
+    return imageData; // Return original if processing fails
   }
-  return url;
 }
 
 // Unified generate route that handles all FAL models directly
@@ -130,12 +142,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Handle image URLs for image-to-image models
     if (body.image_url) {
-      input.image_url = await convertLocalhostToBase64(body.image_url);
+      input.image_url = await processImageWithCompression(body.image_url);
     }
     
     if (body.image_urls && Array.isArray(body.image_urls)) {
       input.image_urls = await Promise.all(
-        body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+        body.image_urls.map((url: string) => processImageWithCompression(url))
       );
     }
 
@@ -165,7 +177,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Nano Banana Edit specific handling
       if (body.image_urls && body.image_urls.length > 0) {
         input.image_urls = await Promise.all(
-          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+          body.image_urls.map((url: string) => processImageWithCompression(url))
         );
       }
       // Nano Banana Edit might use different parameter names

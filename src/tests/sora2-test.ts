@@ -14,9 +14,9 @@ async function testSora2ImageToVideo() {
         duration: 4,
       },
       logs: true,
-      onQueueUpdate: (update) => {
+      onQueueUpdate: (update: any) => {
         if (update.status === "IN_PROGRESS") {
-          console.log('🎬 [Sora 2 Test] Progress:', update.logs?.map(log => log.message).join('\n'));
+          console.log('🎬 [Sora 2 Test] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
         }
       },
     });

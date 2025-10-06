@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
     const result = await fal.subscribe("fal-ai/sora-2/image-to-video", {
       input,
       logs: true,
-      onQueueUpdate: (update) => {
+      onQueueUpdate: (update: any) => {
         if (update.status === "IN_PROGRESS") {
-          console.log('🎬 [Sora 2 I2V] Progress:', update.logs?.map(log => log.message).join('\n'));
+          console.log('🎬 [Sora 2 I2V] Progress:', update.logs?.map((log: any) => log.message).join('\n'));
         }
       },
     });

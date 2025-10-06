@@ -30,7 +30,7 @@ const DEFAULT_COMPRESSION_OPTIONS: CompressionOptions = {
   maxHeight: 1920,
   quality: 85,
   format: 'jpeg',
-  maxSizeBytes: 5 * 1024 * 1024 // 5MB limit for FAL API
+  maxSizeBytes: 1 * 1024 * 1024 // 1MB limit for FAL API to prevent HTTP 413
 };
 
 /**
@@ -319,7 +319,7 @@ export async function compressBase64DataUri(
     console.log('📊 [ImageCompression] Base64 data URI size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
     
     // If image is small enough, return as-is
-    if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+    if (originalSize <= 1 * 1024 * 1024) { // 1MB threshold for FAL API
       console.log('✅ [ImageCompression] Base64 data URI is small enough, no compression needed');
       return dataUri;
     }
@@ -360,27 +360,27 @@ export function needsCompression(buffer: Buffer, maxSizeBytes: number = 5 * 1024
 export function getOptimalCompressionOptions(originalSize: number): CompressionOptions {
   if (originalSize > 10 * 1024 * 1024) { // > 10MB
     return {
+      maxWidth: 1024,
+      maxHeight: 1024,
+      quality: 70,
+      format: 'jpeg',
+      maxSizeBytes: 800 * 1024 // 800KB target
+    };
+  } else if (originalSize > 5 * 1024 * 1024) { // > 5MB
+    return {
       maxWidth: 1280,
       maxHeight: 1280,
       quality: 75,
       format: 'jpeg',
-      maxSizeBytes: 3 * 1024 * 1024 // 3MB target
+      maxSizeBytes: 900 * 1024 // 900KB target
     };
-  } else if (originalSize > 5 * 1024 * 1024) { // > 5MB
+  } else {
     return {
       maxWidth: 1600,
       maxHeight: 1600,
       quality: 80,
       format: 'jpeg',
-      maxSizeBytes: 4 * 1024 * 1024 // 4MB target
-    };
-  } else {
-    return {
-      maxWidth: 1920,
-      maxHeight: 1920,
-      quality: 85,
-      format: 'jpeg',
-      maxSizeBytes: 5 * 1024 * 1024 // 5MB target
+      maxSizeBytes: 1 * 1024 * 1024 // 1MB target
     };
   }
 }

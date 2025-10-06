@@ -129,6 +129,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStyleReference: false,
     supportsStylePresets: false,
     maxStyleStrength: 0,
+  },
+  "fal-ai/sora-2/image-to-video": {
+    supportsStyleReference: false,
+    supportsStylePresets: true,
+    maxStyleStrength: 0,
   }
 } as const;
 
@@ -299,6 +304,22 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
 
   // Video Generation Models
+  {
+    endpointId: "fal-ai/sora-2/image-to-video",
+    label: "Sora 2 (Image-to-Video)",
+    description: "OpenAI's state-of-the-art video model capable of creating richly detailed, dynamic clips with audio from images and natural language prompts",
+    category: "video",
+    inputAsset: ["image"], // Image-to-video only
+    supportsMultipleImages: false,
+    maxImages: 1,
+    initialInput: {
+      prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
+      image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
+      resolution: "auto",
+      aspect_ratio: "auto",
+      duration: 4,
+    },
+  },
   {
     endpointId: "fal-ai/veo3/image-to-video",
     label: "Veo 3",

@@ -667,6 +667,9 @@ export class IntelligenceCore {
         break;
       case 'video':
         strengths.push('Dynamic content creation', 'Motion and animation');
+        if (endpoint.endpointId.includes('sora-2')) {
+          strengths.push('State-of-the-art video quality', 'Rich detail and dynamic motion', 'Audio generation', 'OpenAI technology', 'High-resolution output', 'Advanced prompt understanding');
+        }
         if (endpoint.endpointId.includes('luma')) {
           strengths.push('Cinematic quality', 'Long-form video');
         }
@@ -737,6 +740,9 @@ export class IntelligenceCore {
         break;
       case 'video':
         useCases.push('Marketing videos', 'Educational content', 'Entertainment');
+        if (endpoint.endpointId.includes('sora-2')) {
+          useCases.push('High-quality video production', 'Professional content creation', 'Image-to-video animation', 'Audio-visual content', 'Creative storytelling', 'Commercial video projects');
+        }
         if (endpoint.endpointId.includes('luma')) {
           useCases.push('Cinematic projects', 'Long-form content');
         }
@@ -1441,8 +1447,9 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
             
             if (isMultipleAngleRequest) {
               console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
-              // Prioritize Veo 3 for multiple angle shot variations
-              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              // Prioritize Sora 2 for multiple angle shot variations, then Veo 3
+              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('sora-2')) ||
+                             imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video')) ||
                              imageToVideoModels[0];
@@ -1451,18 +1458,21 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               console.log('🎬 [IntelligenceCore] Available image-to-video models:', imageToVideoModels.map(m => m.endpointId));
               
               // Check each model in the fallback chain
+              const sora2Model = imageToVideoModels.find(model => model.endpointId.includes('sora-2'));
               const veo3Model = imageToVideoModels.find(model => model.endpointId.includes('veo3'));
               const klingModel = imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video'));
               const minimaxModel = imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video'));
               
               console.log('🎬 [IntelligenceCore] Fallback models found:', {
+                sora2: sora2Model?.endpointId,
                 veo3: veo3Model?.endpointId,
                 kling: klingModel?.endpointId,
                 minimax: minimaxModel?.endpointId
               });
               
-              // Prioritize Veo 3 as default for image-to-video, then other models
-              selectedModel = veo3Model ||
+              // Prioritize Sora 2 as default for image-to-video, then Veo 3, then other models
+              selectedModel = sora2Model ||
+                             veo3Model ||
                              klingModel ||
                              minimaxModel ||
                              imageToVideoModels[0];

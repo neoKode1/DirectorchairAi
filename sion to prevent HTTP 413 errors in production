@@ -1,0 +1,329 @@
+[1mdiff --git a/src/app/api/fal/image/route.ts b/src/app/api/fal/image/route.ts[m
+[1mindex 9ed55c5..cb2d806 100644[m
+[1m--- a/src/app/api/fal/image/route.ts[m
+[1m+++ b/src/app/api/fal/image/route.ts[m
+[36m@@ -1,5 +1,6 @@[m
+ import { NextRequest, NextResponse } from "next/server";[m
+ import { fal } from '@fal-ai/client';[m
+[32m+[m[32mimport { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';[m
+ [m
+ // Image-specific FAL proxy that handles all image generation models[m
+ export async function POST(request: NextRequest): Promise<NextResponse> {[m
+[36m@@ -39,25 +40,40 @@[m [mexport async function POST(request: NextRequest): Promise<NextResponse> {[m
+ [m
+     // Add image_url if provided (for image-to-image)[m
+     if (body.image_url) {[m
+[31m-      // Convert HTTP URLs to base64 data URIs for FAL compatibility[m
+[31m-      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:')) {[m
+[31m-        console.log('🖼️ [FAL Image Proxy] Converting HTTP URL to base64 for FAL compatibility:', body.image_url);[m
+[32m+[m[32m      // Convert HTTP URLs to base64 data URIs for FAL compatibility with compression[m
+[32m+[m[32m      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:') || body.image_url.startsWith('https://')) {[m
+[32m+[m[32m        console.log('🖼️ [FAL Image Proxy] Converting HTTP URL to base64 with compression for FAL compatibility:', body.image_url);[m
+         try {[m
+[31m-          // Fetch the image and convert to base64[m
+[32m+[m[32m          // First, fetch the image to check its size[m
+           const response = await fetch(body.image_url);[m
+           if (!response.ok) {[m
+             throw new Error(`Failed to fetch image: ${response.status}`);[m
+           }[m
+           [m
+           const arrayBuffer = await response.arrayBuffer();[m
+[31m-          const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[31m-          const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[31m-          const dataUri = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m          const originalSize = arrayBuffer.byteLength;[m
+[32m+[m[41m          [m
+[32m+[m[32m          console.log('📊 [FAL Image Proxy] Original image size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');[m
+[32m+[m[41m          [m
+[32m+[m[32m          // If image is small enough, use simple base64 conversion[m
+[32m+[m[32m          if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold[m
+[32m+[m[32m            console.log('✅ [FAL Image Proxy] Image is small enough, using simple base64 conversion');[m
+[32m+[m[32m            const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[32m+[m[32m            const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[32m+[m[32m            const dataUri = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m            input.image_url = dataUri;[m
+[32m+[m[32m            console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);[m
+[32m+[m[32m          } else {[m
+[32m+[m[32m            // For larger images, use compression[m
+[32m+[m[32m            console.log('🗜️ [FAL Image Proxy] Image is large, applying compression');[m
+[32m+[m[32m            const compressionOptions = getOptimalCompressionOptions(originalSize);[m
+[32m+[m[32m            const dataUri = await compressImageFromUrl(body.image_url, compressionOptions);[m
+[32m+[m[32m            input.image_url = dataUri;[m
+[32m+[m[32m            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);[m
+[32m+[m[32m          }[m
+           [m
+[31m-          input.image_url = dataUri;[m
+           console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');[m
+[31m-          console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);[m
+[31m-          console.log('🖼️ [FAL Image Proxy] Data URI starts with data:', dataUri.startsWith('data:'));[m
+[32m+[m[32m          console.log('🖼️ [FAL Image Proxy] Data URI starts with data:', input.image_url.startsWith('data:'));[m
+         } catch (error) {[m
+           console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL to base64:', error);[m
+           return NextResponse.json({[m
+[36m@@ -106,24 +122,39 @@[m [mexport async function POST(request: NextRequest): Promise<NextResponse> {[m
+ [m
+     // Add image_urls if provided (for nano-banana/edit)[m
+     if (body.image_urls) {[m
+[31m-      // Convert localhost URLs in image_urls array to base64[m
+[32m+[m[32m      // Convert URLs in image_urls array to base64 with compression[m
+       const convertedImageUrls = await Promise.all([m
+         body.image_urls.map(async (url: string) => {[m
+[31m-          if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {[m
+[31m-            console.log('🖼️ [FAL Image Proxy] Converting HTTP URL in image_urls array to base64:', url);[m
+[32m+[m[32m          if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://')) {[m
+[32m+[m[32m            console.log('🖼️ [FAL Image Proxy] Converting HTTP URL in image_urls array to base64 with compression:', url);[m
+             try {[m
+[32m+[m[32m              // First, fetch the image to check its size[m
+               const response = await fetch(url);[m
+               if (!response.ok) {[m
+                 throw new Error(`Failed to fetch image: ${response.status}`);[m
+               }[m
+               [m
+               const arrayBuffer = await response.arrayBuffer();[m
+[31m-              const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[31m-              const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[31m-              const dataUri = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m              const originalSize = arrayBuffer.byteLength;[m
+[32m+[m[41m              [m
+[32m+[m[32m              console.log('📊 [FAL Image Proxy] Original image size in array:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');[m
+               [m
+[31m-              console.log('🖼️ [FAL Image Proxy] Successfully converted image_urls array item to base64 data URI');[m
+[31m-              return dataUri;[m
+[32m+[m[32m              // If image is small enough, use simple base64 conversion[m
+[32m+[m[32m              if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold[m
+[32m+[m[32m                console.log('✅ [FAL Image Proxy] Image in array is small enough, using simple base64 conversion');[m
+[32m+[m[32m                const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[32m+[m[32m                const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[32m+[m[32m                const dataUri = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m                console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);[m
+[32m+[m[32m                return dataUri;[m
+[32m+[m[32m              } else {[m
+[32m+[m[32m                // For larger images, use compression[m
+[32m+[m[32m                console.log('🗜️ [FAL Image Proxy] Image in array is large, applying compression');[m
+[32m+[m[32m                const compressionOptions = getOptimalCompressionOptions(originalSize);[m
+[32m+[m[32m                const dataUri = await compressImageFromUrl(url, compressionOptions);[m
+[32m+[m[32m                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);[m
+[32m+[m[32m                return dataUri;[m
+[32m+[m[32m              }[m
+             } catch (error) {[m
+               console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL in image_urls array to base64:', error);[m
+               throw error;[m
+[36m@@ -355,21 +386,34 @@[m [mexport async function POST(request: NextRequest): Promise<NextResponse> {[m
+         input.image_urls = body.image_urls;[m
+         console.log('🔧 [FAL Image Proxy] Using provided image_urls array for Nano Banana:', body.image_urls.length, 'images');[m
+       } else if (body.image_url) {[m
+[31m-        // Convert single image_url to image_urls array[m
+[31m-        // Check if it's a localhost URL and convert to base64[m
+[32m+[m[32m        // Convert single image_url to image_urls array with compression[m
+         let imageUrl = body.image_url;[m
+[31m-        if (imageUrl.startsWith('http://localhost:') || imageUrl.startsWith('http://127.0.0.1:')) {[m
+[31m-          console.log('🖼️ [FAL Image Proxy] Converting single image_url to base64 for Nano Banana:', imageUrl);[m
+[32m+[m[32m        if (imageUrl.startsWith('http://localhost:') || imageUrl.startsWith('http://127.0.0.1:') || imageUrl.startsWith('https://')) {[m
+[32m+[m[32m          console.log('🖼️ [FAL Image Proxy] Converting single image_url to base64 with compression for Nano Banana:', imageUrl);[m
+           try {[m
+[32m+[m[32m            // First, fetch the image to check its size[m
+             const response = await fetch(imageUrl);[m
+             if (!response.ok) {[m
+               throw new Error(`Failed to fetch image: ${response.status}`);[m
+             }[m
+             [m
+             const arrayBuffer = await response.arrayBuffer();[m
+[31m-            const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[31m-            const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[31m-            imageUrl = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m            const originalSize = arrayBuffer.byteLength;[m
+[32m+[m[41m            [m
+[32m+[m[32m            console.log('📊 [FAL Image Proxy] Original image size for Nano Banana:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');[m
+[32m+[m[41m            [m
+[32m+[m[32m            // If image is small enough, use simple base64 conversion[m
+[32m+[m[32m            if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold[m
+[32m+[m[32m              console.log('✅ [FAL Image Proxy] Image for Nano Banana is small enough, using simple base64 conversion');[m
+[32m+[m[32m              const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[32m+[m[32m              const mimeType = response.headers.get('content-type') || 'image/jpeg';[m
+[32m+[m[32m              imageUrl = `data:${mimeType};base64,${base64}`;[m
+[32m+[m[32m            } else {[m
+[32m+[m[32m              // For larger images, use compression[m
+[32m+[m[32m              console.log('🗜️ [FAL Image Proxy] Image for Nano Banana is large, applying compression');[m
+[32m+[m[32m              const compressionOptions = getOptimalCompressionOptions(originalSize);[m
+[32m+[m[32m              imageUrl = await compressImageFromUrl(imageUrl, compressionOptions);[m
+[32m+[m[32m            }[m
+             [m
+             console.log('🖼️ [FAL Image Proxy] Successfully converted single image_url to base64 for Nano Banana');[m
+           } catch (error) {[m
+[1mdiff --git a/src/app/api/generate/route.ts b/src/app/api/generate/route.ts[m
+[1mindex 8c0182c..3215c27 100644[m
+[1m--- a/src/app/api/generate/route.ts[m
+[1m+++ b/src/app/api/generate/route.ts[m
+[36m@@ -1,17 +1,39 @@[m
+ import { NextRequest, NextResponse } from "next/server";[m
+ import { fal } from '@fal-ai/client';[m
+[32m+[m[32mimport { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';[m
+ [m
+[31m-// Helper function to convert localhost URLs to base64 data URIs[m
+[32m+[m[32m// Helper function to convert localhost URLs to base64 data URIs with compression[m
+ async function convertLocalhostToBase64(url: string): Promise<string> {[m
+   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {[m
+     try {[m
+[32m+[m[32m      console.log('🔄 [Generate API] Converting localhost URL to base64 with compression:', url);[m
+[32m+[m[41m      [m
+[32m+[m[32m      // First, fetch the image to check its size[m
+       const response = await fetch(url);[m
+[32m+[m[32m      if (!response.ok) {[m
+[32m+[m[32m        throw new Error(`Failed to fetch image: ${response.status}`);[m
+[32m+[m[32m      }[m
+[32m+[m[41m      [m
+       const arrayBuffer = await response.arrayBuffer();[m
+[31m-      const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[31m-      const contentType = response.headers.get('content-type') || 'image/jpeg';[m
+[31m-      return `data:${contentType};base64,${base64}`;[m
+[32m+[m[32m      const originalSize = arrayBuffer.byteLength;[m
+[32m+[m[41m      [m
+[32m+[m[32m      console.log('📊 [Generate API] Original image size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');[m
+[32m+[m[41m      [m
+[32m+[m[32m      // If image is small enough, use simple base64 conversion[m
+[32m+[m[32m      if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold[m
+[32m+[m[32m        console.log('✅ [Generate API] Image is small enough, using simple base64 conversion');[m
+[32m+[m[32m        const base64 = Buffer.from(arrayBuffer).toString('base64');[m
+[32m+[m[32m        const contentType = response.headers.get('content-type') || 'image/jpeg';[m
+[32m+[m[32m        return `data:${contentType};base64,${base64}`;[m
+[32m+[m[32m      }[m
+[32m+[m[41m      [m
+[32m+[m[32m      // For larger images, use compression[m
+[32m+[m[32m      console.log('🗜️ [Generate API] Image is large, applying compression');[m
+[32m+[m[32m      const compressionOptions = getOptimalCompressionOptions(originalSize);[m
+[32m+[m[32m      return await compressImageFromUrl(url, compressionOptions);[m
+[32m+[m[41m      [m
+     } catch (error) {[m
+[31m-      console.error('Failed to convert localhost URL to base64:', error);[m
+[32m+[m[32m      console.error('❌ [Generate API] Failed to convert localhost URL to base64:', error);[m
+       return url; // Return original URL if conversion fails[m
+     }[m
+   }[m
+[1mdiff --git a/src/lib/image-compression.ts b/src/lib/image-compression.ts[m
+[1mnew file mode 100644[m
+[1mindex 0000000..39efda9[m
+[1m--- /dev/null[m
+[1m+++ b/src/lib/image-compression.ts[m
+[36m@@ -0,0 +1,305 @@[m
+[32m+[m[32mimport sharp from 'sharp';[m
+[32m+[m
+[32m+[m[32mexport interface CompressionOptions {[m
+[32m+[m[32m  maxWidth?: number;[m
+[32m+[m[32m  maxHeight?: number;[m
+[32m+[m[32m  quality?: number;[m
+[32m+[m[32m  format?: 'jpeg' | 'png' | 'webp';[m
+[32m+[m[32m  maxSizeBytes?: number;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mexport interface CompressionResult {[m
+[32m+[m[32m  buffer: Buffer;[m
+[32m+[m[32m  size: number;[m
+[32m+[m[32m  format: string;[m
+[32m+[m[32m  width: number;[m
+[32m+[m[32m  height: number;[m
+[32m+[m[32m  compressed: boolean;[m
+[32m+[m[32m  originalSize: number;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mconst DEFAULT_COMPRESSION_OPTIONS: CompressionOptions = {[m
+[32m+[m[32m  maxWidth: 1920,[m
+[32m+[m[32m  maxHeight: 1920,[m
+[32m+[m[32m  quality: 85,[m
+[32m+[m[32m  format: 'jpeg',[m
+[32m+[m[32m  maxSizeBytes: 5 * 1024 * 1024 // 5MB limit for FAL API[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Compress an image buffer to reduce file size while maintaining quality[m
+[32m+[m[32m * This is specifically designed to prevent HTTP 413 errors with FAL API[m
+[32m+[m[32m */[m
+[32m+[m[32mexport async function compressImage([m
+[32m+[m[32m  inputBuffer: Buffer,[m
+[32m+[m[32m  options: CompressionOptions = {}[m
+[32m+[m[32m): Promise<CompressionResult> {[m
+[32m+[m[32m  const opts = { ...DEFAULT_COMPRESSION_OPTIONS, ...options };[m
+[32m+[m[41m  [m
+[32m+[m[32m  try {[m
+[32m+[m[32m    console.log('🗜️ [ImageCompression] Starting compression with options:', opts);[m
+[32m+[m[41m    [m
+[32m+[m[32m    // Get image metadata[m
+[32m+[m[32m    const metadata = await sharp(inputBuffer).metadata();[m
+[32m+[m[32m    const originalSize = inputBuffer.length;[m
+[32m+[m[41m    [m
+[32m+[m[32m    console.log('🗜️ [ImageCompression] Original image:', {[m
+[32m+[m[32m      width: metadata.width,[m
+[32m+[m[32m      height: metadata.height,[m
+[32m+[m[32m      format: metadata.format,[m
+[32m+[m[32m      size: originalSize,[m
+[32m+[m[32m      sizeMB: (originalSize / 1024 / 1024).toFixed(2)[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m    // If image is already small enough, return as-is[m
+[32m+[m[32m    if (originalSize <= (opts.maxSizeBytes || DEFAULT_COMPRESSION_OPTIONS.maxSizeBytes!)) {[m
+[32m+[m[32m      console.log('🗜️ [ImageCompression] Image already within size limit, no compression needed');[m
+[32m+[m[32m      return {[m
+[32m+[m[32m        buffer: inputBuffer,[m
+[32m+[m[32m        size: originalSize,[m
+[32m+[m[32m        format: metadata.format || 'unknown',[m
+[32m+[m[32m        width: metadata.width || 0,[m
+[32m+[m[32m        height: metadata.height || 0,[m
+[32m+[m[32m        compressed: false,[m
+[32m+[m[32m        originalSize[m
+[32m+[m[32m      };[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Calculate new dimensions while maintaining aspect ratio[m
+[32m+[m[32m    let newWidth = metadata.width || 1920;[m
+[32m+[m[32m    let newHeight = metadata.height || 1920;[m
+[32m+[m[41m    [m
+[32m+[m[32m    if (newWidth > (opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!)) {[m
+[32m+[m[32m      const ratio = (opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!) / newWidth;[m
+[32m+[m[32m      newWidth = opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!;[m
+[32m+[m[32m      newHeight = Math.round(newHeight * ratio);[m
+[32m+[m[32m    }[m
+[32m+[m[41m    [m
+[32m+[m[32m    if (newHeight > (opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!)) {[m
+[32m+[m[32m      const ratio = (opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!) / newHeight;[m
+[32m+[m[32m      newHeight = opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!;[m
+[32m+[m[32m      newWidth = Math.round(newWidth * ratio);[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    console.log('🗜️ [ImageCompression] Resizing to:', { width: newWidth, height: newHeight });[m
+[32m+[m
+[32m+[m[32m    // Start with the base transformation[m
+[32m+[m[32m    let sharpInstance = sharp(inputBuffer)[m
+[32m+[m[32m      .resize(newWidth, newHeight, {[m
+[32m+[m[32m        fit: 'inside',[m
+[32m+[m[32m        withoutEnlargement: true[m
+[32m+[m[32m      });[m
+[32m+[m
+[32m+[m[32m    // Apply format-specific compression[m
+[32m+[m[32m    switch (opts.format) {[m
+[32m+[m[32m      case 'jpeg':[m
+[32m+[m[32m        sharpInstance = sharpInstance.jpeg({[m[41m [m
+[32m+[m[32m          quality: opts.quality,[m
+[32m+[m[32m          progressive: true,[m
+[32m+[m[32m          mozjpeg: true // Use mozjpeg for better compression[m
+[32m+[m[32m        });[m
+[32m+[m[32m        break;[m
+[32m+[m[32m      case 'png':[m
+[32m+[m[32m        sharpInstance = sharpInstance.png({[m[41m [m
+[32m+[m[32m          quality: opts.quality,[m
+[32m+[m[32m          progressive: true,[m
+[32m+[m[32m          compressionLevel: 9[m
+[32m+[m[32m        });[m
+[32m+[m[32m        break;[m
+[32m+[m[32m      case 'webp':[m
+[32m+[m[32m        sharpInstance = sharpInstance.webp({[m[41m [m
+[32m+[m[32m          quality: opts.quality,[m
+[32m+[m[32m          effort: 6 // Higher effort for better compression[m
+[32m+[m[32m        });[m
+[32m+[m[32m        break;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    // Apply compression[m
+[32m+[m[32m    let compressedBuffer = await sharpInstance.toBuffer();[m
+[32m+[m[32m    let currentQuality = opts.quality || 85;[m
+[32m+[m[41m    [m
+[32m+[m[32m    // If still too large, reduce quality iteratively[m
+[32m+[m[32m    while (compressedBuffer.length > (opts.maxSizeBytes || DEFAULT_COMPRESS

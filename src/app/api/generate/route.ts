@@ -336,6 +336,63 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    // Handle Sora 2 model specific parameters
+    if (model.includes('sora-2')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Sora 2 model: ${model}`);
+      
+      // Sora 2 ONLY accepts resolution: 'auto' or '720p'
+      if (body.resolution) {
+        if (body.resolution === '1080p') {
+          input.resolution = '720p'; // Convert 1080p to 720p (closest valid option)
+        } else if (body.resolution === 'auto' || body.resolution === '720p') {
+          input.resolution = body.resolution; // Already valid
+        } else {
+          input.resolution = 'auto'; // Default to auto
+        }
+      } else {
+        input.resolution = 'auto'; // Default to auto
+      }
+      
+      // Sora 2 ONLY accepts duration: 4, 8, or 12 (numbers, not strings)
+      if (body.duration) {
+        const durationNum = parseInt(body.duration.toString());
+        if (durationNum === 4 || durationNum === 8 || durationNum === 12) {
+          input.duration = durationNum; // Already valid
+        } else if (durationNum <= 4) {
+          input.duration = 4; // Convert short durations to 4
+        } else if (durationNum <= 8) {
+          input.duration = 8; // Convert medium durations to 8
+        } else {
+          input.duration = 12; // Convert long durations to 12
+        }
+      } else {
+        input.duration = 4; // Default to 4 seconds
+      }
+      
+      // Sora 2 supports aspect_ratio: 'auto', '9:16', '16:9'
+      if (body.aspect_ratio && !['auto', '9:16', '16:9'].includes(body.aspect_ratio)) {
+        // Convert to supported aspect ratios
+        if (body.aspect_ratio === '16:9') {
+          input.aspect_ratio = '16:9';
+        } else if (body.aspect_ratio === '9:16') {
+          input.aspect_ratio = '9:16';
+        } else {
+          input.aspect_ratio = 'auto'; // Default to auto
+        }
+      }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Sora 2 model parameters:`, {
+        model: model,
+        originalDuration: body.duration,
+        originalResolution: body.resolution,
+        originalAspectRatio: body.aspect_ratio,
+        finalDuration: input.duration,
+        finalResolution: input.resolution,
+        finalAspectRatio: input.aspect_ratio,
+        note: 'Sora 2 only accepts duration: 4, 8, or 12 (numbers), resolution: auto or 720p, aspect_ratio: auto/9:16/16:9'
+      });
+    }
+
 
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);

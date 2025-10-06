@@ -76,6 +76,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
   // Helper function to get model icon
   const getModelIcon = (model: string) => {
+    if (model.includes('sora')) return '/openai.svg'; // Use OpenAI icon for Sora
     if (model.includes('nano-banana')) return '/gemini-color.svg';
     if (model.includes('flux')) return '/flux.svg';
     if (model.includes('kling')) return '/kling-color.svg';
@@ -838,6 +839,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Default</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>

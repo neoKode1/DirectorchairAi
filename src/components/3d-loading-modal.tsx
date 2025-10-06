@@ -13,7 +13,9 @@ interface ThreeJSLoadingModalProps {
 const getModelIcon = (model: string): string => {
   const modelLower = model.toLowerCase();
   
-  if (modelLower.includes('flux')) {
+  if (modelLower.includes('sora')) {
+    return '/openai.svg'; // Use OpenAI icon for Sora
+  } else if (modelLower.includes('flux')) {
     return '/flux.svg';
   } else if (modelLower.includes('seedream') || modelLower.includes('bytedance')) {
     return '/bytedance-color.svg';

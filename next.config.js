@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output configuration to prevent static generation issues
-  output: 'standalone',
-  
   images: {
     remotePatterns: [
       {
@@ -15,6 +12,31 @@ const nextConfig = {
   // Production optimizations
   experimental: {
     optimizePackageImports: ['@tanstack/react-query', 'lucide-react'],
+    // Fix webpack compatibility issues with Radix UI
+    webpackBuildWorker: false,
+  },
+
+  // Webpack configuration to fix Radix UI compatibility
+  webpack: (config, { isServer }) => {
+    // Fix for Radix UI webpack issues
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '@radix-ui/react-id': 'commonjs @radix-ui/react-id',
+        '@radix-ui/react-dialog': 'commonjs @radix-ui/react-dialog',
+      });
+    }
+
+    // Ensure proper module resolution
+    config.resolve = config.resolve || {};
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
+    return config;
   },
 
   // Error handling and fallbacks
@@ -71,14 +93,29 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // Prevent static generation of API routes during build
-  async generateStaticParams() {
-    return [];
-  },
-
   // Disable static generation for problematic routes
   trailingSlash: false,
   poweredByHeader: false,
+
+  // Transpile packages to fix compatibility issues
+  transpilePackages: [
+    '@radix-ui/react-id',
+    '@radix-ui/react-dialog',
+    '@radix-ui/react-dropdown-menu',
+    '@radix-ui/react-popover',
+    '@radix-ui/react-select',
+    '@radix-ui/react-tabs',
+    '@radix-ui/react-toast',
+    '@radix-ui/react-accordion',
+    '@radix-ui/react-checkbox',
+    '@radix-ui/react-collapsible',
+    '@radix-ui/react-label',
+    '@radix-ui/react-progress',
+    '@radix-ui/react-radio-group',
+    '@radix-ui/react-separator',
+    '@radix-ui/react-slider',
+    '@radix-ui/react-switch',
+  ],
 };
 
 export default nextConfig;

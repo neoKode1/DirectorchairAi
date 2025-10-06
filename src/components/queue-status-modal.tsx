@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { X, Clock, Play, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { QueueRequest } from '@/hooks/useQueue';
+import Image from 'next/image';
 
 interface QueueStatusModalProps {
   isOpen: boolean;
@@ -47,6 +48,30 @@ const getStatusColor = (status: QueueRequest['status']) => {
       return 'bg-gray-100 text-gray-800 border-gray-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
+  }
+};
+
+const getModelIcon = (model: string): string => {
+  const modelLower = model.toLowerCase();
+  
+  if (modelLower.includes('flux')) {
+    return '/flux.svg';
+  } else if (modelLower.includes('seedream') || modelLower.includes('bytedance')) {
+    return '/bytedance-color.svg';
+  } else if (modelLower.includes('kling')) {
+    return '/kling-color.svg';
+  } else if (modelLower.includes('minimax')) {
+    return '/minimax-color.svg';
+  } else if (modelLower.includes('luma') || modelLower.includes('dream-machine')) {
+    return '/dreammachine.png';
+  } else if (modelLower.includes('gemini')) {
+    return '/gemini-color.svg';
+  } else if (modelLower.includes('ideogram')) {
+    return '/ideogram.svg';
+  } else if (modelLower.includes('nano-banana')) {
+    return '/bytedance-color.svg'; // Use bytedance icon for nano-banana as well
+  } else {
+    return '/flux.svg'; // Default fallback
   }
 };
 
@@ -144,6 +169,15 @@ export const QueueStatusModal: React.FC<QueueStatusModalProps> = ({
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
+                          <div className="relative w-6 h-6 flex-shrink-0">
+                            <Image
+                              src={getModelIcon(request.model)}
+                              alt={`${formatModelName(request.model)} icon`}
+                              fill
+                              className="object-contain"
+                              sizes="24px"
+                            />
+                          </div>
                           {getStatusIcon(request.status)}
                           <span className="text-sm font-medium text-gray-900">
                             {formatModelName(request.model)}
@@ -208,6 +242,15 @@ export const QueueStatusModal: React.FC<QueueStatusModalProps> = ({
                     className="flex items-center justify-between p-3 border rounded-lg bg-white"
                   >
                     <div className="flex items-center space-x-3">
+                      <div className="relative w-5 h-5 flex-shrink-0">
+                        <Image
+                          src={getModelIcon(request.model)}
+                          alt={`${formatModelName(request.model)} icon`}
+                          fill
+                          className="object-contain"
+                          sizes="20px"
+                        />
+                      </div>
                       {getStatusIcon(request.status)}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2">

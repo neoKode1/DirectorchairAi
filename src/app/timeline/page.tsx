@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { SimpleChatInterface } from "@/components/simple-chat-interface";
 import { GalleryView } from "@/components/gallery-view";
+import { ThreeJSLoadingModal } from "@/components/3d-loading-modal";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useQueue } from "@/hooks/useQueue";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -33,6 +35,13 @@ function TimelineContent() {
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [isGalleryCollapsed, setIsGalleryCollapsed] = useState(false);
   const contentAreaRef = useRef<HTMLDivElement>(null);
+
+  // Queue system
+  const {
+    requests: queueRequests,
+    cancelRequest,
+    getActiveCount
+  } = useQueue();
 
   useEffect(() => {
     setMounted(true);
@@ -400,6 +409,13 @@ function TimelineContent() {
           </div>
         )}
       </div>
+
+      {/* 3D Loading Modal */}
+      <ThreeJSLoadingModal
+        isOpen={getActiveCount() > 0}
+        requests={queueRequests}
+        onCancelRequest={cancelRequest}
+      />
 
       <Toaster />
     </div>

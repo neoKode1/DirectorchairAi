@@ -17,12 +17,10 @@
     "@fal-ai/server-proxy": "^1.1.1",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
-
     "@hookform/resolvers": "^3.9.1",
     "@langchain/community": "^0.3.53",
     "@langchain/core": "^0.3.72",
     "@langchain/groq": "^0.2.3",
-
     "@nextui-org/react": "^2.6.11",
     "@nextui-org/theme": "^2.4.5",
     "@radix-ui/react-accordion": "^1.2.1",
@@ -61,8 +59,8 @@
     "@remotion/media-utils": "4.0.249",
     "@remotion/player": "4.0.249",
     "@remotion/preload": "^4.0.260",
-
     "@tanstack/react-query": "^5.62.7",
+    "@types/three": "^0.180.0",
     "@types/uuid": "^10.0.0",
     "@vercel/analytics": "^1.4.1",
     "@vercel/kv": "^3.0.0",
@@ -87,9 +85,9 @@
     "react-hotkeys-hook": "^4.6.1",
     "remotion": "4.0.249",
     "sonner": "^1.7.4",
-
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "three": "^0.180.0",
     "throttle-debounce": "^5.0.2",
     "uuid": "^11.0.5",
     "zod": "^3.24.1",

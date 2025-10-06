@@ -495,6 +495,32 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             model: 'fal-ai/bytedance/seedream/v4/edit'
           };
           
+          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
+          if (generationData.aspect_ratio) {
+            const aspectRatioToDimensions = (ratio: string) => {
+              switch (ratio) {
+                case '1:1':
+                  return { width: 1024, height: 1024 };
+                case '16:9':
+                  return { width: 1920, height: 1080 };
+                case '9:16':
+                  return { width: 1080, height: 1920 };
+                case '4:3':
+                  return { width: 1024, height: 768 };
+                case '3:4':
+                  return { width: 768, height: 1024 };
+                default:
+                  return { width: 1920, height: 1080 }; // Default to 16:9
+              }
+            };
+            
+            (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
+            // Remove aspect_ratio since Seedream uses image_size
+            delete (fallbackGenerationData as any).aspect_ratio;
+            
+            console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream queue fallback:', (fallbackGenerationData as any).image_size);
+          }
+          
           try {
             const requestId = await submitRequest(fallbackGenerationData.model, fallbackGenerationData, userInput.trim());
             console.log('✅ [Chat] Fallback request submitted to queue:', requestId);
@@ -620,6 +646,32 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               ...generationData,
               model: 'fal-ai/bytedance/seedream/v4/edit'
             };
+            
+            // Convert aspect_ratio to image_size for Seedream 4.0 Edit
+            if (generationData.aspect_ratio) {
+              const aspectRatioToDimensions = (ratio: string) => {
+                switch (ratio) {
+                  case '1:1':
+                    return { width: 1024, height: 1024 };
+                  case '16:9':
+                    return { width: 1920, height: 1080 };
+                  case '9:16':
+                    return { width: 1080, height: 1920 };
+                  case '4:3':
+                    return { width: 1024, height: 768 };
+                  case '3:4':
+                    return { width: 768, height: 1024 };
+                  default:
+                    return { width: 1920, height: 1080 }; // Default to 16:9
+                }
+              };
+              
+              (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
+              // Remove aspect_ratio since Seedream uses image_size
+              delete (fallbackGenerationData as any).aspect_ratio;
+              
+              console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream fallback:', (fallbackGenerationData as any).image_size);
+            }
             
             result = await onContentGenerated(fallbackGenerationData);
           } else {

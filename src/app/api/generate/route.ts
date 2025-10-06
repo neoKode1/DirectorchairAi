@@ -272,6 +272,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             // Keep the same prompt and image for fallback
           };
           
+          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
+          if (body.aspect_ratio) {
+            const aspectRatioToDimensions = (ratio: string) => {
+              switch (ratio) {
+                case '1:1':
+                  return { width: 1024, height: 1024 };
+                case '16:9':
+                  return { width: 1920, height: 1080 };
+                case '9:16':
+                  return { width: 1080, height: 1920 };
+                case '4:3':
+                  return { width: 1024, height: 768 };
+                case '3:4':
+                  return { width: 768, height: 1024 };
+                default:
+                  return { width: 1920, height: 1080 }; // Default to 16:9
+              }
+            };
+            
+            fallbackInput.image_size = aspectRatioToDimensions(body.aspect_ratio);
+            // Remove aspect_ratio since Seedream uses image_size
+            delete fallbackInput.aspect_ratio;
+            
+            console.log(`🔄 [Generate API] [${requestId}] Converted aspect_ratio ${body.aspect_ratio} to image_size:`, fallbackInput.image_size);
+          }
+          
           const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
             input: fallbackInput,
             logs: true,

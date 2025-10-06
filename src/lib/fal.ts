@@ -194,10 +194,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     maxImages: 4,
     initialInput: {
       prompt: "Dress the model in the clothes and hat. Add a cat to the scene and change the background to a Victorian era building.",
-      image_size: {
-        width: 3840,
-        height: 2160,
-      },
       num_images: 1,
       max_images: 1,
       enable_safety_checker: true,

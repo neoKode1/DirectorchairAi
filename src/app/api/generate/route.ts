@@ -63,7 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isVideoModel = model.includes('video') || 
                         model.includes('veo') || 
                         model.includes('kling') || 
-                        model.includes('luma') || 
+                        model.includes('luma-dream-machine') || // Only Luma Ray 2 Flash
                         model.includes('minimax') ||
                         model.includes('seedance');
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       model: model,
       isVideoModel: isVideoModel,
       isImageModel: isImageModel,
-      videoKeywords: ['video', 'veo', 'kling', 'luma', 'minimax', 'seedance'].filter(keyword => model.includes(keyword)),
+      videoKeywords: ['video', 'veo', 'kling', 'luma-dream-machine', 'minimax', 'seedance'].filter(keyword => model.includes(keyword)),
       imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
@@ -90,6 +90,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const input: Record<string, any> = {
       prompt: prompt.trim()
     };
+
+    // Set default parameters for video models
+    if (isVideoModel) {
+      // Default aspect ratio for all video models
+      if (body.aspect_ratio) {
+        input.aspect_ratio = body.aspect_ratio;
+      } else {
+        input.aspect_ratio = '16:9'; // Default aspect ratio for video models
+      }
+      
+      // Default duration for video models (will be overridden by model-specific handling)
+      if (body.duration) {
+        input.duration = body.duration;
+      } else {
+        input.duration = 5; // Default to 5 seconds for video models
+      }
+    }
 
     // Handle image URLs for image-to-image models
     if (body.image_url) {
@@ -158,16 +175,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle Minimax Hailuo-02 model specific parameters
     if (model.includes('minimax/hailuo-02')) {
       // Minimax Hailuo-02 only accepts duration: '6' or '10' (strings)
-      // Default to 6 seconds
-      input.duration = '6';
+      // Convert user duration to valid format
+      if (body.duration) {
+        const durationStr = body.duration.toString();
+        if (durationStr.includes('5') || durationStr.includes('5s')) {
+          input.duration = '6'; // Closest valid option to 5 seconds
+        } else if (durationStr.includes('10') || durationStr.includes('10s')) {
+          input.duration = '10';
+        } else {
+          input.duration = '6'; // Default to 6 seconds
+        }
+      } else {
+        input.duration = '6'; // Default to 6 seconds
+      }
       
       // Minimax Hailuo-02 only accepts resolution: '512P' or '768P'
-      // Convert 1080p to 768P, others to 512P
-      if (body.resolution === '1080p') {
-        input.resolution = '768P';
+      // Convert user resolution to valid format
+      if (body.resolution) {
+        if (body.resolution === '1080p') {
+          input.resolution = '768P';
+        } else if (body.resolution === '720p') {
+          input.resolution = '768P';
+        } else {
+          input.resolution = '512P';
+        }
       } else {
-        input.resolution = '512P';
+        input.resolution = '512P'; // Default to 512P
       }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Minimax Hailuo-02 parameters:`, {
+        originalDuration: body.duration,
+        originalResolution: body.resolution,
+        finalDuration: input.duration,
+        finalResolution: input.resolution
+      });
     }
 
     // Handle Kling model specific parameters

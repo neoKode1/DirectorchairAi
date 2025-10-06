@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Get the final result
     const falClient = fal();
     const result = await falClient.queue.result(model, {
-      request_id: requestId,
+      requestId: requestId,
     });
 
     console.log('✅ [Queue] Result retrieved successfully');

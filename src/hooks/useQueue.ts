@@ -224,11 +224,11 @@ export const useQueue = () => {
           } catch (error) {
             console.error('❌ [Queue] Error getting result:', error);
             // If result retrieval fails, check if the result is in the status response
-            if (status.response) {
+            if ((status as any).response) {
               console.log('🔄 [Queue] Using result from status response');
               updateRequestStatus(request.requestId, {
                 status: 'COMPLETED',
-                result: status.response,
+                result: (status as any).response,
                 completedAt: new Date(),
               });
             } else {

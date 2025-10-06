@@ -840,6 +840,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 <SelectContent>
                   <SelectItem value="none">Default</SelectItem>
                   <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
@@ -1116,6 +1117,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None (prompt to select)</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>

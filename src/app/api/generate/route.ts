@@ -336,18 +336,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Handle Sora 2 model specific parameters
+    // Handle Sora 2 and Sora 2 Pro model specific parameters
     if (model.includes('sora-2')) {
       console.log(`🔧 [Generate API] [${requestId}] Detected Sora 2 model: ${model}`);
       
-      // Sora 2 ONLY accepts resolution: 'auto' or '720p'
+      // Sora 2 Pro supports resolution: 'auto', '720p', '1080p'
+      // Sora 2 (standard) supports resolution: 'auto', '720p'
+      const isSora2Pro = model.includes('sora-2/image-to-video/pro');
+      
       if (body.resolution) {
-        if (body.resolution === '1080p') {
-          input.resolution = '720p'; // Convert 1080p to 720p (closest valid option)
-        } else if (body.resolution === 'auto' || body.resolution === '720p') {
-          input.resolution = body.resolution; // Already valid
+        if (isSora2Pro) {
+          // Sora 2 Pro supports 1080p
+          if (body.resolution === 'auto' || body.resolution === '720p' || body.resolution === '1080p') {
+            input.resolution = body.resolution; // Already valid
+          } else {
+            input.resolution = 'auto'; // Default to auto
+          }
         } else {
-          input.resolution = 'auto'; // Default to auto
+          // Sora 2 standard only supports auto and 720p
+          if (body.resolution === '1080p') {
+            input.resolution = '720p'; // Convert 1080p to 720p (closest valid option)
+          } else if (body.resolution === 'auto' || body.resolution === '720p') {
+            input.resolution = body.resolution; // Already valid
+          } else {
+            input.resolution = 'auto'; // Default to auto
+          }
         }
       } else {
         input.resolution = 'auto'; // Default to auto
@@ -383,13 +396,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       
       console.log(`🔧 [Generate API] [${requestId}] Sora 2 model parameters:`, {
         model: model,
+        isSora2Pro: isSora2Pro,
         originalDuration: body.duration,
         originalResolution: body.resolution,
         originalAspectRatio: body.aspect_ratio,
         finalDuration: input.duration,
         finalResolution: input.resolution,
         finalAspectRatio: input.aspect_ratio,
-        note: 'Sora 2 only accepts duration: 4, 8, or 12 (numbers), resolution: auto or 720p, aspect_ratio: auto/9:16/16:9'
+        note: isSora2Pro 
+          ? 'Sora 2 Pro accepts duration: 4, 8, or 12 (numbers), resolution: auto/720p/1080p, aspect_ratio: auto/9:16/16:9'
+          : 'Sora 2 accepts duration: 4, 8, or 12 (numbers), resolution: auto or 720p, aspect_ratio: auto/9:16/16:9'
       });
     }
 

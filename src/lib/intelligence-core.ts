@@ -667,9 +667,13 @@ export class IntelligenceCore {
         break;
       case 'video':
         strengths.push('Dynamic content creation', 'Motion and animation');
-        if (endpoint.endpointId.includes('sora-2')) {
-          strengths.push('State-of-the-art video quality', 'Rich detail and dynamic motion', 'Audio generation', 'OpenAI technology', 'High-resolution output', 'Advanced prompt understanding');
-        }
+          if (endpoint.endpointId.includes('sora-2')) {
+            if (endpoint.endpointId.includes('pro')) {
+              strengths.push('Premium video quality', 'Enhanced detail and motion', 'Audio generation', 'OpenAI Pro technology', 'Up to 1080p resolution', 'Superior prompt understanding', 'Professional-grade output');
+            } else {
+              strengths.push('State-of-the-art video quality', 'Rich detail and dynamic motion', 'Audio generation', 'OpenAI technology', 'High-resolution output', 'Advanced prompt understanding');
+            }
+          }
         if (endpoint.endpointId.includes('luma')) {
           strengths.push('Cinematic quality', 'Long-form video');
         }
@@ -740,9 +744,13 @@ export class IntelligenceCore {
         break;
       case 'video':
         useCases.push('Marketing videos', 'Educational content', 'Entertainment');
-        if (endpoint.endpointId.includes('sora-2')) {
-          useCases.push('High-quality video production', 'Professional content creation', 'Image-to-video animation', 'Audio-visual content', 'Creative storytelling', 'Commercial video projects');
-        }
+          if (endpoint.endpointId.includes('sora-2')) {
+            if (endpoint.endpointId.includes('pro')) {
+              useCases.push('Premium video production', 'Professional content creation', 'High-end commercial projects', 'Broadcast-quality content', 'Image-to-video animation', 'Audio-visual content', 'Creative storytelling', 'Enterprise video solutions');
+            } else {
+              useCases.push('High-quality video production', 'Professional content creation', 'Image-to-video animation', 'Audio-visual content', 'Creative storytelling', 'Commercial video projects');
+            }
+          }
         if (endpoint.endpointId.includes('luma')) {
           useCases.push('Cinematic projects', 'Long-form content');
         }
@@ -1446,9 +1454,10 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                                           intent.context.toLowerCase().includes('dynamic camera');
             
             if (isMultipleAngleRequest) {
-              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
-              // Prioritize Sora 2 for multiple angle shot variations, then Veo 3
-              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('sora-2')) ||
+              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Sora 2 Pro for advanced camera control');
+              // Prioritize Sora 2 Pro for multiple angle shot variations, then Sora 2, then Veo 3
+              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('sora-2/image-to-video/pro')) ||
+                             imageToVideoModels.find(model => model.endpointId.includes('sora-2') && !model.endpointId.includes('pro')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video')) ||
@@ -1457,25 +1466,28 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               console.log('🎬 [IntelligenceCore] Standard image-to-video animation, prioritizing Veo 3 as default');
               console.log('🎬 [IntelligenceCore] Available image-to-video models:', imageToVideoModels.map(m => m.endpointId));
               
-              // Check each model in the fallback chain
-              const sora2Model = imageToVideoModels.find(model => model.endpointId.includes('sora-2'));
-              const veo3Model = imageToVideoModels.find(model => model.endpointId.includes('veo3'));
-              const klingModel = imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video'));
-              const minimaxModel = imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video'));
-              
-              console.log('🎬 [IntelligenceCore] Fallback models found:', {
-                sora2: sora2Model?.endpointId,
-                veo3: veo3Model?.endpointId,
-                kling: klingModel?.endpointId,
-                minimax: minimaxModel?.endpointId
-              });
-              
-              // Prioritize Sora 2 as default for image-to-video, then Veo 3, then other models
-              selectedModel = sora2Model ||
-                             veo3Model ||
-                             klingModel ||
-                             minimaxModel ||
-                             imageToVideoModels[0];
+                  // Check each model in the fallback chain
+                  const sora2ProModel = imageToVideoModels.find(model => model.endpointId.includes('sora-2/image-to-video/pro'));
+                  const sora2Model = imageToVideoModels.find(model => model.endpointId.includes('sora-2') && !model.endpointId.includes('pro'));
+                  const veo3Model = imageToVideoModels.find(model => model.endpointId.includes('veo3'));
+                  const klingModel = imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video'));
+                  const minimaxModel = imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video'));
+                  
+                  console.log('🎬 [IntelligenceCore] Fallback models found:', {
+                    sora2Pro: sora2ProModel?.endpointId,
+                    sora2: sora2Model?.endpointId,
+                    veo3: veo3Model?.endpointId,
+                    kling: klingModel?.endpointId,
+                    minimax: minimaxModel?.endpointId
+                  });
+                  
+                  // Prioritize Sora 2 Pro as default for image-to-video, then Sora 2, then Veo 3, then other models
+                  selectedModel = sora2ProModel ||
+                                 sora2Model ||
+                                 veo3Model ||
+                                 klingModel ||
+                                 minimaxModel ||
+                                 imageToVideoModels[0];
               
               console.log('🎬 [IntelligenceCore] Final selected model:', selectedModel?.endpointId);
             }

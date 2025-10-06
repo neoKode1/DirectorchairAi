@@ -285,18 +285,64 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
     // Detect if user wants video generation based on keywords
     const videoKeywords = [
+      // Basic animation terms
       'animate', 'animation', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie',
+      
+      // Character actions
       'walking', 'running', 'dancing', 'jumping', 'flying', 'swimming', 'driving', 'riding',
+      'sitting', 'standing', 'turning', 'looking', 'waving', 'pointing', 'gesturing',
+      
+      // Camera movements and shots
       'camera movement', 'camera shot', 'camera pan', 'camera zoom', 'tracking shot', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
+      
+      // Comprehensive cinematic shot types
       'tracking dolly shot', 'dolly shot', 'dolly', 'tracking', 'dolly in', 'dolly out', 'push in', 'pull out',
+      'low-angle shot', 'low angle shot', 'low-angle', 'low angle',
+      'high-angle shot', 'high angle shot', 'high-angle', 'high angle',
+      'pedestal up shot', 'pedestal upshot', 'pedestal up', 'pedestal up shot',
+      'pedestal down shot', 'pedestal down', 'pedestal down shot',
+      'pan right shot', 'pan right', 'panning right', 'pan to right',
+      'pan left shot', 'pan left', 'panning left', 'pan to left',
+      'tilt up shot', 'tilt up', 'tilting up', 'tilt to up',
+      'tilt down shot', 'tilt down', 'tilting down', 'tilt to down',
+      'zoom in shot', 'zoom in', 'zooming in', 'zoom into',
+      'zoom out shot', 'zoom out', 'zooming out', 'zoom away',
+      'crane shot', 'crane up', 'crane down', 'crane movement',
+      'handheld shot', 'handheld', 'shaky cam', 'shaky camera',
+      'steady cam', 'steadicam', 'smooth movement',
+      'close-up shot', 'close up shot', 'close-up', 'close up',
+      'wide shot', 'wide angle shot', 'establishing shot',
+      'medium shot', 'medium close-up', 'medium close up',
+      'over-the-shoulder shot', 'over the shoulder shot', 'over shoulder',
+      'point of view shot', 'pov shot', 'first person shot',
+      'bird\'s eye view', 'birds eye view', 'aerial shot', 'top down',
+      'worm\'s eye view', 'worms eye view', 'ground level',
+      
+      // Advanced camera techniques
+      'rack focus', 'focus pull', 'shallow depth of field', 'bokeh',
+      'slow motion', 'slow-mo', 'time-lapse', 'fast motion',
+      'freeze frame', 'bullet time', 'matrix effect',
+      
+      // Transitions and effects
       'transition', 'morphing', 'transforming', 'changing', 'evolving', 'progressing',
+      'fade in', 'fade out', 'crossfade', 'dissolve', 'wipe',
       'action sequence', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
+      
+      // File formats and playback
       'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer',
       'duration', 'seconds', 'minutes', 'timeline', 'sequence'
     ];
     
     // Special trigger words that force video generation (image-to-video only)
-    const videoTriggers = ['make video', 'create video', 'generate video', 'video of', 'animate this', 'make it move', 'animate the image', 'bring to life'];
+    const videoTriggers = [
+      'make video', 'create video', 'generate video', 'video of', 
+      'animate this', 'make it move', 'animate the image', 'bring to life',
+      'animate this image', 'make this move', 'bring this to life',
+      'create animation', 'make animation', 'generate animation',
+      'turn into video', 'convert to video', 'make a video',
+      'animate with', 'animate using', 'animate the character',
+      'make the character', 'bring the character', 'animate the scene'
+    ];
     
     const hasVideoTrigger = videoTriggers.some(trigger => 
       userInput.toLowerCase().includes(trigger)

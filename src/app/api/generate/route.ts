@@ -103,8 +103,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Default duration for video models (will be overridden by model-specific handling)
       if (body.duration) {
         input.duration = body.duration;
-      } else {
-        input.duration = 5; // Default to 5 seconds for video models
+    } else {
+        input.duration = 6; // Default to 6 seconds for video models (compatible with Hailuo AI 02)
       }
     }
 
@@ -173,56 +173,87 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Handle Minimax Hailuo-02 model specific parameters
-    if (model.includes('minimax/hailuo-02')) {
-      // Minimax Hailuo-02 only accepts duration: '6' or '10' (strings)
-      // Convert user duration to valid format
+    if (model.includes('minimax/hailuo-02') || model.includes('minimax/hailuo-02/standard')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Minimax Hailuo-02 model: ${model}`);
+      // Hailuo AI 02 Standard ONLY accepts duration: '6' or '10' (strings)
+      // NEVER send '5' or '5s' - it will be rejected!
       if (body.duration) {
         const durationStr = body.duration.toString();
         if (durationStr.includes('5') || durationStr.includes('5s')) {
-          input.duration = '6'; // Closest valid option to 5 seconds
+          input.duration = '6'; // Convert 5s to 6s (closest valid option)
         } else if (durationStr.includes('10') || durationStr.includes('10s')) {
           input.duration = '10';
+        } else if (durationStr.includes('6') || durationStr.includes('6s')) {
+          input.duration = '6';
         } else {
-          input.duration = '6'; // Default to 6 seconds
+          input.duration = '6'; // Default to 6 seconds (valid option)
         }
       } else {
-        input.duration = '6'; // Default to 6 seconds
+        input.duration = '6'; // Default to 6 seconds (valid option)
       }
       
-      // Minimax Hailuo-02 only accepts resolution: '512P' or '768P'
-      // Convert user resolution to valid format
+      // Hailuo AI 02 Standard ONLY accepts resolution: '512P' or '768P'
+      // NEVER send '1080p', '720p', etc. - they will be rejected!
       if (body.resolution) {
-        if (body.resolution === '1080p') {
-          input.resolution = '768P';
-        } else if (body.resolution === '720p') {
-          input.resolution = '768P';
+        if (body.resolution === '1080p' || body.resolution === '720p') {
+          input.resolution = '768P'; // Convert high res to 768P
+        } else if (body.resolution === '512P' || body.resolution === '768P') {
+          input.resolution = body.resolution; // Already valid
         } else {
-          input.resolution = '512P';
+          input.resolution = '768P'; // Default to 768P (valid option)
         }
       } else {
-        input.resolution = '512P'; // Default to 512P
+        input.resolution = '768P'; // Default to 768P (valid option)
       }
       
-      console.log(`🔧 [Generate API] [${requestId}] Minimax Hailuo-02 parameters:`, {
+      console.log(`🔧 [Generate API] [${requestId}] Hailuo AI 02 Standard parameters:`, {
+        model: model,
         originalDuration: body.duration,
         originalResolution: body.resolution,
         finalDuration: input.duration,
-        finalResolution: input.resolution
+        finalResolution: input.resolution,
+        note: 'Hailuo AI 02 only accepts duration: 6 or 10 (strings), resolution: 512P or 768P (strings)'
       });
     }
 
     // Handle Kling model specific parameters
     if (model.includes('kling-video')) {
-      // Kling models only accept duration: '5' or '10' (strings)
-      // Default to 5 seconds
-      input.duration = '5';
+      // Kling models only accept duration: '5' or '10' (strings without 's')
+      if (body.duration) {
+        const durationStr = body.duration.toString();
+        if (durationStr.includes('5') || durationStr.includes('5s')) {
+          input.duration = '5'; // Kling uses '5' not '5s'
+        } else if (durationStr.includes('10') || durationStr.includes('10s')) {
+          input.duration = '10';
+        } else {
+          input.duration = '5'; // Default to 5 seconds
+        }
+      } else {
+        input.duration = '5'; // Default to 5 seconds
+      }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Kling model parameters:`, {
+        originalDuration: body.duration,
+        finalDuration: input.duration,
+        note: 'Kling uses duration: 5 or 10 (strings without s)'
+      });
     }
 
     // Handle Luma model specific parameters
     if (model.includes('luma-dream-machine')) {
-      // Luma models use duration: '5s' or '9s' (strings with 's')
-      // Default to 5 seconds
-      input.duration = '5s';
+      // Luma Ray 2 Flash uses duration: '5s' or '9s' (strings with 's')
+      if (body.duration) {
+        const durationStr = body.duration.toString();
+        if (durationStr.includes('5') || durationStr.includes('5s')) {
+          input.duration = '5s'; // Luma uses '5s' with 's'
+        } else if (durationStr.includes('9') || durationStr.includes('9s')) {
+          input.duration = '9s';
+        } else {
+          input.duration = '5s'; // Default to 5 seconds
+        }
+      } else {
+        input.duration = '5s'; // Default to 5 seconds
+      }
       
       // Luma models use resolution: '540p', '720p', '1080p'
       // Convert to appropriate format if needed
@@ -236,6 +267,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           input.resolution = '540p'; // Default to 540p for cost efficiency
         }
       }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 Flash parameters:`, {
+        originalDuration: body.duration,
+        originalResolution: body.resolution,
+        finalDuration: input.duration,
+        finalResolution: input.resolution,
+        note: 'Luma uses duration: 5s or 9s (strings with s), resolution: 540p, 720p, or 1080p'
+      });
     }
 
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
@@ -273,7 +312,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`✅ [Generate API] [${requestId}] Generation successful`);
       console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
       console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
-
+      
       return NextResponse.json({
         success: true,
         data: result.data,
@@ -292,7 +331,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       
       const endTime = Date.now();
       const duration = endTime - startTime;
-
+      
       // Check if this is a content policy violation with Nano Banana Edit that we can fallback from
       const isContentPolicyViolation = falError.status === 422 ||
                                      (falError.body && falError.body.detail && 
@@ -354,13 +393,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           console.log(`✅ [Generate API] [${requestId}] Total duration: ${fallbackDuration}ms`);
           console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED (FALLBACK) =====`);
           
-          return NextResponse.json({
+        return NextResponse.json({
             success: true,
             data: fallbackResult.data,
             requestId: fallbackResult.requestId,
             status: 'completed',
             model: 'fal-ai/bytedance/seedream/v4/edit',
-            prompt: prompt,
+          prompt: prompt,
             duration: fallbackDuration,
             fallbackUsed: 'fal-ai/bytedance/seedream/v4/edit',
             timestamp: new Date().toISOString()

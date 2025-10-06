@@ -177,6 +177,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.duration = '5';
     }
 
+    // Handle Luma model specific parameters
+    if (model.includes('luma-dream-machine')) {
+      // Luma models use duration: '5s' or '9s' (strings with 's')
+      // Default to 5 seconds
+      input.duration = '5s';
+      
+      // Luma models use resolution: '540p', '720p', '1080p'
+      // Convert to appropriate format if needed
+      if (body.resolution && !['540p', '720p', '1080p'].includes(body.resolution)) {
+        // Convert common resolutions to Luma format
+        if (body.resolution === '1080p') {
+          input.resolution = '1080p';
+        } else if (body.resolution === '720p') {
+          input.resolution = '720p';
+        } else {
+          input.resolution = '540p'; // Default to 540p for cost efficiency
+        }
+      }
+    }
+
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
     console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);

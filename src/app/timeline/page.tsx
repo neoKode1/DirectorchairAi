@@ -44,6 +44,19 @@ function TimelineContent() {
     }
   };
 
+  const handleAnimateImage = (imageUrl: string) => {
+    // Inject the image and automatically add an animation prompt
+    if ((window as any).injectImageToChat) {
+      (window as any).injectImageToChat(imageUrl);
+      // Add a small delay to ensure the image is injected first
+      setTimeout(() => {
+        if ((window as any).setChatInput) {
+          (window as any).setChatInput("Animate this character with smooth motion");
+        }
+      }, 200);
+    }
+  };
+
   const handleGenerate = async (generationData: any): Promise<any> => {
     try {
       console.log('🚀 [Timeline] ===== GENERATION START =====');
@@ -198,6 +211,7 @@ function TimelineContent() {
           onContentGenerated={handleGenerate}
           onGenerationStarted={() => console.log('Generation started')}
           onGenerationComplete={() => console.log('Generation complete')}
+          onImageInjected={() => console.log('Image injection ready')}
         />
       </div>
 
@@ -336,10 +350,16 @@ function TimelineContent() {
                 className="h-full"
                 useLocalStorage={true}
                 onItemClick={(item) => {
-                  console.log('Gallery item clicked:', item);
+                  console.log('Gallery item clicked for editing:', item);
+                  if (item.type === 'image') {
+                    handleEditImage(item.url);
+                  }
                 }}
                 onAnimate={(item) => {
                   console.log('Animate item:', item);
+                  if (item.type === 'image') {
+                    handleAnimateImage(item.url);
+                  }
                 }}
               />
             </div>

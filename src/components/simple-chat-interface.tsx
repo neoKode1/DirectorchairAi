@@ -209,11 +209,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }, 100);
   };
 
-  // Expose injectImage function to parent component
+  // Expose injectImage function and setChatInput to parent component
   useEffect(() => {
     if (onImageInjected) {
       // Store the injectImage function in a way that parent can access it
       (window as any).injectImageToChat = injectImage;
+      // Store the setUserInput function for setting chat input
+      (window as any).setChatInput = setUserInput;
     }
   }, [onImageInjected]);
 

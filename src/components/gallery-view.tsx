@@ -676,20 +676,18 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                           <Edit className="w-4 h-4 mr-2" />
                           Edit
                         </Button>
-                        {onAnimate && (
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="bg-white/20 text-white border-white/30 hover:bg-white/30"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAnimate?.(selectedItem);
-                            }}
-                          >
-                            <Zap className="w-4 h-4 mr-2" />
-                            Animate
-                          </Button>
-                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAnimate?.(selectedItem);
+                          }}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Animate
+                        </Button>
                       </>
                     )}
                   </div>

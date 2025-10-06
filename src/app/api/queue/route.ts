@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     // Get request status
     const falClient = fal();
     const status = await falClient.queue.status(model, {
-      requestId,
+      request_id: requestId,
       logs: true,
     });
 

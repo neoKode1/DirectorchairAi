@@ -181,6 +181,15 @@ export const useQueue = () => {
       req.status === 'IN_QUEUE' || req.status === 'IN_PROGRESS'
     );
 
+    // Also filter out requests that have been completed for too long (5 minutes)
+    const recentRequests = requests.filter(req => {
+      if (req.status === 'COMPLETED' && req.completedAt) {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        return req.completedAt > fiveMinutesAgo;
+      }
+      return true;
+    });
+
     console.log('🔄 [Queue] All requests:', requests.map(req => ({ id: req.requestId, status: req.status })));
     console.log('🔄 [Queue] Active requests:', activeRequests.length);
 
@@ -213,10 +222,22 @@ export const useQueue = () => {
             });
             console.log('✅ [Queue] Request completed:', request.requestId);
           } catch (error) {
-            updateRequestStatus(request.requestId, {
-              status: 'FAILED',
-              error: 'Failed to retrieve result',
-            });
+            console.error('❌ [Queue] Error getting result:', error);
+            // If result retrieval fails, check if the result is in the status response
+            if (status.response) {
+              console.log('🔄 [Queue] Using result from status response');
+              updateRequestStatus(request.requestId, {
+                status: 'COMPLETED',
+                result: status.response,
+                completedAt: new Date(),
+              });
+            } else {
+              // Mark as failed if we can't get the result
+              updateRequestStatus(request.requestId, {
+                status: 'FAILED',
+                error: 'Failed to retrieve result',
+              });
+            }
           }
         }
 

@@ -118,6 +118,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
+    // Validate prompt length for different models
+    const promptLength = prompt.trim().length;
+    const modelPromptLimits: Record<string, number> = {
+      'fal-ai/nano-banana/edit': 2000,        // Nano Banana Edit has stricter limits
+      'fal-ai/bytedance/seedream/v4/edit': 2000, // Seedream also has limits
+      'fal-ai/flux-pro': 3000,                // Flux Pro allows longer prompts
+      'fal-ai/imagen4': 3000,                 // Imagen 4 allows longer prompts
+      'default': 2500                         // Default limit for other models
+    };
+    
+    const maxLength = modelPromptLimits[model] || modelPromptLimits['default'];
+    
+    if (promptLength > maxLength) {
+      console.log(`⚠️ [Generate API] [${requestId}] Prompt too long: ${promptLength} chars (max: ${maxLength})`);
+      return NextResponse.json({
+        success: false,
+        error: 'Prompt too long',
+        message: `Your prompt is ${promptLength} characters long, but the ${model} model has a limit of ${maxLength} characters. Please shorten your prompt and try again.`,
+        details: `Current length: ${promptLength} characters. Maximum allowed: ${maxLength} characters.`,
+        status: 400,
+        model: model,
+        promptLength: promptLength,
+        maxLength: maxLength,
+        timestamp: new Date().toISOString()
+      }, { status: 400 });
+    }
+
     // Prepare FAL API input parameters
     const input: Record<string, any> = {
       prompt: prompt.trim()
@@ -365,18 +392,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const endTime = Date.now();
       const duration = endTime - startTime;
       
-      // Check if this is a content policy violation with Nano Banana Edit that we can fallback from
+      // Check if this is a content policy violation or prompt length issue with Nano Banana Edit that we can fallback from
       const isContentPolicyViolation = falError.status === 422 ||
                                      (falError.body && falError.body.detail && 
                                       falError.body.detail.some((d: any) => 
-                                        d.msg && d.msg.includes('Gemini could not generate an image')
+                                        d.msg && (d.msg.includes('Gemini could not generate an image') ||
+                                                 d.msg.includes('prompt too long') ||
+                                                 d.msg.includes('input too long'))
                                       ));
+      
+      const isPromptTooLong = falError.status === 400 && 
+                             (falError.message?.toLowerCase().includes('too long') ||
+                              falError.body?.detail?.some((d: any) => 
+                                d.msg?.toLowerCase().includes('too long')
+                              ));
       
       const isNanoBananaEdit = model === 'fal-ai/nano-banana/edit';
       const hasImageInput = body.image_url || body.image_urls;
       
-      if (isContentPolicyViolation && isNanoBananaEdit && hasImageInput) {
-        console.log(`🔄 [Generate API] [${requestId}] Content policy violation detected, trying Seedream 4.0 Edit as fallback...`);
+      if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaEdit && hasImageInput) {
+        const issueType = isPromptTooLong ? 'prompt length issue' : 'content policy violation';
+        console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying Seedream 4.0 Edit as fallback...`);
         
         try {
           // Retry with Seedream 4.0 Edit
@@ -448,18 +484,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         } catch (fallbackError: any) {
           console.error(`❌ [Generate API] [${requestId}] Fallback also failed:`, fallbackError);
           
-          // Return a user-friendly error message for content policy violations
+          // Return a user-friendly error message for content policy violations or prompt length issues
+          const errorType = isPromptTooLong ? 'Prompt too long' : 'Content policy violation';
+          const errorMessage = isPromptTooLong 
+            ? 'Your prompt is too long for both the primary model and fallback model. Please shorten your prompt and try again.'
+            : 'The prompt contains content that violates our content policy. Please try rephrasing your prompt to be more appropriate.';
+          const errorDetails = isPromptTooLong
+            ? 'Both models have prompt length limits. Please reduce your prompt length and try again.'
+            : 'Both the primary model and fallback model rejected the content. Please modify your prompt and try again.';
+          
           return NextResponse.json({
             success: false,
-            error: 'Content policy violation',
-            message: 'The prompt contains content that violates our content policy. Please try rephrasing your prompt to be more appropriate.',
-            details: 'Both the primary model and fallback model rejected the content. Please modify your prompt and try again.',
-            status: 422,
+            error: errorType,
+            message: errorMessage,
+            details: errorDetails,
+            status: isPromptTooLong ? 400 : 422,
             model: model,
             prompt: prompt,
+            promptLength: prompt.length,
             duration: Date.now() - startTime,
             timestamp: new Date().toISOString()
-          }, { status: 422 });
+          }, { status: isPromptTooLong ? 400 : 422 });
         }
       }
 

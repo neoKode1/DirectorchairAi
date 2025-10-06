@@ -170,7 +170,9 @@ function TimelineContent() {
         images: contentToStore.images,
         videos: contentToStore.videos,
         imagesLength: contentToStore.images?.length,
-        videosLength: contentToStore.videos?.length
+        videosLength: contentToStore.videos?.length,
+        firstVideo: contentToStore.videos?.[0],
+        firstVideoUrl: contentToStore.videos?.[0]?.url
       });
       
       // Add to generated content for display in center panel
@@ -285,7 +287,14 @@ function TimelineContent() {
                     </div>
                   ) : content.videos && content.videos.length > 0 ? (
                     <div className="space-y-4">
-                      {content.videos.map((video: any, vidIndex: number) => (
+                      {content.videos.map((video: any, vidIndex: number) => {
+                        console.log('🎬 [Timeline] Rendering video:', {
+                          video,
+                          videoUrl: video?.url,
+                          videoType: typeof video,
+                          videoKeys: Object.keys(video || {})
+                        });
+                        return (
                         <div key={vidIndex} className="relative group">
                           <video 
                             src={video.url} 
@@ -309,7 +318,8 @@ function TimelineContent() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-gray-500 text-sm">No media content generated</div>

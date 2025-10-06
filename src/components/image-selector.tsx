@@ -69,7 +69,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const imageElement = findImageElement();
-    if (!isDragging || !selection || !imageElement) return;
+    if (!imageElement) return;
 
     const imageRect = imageElement.getBoundingClientRect();
     const x = e.clientX - imageRect.left;
@@ -79,54 +79,81 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
     const constrainedX = Math.max(0, Math.min(x, imageRect.width));
     const constrainedY = Math.max(0, Math.min(y, imageRect.height));
 
-    setSelection(prev => prev ? {
-      ...prev,
-      endX: constrainedX,
-      endY: constrainedY
-    } : null);
-  }, [isDragging, selection]);
+    // Only update if we're currently selecting
+    setSelection(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        endX: constrainedX,
+        endY: constrainedY
+      };
+    });
+  }, [findImageElement]);
 
-  const handleMouseUp = useCallback(async () => {
+  const handleMouseUp = useCallback(async (e?: React.MouseEvent) => {
     const imageElement = findImageElement();
     if (!isSelecting || !selection || !imageElement) return;
 
-    setIsSelecting(false);
-    setIsDragging(false);
-
-    // Calculate selection bounds
-    const startX = Math.min(selection.startX, selection.endX);
-    const startY = Math.min(selection.startY, selection.endY);
-    const width = Math.abs(selection.endX - selection.startX);
-    const height = Math.abs(selection.endY - selection.startY);
-
-    // Only proceed if selection is large enough
-    if (width < 20 || height < 20) {
-      setSelection(null);
-      return;
-    }
-
-    try {
-      // Create cropped image
-      const croppedDataUrl = await cropImage(imageUrl, startX, startY, width, height);
+    // If this is a mouse event, update the final position
+    if (e) {
+      const imageRect = imageElement.getBoundingClientRect();
+      const x = e.clientX - imageRect.left;
+      const y = e.clientY - imageRect.top;
       
-      const imageSelection: ImageSelection = {
-        x: startX,
-        y: startY,
-        width,
-        height,
-        imageUrl,
-        croppedDataUrl
-      };
-
-      onSelectionComplete(imageSelection);
-      setSelection(null);
-    } catch (error) {
-      console.error('Error cropping image:', error);
-      setSelection(null);
+      const constrainedX = Math.max(0, Math.min(x, imageRect.width));
+      const constrainedY = Math.max(0, Math.min(y, imageRect.height));
+      
+      setSelection(prev => prev ? {
+        ...prev,
+        endX: constrainedX,
+        endY: constrainedY
+      } : null);
     }
-  }, [isSelecting, selection, imageUrl, onSelectionComplete]);
 
-  // Handle escape key to cancel selection
+    // Small delay to ensure state is updated
+    setTimeout(async () => {
+      setIsSelecting(false);
+      setIsDragging(false);
+
+      // Get the final selection state
+      const finalSelection = selection;
+      if (!finalSelection) return;
+
+      // Calculate selection bounds
+      const startX = Math.min(finalSelection.startX, finalSelection.endX);
+      const startY = Math.min(finalSelection.startY, finalSelection.endY);
+      const width = Math.abs(finalSelection.endX - finalSelection.startX);
+      const height = Math.abs(finalSelection.endY - finalSelection.startY);
+
+      // Only proceed if selection is large enough
+      if (width < 20 || height < 20) {
+        setSelection(null);
+        return;
+      }
+
+      try {
+        // Create cropped image
+        const croppedDataUrl = await cropImage(imageUrl, startX, startY, width, height);
+        
+        const imageSelection: ImageSelection = {
+          x: startX,
+          y: startY,
+          width,
+          height,
+          imageUrl,
+          croppedDataUrl
+        };
+
+        onSelectionComplete(imageSelection);
+        setSelection(null);
+      } catch (error) {
+        console.error('Error cropping image:', error);
+        setSelection(null);
+      }
+    }, 10);
+  }, [isSelecting, selection, imageUrl, onSelectionComplete, findImageElement]);
+
+  // Handle escape key to cancel selection and global mouse events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isSelecting) {
@@ -136,9 +163,46 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
       }
     };
 
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isSelecting) {
+        const imageElement = findImageElement();
+        if (!imageElement) return;
+
+        const imageRect = imageElement.getBoundingClientRect();
+        const x = e.clientX - imageRect.left;
+        const y = e.clientY - imageRect.top;
+
+        // Constrain to image bounds
+        const constrainedX = Math.max(0, Math.min(x, imageRect.width));
+        const constrainedY = Math.max(0, Math.min(y, imageRect.height));
+
+        setSelection(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            endX: constrainedX,
+            endY: constrainedY
+          };
+        });
+      }
+    };
+
+    const handleGlobalMouseUp = (e: MouseEvent) => {
+      if (isSelecting) {
+        handleMouseUp();
+      }
+    };
+
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isSelecting]);
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isSelecting, handleMouseUp, findImageElement]);
 
   // Calculate selection rectangle for display
   const getSelectionStyle = () => {
@@ -163,9 +227,6 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
       ref={containerRef}
       className={cn("relative", className)}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       {children}
       

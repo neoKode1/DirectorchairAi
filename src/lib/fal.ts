@@ -344,7 +344,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     inputAsset: ["image"],
     initialInput: {
       prompt: "Animate this image with realistic motion",
-      duration: "5s",
+      duration: "5",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },
@@ -356,7 +356,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "video",
     initialInput: {
       prompt: "A cinematic scene with professional quality",
-      duration: "5s",
+      duration: "5",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },

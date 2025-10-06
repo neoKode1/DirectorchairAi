@@ -170,6 +170,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
+    // Handle Kling model specific parameters
+    if (model.includes('kling-video')) {
+      // Kling models only accept duration: '5' or '10' (strings)
+      // Default to 5 seconds
+      input.duration = '5';
+    }
+
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
     console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);

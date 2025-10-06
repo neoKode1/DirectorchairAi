@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Download, Edit, Trash2, Video } from "lucide-react";
 import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
+import { ImageSelector, type ImageSelection } from "@/components/image-selector";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -61,6 +62,28 @@ function TimelineContent() {
           (window as any).setChatInput("Animate this character with smooth motion");
         }
       }, 200);
+    }
+  };
+
+  const handleImageSelection = (selection: ImageSelection) => {
+    console.log('🎯 [Timeline] Image selection completed:', selection);
+    
+    // Inject the cropped image into the chat interface
+    if (typeof window !== 'undefined' && (window as any).injectImageToChat) {
+      (window as any).injectImageToChat(selection.croppedDataUrl);
+      
+      // Set an intelligent prompt for AI analysis
+      const analysisPrompt = "Analyze this image selection and recreate it perfectly. Focus on the visual elements, style, and composition of this specific portion.";
+      if (typeof window !== 'undefined' && (window as any).setChatInput) {
+        (window as any).setChatInput(analysisPrompt);
+      }
+      
+      // Show toast notification
+      toast({
+        title: "Image Selection Ready",
+        description: "The selected area has been injected into the chat for AI analysis. Press Generate to recreate it.",
+        duration: 4000,
+      });
     }
   };
 
@@ -259,6 +282,14 @@ function TimelineContent() {
             // Store additional info in a way that doesn't conflict with the interface
           }
         };
+        console.log('💾 [Timeline] Adding content to storage:', {
+          newContent,
+          contentToStore,
+          videoUrl: contentToStore.videos?.[0]?.url,
+          imageUrl: contentToStore.images?.[0]?.url,
+          type: newContent.type
+        });
+        
         contentStorage.addContent(newContent);
         
         // Trigger a custom event to notify GalleryView to refresh
@@ -326,11 +357,17 @@ function TimelineContent() {
                     <div className="space-y-4">
                       {content.images.map((image: any, imgIndex: number) => (
                         <div key={imgIndex} className="relative group">
-                          <img 
-                            src={image.url} 
-                            alt={content.prompt}
-                            className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
-                          />
+                          <ImageSelector
+                            imageUrl={image.url}
+                            onSelectionComplete={handleImageSelection}
+                            className="w-full"
+                          >
+                            <img 
+                              src={image.url} 
+                              alt={content.prompt}
+                              className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
+                            />
+                          </ImageSelector>
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                             <div className="flex space-x-2 pointer-events-auto">
                               <button

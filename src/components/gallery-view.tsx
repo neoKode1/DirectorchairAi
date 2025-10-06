@@ -99,6 +99,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       console.log('📂 [GalleryView] Loading items from localStorage');
       const savedContent = contentStorage.loadContent();
       
+      console.log('📂 [GalleryView] Loaded content from storage:', {
+        totalItems: savedContent.length,
+        items: savedContent.map(item => ({
+          id: item.id,
+          type: item.type,
+          url: item.url,
+          title: item.title
+        }))
+      });
+      
       // Filter out text items and convert StoredContent to GalleryItem
       const filteredItems: GalleryItem[] = savedContent
         .filter(item => item.type !== 'text') // Exclude text items
@@ -154,6 +164,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       // Reload items from localStorage
       if (useLocalStorage) {
         const savedContent = contentStorage.loadContent();
+        
+        console.log('🔄 [GalleryView] Refreshed content from storage:', {
+          totalItems: savedContent.length,
+          items: savedContent.map(item => ({
+            id: item.id,
+            type: item.type,
+            url: item.url,
+            title: item.title
+          }))
+        });
         
         // Filter out text items and convert StoredContent to GalleryItem
         const filteredItems: GalleryItem[] = savedContent

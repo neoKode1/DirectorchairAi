@@ -1,4 +1,11 @@
-import sharp from 'sharp';
+// Import sharp with fallback handling
+let sharp: any;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.warn('⚠️ [ImageCompression] Sharp not available, using fallback compression');
+  sharp = null;
+}
 
 export interface CompressionOptions {
   maxWidth?: number;
@@ -34,6 +41,21 @@ export async function compressImage(
   inputBuffer: Buffer,
   options: CompressionOptions = {}
 ): Promise<CompressionResult> {
+  // Use fallback if Sharp is not available
+  if (!sharp) {
+    console.warn('⚠️ [ImageCompression] Sharp not available, using fallback compression');
+    const originalSize = inputBuffer.length;
+    return {
+      buffer: inputBuffer,
+      size: originalSize,
+      format: 'unknown',
+      width: 0,
+      height: 0,
+      compressed: false,
+      originalSize
+    };
+  }
+
   const opts = { ...DEFAULT_COMPRESSION_OPTIONS, ...options };
   
   try {
@@ -256,7 +278,11 @@ export async function compressImageFromUrl(
     const base64 = result.buffer.toString('base64');
     const dataUri = `data:${mimeType};base64,${base64}`;
     
-    console.log('🗜️ [ImageCompression] Successfully compressed and converted to base64');
+    console.log('🗜️ [ImageCompression] URL compression completed:', {
+      originalSize: result.originalSize,
+      compressedSize: result.size,
+      reduction: result.compressed ? `${((1 - result.size / result.originalSize) * 100).toFixed(1)}%` : '0% (no compression)'
+    });
     
     return dataUri;
     

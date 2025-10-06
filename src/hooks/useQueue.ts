@@ -75,16 +75,20 @@ export const useQueue = () => {
       setRequests(prev => {
         const updated = [...prev, newRequest];
         console.log('🔄 [Queue] Updated requests array:', updated.map(req => ({ id: req.requestId, status: req.status })));
+        
+        // Start polling after state update if not already polling
+        if (!isPolling) {
+          console.log('🔄 [Queue] Starting polling for new request');
+          // Use setTimeout to ensure state update is applied before starting polling
+          setTimeout(() => {
+            startPolling();
+          }, 0);
+        } else {
+          console.log('🔄 [Queue] Polling already active');
+        }
+        
         return updated;
       });
-
-      // Start polling if not already polling
-      if (!isPolling) {
-        console.log('🔄 [Queue] Starting polling for new request');
-        startPolling();
-      } else {
-        console.log('🔄 [Queue] Polling already active');
-      }
 
       console.log('✅ [Queue] Request submitted successfully:', requestId);
       return requestId;
@@ -237,12 +241,16 @@ export const useQueue = () => {
     setIsPolling(true);
     console.log('🔄 [Queue] Starting polling...');
 
-    // Poll immediately
-    pollStatus();
-
-    // Then poll every 3 seconds
+    // Don't poll immediately - wait for the interval to ensure state is updated
+    // Poll every 3 seconds
     pollingIntervalRef.current = setInterval(pollStatus, 3000);
     console.log('🔄 [Queue] Polling interval set:', pollingIntervalRef.current);
+    
+    // Poll once after a short delay to ensure state is updated
+    setTimeout(() => {
+      console.log('🔄 [Queue] Initial poll after state update');
+      pollStatus();
+    }, 100);
   }, [isPolling, pollStatus]);
 
   // Stop polling

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
+import { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';
 
 // Image-specific FAL proxy that handles all image generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -39,25 +40,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Add image_url if provided (for image-to-image)
     if (body.image_url) {
-      // Convert HTTP URLs to base64 data URIs for FAL compatibility
-      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:')) {
-        console.log('🖼️ [FAL Image Proxy] Converting HTTP URL to base64 for FAL compatibility:', body.image_url);
+      // Convert HTTP URLs to base64 data URIs for FAL compatibility with compression
+      if (body.image_url.startsWith('http://localhost:') || body.image_url.startsWith('http://127.0.0.1:') || body.image_url.startsWith('https://')) {
+        console.log('🖼️ [FAL Image Proxy] Converting HTTP URL to base64 with compression for FAL compatibility:', body.image_url);
         try {
-          // Fetch the image and convert to base64
+          // First, fetch the image to check its size
           const response = await fetch(body.image_url);
           if (!response.ok) {
             throw new Error(`Failed to fetch image: ${response.status}`);
           }
           
           const arrayBuffer = await response.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          const mimeType = response.headers.get('content-type') || 'image/jpeg';
-          const dataUri = `data:${mimeType};base64,${base64}`;
+          const originalSize = arrayBuffer.byteLength;
           
-          input.image_url = dataUri;
+          console.log('📊 [FAL Image Proxy] Original image size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
+          
+          // If image is small enough, use simple base64 conversion
+          if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+            console.log('✅ [FAL Image Proxy] Image is small enough, using simple base64 conversion');
+            const base64 = Buffer.from(arrayBuffer).toString('base64');
+            const mimeType = response.headers.get('content-type') || 'image/jpeg';
+            const dataUri = `data:${mimeType};base64,${base64}`;
+            input.image_url = dataUri;
+            console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);
+          } else {
+            // For larger images, use compression
+            console.log('🗜️ [FAL Image Proxy] Image is large, applying compression');
+            const compressionOptions = getOptimalCompressionOptions(originalSize);
+            const dataUri = await compressImageFromUrl(body.image_url, compressionOptions);
+            input.image_url = dataUri;
+            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);
+          }
+          
           console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');
-          console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);
-          console.log('🖼️ [FAL Image Proxy] Data URI starts with data:', dataUri.startsWith('data:'));
+          console.log('🖼️ [FAL Image Proxy] Data URI starts with data:', input.image_url.startsWith('data:'));
         } catch (error) {
           console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL to base64:', error);
           return NextResponse.json({
@@ -106,24 +122,39 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Add image_urls if provided (for nano-banana/edit)
     if (body.image_urls) {
-      // Convert localhost URLs in image_urls array to base64
+      // Convert URLs in image_urls array to base64 with compression
       const convertedImageUrls = await Promise.all(
         body.image_urls.map(async (url: string) => {
-          if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
-            console.log('🖼️ [FAL Image Proxy] Converting HTTP URL in image_urls array to base64:', url);
+          if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:') || url.startsWith('https://')) {
+            console.log('🖼️ [FAL Image Proxy] Converting HTTP URL in image_urls array to base64 with compression:', url);
             try {
+              // First, fetch the image to check its size
               const response = await fetch(url);
               if (!response.ok) {
                 throw new Error(`Failed to fetch image: ${response.status}`);
               }
               
               const arrayBuffer = await response.arrayBuffer();
-              const base64 = Buffer.from(arrayBuffer).toString('base64');
-              const mimeType = response.headers.get('content-type') || 'image/jpeg';
-              const dataUri = `data:${mimeType};base64,${base64}`;
+              const originalSize = arrayBuffer.byteLength;
               
-              console.log('🖼️ [FAL Image Proxy] Successfully converted image_urls array item to base64 data URI');
-              return dataUri;
+              console.log('📊 [FAL Image Proxy] Original image size in array:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
+              
+              // If image is small enough, use simple base64 conversion
+              if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+                console.log('✅ [FAL Image Proxy] Image in array is small enough, using simple base64 conversion');
+                const base64 = Buffer.from(arrayBuffer).toString('base64');
+                const mimeType = response.headers.get('content-type') || 'image/jpeg';
+                const dataUri = `data:${mimeType};base64,${base64}`;
+                console.log('🖼️ [FAL Image Proxy] Data URI length:', dataUri.length);
+                return dataUri;
+              } else {
+                // For larger images, use compression
+                console.log('🗜️ [FAL Image Proxy] Image in array is large, applying compression');
+                const compressionOptions = getOptimalCompressionOptions(originalSize);
+                const dataUri = await compressImageFromUrl(url, compressionOptions);
+                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);
+                return dataUri;
+              }
             } catch (error) {
               console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL in image_urls array to base64:', error);
               throw error;
@@ -355,21 +386,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.image_urls = body.image_urls;
         console.log('🔧 [FAL Image Proxy] Using provided image_urls array for Nano Banana:', body.image_urls.length, 'images');
       } else if (body.image_url) {
-        // Convert single image_url to image_urls array
-        // Check if it's a localhost URL and convert to base64
+        // Convert single image_url to image_urls array with compression
         let imageUrl = body.image_url;
-        if (imageUrl.startsWith('http://localhost:') || imageUrl.startsWith('http://127.0.0.1:')) {
-          console.log('🖼️ [FAL Image Proxy] Converting single image_url to base64 for Nano Banana:', imageUrl);
+        if (imageUrl.startsWith('http://localhost:') || imageUrl.startsWith('http://127.0.0.1:') || imageUrl.startsWith('https://')) {
+          console.log('🖼️ [FAL Image Proxy] Converting single image_url to base64 with compression for Nano Banana:', imageUrl);
           try {
+            // First, fetch the image to check its size
             const response = await fetch(imageUrl);
             if (!response.ok) {
               throw new Error(`Failed to fetch image: ${response.status}`);
             }
             
             const arrayBuffer = await response.arrayBuffer();
-            const base64 = Buffer.from(arrayBuffer).toString('base64');
-            const mimeType = response.headers.get('content-type') || 'image/jpeg';
-            imageUrl = `data:${mimeType};base64,${base64}`;
+            const originalSize = arrayBuffer.byteLength;
+            
+            console.log('📊 [FAL Image Proxy] Original image size for Nano Banana:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
+            
+            // If image is small enough, use simple base64 conversion
+            if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+              console.log('✅ [FAL Image Proxy] Image for Nano Banana is small enough, using simple base64 conversion');
+              const base64 = Buffer.from(arrayBuffer).toString('base64');
+              const mimeType = response.headers.get('content-type') || 'image/jpeg';
+              imageUrl = `data:${mimeType};base64,${base64}`;
+            } else {
+              // For larger images, use compression
+              console.log('🗜️ [FAL Image Proxy] Image for Nano Banana is large, applying compression');
+              const compressionOptions = getOptimalCompressionOptions(originalSize);
+              imageUrl = await compressImageFromUrl(imageUrl, compressionOptions);
+            }
             
             console.log('🖼️ [FAL Image Proxy] Successfully converted single image_url to base64 for Nano Banana');
           } catch (error) {

@@ -1,17 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
+import { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';
 
-// Helper function to convert localhost URLs to base64 data URIs
+// Helper function to convert localhost URLs to base64 data URIs with compression
 async function convertLocalhostToBase64(url: string): Promise<string> {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
     try {
+      console.log('🔄 [Generate API] Converting localhost URL to base64 with compression:', url);
+      
+      // First, fetch the image to check its size
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      
       const arrayBuffer = await response.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
-      const contentType = response.headers.get('content-type') || 'image/jpeg';
-      return `data:${contentType};base64,${base64}`;
+      const originalSize = arrayBuffer.byteLength;
+      
+      console.log('📊 [Generate API] Original image size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
+      
+      // If image is small enough, use simple base64 conversion
+      if (originalSize <= 2 * 1024 * 1024) { // 2MB threshold
+        console.log('✅ [Generate API] Image is small enough, using simple base64 conversion');
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        return `data:${contentType};base64,${base64}`;
+      }
+      
+      // For larger images, use compression
+      console.log('🗜️ [Generate API] Image is large, applying compression');
+      const compressionOptions = getOptimalCompressionOptions(originalSize);
+      return await compressImageFromUrl(url, compressionOptions);
+      
     } catch (error) {
-      console.error('Failed to convert localhost URL to base64:', error);
+      console.error('❌ [Generate API] Failed to convert localhost URL to base64:', error);
       return url; // Return original URL if conversion fails
     }
   }

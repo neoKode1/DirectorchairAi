@@ -202,6 +202,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   };
 
   const injectImage = (imageUrl: string) => {
+    console.log('🖼️ [Chat] Injecting image:', imageUrl);
     setUploadedImages([imageUrl]);
     // Scroll to bottom to show the injected image
     setTimeout(() => {
@@ -249,11 +250,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     // Don't default to video just because a video model is selected
     const wantsVideo = hasVideoTrigger || hasVideoKeywords;
 
-    // Detect if user is referencing a previously generated image
-    const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this'];
+    // Detect if user is referencing a previously generated image or injected image
+    const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this', 'generate video', 'create video', 'animate', 'make video'];
     const isReferencingPreviousImage = imageReferenceKeywords.some(keyword => 
       userInput.toLowerCase().includes(keyword)
-    ) && lastGeneratedImage && uploadedImages.length === 0;
+    ) && (lastGeneratedImage || uploadedImages.length > 0);
 
     const userMessage = {
       id: Date.now().toString(),
@@ -291,13 +292,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       let imageToUse: string | undefined;
       let imagesToUse: string[] | undefined;
 
-      // Determine which image to use (uploaded or referenced)
+      // Determine which image to use (uploaded/injected or referenced)
+      console.log('🖼️ [Chat] Uploaded images state:', uploadedImages);
+      console.log('🖼️ [Chat] Last generated image:', lastGeneratedImage);
+      console.log('🖼️ [Chat] Is referencing previous image:', isReferencingPreviousImage);
+      
       if (uploadedImages.length > 0) {
+        // Priority 1: Use injected/uploaded images
         imageToUse = uploadedImages[0];
         imagesToUse = uploadedImages;
+        console.log('🖼️ [Chat] Using uploaded/injected image:', imageToUse);
       } else if (isReferencingPreviousImage && lastGeneratedImage) {
+        // Priority 2: Use last generated image when referencing
         imageToUse = lastGeneratedImage;
         imagesToUse = [lastGeneratedImage];
+        console.log('🖼️ [Chat] Using last generated image:', imageToUse);
       }
 
       if (imageToUse) {
@@ -358,6 +367,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           resolution: resolution
         })
       };
+
+      console.log('🎯 [Chat] Final generation data:', {
+        ...generationData,
+        hasImage: !!imageToUse,
+        imageUrl: imageToUse,
+        imagesCount: imagesToUse?.length || 0
+      });
 
       console.log('🎯 [Chat] Generation data being sent:', {
         model,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions } from '@/lib/image-compression';
+import { filterProblematicContent } from '@/lib/custom-styles';
 
 // Helper function to process images with compression (handles both URLs and base64 data URIs)
 async function processImageWithCompression(imageData: string): Promise<string> {
@@ -118,9 +119,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
+    // Apply content filtering to prevent policy violations
+    console.log('🔍 [Generate API] Applying content filtering to prompt...');
+    const { filteredPrompt, filteredTerms } = filterProblematicContent(prompt);
+    
+    if (filteredTerms.length > 0) {
+      console.log('🔍 [Generate API] Content filtering applied:', {
+        originalLength: prompt.length,
+        filteredLength: filteredPrompt.length,
+        filteredTerms: filteredTerms.length,
+        terms: filteredTerms.map(t => `${t.original} → ${t.replacement} (${t.reason})`)
+      });
+    }
+
     // Prepare FAL API input parameters
     const input: Record<string, any> = {
-      prompt: prompt.trim()
+      prompt: filteredPrompt.trim()
     };
 
     // Set default parameters for video models

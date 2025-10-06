@@ -1417,19 +1417,16 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                                           intent.context.toLowerCase().includes('dynamic camera');
             
             if (isMultipleAngleRequest) {
-              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Seedance for advanced camera control');
-              // Prioritize Seedance for multiple angle shot variations
-              selectedModel = textToVideoModels.find(model => model.endpointId.includes('seedance')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
+              // Prioritize Veo 3 for multiple angle shot variations
+              selectedModel = textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              textToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master')) ||
                              textToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard')) ||
                              textToVideoModels[0];
             } else {
-              console.log('🎬 [IntelligenceCore] Standard text-to-video generation, prioritizing Luma Ray 2 as default');
-              // Prioritize Luma Ray 2 as default, then other models
-              selectedModel = textToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Standard text-to-video generation, prioritizing Veo 3 as default');
+              // Prioritize Veo 3 as default, then other models
+              selectedModel = textToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              textToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master')) ||
                              textToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard')) ||
                              textToVideoModels[0];
@@ -1443,41 +1440,29 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                                           intent.context.toLowerCase().includes('dynamic camera');
             
             if (isMultipleAngleRequest) {
-              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Seedance for advanced camera control');
-              // Prioritize Seedance for multiple angle shot variations
-              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('seedance')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2-flash/image-to-video')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2')) ||
-                             imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
+              console.log('🎬 [IntelligenceCore] Multiple angle request detected - prioritizing Veo 3 for advanced camera control');
+              // Prioritize Veo 3 for multiple angle shot variations
+              selectedModel = imageToVideoModels.find(model => model.endpointId.includes('veo3')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video')) ||
                              imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video')) ||
                              imageToVideoModels[0];
             } else {
-              console.log('🎬 [IntelligenceCore] Standard image-to-video animation, prioritizing Luma Ray 2 Flash as default');
+              console.log('🎬 [IntelligenceCore] Standard image-to-video animation, prioritizing Veo 3 as default');
               console.log('🎬 [IntelligenceCore] Available image-to-video models:', imageToVideoModels.map(m => m.endpointId));
               
-              // Check if Luma Ray 2 Flash is available
-              const ray2FlashModel = imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2-flash/image-to-video'));
-              console.log('🎬 [IntelligenceCore] Luma Ray 2 Flash model found:', ray2FlashModel?.endpointId);
-              
               // Check each model in the fallback chain
-              const lumaRay2Model = imageToVideoModels.find(model => model.endpointId.includes('luma-dream-machine/ray-2'));
               const veo3Model = imageToVideoModels.find(model => model.endpointId.includes('veo3'));
               const klingModel = imageToVideoModels.find(model => model.endpointId.includes('kling-video/v2.1/master/image-to-video'));
               const minimaxModel = imageToVideoModels.find(model => model.endpointId.includes('minimax/hailuo-02/standard/image-to-video'));
               
               console.log('🎬 [IntelligenceCore] Fallback models found:', {
-                ray2Flash: ray2FlashModel?.endpointId,
-                lumaRay2: lumaRay2Model?.endpointId,
                 veo3: veo3Model?.endpointId,
                 kling: klingModel?.endpointId,
                 minimax: minimaxModel?.endpointId
               });
               
-              // Prioritize Luma Ray 2 Flash as default for image-to-video, then other models
-              selectedModel = ray2FlashModel ||
-                             lumaRay2Model ||
-                             veo3Model ||
+              // Prioritize Veo 3 as default for image-to-video, then other models
+              selectedModel = veo3Model ||
                              klingModel ||
                              minimaxModel ||
                              imageToVideoModels[0];

@@ -84,40 +84,50 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Handle Luma model specific parameters
-    if (model.includes('luma-dream-machine')) {
-      // Luma Ray 2 Flash uses duration: '5s' or '9s' (strings with 's')
-      if (input.duration) {
-        const durationStr = input.duration.toString();
-        if (durationStr.includes('5') || durationStr.includes('5s')) {
-          processedInput.duration = '5s'; // Luma uses '5s' with 's'
-        } else if (durationStr.includes('9') || durationStr.includes('9s')) {
-          processedInput.duration = '9s';
-        } else {
-          processedInput.duration = '5s'; // Default to 5 seconds
-        }
-      } else {
-        processedInput.duration = '5s'; // Default to 5 seconds
-      }
 
-      console.log(`🔧 [Queue] Luma Ray 2 Flash parameters:`, {
-        originalDuration: input.duration,
-        finalDuration: processedInput.duration,
-        note: 'Luma uses duration: 5s or 9s (strings with s)'
-      });
-    }
+            // Handle Veo 3 model specific parameters
+            if (model.includes('veo3')) {
+              // Veo 3 uses duration: '8s' (string with 's') and supports 720p/1080p resolution
+              processedInput.duration = '8s'; // Veo 3 only supports 8 seconds
+              
+              // Veo 3 supports resolution: '720p' or '1080p'
+              if (input.resolution && !['720p', '1080p'].includes(input.resolution)) {
+                // Convert common resolutions to Veo 3 format
+                if (input.resolution === '1080p') {
+                  processedInput.resolution = '1080p';
+                } else {
+                  processedInput.resolution = '720p'; // Default to 720p
+                }
+              }
 
-    // Handle Seedance model specific parameters
-    if (model.includes('seedance')) {
-      // Seedance expects duration as a number (3, 4, 5, etc.) not a string with 's'
-      processedInput.duration = 5; // Default to 5 seconds for simplicity
-      
-      console.log(`🔧 [Queue] Seedance model parameters:`, {
-        originalDuration: input.duration,
-        finalDuration: processedInput.duration,
-        note: 'Seedance uses duration as number (3, 4, 5, etc.)'
-      });
-    }
+              // Veo 3 supports aspect_ratio: 'auto', '16:9', '9:16'
+              if (input.aspect_ratio && !['auto', '16:9', '9:16'].includes(input.aspect_ratio)) {
+                // Convert to supported aspect ratios
+                if (input.aspect_ratio === '16:9') {
+                  processedInput.aspect_ratio = '16:9';
+                } else if (input.aspect_ratio === '9:16') {
+                  processedInput.aspect_ratio = '9:16';
+                } else {
+                  processedInput.aspect_ratio = 'auto'; // Default to auto
+                }
+              }
+
+              // Set default generate_audio to true for Veo 3
+              if (processedInput.generate_audio === undefined) {
+                processedInput.generate_audio = true;
+              }
+
+              console.log(`🔧 [Queue] Veo 3 model parameters:`, {
+                originalDuration: input.duration,
+                originalResolution: input.resolution,
+                originalAspectRatio: input.aspect_ratio,
+                finalDuration: processedInput.duration,
+                finalResolution: processedInput.resolution,
+                finalAspectRatio: processedInput.aspect_ratio,
+                generateAudio: processedInput.generate_audio,
+                note: 'Veo 3 uses duration: 8s (string with s), resolution: 720p or 1080p, aspect_ratio: auto/16:9/9:16'
+              });
+            }
 
     // Submit request to FAL queue with processed input
     const falClient = fal();

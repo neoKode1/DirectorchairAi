@@ -393,7 +393,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       {/* Gallery Header */}
       <div className="flex items-center justify-between p-6 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <h2 className="text-heading font-semibold">Content Gallery</h2>
+          <div className="flex flex-col">
+            <h2 className="text-4xl font-bold leading-none">YOUR</h2>
+            <span className="text-sm font-bold text-muted-foreground">beautiful mind</span>
+          </div>
           <Badge variant="secondary" className="badge-enhanced">
             {items.length} items
           </Badge>

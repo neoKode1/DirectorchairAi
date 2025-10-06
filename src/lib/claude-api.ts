@@ -72,10 +72,8 @@ export class ClaudeAPI {
 - **Kling v2.1 Master (I2V)**: Enhanced quality and motion realism for image-to-video (5 seconds)
 - **Kling v2.1 Master (T2V)**: Text-to-video generation with professional quality (5 seconds)
 - **Luma Ray 2**: Large-scale video generation with realistic visuals and coherent motion (5 seconds)
-- **Luma Ray 2 Flash (I2V)**: Fast image-to-video generation (540p, 5 seconds)
+- **Veo 3 (I2V)**: Google DeepMind's latest state-of-the-art video generation model (720p/1080p, 8 seconds)
 - **Minimax Hailuo 02 Standard (I2V)**: High-quality image-to-video generation (768p, 6 seconds)
-- **Minimax Hailuo 02 Standard (T2V)**: Text-to-video generation (768p, 6 seconds)
-- **Seedance 1.0 Pro (I2V)**: High-quality image-to-video with multiple angle shot variations (1080p, 5 seconds)
 
 **Audio/Voice Models:**
 - **ElevenLabs TTS Turbo v2.5**: High-quality text-to-speech with natural voice synthesis
@@ -320,12 +318,12 @@ Apply your director's knowledge to create a cinematic, professional-grade prompt
                  return `For images: Google Imagen 4 (highest quality), Stable Diffusion 3.5 Large (improved quality & typography), Dreamina v3.1 (superior aesthetics), Flux Pro 1.1 Ultra (professional), Flux Kontext (with reference image), FLUX LoRA (style transfer), Ideogram Character (consistent characters).`;
                }
       if (lowerInput.includes('video') || lowerInput.includes('animation')) {
-        return `For videos: Veo3 (best quality), Kling v2.1 (realistic motion), Luma Ray 2 (coherent motion), Seedance Pro (multiple angles).`;
+        return `For videos: Veo 3 (best quality), Kling v2.1 (realistic motion), Minimax Hailuo 02 (high quality).`;
       }
       if (lowerInput.includes('audio') || lowerInput.includes('voice') || lowerInput.includes('speech')) {
         return `For audio: ElevenLabs TTS Turbo v2.5 for natural text-to-speech synthesis.`;
       }
-                                  return `Available: 7 image models (Imagen 4, Stable Diffusion 3.5, Dreamina, Flux, Kontext, LoRA, Character), 9 video models (Veo3, Kling, Luma, Minimax, Seedance), 1 audio model (ElevenLabs TTS).`;
+                                  return `Available: 7 image models (Imagen 4, Stable Diffusion 3.5, Dreamina, Flux, Kontext, LoRA, Character), 3 video models (Veo 3, Kling, Minimax), 1 audio model (ElevenLabs TTS).`;
     }
     
     if (lowerInput.includes('prompt') && (lowerInput.includes('horror') || lowerInput.includes('monster') || lowerInput.includes('rat'))) {

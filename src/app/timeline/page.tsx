@@ -3,13 +3,11 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { SimpleChatInterface } from "@/components/simple-chat-interface";
 import { GalleryView } from "@/components/gallery-view";
-import { ThreeJSLoadingModal } from "@/components/3d-loading-modal";
 import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useQueue } from "@/hooks/useQueue";
-import { Download, Edit, Trash2 } from "lucide-react";
+import { Download, Edit, Trash2, Video } from "lucide-react";
 import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,12 +39,6 @@ function TimelineContent() {
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Queue system
-  const {
-    requests: queueRequests,
-    cancelRequest,
-    getActiveCount
-  } = useQueue();
 
   useEffect(() => {
     setMounted(true);
@@ -131,32 +123,8 @@ function TimelineContent() {
     }
   };
 
-  // Auto-scroll when queue status changes (loading modal appears/disappears)
-  useEffect(() => {
-    const activeCount = getActiveCount();
-    if (activeCount > 0) {
-      // Scroll to bottom when loading starts (3D modal appears)
-      console.log('🎬 [Timeline] Queue active, scrolling to show 3D loading modal');
-      setTimeout(() => {
-        scrollToBottom();
-      }, 200);
-    }
-  }, [queueRequests.length, getActiveCount()]);
 
-  // Also scroll when new content is added to the queue
-  useEffect(() => {
-    const activeRequests = queueRequests.filter(req => 
-      req.status === 'IN_QUEUE' || req.status === 'IN_PROGRESS'
-    );
-    if (activeRequests.length > 0) {
-      console.log('🎬 [Timeline] New queue request detected, scrolling to show loading');
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
-    }
-  }, [queueRequests]);
-
-  const handleGenerate = async (generationData: any): Promise<any> => {
+    const handleGenerate = async (generationData: any): Promise<any> => {
     try {
       console.log('🚀 [Timeline] ===== GENERATION START =====');
       console.log('🚀 [Timeline] Generation data received:', generationData);
@@ -256,6 +224,10 @@ function TimelineContent() {
       };
       
       console.log('📦 [Timeline] Content to store:', {
+        rawResult: result,
+        resultData: result.data,
+        resultVideo: result.data?.video,
+        resultVideos: result.data?.videos,
         images: contentToStore.images,
         videos: contentToStore.videos,
         imagesLength: contentToStore.images?.length,
@@ -314,17 +286,18 @@ function TimelineContent() {
       {/* Left Column - Chat Interface (Yellow section from screenshot) */}
       <div className="w-80 border-r border-gray-200 flex flex-col">
         <SimpleChatInterface 
-          onContentGenerated={handleGenerate}
-          onGenerationStarted={() => console.log('Generation started')}
-          onGenerationComplete={() => console.log('Generation complete')}
+            onContentGenerated={handleGenerate}
+            onGenerationStarted={() => console.log('Generation started')}
+            onGenerationComplete={() => console.log('Generation complete')}
           onImageInjected={() => console.log('Image injection ready')}
-        />
-      </div>
-
+          />
+        </div>
+        
       {/* Center Column - Dynamic Content Display (Green section from screenshot) */}
       <div className="flex-1 flex flex-col">
         <div ref={contentAreaRef} className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-6">
+            
             {generatedContent.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
@@ -358,9 +331,9 @@ function TimelineContent() {
                             alt={content.prompt}
                             className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
                           />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <div className="flex space-x-2">
-                              <button 
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <div className="flex space-x-2 pointer-events-auto">
+                              <button
                                 onClick={() => handleEditImage(image.url)}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
@@ -368,7 +341,15 @@ function TimelineContent() {
                                 <Edit className="w-4 h-4" />
                                 <span className="text-sm">Edit</span>
                               </button>
-                              <button 
+                              <button
+                                onClick={() => handleAnimateImage(image.url)}
+                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                disabled={isDownloading}
+                              >
+                                <Video className="w-4 h-4" />
+                                <span className="text-sm">Generate video</span>
+                              </button>
+                              <button
                                 onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
@@ -404,17 +385,17 @@ function TimelineContent() {
                           <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm font-medium">
                             Video
                           </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <div className="flex space-x-2">
-                              <button 
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                            <div className="flex space-x-2 pointer-events-auto">
+            <button
                                 onClick={() => handleEditImage(video.url)}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Edit className="w-4 h-4" />
                                 <span className="text-sm">Edit</span>
-                              </button>
-                              <button 
+            </button>
+            <button
                                 onClick={() => handleDownload(video.url, `video-${Date.now()}`, 'video')}
                                 className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
@@ -442,7 +423,7 @@ function TimelineContent() {
                       </button>
                       <button className="text-gray-400 hover:text-gray-600 text-sm">
                         Delete
-                      </button>
+            </button>
                     </div>
                   </div>
                 </div>
@@ -496,7 +477,7 @@ function TimelineContent() {
                   }
                 }}
               />
-            </div>
+          </div>
           </>
         )}
         
@@ -510,12 +491,6 @@ function TimelineContent() {
         )}
       </div>
 
-      {/* 3D Loading Modal */}
-      <ThreeJSLoadingModal
-        isOpen={getActiveCount() > 0}
-        requests={queueRequests}
-        onCancelRequest={cancelRequest}
-      />
 
       <Toaster />
     </div>
@@ -534,4 +509,4 @@ export default function TimelinePage() {
       </ToastProvider>
     </ErrorBoundary>
   );
-}
+} 

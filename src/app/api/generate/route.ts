@@ -63,9 +63,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isVideoModel = model.includes('video') || 
                         model.includes('veo') || 
                         model.includes('kling') || 
-                        model.includes('luma-dream-machine') || // Only Luma Ray 2 Flash
-                        model.includes('minimax') ||
-                        model.includes('seedance');
+                        model.includes('minimax');
 
     const isImageModel = model.includes('flux') || 
                         model.includes('imagen') || 
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       model: model,
       isVideoModel: isVideoModel,
       isImageModel: isImageModel,
-      videoKeywords: ['video', 'veo', 'kling', 'luma-dream-machine', 'minimax', 'seedance'].filter(keyword => model.includes(keyword)),
+      videoKeywords: ['video', 'veo', 'kling', 'minimax'].filter(keyword => model.includes(keyword)),
       imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
@@ -165,11 +163,49 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Handle Seedance model specific parameters
-    if (model.includes('seedance')) {
-      // Seedance expects duration as a number (3, 4, 5, etc.) not a string with 's'
-      // Default to 5 seconds for simplicity
-      input.duration = 5;
+
+    // Handle Veo 3 model specific parameters
+    if (model.includes('veo3')) {
+      // Veo 3 uses duration: '8s' (string with 's') and supports 720p/1080p resolution
+      input.duration = '8s'; // Veo 3 only supports 8 seconds
+      
+      // Veo 3 supports resolution: '720p' or '1080p'
+      if (body.resolution && !['720p', '1080p'].includes(body.resolution)) {
+        // Convert common resolutions to Veo 3 format
+        if (body.resolution === '1080p') {
+          input.resolution = '1080p';
+        } else {
+          input.resolution = '720p'; // Default to 720p
+        }
+      }
+
+      // Veo 3 supports aspect_ratio: 'auto', '16:9', '9:16'
+      if (body.aspect_ratio && !['auto', '16:9', '9:16'].includes(body.aspect_ratio)) {
+        // Convert to supported aspect ratios
+        if (body.aspect_ratio === '16:9') {
+          input.aspect_ratio = '16:9';
+        } else if (body.aspect_ratio === '9:16') {
+          input.aspect_ratio = '9:16';
+        } else {
+          input.aspect_ratio = 'auto'; // Default to auto
+        }
+      }
+
+      // Set default generate_audio to true for Veo 3
+      if (input.generate_audio === undefined) {
+        input.generate_audio = true;
+      }
+
+      console.log(`🔧 [Generate API] [${requestId}] Veo 3 model parameters:`, {
+        originalDuration: body.duration,
+        originalResolution: body.resolution,
+        originalAspectRatio: body.aspect_ratio,
+        finalDuration: input.duration,
+        finalResolution: input.resolution,
+        finalAspectRatio: input.aspect_ratio,
+        generateAudio: input.generate_audio,
+        note: 'Veo 3 uses duration: 8s (string with s), resolution: 720p or 1080p, aspect_ratio: auto/16:9/9:16'
+      });
     }
 
     // Handle Minimax Hailuo-02 model specific parameters
@@ -239,43 +275,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Handle Luma model specific parameters
-    if (model.includes('luma-dream-machine')) {
-      // Luma Ray 2 Flash uses duration: '5s' or '9s' (strings with 's')
-      if (body.duration) {
-        const durationStr = body.duration.toString();
-        if (durationStr.includes('5') || durationStr.includes('5s')) {
-          input.duration = '5s'; // Luma uses '5s' with 's'
-        } else if (durationStr.includes('9') || durationStr.includes('9s')) {
-          input.duration = '9s';
-        } else {
-          input.duration = '5s'; // Default to 5 seconds
-        }
-      } else {
-        input.duration = '5s'; // Default to 5 seconds
-      }
-      
-      // Luma models use resolution: '540p', '720p', '1080p'
-      // Convert to appropriate format if needed
-      if (body.resolution && !['540p', '720p', '1080p'].includes(body.resolution)) {
-        // Convert common resolutions to Luma format
-        if (body.resolution === '1080p') {
-          input.resolution = '1080p';
-        } else if (body.resolution === '720p') {
-          input.resolution = '720p';
-        } else {
-          input.resolution = '540p'; // Default to 540p for cost efficiency
-        }
-      }
-      
-      console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 Flash parameters:`, {
-        originalDuration: body.duration,
-        originalResolution: body.resolution,
-        finalDuration: input.duration,
-        finalResolution: input.resolution,
-        note: 'Luma uses duration: 5s or 9s (strings with s), resolution: 540p, 720p, or 1080p'
-      });
-    }
 
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);

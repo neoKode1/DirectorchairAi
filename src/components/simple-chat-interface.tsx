@@ -21,11 +21,8 @@ import {
   FileImage,
   CloudUpload,
   Settings,
-  Monitor,
-  Clock
+  Monitor
 } from 'lucide-react';
-import { useQueue } from '@/hooks/useQueue';
-import { QueueStatusModal } from '@/components/queue-status-modal';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -55,6 +52,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   
   const [userInput, setUserInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -66,23 +64,28 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
-  const [showQueueModal, setShowQueueModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  // Queue system
-  const {
-    requests: queueRequests,
-    isPolling,
-    submitRequest,
-    cancelRequest,
-    removeRequest,
-    getActiveCount
-  } = useQueue();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Helper function to get model icon
+  const getModelIcon = (model: string) => {
+    if (model.includes('nano-banana')) return '/gemini-color.svg';
+    if (model.includes('flux')) return '/flux.svg';
+    if (model.includes('kling')) return '/kling-color.svg';
+    if (model.includes('minimax')) return '/minimax-color.svg';
+    if (model.includes('seedream') || model.includes('bytedance')) return '/bytedance-color.svg';
+    if (model.includes('veo3')) return '/Gen4.png'; // Using Gen4 for Veo 3
+    if (model.includes('luma')) return '/dreammachine.png';
+    if (model.includes('imagen')) return '/Gen4.png';
+    if (model.includes('photon')) return '/ideogram.svg';
+    if (model.includes('recraft')) return '/ideogram.svg';
+    return '/gemini-color.svg'; // Default fallback
   };
 
   useEffect(() => {
@@ -95,19 +98,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     const savedLastImage = localStorage.getItem('directorchair-last-generated-image');
     const savedSettings = localStorage.getItem('directorchair-settings');
     
-    if (savedMessages) {
-      try {
-        const parsedMessages = JSON.parse(savedMessages);
-        // Convert timestamp strings back to Date objects
-        const messagesWithDates = parsedMessages.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-        setMessages(messagesWithDates);
-      } catch (error) {
-        console.error('Error loading saved messages:', error);
-      }
-    }
+    // Skip loading messages from localStorage to prevent quota exceeded errors
+    // Messages will start fresh on each page load
+    console.log('📝 [Chat] Starting with empty message history to prevent localStorage quota issues');
+    
+    // Clear any existing messages on page load to ensure fresh start
+    setMessages([]);
     
     if (savedLastImage) {
       setLastGeneratedImage(savedLastImage);
@@ -125,74 +121,73 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   }, []);
 
-  // Save messages to localStorage whenever messages change
+  // Auto-cleanup old messages to prevent localStorage quota exceeded errors
   useEffect(() => {
+    if (messages.length > 25) {
+      // Keep only the last 25 messages to prevent quota exceeded
+      const messagesToKeep = messages.slice(-25);
+      setMessages(messagesToKeep);
+      console.log(`🧹 [Chat] Cleaned up old messages, kept last ${messagesToKeep.length} messages`);
+    }
+  }, [messages.length]);
+
+  // Additional cleanup for messages with images (they take up the most space)
+  useEffect(() => {
+    const messagesWithImages = messages.filter(msg => msg.media && msg.media.url);
+    if (messagesWithImages.length > 10) {
+      // If we have more than 10 messages with images, remove the oldest ones
+      const messagesWithoutOldImages = messages.filter((msg, index) => {
+        if (msg.media && msg.media.url) {
+          // Keep only the last 10 messages with images
+          const imageMessageIndex = messagesWithImages.findIndex(imgMsg => imgMsg.id === msg.id);
+          return imageMessageIndex >= messagesWithImages.length - 10;
+        }
+        return true; // Keep all messages without images
+      });
+      setMessages(messagesWithoutOldImages);
+      console.log(`🧹 [Chat] Cleaned up old messages with images, kept last 10 image messages`);
+    }
+  }, [messages]);
+
+  // Disable localStorage saving for messages to prevent quota exceeded errors
+  // Messages will be lost on page refresh, but this prevents the app from breaking
+  useEffect(() => {
+    // Only save a minimal message count for debugging purposes
     if (messages.length > 0) {
-      localStorage.setItem('directorchair-chat-messages', JSON.stringify(messages));
+      try {
+        const messageCount = messages.length;
+        localStorage.setItem('directorchair-message-count', messageCount.toString());
+      } catch (error) {
+        console.error('Error saving message count to localStorage:', error);
+      }
     }
   }, [messages]);
 
   // Save last generated image to localStorage whenever it changes
   useEffect(() => {
     if (lastGeneratedImage) {
-      localStorage.setItem('directorchair-last-generated-image', lastGeneratedImage);
+      try {
+        localStorage.setItem('directorchair-last-generated-image', lastGeneratedImage);
+      } catch (error) {
+        console.error('Error saving last generated image to localStorage:', error);
+      }
     }
   }, [lastGeneratedImage]);
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
-    const settings = {
-      aspectRatio,
-      resolution,
-      preferredVideoModel
-    };
-    localStorage.setItem('directorchair-settings', JSON.stringify(settings));
+    try {
+      const settings = {
+        aspectRatio,
+        resolution,
+        preferredVideoModel
+      };
+      localStorage.setItem('directorchair-settings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Error saving settings to localStorage:', error);
+    }
   }, [aspectRatio, resolution, preferredVideoModel]);
 
-  // Handle queue completion
-  useEffect(() => {
-    const completedRequests = queueRequests.filter(req => req.status === 'COMPLETED' && req.result);
-    
-    completedRequests.forEach(request => {
-      console.log('🎉 [Chat] Queue request completed:', request.requestId, request.result);
-      
-      // Process the result and call onContentGenerated to update the UI
-      if (request.result) {
-        onContentGenerated({ data: request.result }).then(() => {
-          // Add success message to chat
-          const successMessage = {
-            id: (Date.now() + Math.random()).toString(),
-            type: 'assistant' as const,
-            content: request.result?.images?.[0] ? 
-              `✅ Generated image successfully! Check the center panel and gallery.` : 
-              request.result?.videos?.[0] ? 
-                `✅ Generated video successfully! Check the center panel and gallery.` :
-                `✅ Generation completed successfully!`,
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, successMessage]);
-          
-          // Track the last generated image for future references
-          if (request.result?.images?.[0]) {
-            setLastGeneratedImage(request.result.images[0].url);
-            
-            // Show floating suggestions for images (image-to-video workflow)
-            showFloatingSuggestions([
-              "Animate this character walking",
-              "Make video of this character dancing", 
-              "Bring this character to life",
-              "Animate the image with motion",
-              "Create a cinematic video of this character"
-            ]);
-          }
-          
-          onGenerationComplete?.();
-        }).catch(error => {
-          console.error('Error processing completed queue result:', error);
-        });
-      }
-    });
-  }, [queueRequests, onContentGenerated, onGenerationComplete]);
 
   const processFiles = useCallback((files: FileList) => {
     Array.from(files).forEach(file => {
@@ -256,8 +251,35 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const clearChatHistory = () => {
     setMessages([]);
     setLastGeneratedImage(null);
-    localStorage.removeItem('directorchair-chat-messages');
-    localStorage.removeItem('directorchair-last-generated-image');
+    try {
+      // Clear all DirectorChair-related localStorage items
+      localStorage.removeItem('directorchair-chat-messages');
+      localStorage.removeItem('directorchair-last-generated-image');
+      localStorage.removeItem('directorchair-settings');
+      // Also clear any content gallery items that might be taking up space
+      localStorage.removeItem('directorchair-content-gallery');
+      console.log('✅ [Chat] Chat history and localStorage cleared successfully');
+    } catch (error) {
+      console.error('Error clearing localStorage:', error);
+    }
+  };
+
+  // Utility function to handle localStorage quota exceeded
+  const handleStorageQuotaExceeded = () => {
+    console.warn('⚠️ [Chat] localStorage quota exceeded, clearing old data...');
+    try {
+      // Clear all DirectorChair localStorage items
+      localStorage.removeItem('directorchair-chat-messages');
+      localStorage.removeItem('directorchair-last-generated-image');
+      localStorage.removeItem('directorchair-content-gallery');
+      // Keep settings as they're small
+      console.log('✅ [Chat] localStorage cleared due to quota exceeded');
+      
+      // Also clear the current messages state to prevent immediate re-saving
+      setMessages([]);
+    } catch (error) {
+      console.error('Error clearing localStorage after quota exceeded:', error);
+    }
   };
 
   const injectImage = (imageUrl: string) => {
@@ -283,24 +305,16 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.preventDefault();
     if (!userInput.trim() && uploadedImages.length === 0) return;
 
-    // Detect if user wants video generation based on keywords
+    // Detect if user wants video generation based on keywords (very specific to avoid false positives)
     const videoKeywords = [
-      // Basic animation terms
-      'animate', 'animation', 'video', 'motion', 'movement', 'cinematic', 'film', 'movie',
+      // Explicit video/animation terms
+      'animate', 'animation', 'video', 'motion', 'cinematic', 'film', 'movie',
       
-      // Character actions
-      'walking', 'running', 'dancing', 'jumping', 'flying', 'swimming', 'driving', 'riding',
-      'sitting', 'standing', 'turning', 'looking', 'waving', 'pointing', 'gesturing',
-      
-      // Camera movements and shots
-      'camera movement', 'camera shot', 'camera pan', 'camera zoom', 'tracking shot', 'panning', 'zooming', 'rotating', 'spinning', 'floating', 'falling',
-      
-      // Comprehensive cinematic shot types
-      'tracking dolly shot', 'dolly shot', 'dolly', 'tracking', 'dolly in', 'dolly out', 'push in', 'pull out',
-      'low-angle shot', 'low angle shot', 'low-angle', 'low angle',
-      'high-angle shot', 'high angle shot', 'high-angle', 'high angle',
-      'pedestal up shot', 'pedestal upshot', 'pedestal up', 'pedestal up shot',
-      'pedestal down shot', 'pedestal down', 'pedestal down shot',
+      // Specific camera movements and shots (only when explicitly mentioned)
+      'tracking dolly shot', 'dolly shot', 'dolly in', 'dolly out', 'push in', 'pull out',
+      'low-angle shot', 'low angle shot', 'low-angle tracking', 'low angle tracking',
+      'high-angle shot', 'high angle shot', 'high-angle tracking', 'high angle tracking',
+      'pedestal up shot', 'pedestal upshot', 'pedestal up', 'pedestal down shot', 'pedestal down',
       'pan right shot', 'pan right', 'panning right', 'pan to right',
       'pan left shot', 'pan left', 'panning left', 'pan to left',
       'tilt up shot', 'tilt up', 'tilting up', 'tilt to up',
@@ -309,10 +323,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'zoom out shot', 'zoom out', 'zooming out', 'zoom away',
       'crane shot', 'crane up', 'crane down', 'crane movement',
       'handheld shot', 'handheld', 'shaky cam', 'shaky camera',
-      'steady cam', 'steadicam', 'smooth movement',
-      'close-up shot', 'close up shot', 'close-up', 'close up',
-      'wide shot', 'wide angle shot', 'establishing shot',
-      'medium shot', 'medium close-up', 'medium close up',
+      'steady cam', 'steadicam',
+      'close-up shot', 'close up shot', 'establishing shot',
+      'wide shot', 'wide angle shot', 'medium shot', 'medium close-up', 'medium close up',
       'over-the-shoulder shot', 'over the shoulder shot', 'over shoulder',
       'point of view shot', 'pov shot', 'first person shot',
       'bird\'s eye view', 'birds eye view', 'aerial shot', 'top down',
@@ -323,10 +336,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'slow motion', 'slow-mo', 'time-lapse', 'fast motion',
       'freeze frame', 'bullet time', 'matrix effect',
       
-      // Transitions and effects
-      'transition', 'morphing', 'transforming', 'changing', 'evolving', 'progressing',
+      // Video-specific transitions and effects
       'fade in', 'fade out', 'crossfade', 'dissolve', 'wipe',
-      'action sequence', 'dynamic', 'moving', 'flowing', 'streaming', 'playing', 'looping',
+      'action sequence', 'streaming', 'playing', 'looping',
       
       // File formats and playback
       'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer',
@@ -341,7 +353,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'create animation', 'make animation', 'generate animation',
       'turn into video', 'convert to video', 'make a video',
       'animate with', 'animate using', 'animate the character',
-      'make the character', 'bring the character', 'animate the scene'
+      'make the character', 'bring the character', 'animate the scene',
+      // Cinematic shot triggers
+      'tracking dolly shot', 'low-angle tracking dolly shot', 'low-angle shot',
+      'tracking shot', 'pull out shot', 'push in shot', 'pedestal up shot',
+      'pedestal down shot', 'pan right shot', 'pan left shot'
     ];
     
     const hasVideoTrigger = videoTriggers.some(trigger => 
@@ -353,9 +369,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     );
     const hasVideoKeywords = matchedVideoKeywords.length > 0;
     
-    // Only generate video if there are explicit video triggers or clear video keywords
-    // Don't default to video just because a video model is selected
-    const wantsVideo = hasVideoTrigger || hasVideoKeywords;
+    // Only generate video if there are explicit video triggers
+    // This preserves the conversational image editing workflow
+    const wantsVideo = hasVideoTrigger;
     
     console.log('🎬 [Chat] Video detection:', {
       userInput: userInput.toLowerCase(),
@@ -385,17 +401,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
-    
-    // Add a helpful message about what type of generation is happening
-    const generationTypeMessage = {
-      id: (Date.now() + 0.5).toString(),
-      type: 'assistant' as const,
-      content: wantsVideo 
-        ? `🎬 Generating video with ${preferredVideoModel || 'selected video model'}...`
-        : `🖼️ Generating image...`,
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, generationTypeMessage]);
     
     setUserInput('');
     setUploadedImages([]);
@@ -484,6 +489,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         })
       };
 
+      // Set the current model for the spinning icon
+      setCurrentModel(model);
+
       console.log('🎯 [Chat] Final generation data:', {
         ...generationData,
         hasImage: !!imageToUse,
@@ -507,24 +515,37 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         videoKeywords: videoKeywords.filter(keyword => userInput.toLowerCase().includes(keyword))
       });
 
-      // Submit to queue instead of direct generation
+      // Call the generation API directly
       try {
-        const requestId = await submitRequest(generationData.model, generationData, userInput.trim());
-        console.log('✅ [Chat] Request submitted to queue:', requestId);
+        const result = await onContentGenerated(generationData);
+        console.log('✅ [Chat] Generation completed successfully:', result);
         
-        // Update the generation type message to show it's queued
-        const queuedMessage = {
+        // Add success message to chat
+        const successMessage = {
           id: (Date.now() + 0.5).toString(),
           type: 'assistant' as const,
           content: wantsVideo 
-            ? `🎬 Video generation queued! Check the queue status.`
-            : `🖼️ Image generation queued! Check the queue status.`,
+            ? `✅ Video generated successfully! Check the center panel and gallery.`
+            : `✅ Image generated successfully! Check the center panel and gallery.`,
           timestamp: new Date()
         };
-        setMessages(prev => prev.slice(0, -1).concat([queuedMessage]));
+        setMessages(prev => prev.slice(0, -1).concat([successMessage]));
         
-        // Don't set isGenerating to false here - let the queue handle completion
-        return; // Exit early since we're using the queue
+        // Track the last generated image for future references
+        if (result?.data?.images?.[0]) {
+          setLastGeneratedImage(result.data.images[0].url);
+          
+          // Show floating suggestions for images (image-to-video workflow)
+          showFloatingSuggestions([
+            "Animate this character walking",
+            "Make video of this character dancing", 
+            "Bring this character to life",
+            "Animate the image with motion",
+            "Create a cinematic video of this character"
+          ]);
+        }
+        
+        onGenerationComplete?.();
         
       } catch (error: any) {
         // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
@@ -568,16 +589,32 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           }
           
           try {
-            const requestId = await submitRequest(fallbackGenerationData.model, fallbackGenerationData, userInput.trim());
-            console.log('✅ [Chat] Fallback request submitted to queue:', requestId);
+            const result = await onContentGenerated(fallbackGenerationData);
+            console.log('✅ [Chat] Fallback generation completed successfully:', result);
             
-            const queuedMessage = {
+            const successMessage = {
               id: (Date.now() + 0.5).toString(),
               type: 'assistant' as const,
-              content: `🖼️ Image generation queued (using fallback model)! Check the queue status.`,
+              content: `✅ Image generated successfully (using fallback model)! Check the center panel and gallery.`,
               timestamp: new Date()
             };
-            setMessages(prev => prev.slice(0, -1).concat([queuedMessage]));
+            setMessages(prev => prev.slice(0, -1).concat([successMessage]));
+            
+            // Track the last generated image for future references
+            if (result?.data?.images?.[0]) {
+              setLastGeneratedImage(result.data.images[0].url);
+              
+              // Show floating suggestions for images (image-to-video workflow)
+              showFloatingSuggestions([
+                "Animate this character walking",
+                "Make video of this character dancing", 
+                "Bring this character to life",
+                "Animate the image with motion",
+                "Create a cinematic video of this character"
+              ]);
+            }
+            
+            onGenerationComplete?.();
             return;
           } catch (fallbackError) {
             throw fallbackError;
@@ -587,7 +624,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         }
       }
       
-      // Queue system handles completion - no need for result processing here
     } catch (error) {
       console.error('Generation error:', error);
       const errorMessage = {
@@ -863,7 +899,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <div className="flex justify-start">
             <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
               <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                <img 
+                  src={getModelIcon(currentModel)} 
+                  alt="Model" 
+                  className="w-5 h-5 animate-spin"
+                />
                 <span className="text-sm">Generating...</span>
               </div>
             </div>
@@ -1052,10 +1092,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None (prompt to select)</SelectItem>
-                        <SelectItem value="fal-ai/luma-dream-machine/ray-2-flash/image-to-video">Luma Ray 2 Flash (Image-to-Video)</SelectItem>
+                        <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/bytedance/seedance/v1/pro/image-to-video">Seedance 1.0 Pro (Image-to-Video)</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
@@ -1066,16 +1105,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               </DialogContent>
             </Dialog>
 
-            {/* Queue Status Button */}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-xs"
-              onClick={() => setShowQueueModal(true)}
-            >
-              <Clock className="w-3 h-3 mr-1" />
-              Queue {getActiveCount() > 0 && `(${getActiveCount()})`}
-            </Button>
           </div>
         </form>
 
@@ -1127,14 +1156,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Queue Status Modal */}
-      <QueueStatusModal
-        isOpen={showQueueModal}
-        onClose={() => setShowQueueModal(false)}
-        requests={queueRequests}
-        onCancelRequest={cancelRequest}
-        onRemoveRequest={removeRequest}
-      />
     </div>
   );
 };

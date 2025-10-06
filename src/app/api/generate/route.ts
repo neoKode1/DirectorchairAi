@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fal } from '@fal-ai/client';
 
-// Simplified generate route that routes to dedicated FAL proxies
+// Helper function to convert localhost URLs to base64 data URIs
+async function convertLocalhostToBase64(url: string): Promise<string> {
+  if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      return `data:${contentType};base64,${base64}`;
+    } catch (error) {
+      console.error('Failed to convert localhost URL to base64:', error);
+      return url; // Return original URL if conversion fails
+    }
+  }
+  return url;
+}
+
+// Unified generate route that handles all FAL models directly
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
   const requestId = Math.random().toString(36).substring(7);
@@ -53,120 +71,203 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('imagen') || 
                         model.includes('stable-diffusion') || 
                         model.includes('dreamina') ||
-                        model.includes('ideogram');
+                        model.includes('ideogram') ||
+                        model.includes('photon') ||
+                        model.includes('recraft') ||
+                        model.includes('nano-banana') ||
+                        model.includes('gemini') ||
+                        model.includes('seedream');
     
     console.log(`🔍 [Generate API] [${requestId}] Model classification:`, {
       model: model,
       isVideoModel: isVideoModel,
       isImageModel: isImageModel,
       videoKeywords: ['video', 'veo', 'kling', 'luma', 'minimax', 'seedance'].filter(keyword => model.includes(keyword)),
-      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram'].filter(keyword => model.includes(keyword))
+      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
-    // Route to appropriate proxy
-    let targetEndpoint: string;
+    // Prepare FAL API input parameters
+    const input: Record<string, any> = {
+      prompt: prompt.trim()
+    };
+
+    // Handle image URLs for image-to-image models
+    if (body.image_url) {
+      input.image_url = await convertLocalhostToBase64(body.image_url);
+    }
     
-    if (isVideoModel) {
-      targetEndpoint = '/api/fal/video';
-      console.log(`🎬 [Generate API] [${requestId}] Routing to video proxy`);
-    } else if (isImageModel) {
-      targetEndpoint = '/api/fal/image';
-      console.log(`🖼️ [Generate API] [${requestId}] Routing to image proxy`);
-    } else {
-      // Default to image proxy for unknown models
-      targetEndpoint = '/api/fal/image';
-      console.log(`🖼️ [Generate API] [${requestId}] Unknown model type, defaulting to image proxy`);
+    if (body.image_urls && Array.isArray(body.image_urls)) {
+      input.image_urls = await Promise.all(
+        body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+      );
     }
 
-    // Create request for the appropriate proxy
-    const proxyUrl = new URL(request.url);
-    proxyUrl.pathname = targetEndpoint;
+    // Add model-specific parameters
+    if (body.aspect_ratio) {
+      input.aspect_ratio = body.aspect_ratio;
+    }
     
-    const proxyRequest = new NextRequest(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...Object.fromEntries(request.headers.entries())
-      },
-      body: JSON.stringify(body)
+    if (body.duration) {
+      input.duration = body.duration;
+    }
+    
+    if (body.resolution) {
+      input.resolution = body.resolution;
+    }
+
+    if (body.negative_prompt) {
+      input.negative_prompt = body.negative_prompt;
+    }
+
+    if (body.seed !== undefined) {
+      input.seed = body.seed;
+    }
+
+    // Handle model-specific parameters
+    if (model.includes('nano-banana/edit')) {
+      // Nano Banana Edit specific handling
+      if (body.image_urls && body.image_urls.length > 0) {
+        input.image_urls = await Promise.all(
+          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+        );
+      }
+      // Nano Banana Edit might use different parameter names
+      if (body.aspect_ratio) {
+        input.aspect_ratio = body.aspect_ratio;
+        // Some models might also accept 'ratio' or 'size'
+        input.ratio = body.aspect_ratio;
+      }
+    }
+    
+    // Handle other image models that might need special aspect ratio handling
+    if (model.includes('flux') || model.includes('stable-diffusion') || model.includes('imagen')) {
+      if (body.aspect_ratio) {
+        input.aspect_ratio = body.aspect_ratio;
+        // Some models might use 'size' instead of 'aspect_ratio'
+        input.size = body.aspect_ratio;
+      }
+    }
+
+    console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
+    console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
+    console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);
+    console.log(`🔗 [Generate API] [${requestId}] Resolution being sent:`, input.resolution);
+    console.log(`🔗 [Generate API] [${requestId}] User settings received:`, {
+      aspect_ratio: body.aspect_ratio,
+      resolution: body.resolution,
+      model: body.model
     });
 
-    console.log(`🔗 [Generate API] [${requestId}] Forwarding to:`, targetEndpoint);
-    console.log(`🔗 [Generate API] [${requestId}] Proxy request start time:`, new Date().toISOString());
-
-    // Call the appropriate proxy with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
-    
+    // Call FAL API directly
+    let result;
     try {
-      const proxyResponse = await fetch(proxyRequest, {
-        signal: controller.signal
+      result = await fal.subscribe(model, {
+        input,
+        logs: true,
+        onQueueUpdate: (update: any) => {
+          console.log(`📊 [Generate API] [${requestId}] Queue update:`, update.status);
+          if (update.logs) {
+            update.logs.forEach((log: any) => {
+              console.log(`📊 [Generate API] [${requestId}] Queue log:`, log.message);
+            });
+          }
+        },
       });
-      clearTimeout(timeoutId);
-      const result = await proxyResponse.json();
-      
-      const proxyEndTime = Date.now();
-      const proxyDuration = proxyEndTime - startTime;
-    
-      if (!proxyResponse.ok) {
-        console.error(`❌ [Generate API] [${requestId}] Proxy error:`, {
-          status: proxyResponse.status,
-          result: result,
-          duration: proxyDuration
-        });
-        return NextResponse.json({
-          success: false,
-          error: result.error || 'Generation failed',
-          details: result.details,
-          requestId: requestId,
-          duration: proxyDuration
-        }, { status: proxyResponse.status });
-      }
 
-      console.log(`✅ [Generate API] [${requestId}] Generation successful`);
-      console.log(`✅ [Generate API] [${requestId}] Total duration: ${proxyDuration}ms`);
-      console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
-      
-      return NextResponse.json({
-        ...result,
-        requestId: requestId,
-        duration: proxyDuration
-      });
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
+      console.log(`✅ [Generate API] [${requestId}] FAL API call successful`);
+      console.log(`📦 [Generate API] [${requestId}] Result:`, result);
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
-      console.error(`❌ [Generate API] [${requestId}] Fetch error:`, {
-        error: fetchError.message,
-        name: fetchError.name,
+
+      console.log(`✅ [Generate API] [${requestId}] Generation successful`);
+      console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
+      console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
+
+      return NextResponse.json({
+        success: true,
+        data: result.data,
+        requestId: result.requestId,
+        status: 'completed',
+        model: model,
+        prompt: prompt,
         duration: duration,
         timestamp: new Date().toISOString()
       });
+
+    } catch (falError: any) {
+      console.error(`❌ [Generate API] [${requestId}] FAL API error:`, falError);
+      console.error(`❌ [Generate API] [${requestId}] Error status:`, falError.status);
+      console.error(`❌ [Generate API] [${requestId}] Error body:`, falError.body);
       
-      if (fetchError.name === 'AbortError') {
-        console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST TIMEOUT =====`);
-        return NextResponse.json({
-          success: false,
-          error: 'Generation timeout',
-          details: 'The generation request took too long and was cancelled. Please try again with a simpler prompt or different model.',
-          model: model,
-          prompt: prompt,
-          requestId: requestId,
-          duration: duration
-        }, { status: 408 });
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Check if this is a content policy violation with Nano Banana Edit that we can fallback from
+      const isContentPolicyViolation = falError.status === 422 ||
+                                     (falError.body && falError.body.detail && 
+                                      falError.body.detail.some((d: any) => 
+                                        d.msg && d.msg.includes('Gemini could not generate an image')
+                                      ));
+      
+      const isNanoBananaEdit = model === 'fal-ai/nano-banana/edit';
+      const hasImageInput = body.image_url || body.image_urls;
+      
+      if (isContentPolicyViolation && isNanoBananaEdit && hasImageInput) {
+        console.log(`🔄 [Generate API] [${requestId}] Content policy violation detected, trying Seedream 4.0 Edit as fallback...`);
+        
+        try {
+          // Retry with Seedream 4.0 Edit
+          const fallbackInput = {
+            ...input,
+            // Keep the same prompt and image for fallback
+          };
+          
+          const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
+            input: fallbackInput,
+            logs: true,
+            onQueueUpdate: (update: any) => {
+              console.log(`📊 [Generate API] [${requestId}] Fallback queue update:`, update.status);
+            },
+          });
+          
+          const fallbackEndTime = Date.now();
+          const fallbackDuration = fallbackEndTime - startTime;
+          
+          console.log(`✅ [Generate API] [${requestId}] Fallback generation successful with Seedream 4.0 Edit`);
+          console.log(`✅ [Generate API] [${requestId}] Total duration: ${fallbackDuration}ms`);
+          console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED (FALLBACK) =====`);
+          
+          return NextResponse.json({
+            success: true,
+            data: fallbackResult.data,
+            requestId: fallbackResult.requestId,
+            status: 'completed',
+            model: 'fal-ai/bytedance/seedream/v4/edit',
+            prompt: prompt,
+            duration: fallbackDuration,
+            fallbackUsed: 'fal-ai/bytedance/seedream/v4/edit',
+            timestamp: new Date().toISOString()
+          });
+        } catch (fallbackError) {
+          console.error(`❌ [Generate API] [${requestId}] Fallback also failed:`, fallbackError);
+        }
       }
+
+      // Return the original error if no fallback or fallback failed
+      const originalStatus = falError.status || 500;
       
-      console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST FAILED =====`);
       return NextResponse.json({
         success: false,
-        error: 'Network error',
-        details: fetchError.message || 'Failed to connect to generation service',
+        error: 'FAL API call failed',
+        details: falError.message || 'Unknown FAL error',
+        status: falError.status,
+        body: falError.body,
         model: model,
         prompt: prompt,
-        requestId: requestId,
-        duration: duration
-      }, { status: 500 });
+        duration: duration,
+        timestamp: new Date().toISOString()
+      }, { status: originalStatus });
     }
 
   } catch (error: any) {
@@ -194,7 +295,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 // Handle CORS preflight requests
-export async function OPTIONS(request: NextRequest): Promise<NextResponse> {
+export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 204,
     headers: {

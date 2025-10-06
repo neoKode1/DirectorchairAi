@@ -106,7 +106,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Add image_urls if provided (for nano-banana/edit)
     if (body.image_urls) {
-      input.image_urls = body.image_urls;
+      // Convert localhost URLs in image_urls array to base64
+      const convertedImageUrls = await Promise.all(
+        body.image_urls.map(async (url: string) => {
+          if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
+            console.log('🖼️ [FAL Image Proxy] Converting HTTP URL in image_urls array to base64:', url);
+            try {
+              const response = await fetch(url);
+              if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.status}`);
+              }
+              
+              const arrayBuffer = await response.arrayBuffer();
+              const base64 = Buffer.from(arrayBuffer).toString('base64');
+              const mimeType = response.headers.get('content-type') || 'image/jpeg';
+              const dataUri = `data:${mimeType};base64,${base64}`;
+              
+              console.log('🖼️ [FAL Image Proxy] Successfully converted image_urls array item to base64 data URI');
+              return dataUri;
+            } catch (error) {
+              console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL in image_urls array to base64:', error);
+              throw error;
+            }
+          }
+          return url;
+        })
+      );
+      input.image_urls = convertedImageUrls;
     }
 
     // Add image-specific parameters that FAL expects
@@ -325,11 +351,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Nano Banana supports advanced controls for fine-grained editing
       // Handle image URLs for Nano Banana - it expects image_urls array
       if (body.image_urls && body.image_urls.length > 0) {
-        // Use provided image_urls array
+        // Use provided image_urls array (already converted to base64 if needed)
         input.image_urls = body.image_urls;
+        console.log('🔧 [FAL Image Proxy] Using provided image_urls array for Nano Banana:', body.image_urls.length, 'images');
       } else if (body.image_url) {
         // Convert single image_url to image_urls array
-        input.image_urls = [body.image_url];
+        // Check if it's a localhost URL and convert to base64
+        let imageUrl = body.image_url;
+        if (imageUrl.startsWith('http://localhost:') || imageUrl.startsWith('http://127.0.0.1:')) {
+          console.log('🖼️ [FAL Image Proxy] Converting single image_url to base64 for Nano Banana:', imageUrl);
+          try {
+            const response = await fetch(imageUrl);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch image: ${response.status}`);
+            }
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const base64 = Buffer.from(arrayBuffer).toString('base64');
+            const mimeType = response.headers.get('content-type') || 'image/jpeg';
+            imageUrl = `data:${mimeType};base64,${base64}`;
+            
+            console.log('🖼️ [FAL Image Proxy] Successfully converted single image_url to base64 for Nano Banana');
+          } catch (error) {
+            console.error('❌ [FAL Image Proxy] Failed to convert single image_url to base64 for Nano Banana:', error);
+            throw error;
+          }
+        }
+        input.image_urls = [imageUrl];
         console.log('🔧 [FAL Image Proxy] Converted single image_url to image_urls array for Nano Banana');
       } else {
         // No images provided
@@ -539,6 +587,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error('❌ [FAL Image Proxy] Error body:', falError.body);
       console.error('❌ [FAL Image Proxy] Error message:', falError.message);
       
+      // Preserve the original FAL API status code for proper fallback detection
+      const originalStatus = falError.status || 500;
+      
       return NextResponse.json({
         success: false,
         error: 'FAL API call failed',
@@ -547,7 +598,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         body: falError.body,
         model: model,
         prompt: prompt
-      }, { status: 500 });
+      }, { status: originalStatus });
     }
 
   } catch (error: any) {

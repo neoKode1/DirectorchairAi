@@ -19,7 +19,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { contentStorage, type StoredContent } from '@/lib/content-storage';
@@ -148,12 +149,41 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       }
     };
 
+    const handleContentUpdated = () => {
+      console.log('🔄 [GalleryView] Content updated event received, refreshing gallery...');
+      // Reload items from localStorage
+      if (useLocalStorage) {
+        const savedContent = contentStorage.loadContent();
+        
+        // Filter out text items and convert StoredContent to GalleryItem
+        const filteredItems: GalleryItem[] = savedContent
+          .filter(item => item.type !== 'text') // Exclude text items
+          .map(item => ({
+            id: item.id,
+            type: item.type as 'image' | 'video' | 'audio',
+            url: item.url,
+            title: item.title,
+            prompt: item.prompt || '',
+            timestamp: item.timestamp,
+            metadata: item.metadata
+          }));
+        
+        setLocalItems(filteredItems);
+        console.log('🔄 [GalleryView] Refreshed gallery with', filteredItems.length, 'items');
+        
+        // Generate thumbnails for new video items
+        generateVideoThumbnails(filteredItems);
+      }
+    };
+
     window.addEventListener('content-generated', handleContentGenerated as EventListener);
+    window.addEventListener('contentUpdated', handleContentUpdated as EventListener);
     
     return () => {
       window.removeEventListener('content-generated', handleContentGenerated as EventListener);
+      window.removeEventListener('contentUpdated', handleContentUpdated as EventListener);
     };
-  }, []);
+  }, [useLocalStorage, generateVideoThumbnails]);
 
   // Use either local items or prop items
   const items = useLocalStorage ? localItems : (propItems || []);
@@ -212,6 +242,42 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const handleAnimate = (e: React.MouseEvent, item: GalleryItem) => {
     e.stopPropagation();
     onAnimate?.(item);
+  };
+
+  // Handle delete item
+  const handleDelete = async (e: React.MouseEvent, item: GalleryItem) => {
+    e.stopPropagation();
+    
+    if (useLocalStorage) {
+      try {
+        // Remove from localStorage
+        contentStorage.removeContent(item.id);
+        
+        // Update local state
+        setLocalItems(prev => prev.filter(i => i.id !== item.id));
+        
+        // Remove video thumbnail if exists
+        if (videoThumbnails[item.id]) {
+          setVideoThumbnails(prev => {
+            const newThumbnails = { ...prev };
+            delete newThumbnails[item.id];
+            return newThumbnails;
+          });
+        }
+        
+        toast({
+          title: "Item Deleted",
+          description: `"${item.title}" has been removed from your gallery.`,
+        });
+      } catch (error) {
+        console.error('❌ [GalleryView] Delete failed:', error);
+        toast({
+          title: "Delete Failed",
+          description: "Failed to delete the item. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   // Handle download with frame extraction for videos
@@ -424,84 +490,47 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   </div>
                 )}
 
-                {/* Gradient Overlay for Text Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                {/* Content Overlay */}
-                <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <Badge 
-                        variant="secondary" 
-                        className={cn("badge-enhanced bg-white/90 text-black border-0", getTypeColor(item.type))}
-                      >
-                        {getTypeIcon(item.type)}
-                        {item.type}
-                      </Badge>
-                    </div>
+                {/* Action Buttons Only - Centered */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <Button
-                      variant="secondary"
                       size="sm"
-                      className="btn-secondary bg-white/90 text-black border-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      variant="secondary"
+                      className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(item);
                       }}
                       disabled={isDownloading}
-                      title={item.type === 'video' ? 'Download video + last frame' : 'Download'}
                     >
                       <Download className="w-4 h-4" />
                     </Button>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-sm font-medium line-clamp-2 text-white mb-2 group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-
-                  {/* Prompt */}
-                  <p className="text-xs text-white/80 line-clamp-2 mb-2">
-                    {item.prompt}
-                  </p>
-
-                  {/* Metadata */}
-                  <div className="flex items-center justify-between text-xs text-white/70">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatTimestamp(item.timestamp)}
-                    </div>
-                    {item.metadata?.width && item.metadata?.height && (
-                      <span>
-                        {item.metadata.width}×{item.metadata.height}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons Overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="btn-secondary bg-white/90 text-black border-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {item.type === 'image' && onAnimate && (
+                    
+                    {item.type === 'image' && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="btn-secondary bg-white/90 text-black border-0"
-                        onClick={(e) => handleAnimate(e, item)}
+                        className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onItemClick?.(item);
+                        }}
                       >
-                        <Zap className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </Button>
                     )}
+                    
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 px-3 bg-red-500/20 text-red-300 border-red-500/30 hover:bg-red-500/30 backdrop-blur-sm"
+                      onClick={(e) => handleDelete(e, item)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>

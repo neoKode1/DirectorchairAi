@@ -933,6 +933,13 @@ export class IntelligenceCore {
         confidence = 0.8;
       }
     }
+    // Special case for character-movie integration requests
+    else if (this.containsCharacterMovieKeywords(lowerInput)) {
+      console.log('🔍 [IntelligenceCore] ✅ Found character-movie integration request, treating as image generation');
+      requiresGeneration = true;
+      type = 'image';
+      confidence = 0.95; // High confidence for character-movie requests
+    }
     // Special case for director-specific prompts (e.g., "Directed by Rob Zombie")
     else if (lowerInput.includes('directed by') || this.containsDirectorNames(lowerInput)) {
       console.log('🔍 [IntelligenceCore] ✅ Found director-specific prompt, treating as image generation');
@@ -1050,6 +1057,17 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       if (input.includes(type)) keywords.push(type);
     });
 
+    // Character and movie integration keywords
+    const characterMovieTerms = [
+      'character', 'put', 'place', 'movie', 'film', 'scene', 'shot', 'in that',
+      'into', 'within', 'movie scene', 'film scene', 'cinematic scene', 'movie shot',
+      'film shot', 'character in', 'put character', 'place character', 'character movie',
+      'put the character', 'place the character', 'character in movie', 'character in film'
+    ];
+    characterMovieTerms.forEach(term => {
+      if (input.includes(term)) keywords.push(term);
+    });
+
     // Style indicators
     const styleTerms = ['realistic', 'artistic', 'cinematic', 'professional', 'casual', 'modern', 'vintage'];
     styleTerms.forEach(style => {
@@ -1085,6 +1103,19 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     ];
     const found = imageWords.some(word => input.toLowerCase().includes(word.toLowerCase()));
     console.log('🔍 [IntelligenceCore] Checking image keywords:', { input, imageWords, found });
+    return found;
+  }
+
+  private containsCharacterMovieKeywords(input: string): boolean {
+    const characterMovieWords = [
+      'put the character', 'place the character', 'character in movie', 'character in film',
+      'put character in', 'place character in', 'character in that movie', 'character in that film',
+      'put him in', 'put her in', 'place him in', 'place her in', 'put them in', 'place them in',
+      'movie scene', 'film scene', 'cinematic scene', 'movie shot', 'film shot',
+      'character movie', 'character film', 'character scene', 'character shot'
+    ];
+    const found = characterMovieWords.some(phrase => input.toLowerCase().includes(phrase.toLowerCase()));
+    console.log('🔍 [IntelligenceCore] Checking character-movie keywords:', { input, characterMovieWords, found });
     return found;
   }
 

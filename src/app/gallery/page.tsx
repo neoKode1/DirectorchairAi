@@ -23,7 +23,7 @@ import {
   Share2
 } from 'lucide-react';
 import Link from 'next/link';
-import { GeneratedContentDisplay } from "@/components/generated-content-display";
+// import { GeneratedContentDisplay } from "@/components/generated-content-display"; // Removed - component deleted
 
 interface GalleryItem {
   id: string;

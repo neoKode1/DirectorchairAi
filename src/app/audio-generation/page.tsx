@@ -1,5 +1,5 @@
 import React from 'react';
-import { AudioGenerationInterface } from '@/components/audio-generation-interface';
+// import { AudioGenerationInterface } from '@/components/audio-generation-interface'; // Removed - component deleted
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AudioGenerationPage() {
@@ -13,11 +13,15 @@ export default function AudioGenerationPage() {
           </p>
         </div>
 
-        <AudioGenerationInterface
+        {/* <AudioGenerationInterface
           showDownloadButton={true}
           showUseInLipSync={true}
           showUseInVideo={true}
-        />
+        /> Removed - component deleted */}
+        <div className="text-center py-8 text-gray-500">
+          <p>Audio Generation Interface component has been removed during cleanup.</p>
+          <p>This page is no longer functional.</p>
+        </div>
 
         <div className="mt-8">
           <Card>

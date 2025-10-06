@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       prompt: body.prompt,
       generation_type: "image",
       model,
-      aspect_ratio: body.aspect_ratio || "1:1",
+      aspect_ratio: body.aspect_ratio,
       negative_prompt: body.negative_prompt,
       seed: body.seed,
       num_steps: body.num_steps || 50,

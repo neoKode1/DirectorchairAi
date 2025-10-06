@@ -151,7 +151,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     category: "image",
     initialInput: {
       prompt: "A beautiful landscape with mountains and sunset",
-      aspect_ratio: "1:1",
       num_images: 1,
     },
   },
@@ -186,6 +185,25 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/bytedance/seedream/v4/edit",
+    label: "Seedream 4.0 Edit",
+    description: "New-generation image creation model by ByteDance that integrates image generation and image editing capabilities into a single, unified architecture",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 4,
+    initialInput: {
+      prompt: "Dress the model in the clothes and hat. Add a cat to the scene and change the background to a Victorian era building.",
+      image_size: {
+        width: 3840,
+        height: 2160,
+      },
+      num_images: 1,
+      max_images: 1,
+      enable_safety_checker: true,
+    },
+  },
+  {
     endpointId: "fal-ai/flux-pro/v1.1-ultra",
     label: "Flux Pro 1.1 Ultra",
     description: "Professional-grade image generation with ultra quality and advanced features",
@@ -194,7 +212,6 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       prompt: "A beautiful landscape with mountains and sunset",
       num_inference_steps: 30,
       guidance_scale: 7.5,
-      aspect_ratio: "1:1",
       num_images: 1,
       output_format: "jpeg",
       enhance_prompt: true,

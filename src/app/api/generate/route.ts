@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions } from '@/lib/image-compression';
-import { filterProblematicContent } from '@/lib/custom-styles';
 
 // Helper function to process images with compression (handles both URLs and base64 data URIs)
 async function processImageWithCompression(imageData: string): Promise<string> {
@@ -119,22 +118,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
     });
 
-    // Apply content filtering to prevent policy violations
-    console.log('🔍 [Generate API] Applying content filtering to prompt...');
-    const { filteredPrompt, filteredTerms } = filterProblematicContent(prompt);
-    
-    if (filteredTerms.length > 0) {
-      console.log('🔍 [Generate API] Content filtering applied:', {
-        originalLength: prompt.length,
-        filteredLength: filteredPrompt.length,
-        filteredTerms: filteredTerms.length,
-        terms: filteredTerms.map(t => `${t.original} → ${t.replacement} (${t.reason})`)
-      });
-    }
-
     // Prepare FAL API input parameters
     const input: Record<string, any> = {
-      prompt: filteredPrompt.trim()
+      prompt: prompt.trim()
     };
 
     // Set default parameters for video models
@@ -425,13 +411,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             console.log(`🔄 [Generate API] [${requestId}] Converted aspect_ratio ${body.aspect_ratio} to image_size:`, fallbackInput.image_size);
           }
           
-          const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
+          // Add timeout to prevent hanging
+          const fallbackTimeout = 300000; // 5 minutes timeout
+          const fallbackPromise = fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
             input: fallbackInput,
             logs: true,
             onQueueUpdate: (update: any) => {
               console.log(`📊 [Generate API] [${requestId}] Fallback queue update:`, update.status);
             },
           });
+          
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Fallback timeout after 5 minutes')), fallbackTimeout);
+          });
+          
+          const fallbackResult = await Promise.race([fallbackPromise, timeoutPromise]);
           
           const fallbackEndTime = Date.now();
           const fallbackDuration = fallbackEndTime - startTime;
@@ -451,8 +445,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             fallbackUsed: 'fal-ai/bytedance/seedream/v4/edit',
             timestamp: new Date().toISOString()
           });
-        } catch (fallbackError) {
+        } catch (fallbackError: any) {
           console.error(`❌ [Generate API] [${requestId}] Fallback also failed:`, fallbackError);
+          
+          // Return a user-friendly error message for content policy violations
+          return NextResponse.json({
+            success: false,
+            error: 'Content policy violation',
+            message: 'The prompt contains content that violates our content policy. Please try rephrasing your prompt to be more appropriate.',
+            details: 'Both the primary model and fallback model rejected the content. Please modify your prompt and try again.',
+            status: 422,
+            model: model,
+            prompt: prompt,
+            duration: Date.now() - startTime,
+            timestamp: new Date().toISOString()
+          }, { status: 422 });
         }
       }
 

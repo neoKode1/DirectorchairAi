@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { SimpleChatInterface } from "@/components/simple-chat-interface";
 import { GalleryView } from "@/components/gallery-view";
 import { Toaster } from "@/components/ui/toaster";
@@ -32,6 +32,7 @@ function TimelineContent() {
   const [mounted, setMounted] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [isGalleryCollapsed, setIsGalleryCollapsed] = useState(false);
+  const contentAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -54,6 +55,15 @@ function TimelineContent() {
           (window as any).setChatInput("Animate this character with smooth motion");
         }
       }, 200);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (contentAreaRef.current) {
+      contentAreaRef.current.scrollTo({
+        top: contentAreaRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -166,6 +176,11 @@ function TimelineContent() {
       // Add to generated content for display in center panel
       setGeneratedContent(prev => [...prev, contentToStore]);
       
+      // Scroll to bottom to show the new content
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
       // Store in localStorage for gallery using contentStorage
       if (typeof window !== 'undefined') {
         const { contentStorage } = await import('@/lib/content-storage');
@@ -217,7 +232,7 @@ function TimelineContent() {
 
       {/* Center Column - Dynamic Content Display (Green section from screenshot) */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-4 overflow-y-auto">
+        <div ref={contentAreaRef} className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-6">
             {generatedContent.length === 0 ? (
               <div className="flex items-center justify-center h-full">

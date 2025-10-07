@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
-import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions } from '@/lib/image-compression';
+import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions, bufferToDataUri } from '@/lib/image-compression-server';
 import { createClient } from '@/utils/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -56,7 +56,7 @@ async function processImageWithCompression(imageData: string): Promise<string> {
       console.log('📊 [Generate API] Processing base64 data URI');
       const compressionOptions = getOptimalCompressionOptions(0); // Will be determined from actual size
       const result = await compressBase64DataUri(imageData, compressionOptions);
-      return result.compressedDataUrl;
+      return bufferToDataUri(result.compressedBuffer, result.mimeType);
     }
     
     // Handle HTTP URLs
@@ -86,7 +86,7 @@ async function processImageWithCompression(imageData: string): Promise<string> {
       console.log('🗜️ [Generate API] Image is large, applying compression');
       const compressionOptions = getOptimalCompressionOptions(originalSize);
       const result = await compressImageFromUrl(imageData, compressionOptions);
-      return result.compressedDataUrl;
+      return bufferToDataUri(result.compressedBuffer, result.mimeType);
     }
     
     // Return as-is if not a recognized format

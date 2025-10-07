@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
-import { compressImageFromUrl, getOptimalCompressionOptions } from '@/lib/image-compression';
+import { compressImageFromUrl, getOptimalCompressionOptions, bufferToDataUri } from '@/lib/image-compression-server';
 
 // Image-specific FAL proxy that handles all image generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             console.log('🗜️ [FAL Image Proxy] Image is large, applying compression');
             const compressionOptions = getOptimalCompressionOptions(originalSize);
             const compressionResult = await compressImageFromUrl(body.image_url, compressionOptions);
-            input.image_url = compressionResult.compressedDataUrl;
-            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', compressionResult.compressedDataUrl.length);
+            input.image_url = bufferToDataUri(compressionResult.compressedBuffer, compressionResult.mimeType);
+            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', input.image_url.length);
           }
           
           console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');
@@ -152,8 +152,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 console.log('🗜️ [FAL Image Proxy] Image in array is large, applying compression');
                 const compressionOptions = getOptimalCompressionOptions(originalSize);
                 const compressionResult = await compressImageFromUrl(url, compressionOptions);
-                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', compressionResult.compressedDataUrl.length);
-                return compressionResult.compressedDataUrl;
+                const dataUri = bufferToDataUri(compressionResult.compressedBuffer, compressionResult.mimeType);
+                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);
+                return dataUri;
               }
             } catch (error) {
               console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL in image_urls array to base64:', error);

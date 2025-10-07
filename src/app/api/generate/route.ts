@@ -611,17 +611,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`✅ [Generate API] [${requestId}] Generation successful`);
       console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
       
-      // Save generation to database
+      // Save generation to database (temporarily disabled until table is created)
       const outputUrl = result.data?.video?.url || result.data?.images?.[0]?.url || null;
-      await saveGenerationToDatabase(
-        requestId,
-        prompt,
-        model,
-        outputUrl,
-        'completed',
-        userId,
-        sessionId
-      );
+      try {
+        await saveGenerationToDatabase(
+          requestId,
+          prompt,
+          model,
+          outputUrl,
+          'completed',
+          userId,
+          sessionId
+        );
+      } catch (dbError: any) {
+        console.log(`⚠️ [Generate API] [${requestId}] Database save failed (table may not exist):`, dbError.message);
+        // Continue without failing the request
+      }
       
       console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
       
@@ -645,15 +650,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error(`❌ [Generate API] [${requestId}] Error body:`, falError.body);
       
       // Save failed generation to database
-      await saveGenerationToDatabase(
-        requestId,
-        prompt,
-        model,
-        null,
-        'failed',
-        userId,
-        sessionId
-      );
+      try {
+        await saveGenerationToDatabase(
+          requestId,
+          prompt,
+          model,
+          null,
+          'failed',
+          userId,
+          sessionId
+        );
+      } catch (dbError: any) {
+        console.log(`⚠️ [Generate API] [${requestId}] Database save failed (table may not exist):`, dbError.message);
+      }
       
       // Handle timeout errors specifically
       if (falError.message && falError.message.includes('timeout')) {

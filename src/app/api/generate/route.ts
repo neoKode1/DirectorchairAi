@@ -1,6 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions } from '@/lib/image-compression';
+import { createClient } from '@/utils/supabase/server';
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper function to save generation result to database
+async function saveGenerationToDatabase(
+  requestId: string,
+  prompt: string,
+  model: string,
+  outputUrl: string | null,
+  status: string,
+  userId?: string,
+  sessionId?: string
+) {
+  try {
+    const supabase = await createClient();
+    
+    const generationData = {
+      id: requestId,
+      user_id: userId || null,
+      session_id: sessionId || null,
+      prompt,
+      model,
+      output_url: outputUrl,
+      status,
+      expires_at: userId ? null : new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours for anonymous
+      metadata: {
+        timestamp: new Date().toISOString(),
+        model_type: model.includes('video') ? 'video' : 'image'
+      }
+    };
+
+    const { data, error } = await supabase
+      .from('generations')
+      .insert(generationData);
+
+    if (error) {
+      console.error('❌ [Generate API] Failed to save generation to database:', error);
+    } else {
+      console.log('✅ [Generate API] Generation saved to database:', requestId);
+    }
+  } catch (error) {
+    console.error('❌ [Generate API] Database save error:', error);
+  }
+}
 
 // Helper function to process images with compression (handles both URLs and base64 data URIs)
 async function processImageWithCompression(imageData: string): Promise<string> {
@@ -55,11 +99,27 @@ async function processImageWithCompression(imageData: string): Promise<string> {
 // Unified generate route that handles all FAL models directly
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
-  const requestId = Math.random().toString(36).substring(7);
+  const requestId = uuidv4();
   
   try {
     console.log(`🔍 [Generate API] ===== GENERATION REQUEST START [${requestId}] =====`);
     console.log(`🔍 [Generate API] Timestamp: ${new Date().toISOString()}`);
+    
+    // Get user authentication and session info
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    let userId: string | undefined;
+    let sessionId: string | undefined;
+    
+    if (user && !authError) {
+      userId = user.id;
+      console.log(`👤 [Generate API] [${requestId}] Authenticated user: ${user.email}`);
+    } else {
+      // Generate session ID for anonymous users
+      sessionId = requestId; // Use requestId as sessionId for anonymous users
+      console.log(`👤 [Generate API] [${requestId}] Anonymous user, session: ${sessionId}`);
+    }
     
     const body = await request.json();
     console.log(`🔍 [Generate API] [${requestId}] Request received:`, {
@@ -172,7 +232,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image_url = await processImageWithCompression(body.image_url);
     }
     
-    if (body.image_urls && Array.isArray(body.image_urls)) {
+    // Only add image_urls if it exists and is a valid array
+    if (body.image_urls && Array.isArray(body.image_urls) && body.image_urls.length > 0) {
       input.image_urls = await Promise.all(
         body.image_urls.map((url: string) => processImageWithCompression(url))
       );
@@ -344,6 +405,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Sora 2 (standard) supports resolution: 'auto', '720p'
       const isSora2Pro = model.includes('sora-2/image-to-video/pro');
       
+      // Sora 2 models default to 'auto' for resolution (matching playground example)
       if (body.resolution) {
         if (isSora2Pro) {
           // Sora 2 Pro supports 1080p
@@ -363,7 +425,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }
         }
       } else {
-        input.resolution = 'auto'; // Default to auto
+        input.resolution = 'auto'; // Default to auto (matching playground example)
       }
       
       // Sora 2 ONLY accepts duration: 4, 8, or 12 (numbers, not strings)
@@ -382,7 +444,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.duration = 4; // Default to 4 seconds
       }
       
-      // Sora 2 supports aspect_ratio: 'auto', '9:16', '16:9'
+      // Sora 2 supports aspect_ratio: 'auto', '9:16', '16:9' (default to 'auto' like playground)
       if (body.aspect_ratio && !['auto', '9:16', '16:9'].includes(body.aspect_ratio)) {
         // Convert to supported aspect ratios
         if (body.aspect_ratio === '16:9') {
@@ -392,6 +454,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         } else {
           input.aspect_ratio = 'auto'; // Default to auto
         }
+      } else if (!body.aspect_ratio) {
+        input.aspect_ratio = 'auto'; // Default to auto (matching playground example)
       }
       
       console.log(`🔧 [Generate API] [${requestId}] Sora 2 model parameters:`, {
@@ -407,25 +471,94 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ? 'Sora 2 Pro accepts duration: 4, 8, or 12 (numbers), resolution: auto/720p/1080p, aspect_ratio: auto/9:16/16:9'
           : 'Sora 2 accepts duration: 4, 8, or 12 (numbers), resolution: auto or 720p, aspect_ratio: auto/9:16/16:9'
       });
+      
+      // For Sora 2 Pro, use exact schema from FAL AI documentation
+      if (isSora2Pro) {
+        console.log(`🔧 [Generate API] [${requestId}] Applying Sora 2 Pro exact schema parameters`);
+        
+        // Build input according to exact FAL AI schema - ONLY include valid parameters
+        const sora2ProInput: Record<string, any> = {
+          prompt: input.prompt
+        };
+        
+        // Only add image_url if it exists and is valid
+        if (input.image_url) {
+          sora2ProInput.image_url = input.image_url;
+        }
+        
+        // Add optional parameters only if they have valid values
+        if (input.resolution && ['auto', '720p', '1080p'].includes(input.resolution)) {
+          sora2ProInput.resolution = input.resolution;
+        }
+        
+        if (input.aspect_ratio && ['auto', '9:16', '16:9'].includes(input.aspect_ratio)) {
+          sora2ProInput.aspect_ratio = input.aspect_ratio;
+        }
+        
+        if (input.duration && [4, 8, 12].includes(Number(input.duration))) {
+          sora2ProInput.duration = Number(input.duration);
+        }
+        
+        // Completely replace input with clean Sora 2 Pro parameters
+        // This ensures no extra parameters like image_urls are sent
+        Object.keys(input).forEach(key => delete input[key]);
+        Object.assign(input, sora2ProInput);
+        
+        console.log(`🔧 [Generate API] [${requestId}] Sora 2 Pro final input (exact schema):`, sora2ProInput);
+        console.log(`🔧 [Generate API] [${requestId}] Sora 2 Pro input keys:`, Object.keys(sora2ProInput));
+      }
     }
 
 
+    // Final cleanup: remove any undefined values from input
+    Object.keys(input).forEach(key => {
+      if (input[key] === undefined) {
+        delete input[key];
+      }
+    });
+
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
-    console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
+    console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, {
+      ...input,
+      image_url: input.image_url ? '[IMAGE_DATA_OMITTED]' : undefined,
+      image_urls: input.image_urls ? '[IMAGE_DATA_OMITTED]' : undefined
+    });
     console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);
     console.log(`🔗 [Generate API] [${requestId}] Resolution being sent:`, input.resolution);
+    console.log(`🔗 [Generate API] [${requestId}] Duration being sent:`, input.duration);
     console.log(`🔗 [Generate API] [${requestId}] User settings received:`, {
       aspect_ratio: body.aspect_ratio,
       resolution: body.resolution,
+      duration: body.duration,
       model: body.model
     });
 
     // Call FAL API directly with timeout handling
     let result;
     try {
-      // Add timeout for video generation models (longer timeout)
+      // Add timeout based on model type and quality (based on actual FAL AI timing data)
       const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax');
-      const timeoutDuration = isVideoModel ? 4 * 60 * 1000 : 2 * 60 * 1000; // 4 minutes for video, 2 minutes for images
+      const isHighQualityImageModel = model.includes('flux-pro') || model.includes('imagen4') || model.includes('nano-banana');
+      
+      let timeoutDuration;
+      if (isVideoModel) {
+        // Video models: Based on actual timing data + buffer
+        if (model.includes('kling-video')) {
+          timeoutDuration = 5 * 60 * 1000; // 5 minutes for Kling (actual: ~3 min)
+        } else if (model.includes('sora-2')) {
+          timeoutDuration = 5 * 60 * 1000; // 5 minutes for Sora 2 (actual: ~2-2.5 min)
+        } else if (model.includes('minimax')) {
+          timeoutDuration = 4 * 60 * 1000; // 4 minutes for Minimax (actual: ~2 min)
+        } else if (model.includes('veo3')) {
+          timeoutDuration = 3 * 60 * 1000; // 3 minutes for Veo 3 (actual: ~1 min)
+        } else {
+          timeoutDuration = 5 * 60 * 1000; // 5 minutes default for other video models
+        }
+      } else if (isHighQualityImageModel) {
+        timeoutDuration = 3 * 60 * 1000; // 3 minutes for high-quality image models
+      } else {
+        timeoutDuration = 2 * 60 * 1000; // 2 minutes for standard image models
+      }
       
       result = await Promise.race([
         fal.subscribe(model, {
@@ -453,6 +586,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       console.log(`✅ [Generate API] [${requestId}] Generation successful`);
       console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
+      
+      // Save generation to database
+      const outputUrl = result.data?.video?.url || result.data?.images?.[0]?.url || null;
+      await saveGenerationToDatabase(
+        requestId,
+        prompt,
+        model,
+        outputUrl,
+        'completed',
+        userId,
+        sessionId
+      );
+      
       console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
       
       return NextResponse.json({
@@ -470,6 +616,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error(`❌ [Generate API] [${requestId}] FAL API error:`, falError);
       console.error(`❌ [Generate API] [${requestId}] Error status:`, falError.status);
       console.error(`❌ [Generate API] [${requestId}] Error body:`, falError.body);
+      
+      // Save failed generation to database
+      await saveGenerationToDatabase(
+        requestId,
+        prompt,
+        model,
+        null,
+        'failed',
+        userId,
+        sessionId
+      );
       
       // Handle timeout errors specifically
       if (falError.message && falError.message.includes('timeout')) {
@@ -491,31 +648,65 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Check if this is a content policy violation or prompt length issue with Nano Banana Edit that we can fallback from
       const isContentPolicyViolation = falError.status === 422 ||
                                      (falError.body && falError.body.detail && 
+                                      Array.isArray(falError.body.detail) &&
                                       falError.body.detail.some((d: any) => 
                                         d.msg && (d.msg.includes('Gemini could not generate an image') ||
                                                  d.msg.includes('prompt too long') ||
-                                                 d.msg.includes('input too long'))
+                                                 d.msg.includes('input too long') ||
+                                                 d.msg.includes('content could not be processed') ||
+                                                 d.msg.includes('flagged by a content checker') ||
+                                                 d.msg.includes('content policy') ||
+                                                 d.type === 'content_policy_violation')
                                       ));
+      
+      // Check if this is a Sora 2 parameter validation error
+      const isSora2ValidationError = falError.status === 422 &&
+                                    (falError.body && falError.body.detail && 
+                                     Array.isArray(falError.body.detail) &&
+                                     falError.body.detail.some((d: any) => 
+                                       d.msg && (d.msg.includes('Invalid request to downstream service') ||
+                                                d.msg.includes('validation error') ||
+                                                d.msg.includes('invalid parameter'))
+                                     ));
       
       const isPromptTooLong = falError.status === 400 && 
                              (falError.message?.toLowerCase().includes('too long') ||
-                              falError.body?.detail?.some((d: any) => 
-                                d.msg?.toLowerCase().includes('too long')
-                              ));
+                              (falError.body?.detail && Array.isArray(falError.body.detail) &&
+                               falError.body.detail.some((d: any) => 
+                                 d.msg?.toLowerCase().includes('too long')
+                               )));
       
       const isNanoBananaEdit = model === 'fal-ai/nano-banana/edit';
       const hasImageInput = body.image_url || body.image_urls;
+      
+      console.log(`🔍 [Generate API] [${requestId}] Error analysis:`, {
+        isContentPolicyViolation,
+        isPromptTooLong,
+        isNanoBananaEdit,
+        hasImageInput,
+        model,
+        errorStatus: falError.status,
+        errorBody: falError.body
+      });
       
       if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaEdit && hasImageInput) {
         const issueType = isPromptTooLong ? 'prompt length issue' : 'content policy violation';
         console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying Seedream 4.0 Edit as fallback...`);
         
         try {
-          // Retry with Seedream 4.0 Edit
-          const fallbackInput = {
-            ...input,
-            // Keep the same prompt and image for fallback
+          // Prepare fallback input
+          const fallbackInput: Record<string, any> = {
+            prompt: input.prompt,
+            logs: true,
           };
+
+          if (body.image_url) {
+            fallbackInput.image_url = await processImageWithCompression(body.image_url);
+          } else if (body.image_urls && body.image_urls.length > 0) {
+            fallbackInput.image_urls = await Promise.all(
+              body.image_urls.map((url: string) => processImageWithCompression(url))
+            );
+          }
           
           // Convert aspect_ratio to image_size for Seedream 4.0 Edit
           if (body.aspect_ratio) {
@@ -564,6 +755,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           
           console.log(`✅ [Generate API] [${requestId}] Fallback generation successful with Seedream 4.0 Edit`);
           console.log(`✅ [Generate API] [${requestId}] Total duration: ${fallbackDuration}ms`);
+          
+          // Save fallback generation to database
+          const fallbackOutputUrl = fallbackResult.data?.video?.url || fallbackResult.data?.images?.[0]?.url || null;
+          await saveGenerationToDatabase(
+            requestId,
+            prompt,
+            'fal-ai/bytedance/seedream/v4/edit',
+            fallbackOutputUrl,
+            'completed',
+            userId,
+            sessionId
+          );
+          
           console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED (FALLBACK) =====`);
           
         return NextResponse.json({
@@ -604,6 +808,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
 
+      // Handle Sora 2 validation errors specifically
+      if (isSora2ValidationError) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid Sora 2 parameters',
+          message: 'The parameters sent to Sora 2 are invalid. Please check your resolution, duration, and aspect ratio settings.',
+          details: falError.body?.detail || 'Parameter validation failed',
+          status: 422,
+          model: model,
+          prompt: prompt,
+          duration: duration,
+          timestamp: new Date().toISOString()
+        }, { status: 422 });
+      }
+      
       // Return the original error if no fallback or fallback failed
       const originalStatus = falError.status || 500;
       

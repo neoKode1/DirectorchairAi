@@ -1,10 +1,10 @@
 {
   "functions": {
     "src/app/api/generate/sora2-image-to-video/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 600
     },
     "src/app/api/generate/route.ts": {
-      "maxDuration": 300
+      "maxDuration": 600
     }
   },
   "headers": [

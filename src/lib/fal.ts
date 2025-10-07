@@ -334,10 +334,10 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
         supportsMultipleImages: false,
         maxImages: 1,
         initialInput: {
-          prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
-          image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
+          prompt: "Front-facing 'invisible' action-cam on a skydiver in freefall above bright clouds; camera locked on his face. He speaks over the wind with clear lipsync: 'This is insanely fun! You've got to try it—book a tandem and go!' Natural wind roar, voice close-mic'd and slightly compressed so it's intelligible. Midday sun, goggles and jumpsuit flutter, altimeter visible, parachute rig on shoulders. Energetic but stable framing with subtle shake; brief horizon roll. End on first tug of canopy and wind noise dropping.",
+          image_url: "https://storage.googleapis.com/falserverless/example_inputs/sora-2-i2v-input.png",
           resolution: "auto",
-          aspect_ratio: "auto",
+          aspect_ratio: "auto", 
           duration: 4,
         },
       },

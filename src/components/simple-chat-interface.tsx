@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { EnhancedLoadingModal } from '@/components/enhanced-loading-modal';
 import { 
   Send, 
   Plus,
@@ -63,8 +64,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [showFloatingDialog, setShowFloatingDialog] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/nano-banana/edit');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
+  const [userIntent, setUserIntent] = useState<'image' | 'video' | 'auto'>('image');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         const settings = JSON.parse(savedSettings);
         setAspectRatio(settings.aspectRatio || '16:9');
         setResolution(settings.resolution || '1080p');
-        setPreferredVideoModel(settings.preferredVideoModel || 'none');
+        setPreferredVideoModel(settings.preferredVideoModel || 'fal-ai/nano-banana/edit');
+        setUserIntent(settings.userIntent || 'image');
       } catch (error) {
         console.error('Error loading saved settings:', error);
       }
@@ -182,13 +185,31 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       const settings = {
         aspectRatio,
         resolution,
-        preferredVideoModel
+        preferredVideoModel,
+        userIntent
       };
       localStorage.setItem('directorchair-settings', JSON.stringify(settings));
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
-  }, [aspectRatio, resolution, preferredVideoModel]);
+  }, [aspectRatio, resolution, preferredVideoModel, userIntent]);
+
+  // Event listener for model selection changes
+  const handleModelSelectionChange = (newModel: string) => {
+    console.log('🎯 [Chat] Model selection changed:', { from: preferredVideoModel, to: newModel });
+    
+    // Update the preferred model
+    setPreferredVideoModel(newModel);
+    
+    // Set user intent based on model selection
+    if (newModel.includes('image-to-video') || newModel.includes('video')) {
+      setUserIntent('video'); // User explicitly wants video
+      console.log('🎯 [Chat] Intent set to VIDEO - user selected video model');
+    } else {
+      setUserIntent('image'); // User explicitly wants image (default behavior)
+      console.log('🎯 [Chat] Intent set to IMAGE - user selected image model');
+    }
+  };
 
 
   const processFiles = useCallback((files: FileList) => {
@@ -375,12 +396,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     );
     const hasVideoKeywords = matchedVideoKeywords.length > 0;
     
-    // Only generate video if there are explicit video triggers OR if forced by Generate Video button
-    // This preserves the conversational image editing workflow
-    const wantsVideo = hasVideoTrigger || forceVideoGeneration;
+    // Determine if user wants video based on intent
+    let wantsVideo = false;
     
-    console.log('🎬 [Chat] Video detection:', {
+    if (userIntent === 'video') {
+      // User explicitly selected a video model - always generate video
+      wantsVideo = true;
+      console.log('🎬 [Chat] Video generation forced by user intent (video model selected)');
+    } else {
+      // User selected an image model (default) - always generate images
+      wantsVideo = false;
+      console.log('🎬 [Chat] Image generation forced by user intent (image model selected)');
+    }
+    
+    console.log('🎬 [Chat] Intent-based video detection:', {
       userInput: userInput.toLowerCase(),
+      userIntent,
       hasVideoTrigger,
       hasVideoKeywords,
       matchedVideoKeywords,
@@ -438,56 +469,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         console.log('🖼️ [Chat] Using last generated image:', imageToUse);
       }
 
-      if (imageToUse) {
-        // Image editing/generation with image (uploaded or referenced)
-        if (wantsVideo) {
-          console.log('🎬 [Chat] Video generation requested, checking model selection:', {
-            preferredVideoModel,
-            hasPreferredModel: preferredVideoModel && preferredVideoModel !== 'none'
-          });
-          // Check if user has a preferred video model selected
-          if (preferredVideoModel && preferredVideoModel !== 'none') {
-            model = preferredVideoModel;
-            console.log('🎬 [Chat] Using preferred video model:', model);
-          } else {
-            // Prompt user to select a video model
-            const errorMessage = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant' as const,
-              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            setIsGenerating(false);
-            onGenerationComplete?.();
-            return;
-          }
-        } else {
-          model = 'fal-ai/nano-banana/edit'; // Nano Banana Edit for image editing
-        }
-      } else {
-        // Text-to-content generation
-        if (wantsVideo) {
-          // Check if user has a preferred video model selected
-          if (preferredVideoModel && preferredVideoModel !== 'none') {
-            model = preferredVideoModel;
-          } else {
-            // Prompt user to select a video model
-            const errorMessage = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant' as const,
-              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            setIsGenerating(false);
-            onGenerationComplete?.();
-            return;
-          }
-        } else {
-          model = 'fal-ai/flux-pro/v1.1-ultra'; // Flux Pro for text-to-image
-        }
-      }
+      // Use the selected model directly
+      model = preferredVideoModel;
+      console.log('🎯 [Chat] Using selected model:', model);
 
       const generationData = {
         model,
@@ -497,8 +481,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         aspect_ratio: aspectRatio,
         // Add required video parameters for video models
         ...(wantsVideo && {
-          duration: '5s',
-          resolution: resolution
+          duration: model.includes('sora-2') ? 4 : '5s', // Sora 2 expects number, others expect string
+          resolution: model.includes('sora-2') ? 'auto' : resolution // Sora 2 defaults to 'auto'
         })
       };
 
@@ -833,12 +817,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             {/* Model Preferences Dropdown */}
             <div className="flex items-center gap-2">
               <Monitor className="w-4 h-4 text-gray-500" />
-              <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
+              <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
                 <SelectTrigger className="w-40 h-8 text-xs">
-                  <SelectValue placeholder="Video Model" />
+                  <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Default</SelectItem>
+                  <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
+                  <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
                   <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
@@ -920,20 +905,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             </div>
           ))
         )}
-        {isGenerating && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <img 
-                  src={getModelIcon(currentModel)} 
-                  alt="Model" 
-                  className="w-5 h-5 animate-spin"
-                />
-                <span className="text-sm">Generating...</span>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Enhanced Loading Modal */}
+        <EnhancedLoadingModal 
+          isOpen={isGenerating} 
+          model={currentModel}
+          onClose={() => setIsGenerating(false)}
+        />
         <div ref={messagesEndRef} />
       </div>
 
@@ -1110,13 +1087,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="video-model">Preferred Video Model</Label>
-                    <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
+                    <Label htmlFor="video-model">Preferred Model</Label>
+                    <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select video model (optional)" />
+                        <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">None (prompt to select)</SelectItem>
+                        <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
+                        <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
                         <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
@@ -1125,7 +1103,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
-                      Image-to-video models only. You'll be prompted to choose one when animating images.
+                      Select your preferred model for content generation. Image models generate images, video models generate videos.
                     </p>
                   </div>
                 </div>

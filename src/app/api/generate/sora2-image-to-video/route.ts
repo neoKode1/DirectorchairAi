@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         },
       }),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Sora 2 generation timeout after 4 minutes')), 4 * 60 * 1000)
+        setTimeout(() => reject(new Error('Sora 2 generation timeout after 10 minutes')), 10 * 60 * 1000)
       )
     ]) as any;
 

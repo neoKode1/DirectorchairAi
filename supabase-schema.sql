@@ -1,5 +1,5 @@
 -- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- Note: app.jwt_secret is automatically managed by Supabase
 
 -- Create users table (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS public.users (
@@ -18,11 +18,12 @@ CREATE TABLE IF NOT EXISTS public.generations (
   session_id TEXT, -- For non-authenticated users
   model TEXT NOT NULL,
   prompt TEXT NOT NULL,
-  result_data JSONB,
+  output_url TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  expires_at TIMESTAMP WITH TIME ZONE -- For session-based data cleanup
+  expires_at TIMESTAMP WITH TIME ZONE, -- For session-based data cleanup
+  metadata JSONB
 );
 
 -- Create media_files table
@@ -47,34 +48,41 @@ ALTER TABLE public.generations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.media_files ENABLE ROW LEVEL SECURITY;
 
 -- Users can only see and modify their own data
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
 CREATE POLICY "Users can view own profile" ON public.users
   FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
 CREATE POLICY "Users can update own profile" ON public.users
   FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
 CREATE POLICY "Users can insert own profile" ON public.users
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Generations policies
+DROP POLICY IF EXISTS "Users can view own generations" ON public.generations;
 CREATE POLICY "Users can view own generations" ON public.generations
   FOR SELECT USING (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can insert own generations" ON public.generations;
 CREATE POLICY "Users can insert own generations" ON public.generations
   FOR INSERT WITH CHECK (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can update own generations" ON public.generations;
 CREATE POLICY "Users can update own generations" ON public.generations
   FOR UPDATE USING (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can delete own generations" ON public.generations;
 CREATE POLICY "Users can delete own generations" ON public.generations
   FOR DELETE USING (
     auth.uid() = user_id OR 
@@ -82,24 +90,28 @@ CREATE POLICY "Users can delete own generations" ON public.generations
   );
 
 -- Media files policies
+DROP POLICY IF EXISTS "Users can view own media files" ON public.media_files;
 CREATE POLICY "Users can view own media files" ON public.media_files
   FOR SELECT USING (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can insert own media files" ON public.media_files;
 CREATE POLICY "Users can insert own media files" ON public.media_files
   FOR INSERT WITH CHECK (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can update own media files" ON public.media_files;
 CREATE POLICY "Users can update own media files" ON public.media_files
   FOR UPDATE USING (
     auth.uid() = user_id OR 
     (user_id IS NULL AND session_id IS NOT NULL)
   );
 
+DROP POLICY IF EXISTS "Users can delete own media files" ON public.media_files;
 CREATE POLICY "Users can delete own media files" ON public.media_files
   FOR DELETE USING (
     auth.uid() = user_id OR 
@@ -127,13 +139,16 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers for updated_at
+-- Create triggers for updated_at (drop if exists first)
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_generations_updated_at ON public.generations;
 CREATE TRIGGER update_generations_updated_at BEFORE UPDATE ON public.generations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_media_files_updated_at ON public.media_files;
 CREATE TRIGGER update_media_files_updated_at BEFORE UPDATE ON public.media_files
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -152,7 +167,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for new user creation
+-- Create trigger for new user creation (drop if exists first)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -178,4 +194,4 @@ $$ LANGUAGE plpgsql;
 -- Create a scheduled job to clean up expired data (run every hour)
 -- Note: This requires pg_cron extension to be enabled in Supabase
 -- You can also run this manually or set up a cron job
-SELECT cron.schedule('cleanup-expired-sessions', '0 * * * *', 'SELECT cleanup_expired_sessions();');
+-- SELECT cron.schedule('cleanup-expired-sessions', '0 * * * *', 'SELECT cleanup_expired_sessions();');

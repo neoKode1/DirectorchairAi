@@ -1,386 +1,359 @@
-// Import sharp with fallback handling
-let sharp: any;
-try {
-  sharp = require('sharp');
-} catch (error) {
-  console.warn('⚠️ [ImageCompression] Sharp not available, using fallback compression');
-  sharp = null;
-}
+/**
+ * Image compression utilities for handling large images
+ */
 
 export interface CompressionOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
-  format?: 'jpeg' | 'png' | 'webp';
-  maxSizeBytes?: number;
+  maxSizeKB?: number;
 }
 
 export interface CompressionResult {
-  buffer: Buffer;
-  size: number;
-  format: string;
-  width: number;
-  height: number;
-  compressed: boolean;
+  compressedDataUrl: string;
   originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
 }
 
-const DEFAULT_COMPRESSION_OPTIONS: CompressionOptions = {
-  maxWidth: 1920,
-  maxHeight: 1920,
-  quality: 85,
-  format: 'jpeg',
-  maxSizeBytes: 1 * 1024 * 1024 // 1MB limit for FAL API to prevent HTTP 413
-};
-
 /**
- * Compress an image buffer to reduce file size while maintaining quality
- * This is specifically designed to prevent HTTP 413 errors with FAL API
+ * Compress an image file to reduce its size
  */
 export async function compressImage(
-  inputBuffer: Buffer,
+  file: File, 
   options: CompressionOptions = {}
 ): Promise<CompressionResult> {
-  // Use fallback if Sharp is not available
-  if (!sharp) {
-    console.warn('⚠️ [ImageCompression] Sharp not available, using fallback compression');
-    const originalSize = inputBuffer.length;
-    return {
-      buffer: inputBuffer,
-      size: originalSize,
-      format: 'unknown',
-      width: 0,
-      height: 0,
-      compressed: false,
-      originalSize
-    };
-  }
+  const {
+    maxWidth = 1920,
+    maxHeight = 1080,
+    quality = 0.8,
+    maxSizeKB = 1024 // 1MB limit
+  } = options;
 
-  const opts = { ...DEFAULT_COMPRESSION_OPTIONS, ...options };
-  
-  try {
-    console.log('🗜️ [ImageCompression] Starting compression with options:', opts);
-    
-    // Get image metadata
-    const metadata = await sharp(inputBuffer).metadata();
-    const originalSize = inputBuffer.length;
-    
-    console.log('🗜️ [ImageCompression] Original image:', {
-      width: metadata.width,
-      height: metadata.height,
-      format: metadata.format,
-      size: originalSize,
-      sizeMB: (originalSize / 1024 / 1024).toFixed(2)
-    });
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
 
-    // If image is already small enough, return as-is
-    if (originalSize <= (opts.maxSizeBytes || DEFAULT_COMPRESSION_OPTIONS.maxSizeBytes!)) {
-      console.log('🗜️ [ImageCompression] Image already within size limit, no compression needed');
-      return {
-        buffer: inputBuffer,
-        size: originalSize,
-        format: metadata.format || 'unknown',
-        width: metadata.width || 0,
-        height: metadata.height || 0,
-        compressed: false,
-        originalSize
-      };
-    }
+    img.onload = () => {
+      try {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
 
-    // Calculate new dimensions while maintaining aspect ratio
-    let newWidth = metadata.width || 1920;
-    let newHeight = metadata.height || 1920;
-    
-    if (newWidth > (opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!)) {
-      const ratio = (opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!) / newWidth;
-      newWidth = opts.maxWidth || DEFAULT_COMPRESSION_OPTIONS.maxWidth!;
-      newHeight = Math.round(newHeight * ratio);
-    }
-    
-    if (newHeight > (opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!)) {
-      const ratio = (opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!) / newHeight;
-      newHeight = opts.maxHeight || DEFAULT_COMPRESSION_OPTIONS.maxHeight!;
-      newWidth = Math.round(newWidth * ratio);
-    }
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
 
-    console.log('🗜️ [ImageCompression] Resizing to:', { width: newWidth, height: newHeight });
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Try different quality levels if the image is still too large
+        let currentQuality = quality;
+        let dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        
+        // Check if we need to reduce quality further
+        while (getDataUrlSizeKB(dataUrl) > maxSizeKB && currentQuality > 0.1) {
+          currentQuality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        }
 
-    // Start with the base transformation
-    let sharpInstance = sharp(inputBuffer)
-      .resize(newWidth, newHeight, {
-        fit: 'inside',
-        withoutEnlargement: true
-      });
+        // If still too large, reduce dimensions
+        if (getDataUrlSizeKB(dataUrl) > maxSizeKB) {
+          const sizeReduction = Math.sqrt(maxSizeKB / getDataUrlSizeKB(dataUrl));
+          const newWidth = Math.floor(width * sizeReduction);
+          const newHeight = Math.floor(height * sizeReduction);
+          
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+          dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
 
-    // Apply format-specific compression
-    switch (opts.format) {
-      case 'jpeg':
-        sharpInstance = sharpInstance.jpeg({ 
-          quality: opts.quality,
-          progressive: true,
-          mozjpeg: true // Use mozjpeg for better compression
-        });
-        break;
-      case 'png':
-        sharpInstance = sharpInstance.png({ 
-          quality: opts.quality,
-          progressive: true,
-          compressionLevel: 9
-        });
-        break;
-      case 'webp':
-        sharpInstance = sharpInstance.webp({ 
-          quality: opts.quality,
-          effort: 6 // Higher effort for better compression
-        });
-        break;
-    }
+        const originalSize = file.size;
+        const compressedSize = getDataUrlSizeBytes(dataUrl);
 
-    // Apply compression
-    let compressedBuffer = await sharpInstance.toBuffer();
-    let currentQuality = opts.quality || 85;
-    
-    // If still too large, reduce quality iteratively
-    while (compressedBuffer.length > (opts.maxSizeBytes || DEFAULT_COMPRESSION_OPTIONS.maxSizeBytes!) && currentQuality > 20) {
-      currentQuality -= 10;
-      console.log(`🗜️ [ImageCompression] Reducing quality to ${currentQuality}% (current size: ${(compressedBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
-      
-      let retryInstance = sharp(inputBuffer)
-        .resize(newWidth, newHeight, {
-          fit: 'inside',
-          withoutEnlargement: true
+        resolve({
+          compressedDataUrl: dataUrl,
+          originalSize,
+          compressedSize,
+          compressionRatio: compressedSize / originalSize
         });
 
-      switch (opts.format) {
-        case 'jpeg':
-          retryInstance = retryInstance.jpeg({ 
-            quality: currentQuality,
-            progressive: true,
-            mozjpeg: true
-          });
-          break;
-        case 'png':
-          retryInstance = retryInstance.png({ 
-            quality: currentQuality,
-            progressive: true,
-            compressionLevel: 9
-          });
-          break;
-        case 'webp':
-          retryInstance = retryInstance.webp({ 
-            quality: currentQuality,
-            effort: 6
-          });
-          break;
+      } catch (error) {
+        reject(new Error(`Image compression failed: ${error}`));
       }
-
-      compressedBuffer = await retryInstance.toBuffer();
-    }
-
-    // If still too large, reduce dimensions further
-    if (compressedBuffer.length > (opts.maxSizeBytes || DEFAULT_COMPRESSION_OPTIONS.maxSizeBytes!)) {
-      console.log('🗜️ [ImageCompression] Still too large, reducing dimensions further');
-      
-      newWidth = Math.round(newWidth * 0.8);
-      newHeight = Math.round(newHeight * 0.8);
-      
-      let finalInstance = sharp(inputBuffer)
-        .resize(newWidth, newHeight, {
-          fit: 'inside',
-          withoutEnlargement: true
-        });
-
-      switch (opts.format) {
-        case 'jpeg':
-          finalInstance = finalInstance.jpeg({ 
-            quality: 70,
-            progressive: true,
-            mozjpeg: true
-          });
-          break;
-        case 'png':
-          finalInstance = finalInstance.png({ 
-            quality: 70,
-            progressive: true,
-            compressionLevel: 9
-          });
-          break;
-        case 'webp':
-          finalInstance = finalInstance.webp({ 
-            quality: 70,
-            effort: 6
-          });
-          break;
-      }
-
-      compressedBuffer = await finalInstance.toBuffer();
-    }
-
-    const finalSize = compressedBuffer.length;
-    const compressionRatio = ((originalSize - finalSize) / originalSize * 100).toFixed(1);
-    
-    console.log('🗜️ [ImageCompression] Compression complete:', {
-      originalSize: (originalSize / 1024 / 1024).toFixed(2) + 'MB',
-      finalSize: (finalSize / 1024 / 1024).toFixed(2) + 'MB',
-      compressionRatio: compressionRatio + '%',
-      finalDimensions: `${newWidth}x${newHeight}`
-    });
-
-    return {
-      buffer: compressedBuffer,
-      size: finalSize,
-      format: opts.format || 'jpeg',
-      width: newWidth,
-      height: newHeight,
-      compressed: true,
-      originalSize
     };
 
-  } catch (error) {
-    console.error('❌ [ImageCompression] Error compressing image:', error);
-    // Return original buffer if compression fails
-    return {
-      buffer: inputBuffer,
-      size: inputBuffer.length,
-      format: 'unknown',
-      width: 0,
-      height: 0,
-      compressed: false,
-      originalSize: inputBuffer.length
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
     };
-  }
+
+    // Load the image
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => {
+      reject(new Error('Failed to read image file'));
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 /**
- * Compress image from URL and return base64 data URI
- * This is the main function used by the FAL API conversion
+ * Get the size of a data URL in KB
+ */
+export function getDataUrlSizeKB(dataUrl: string): number {
+  return getDataUrlSizeBytes(dataUrl) / 1024;
+}
+
+/**
+ * Get the size of a data URL in bytes
+ */
+export function getDataUrlSizeBytes(dataUrl: string): number {
+  // Remove the data URL prefix to get just the base64 data
+  const base64Data = dataUrl.split(',')[1];
+  if (!base64Data) return 0;
+  
+  // Calculate the actual byte size (base64 is ~4/3 the size of the original)
+  return Math.floor((base64Data.length * 3) / 4);
+}
+
+/**
+ * Validate if an image file is within acceptable limits
+ */
+export function validateImageFile(file: File): { isValid: boolean; error?: string } {
+  const maxSizeMB = 5; // 5MB limit
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `Unsupported file type: ${file.type}. Please use JPEG, PNG, or WebP.`
+    };
+  }
+  
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    return {
+      isValid: false,
+      error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum size is ${maxSizeMB}MB.`
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * Format file size for display
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Compress an image from a URL (for server-side use)
  */
 export async function compressImageFromUrl(
   imageUrl: string,
   options: CompressionOptions = {}
-): Promise<string> {
-  try {
-    console.log('🗜️ [ImageCompression] Fetching image from URL:', imageUrl);
-    
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status}`);
-    }
-    
-    const arrayBuffer = await response.arrayBuffer();
-    const inputBuffer = Buffer.from(arrayBuffer);
-    
-    // Compress the image
-    const result = await compressImage(inputBuffer, options);
-    
-    // Convert to base64 data URI
-    const mimeType = `image/${result.format}`;
-    const base64 = result.buffer.toString('base64');
-    const dataUri = `data:${mimeType};base64,${base64}`;
-    
-    console.log('🗜️ [ImageCompression] URL compression completed:', {
-      originalSize: result.originalSize,
-      compressedSize: result.size,
-      reduction: result.compressed ? `${((1 - result.size / result.originalSize) * 100).toFixed(1)}%` : '0% (no compression)'
-    });
-    
-    return dataUri;
-    
-  } catch (error) {
-    console.error('❌ [ImageCompression] Error compressing image from URL:', error);
-    throw error;
-  }
+): Promise<CompressionResult> {
+  const {
+    maxWidth = 1920,
+    maxHeight = 1080,
+    quality = 0.8,
+    maxSizeKB = 1024
+  } = options;
+
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      try {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Try different quality levels if the image is still too large
+        let currentQuality = quality;
+        let dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        
+        // Check if we need to reduce quality further
+        while (getDataUrlSizeKB(dataUrl) > maxSizeKB && currentQuality > 0.1) {
+          currentQuality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        }
+
+        // If still too large, reduce dimensions
+        if (getDataUrlSizeKB(dataUrl) > maxSizeKB) {
+          const sizeReduction = Math.sqrt(maxSizeKB / getDataUrlSizeKB(dataUrl));
+          const newWidth = Math.floor(width * sizeReduction);
+          const newHeight = Math.floor(height * sizeReduction);
+          
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+          dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
+
+        const compressedSize = getDataUrlSizeBytes(dataUrl);
+
+        resolve({
+          compressedDataUrl: dataUrl,
+          originalSize: 0, // Unknown for URL-based compression
+          compressedSize,
+          compressionRatio: 1 // Unknown without original size
+        });
+
+      } catch (error) {
+        reject(new Error(`Image compression failed: ${error}`));
+      }
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    img.src = imageUrl;
+  });
 }
 
 /**
- * Compress a base64 data URI if it's too large
- * This handles images that are already in base64 format from the frontend
+ * Compress a base64 data URI
  */
 export async function compressBase64DataUri(
   dataUri: string,
   options: CompressionOptions = {}
-): Promise<string> {
-  try {
-    console.log('🗜️ [ImageCompression] Processing base64 data URI for compression');
-    
-    // Extract the base64 data from the data URI
-    const base64Match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
-    if (!base64Match) {
-      throw new Error('Invalid data URI format');
-    }
-    
-    const mimeType = base64Match[1];
-    const base64Data = base64Match[2];
-    
-    // Convert base64 to buffer
-    const inputBuffer = Buffer.from(base64Data, 'base64');
-    const originalSize = inputBuffer.length;
-    
-    console.log('📊 [ImageCompression] Base64 data URI size:', (originalSize / 1024 / 1024).toFixed(2) + 'MB');
-    
-    // If image is small enough, return as-is
-    if (originalSize <= 1 * 1024 * 1024) { // 1MB threshold for FAL API
-      console.log('✅ [ImageCompression] Base64 data URI is small enough, no compression needed');
-      return dataUri;
-    }
-    
-    // Compress the image
-    const result = await compressImage(inputBuffer, options);
-    
-    // Convert back to base64 data URI
-    const compressedBase64 = result.buffer.toString('base64');
-    const compressedDataUri = `data:image/${result.format};base64,${compressedBase64}`;
-    
-    const compressionRatio = ((originalSize - result.size) / originalSize * 100).toFixed(1);
-    console.log('🗜️ [ImageCompression] Base64 data URI compressed:', {
-      originalSize: (originalSize / 1024 / 1024).toFixed(2) + 'MB',
-      compressedSize: (result.size / 1024 / 1024).toFixed(2) + 'MB',
-      compressionRatio: compressionRatio + '%'
-    });
-    
-    return compressedDataUri;
-    
-  } catch (error) {
-    console.error('❌ [ImageCompression] Error compressing base64 data URI:', error);
-    // Return original if compression fails
-    return dataUri;
-  }
-}
+): Promise<CompressionResult> {
+  const {
+    maxWidth = 1920,
+    maxHeight = 1080,
+    quality = 0.8,
+    maxSizeKB = 1024
+  } = options;
 
-/**
- * Check if an image needs compression based on size
- */
-export function needsCompression(buffer: Buffer, maxSizeBytes: number = 5 * 1024 * 1024): boolean {
-  return buffer.length > maxSizeBytes;
-}
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
 
-/**
- * Get optimal compression options based on image size and type
- */
-export function getOptimalCompressionOptions(originalSize: number): CompressionOptions {
-  if (originalSize > 10 * 1024 * 1024) { // > 10MB
-    return {
-      maxWidth: 1024,
-      maxHeight: 1024,
-      quality: 70,
-      format: 'jpeg',
-      maxSizeBytes: 800 * 1024 // 800KB target
+    img.onload = () => {
+      try {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width *= ratio;
+          height *= ratio;
+        }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Try different quality levels if the image is still too large
+        let currentQuality = quality;
+        let dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        
+        // Check if we need to reduce quality further
+        while (getDataUrlSizeKB(dataUrl) > maxSizeKB && currentQuality > 0.1) {
+          currentQuality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', currentQuality);
+        }
+
+        // If still too large, reduce dimensions
+        if (getDataUrlSizeKB(dataUrl) > maxSizeKB) {
+          const sizeReduction = Math.sqrt(maxSizeKB / getDataUrlSizeKB(dataUrl));
+          const newWidth = Math.floor(width * sizeReduction);
+          const newHeight = Math.floor(height * sizeReduction);
+          
+          canvas.width = newWidth;
+          canvas.height = newHeight;
+          ctx?.drawImage(img, 0, 0, newWidth, newHeight);
+          dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
+
+        const originalSize = getDataUrlSizeBytes(dataUri);
+        const compressedSize = getDataUrlSizeBytes(dataUrl);
+
+        resolve({
+          compressedDataUrl: dataUrl,
+          originalSize,
+          compressedSize,
+          compressionRatio: compressedSize / originalSize
+        });
+
+      } catch (error) {
+        reject(new Error(`Image compression failed: ${error}`));
+      }
     };
-  } else if (originalSize > 5 * 1024 * 1024) { // > 5MB
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    img.src = dataUri;
+  });
+}
+
+/**
+ * Get optimal compression options based on image characteristics
+ */
+export function getOptimalCompressionOptions(
+  imageSize: number,
+  imageType: string = 'image/jpeg'
+): CompressionOptions {
+  const sizeMB = imageSize / (1024 * 1024);
+  
+  if (sizeMB > 5) {
     return {
       maxWidth: 1280,
-      maxHeight: 1280,
-      quality: 75,
-      format: 'jpeg',
-      maxSizeBytes: 900 * 1024 // 900KB target
+      maxHeight: 720,
+      quality: 0.6,
+      maxSizeKB: 512
+    };
+  } else if (sizeMB > 2) {
+    return {
+      maxWidth: 1600,
+      maxHeight: 900,
+      quality: 0.7,
+      maxSizeKB: 768
     };
   } else {
     return {
-      maxWidth: 1600,
-      maxHeight: 1600,
-      quality: 80,
-      format: 'jpeg',
-      maxSizeBytes: 1 * 1024 * 1024 // 1MB target
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 0.8,
+      maxSizeKB: 1024
     };
   }
 }

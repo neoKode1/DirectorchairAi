@@ -25,6 +25,7 @@ import {
   Monitor
 } from 'lucide-react';
 import { contentStorage } from '@/lib/content-storage';
+import { compressImage, validateImageFile, formatFileSize } from '@/lib/image-compression';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -56,6 +57,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -280,19 +282,45 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   };
 
 
-  const processFiles = useCallback((files: FileList) => {
-    Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          if (result) {
-            setUploadedImages(prev => [...prev, result]);
+  const processFiles = useCallback(async (files: FileList) => {
+    setIsProcessingImages(true);
+    
+    try {
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          try {
+            // Validate the file first
+            const validation = validateImageFile(file);
+            if (!validation.isValid) {
+              console.error('❌ [Chat] Image validation failed:', validation.error);
+              alert(`Image upload failed: ${validation.error}`);
+              continue;
+            }
+
+            console.log(`📸 [Chat] Processing image: ${file.name} (${formatFileSize(file.size)})`);
+
+            // Compress the image
+            const compressionResult = await compressImage(file, {
+              maxWidth: 1920,
+              maxHeight: 1080,
+              quality: 0.8,
+              maxSizeKB: 1024 // 1MB limit
+            });
+
+            console.log(`✅ [Chat] Image compressed: ${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${(compressionResult.compressionRatio * 100).toFixed(1)}% of original)`);
+
+            // Add the compressed image
+            setUploadedImages(prev => [...prev, compressionResult.compressedDataUrl]);
+
+          } catch (error) {
+            console.error('❌ [Chat] Image processing failed:', error);
+            alert(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
-        };
-        reader.readAsDataURL(file);
+        }
       }
-    });
+    } finally {
+      setIsProcessingImages(false);
+    }
   }, []);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1075,23 +1103,31 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         {/* Uploaded Images Preview */}
         {uploadedImages.length > 0 && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              Uploaded Images ({uploadedImages.length}):
+            </p>
             <div className="flex flex-wrap gap-2">
-              {uploadedImages.map((image, index) => (
-                <div key={index} className="relative group">
-                  <img 
-                    src={image} 
-                    alt={`Uploaded ${index + 1}`}
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
-                  />
-                  <button
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+              {uploadedImages.map((image, index) => {
+                const sizeKB = Math.round((image.length * 3) / 4 / 1024);
+                return (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={image} 
+                      alt={`Uploaded ${index + 1}`}
+                      className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sizeKB}KB
+                    </div>
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1103,12 +1139,23 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 p-3 text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 rounded-lg hover:bg-blue-50 transition-all duration-200 group"
-              title="Upload images"
+              disabled={isProcessingImages}
+              className={`flex-shrink-0 p-3 border rounded-lg transition-all duration-200 group ${
+                isProcessingImages 
+                  ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed' 
+                  : 'text-gray-500 hover:text-blue-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+              }`}
+              title={isProcessingImages ? "Processing images..." : "Upload images"}
             >
               <div className="flex flex-col items-center">
-                <FileImage className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Upload</span>
+                {isProcessingImages ? (
+                  <RefreshCw className="w-5 h-5 mb-1 animate-spin" />
+                ) : (
+                  <FileImage className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
+                )}
+                <span className="text-xs font-medium">
+                  {isProcessingImages ? 'Processing...' : 'Upload'}
+                </span>
               </div>
             </button>
 

@@ -67,9 +67,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             // For larger images, use compression
             console.log('🗜️ [FAL Image Proxy] Image is large, applying compression');
             const compressionOptions = getOptimalCompressionOptions(originalSize);
-            const dataUri = await compressImageFromUrl(body.image_url, compressionOptions);
-            input.image_url = dataUri;
-            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);
+            const compressionResult = await compressImageFromUrl(body.image_url, compressionOptions);
+            input.image_url = compressionResult.compressedDataUrl;
+            console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', compressionResult.compressedDataUrl.length);
           }
           
           console.log('🖼️ [FAL Image Proxy] Successfully converted to base64 data URI');
@@ -151,9 +151,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 // For larger images, use compression
                 console.log('🗜️ [FAL Image Proxy] Image in array is large, applying compression');
                 const compressionOptions = getOptimalCompressionOptions(originalSize);
-                const dataUri = await compressImageFromUrl(url, compressionOptions);
-                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', dataUri.length);
-                return dataUri;
+                const compressionResult = await compressImageFromUrl(url, compressionOptions);
+                console.log('🖼️ [FAL Image Proxy] Compressed data URI length:', compressionResult.compressedDataUrl.length);
+                return compressionResult.compressedDataUrl;
               }
             } catch (error) {
               console.error('❌ [FAL Image Proxy] Failed to convert HTTP URL in image_urls array to base64:', error);

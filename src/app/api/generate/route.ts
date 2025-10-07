@@ -55,7 +55,8 @@ async function processImageWithCompression(imageData: string): Promise<string> {
     if (imageData.startsWith('data:')) {
       console.log('📊 [Generate API] Processing base64 data URI');
       const compressionOptions = getOptimalCompressionOptions(0); // Will be determined from actual size
-      return await compressBase64DataUri(imageData, compressionOptions);
+      const result = await compressBase64DataUri(imageData, compressionOptions);
+      return result.compressedDataUrl;
     }
     
     // Handle HTTP URLs
@@ -84,7 +85,8 @@ async function processImageWithCompression(imageData: string): Promise<string> {
       // For larger images, use compression
       console.log('🗜️ [Generate API] Image is large, applying compression');
       const compressionOptions = getOptimalCompressionOptions(originalSize);
-      return await compressImageFromUrl(imageData, compressionOptions);
+      const result = await compressImageFromUrl(imageData, compressionOptions);
+      return result.compressedDataUrl;
     }
     
     // Return as-is if not a recognized format

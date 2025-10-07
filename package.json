@@ -59,6 +59,7 @@
     "@remotion/media-utils": "4.0.249",
     "@remotion/player": "4.0.249",
     "@remotion/preload": "^4.0.260",
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.74.0",
     "@tanstack/react-query": "^5.62.7",
     "@types/three": "^0.180.0",

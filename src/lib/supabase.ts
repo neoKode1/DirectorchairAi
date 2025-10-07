@@ -1,3 +1,8 @@
+// Re-export the Supabase clients from utils
+export { createClient as createServerClient } from '@/utils/supabase/server'
+export { createClient as createBrowserClient } from '@/utils/supabase/client'
+
+// For backward compatibility, create a default client
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!

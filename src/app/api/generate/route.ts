@@ -693,7 +693,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       
       if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaEdit && hasImageInput) {
         const issueType = isPromptTooLong ? 'prompt length issue' : 'content policy violation';
-        console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying Seedream 4.0 Edit as fallback...`);
+        console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying fallback models...`);
         
         try {
           // Prepare fallback input
@@ -784,29 +784,90 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             timestamp: new Date().toISOString()
           });
         } catch (fallbackError: any) {
-          console.error(`❌ [Generate API] [${requestId}] Fallback also failed:`, fallbackError);
+          console.error(`❌ [Generate API] [${requestId}] Seedream 4.0 Edit fallback failed, trying Flux Pro...`);
           
-          // Return a user-friendly error message for content policy violations or prompt length issues
-          const errorType = isPromptTooLong ? 'Prompt too long' : 'Content policy violation';
-          const errorMessage = isPromptTooLong 
-            ? 'Your prompt is too long for both the primary model and fallback model. Please shorten your prompt and try again.'
-            : 'The prompt contains content that violates our content policy. Please try rephrasing your prompt to be more appropriate.';
-          const errorDetails = isPromptTooLong
-            ? 'Both models have prompt length limits. Please reduce your prompt length and try again.'
-            : 'Both the primary model and fallback model rejected the content. Please modify your prompt and try again.';
-          
-          return NextResponse.json({
-            success: false,
-            error: errorType,
-            message: errorMessage,
-            details: errorDetails,
-            status: isPromptTooLong ? 400 : 422,
-            model: model,
-            prompt: prompt,
-            promptLength: prompt.length,
-            duration: Date.now() - startTime,
-            timestamp: new Date().toISOString()
-          }, { status: isPromptTooLong ? 400 : 422 });
+          // Try Flux Pro as a second fallback
+          try {
+            const fluxInput: Record<string, any> = {
+              prompt: input.prompt,
+              logs: true,
+            };
+
+            if (body.image_url) {
+              fluxInput.image_url = await processImageWithCompression(body.image_url);
+            } else if (body.image_urls && body.image_urls.length > 0) {
+              fluxInput.image_urls = await Promise.all(
+                body.image_urls.map((url: string) => processImageWithCompression(url))
+              );
+            }
+            
+            if (body.aspect_ratio) {
+              fluxInput.aspect_ratio = body.aspect_ratio;
+            }
+            if (body.resolution) {
+              fluxInput.resolution = body.resolution;
+            }
+            
+            const fluxResult = await fal.subscribe('fal-ai/flux-pro/v1.1-ultra', {
+              input: fluxInput,
+              logs: true,
+              onQueueUpdate: (update: any) => {
+                console.log(`📊 [Generate API] [${requestId}] Flux Pro queue update:`, update.status);
+              },
+            });
+            
+            console.log(`✅ [Generate API] [${requestId}] Flux Pro fallback successful`);
+            
+            // Save Flux Pro generation to database
+            const fluxOutputUrl = fluxResult.data?.images?.[0]?.url || null;
+            await saveGenerationToDatabase(
+              requestId,
+              prompt,
+              'fal-ai/flux-pro/v1.1-ultra',
+              fluxOutputUrl,
+              'completed',
+              userId,
+              sessionId
+            );
+
+            return NextResponse.json({
+              success: true,
+              data: fluxResult.data,
+              requestId: fluxResult.requestId,
+              status: 'completed',
+              model: 'fal-ai/flux-pro/v1.1-ultra',
+              prompt: prompt,
+              duration: Date.now() - startTime,
+              fallbackUsed: 'fal-ai/flux-pro/v1.1-ultra',
+              originalModel: model,
+              timestamp: new Date().toISOString()
+            });
+
+          } catch (fluxError: any) {
+            console.error(`❌ [Generate API] [${requestId}] All fallbacks failed:`, fluxError);
+            
+            // Return a user-friendly error message for content policy violations or prompt length issues
+            const errorType = isPromptTooLong ? 'Prompt too long' : 'Content policy violation';
+            const errorMessage = isPromptTooLong 
+              ? 'Your prompt is too long for all available models. Please shorten your prompt and try again.'
+              : 'The prompt contains content that violates our content policy. Please try rephrasing your prompt to be more appropriate.';
+            const errorDetails = isPromptTooLong
+              ? 'All models have prompt length limits. Please reduce your prompt length and try again.'
+              : 'All available models rejected the content. Please modify your prompt and try again.';
+            
+            return NextResponse.json({
+              success: false,
+              error: errorType,
+              message: errorMessage,
+              details: errorDetails,
+              status: isPromptTooLong ? 400 : 422,
+              model: model,
+              prompt: prompt,
+              promptLength: prompt.length,
+              duration: Date.now() - startTime,
+              timestamp: new Date().toISOString()
+            }, { status: isPromptTooLong ? 400 : 422 });
+          }
         }
       }
 

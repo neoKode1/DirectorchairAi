@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 import { compressImageFromUrl, compressBase64DataUri, getOptimalCompressionOptions, bufferToDataUri } from '@/lib/image-compression-server';
+import { optimizePrompt, isPromptLikelyRejected, formatOptimizationResult } from '@/lib/prompt-optimizer';
 import { createClient } from '@/utils/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Extract model and prompt - these are required
     const model = body.model || body.endpoint || body.endpointId;
-    const prompt = body.prompt;
+    const originalPrompt = body.prompt;
     
     if (!model) {
       console.error('❌ [Generate API] Missing model parameter');
@@ -147,12 +148,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }, { status: 400 });
     }
 
-    if (!prompt) {
+    if (!originalPrompt) {
       console.error('❌ [Generate API] Missing prompt parameter');
       return NextResponse.json({ 
         success: false,
         error: "Prompt parameter is required" 
       }, { status: 400 });
+    }
+
+    // Optimize the prompt to avoid content policy violations
+    const optimizationResult = optimizePrompt(originalPrompt);
+    const prompt = optimizationResult.optimizedPrompt;
+    
+    if (optimizationResult.wasOptimized) {
+      console.log(`🔧 [Generate API] [${requestId}] Prompt optimized:`, formatOptimizationResult(optimizationResult));
+      console.log(`🔧 [Generate API] [${requestId}] Original: "${originalPrompt}"`);
+      console.log(`🔧 [Generate API] [${requestId}] Optimized: "${prompt}"`);
+    } else {
+      console.log(`✅ [Generate API] [${requestId}] Prompt appears safe, no optimization needed`);
+    }
+
+    // Check if the prompt is likely to be rejected
+    const rejectionCheck = isPromptLikelyRejected(prompt);
+    if (rejectionCheck.isLikelyRejected) {
+      console.log(`⚠️ [Generate API] [${requestId}] Prompt may still be rejected:`, {
+        confidence: rejectionCheck.confidence,
+        reasons: rejectionCheck.reasons
+      });
     }
 
     // Determine if this is a video or image generation request
@@ -610,6 +632,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         status: 'completed',
         model: model,
         prompt: prompt,
+        originalPrompt: optimizationResult.wasOptimized ? originalPrompt : undefined,
+        promptOptimized: optimizationResult.wasOptimized,
+        optimizationChanges: optimizationResult.wasOptimized ? optimizationResult.changes : undefined,
         duration: duration,
         timestamp: new Date().toISOString()
       });
@@ -779,6 +804,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             status: 'completed',
             model: 'fal-ai/bytedance/seedream/v4/edit',
           prompt: prompt,
+          originalPrompt: optimizationResult.wasOptimized ? originalPrompt : undefined,
+          promptOptimized: optimizationResult.wasOptimized,
+          optimizationChanges: optimizationResult.wasOptimized ? optimizationResult.changes : undefined,
             duration: fallbackDuration,
             fallbackUsed: 'fal-ai/bytedance/seedream/v4/edit',
             timestamp: new Date().toISOString()
@@ -837,6 +865,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               status: 'completed',
               model: 'fal-ai/flux-pro/v1.1-ultra',
               prompt: prompt,
+              originalPrompt: optimizationResult.wasOptimized ? originalPrompt : undefined,
+              promptOptimized: optimizationResult.wasOptimized,
+              optimizationChanges: optimizationResult.wasOptimized ? optimizationResult.changes : undefined,
               duration: Date.now() - startTime,
               fallbackUsed: 'fal-ai/flux-pro/v1.1-ultra',
               originalModel: model,

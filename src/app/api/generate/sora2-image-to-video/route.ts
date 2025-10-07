@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
-import { filterSora2Content, generateSafeSora2Prompt, validateImageForSora2, getSora2ContentGuidance } from '@/lib/sora2-content-filter';
+import { filterSora2Content, generateSafeSora2Prompt as getSafeAlternatives, validateImageForSora2, getSora2ContentGuidance } from '@/lib/sora2-content-filter';
 
 // Sora 2 Image-to-Video API Route
 export async function POST(request: NextRequest) {
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       resolution,
       aspect_ratio,
       duration,
-      contentFiltered: contentFilter.filteredPrompt !== prompt
+      contentFiltered: false // No pre-filtering applied
     });
 
     // Prepare input for Sora 2
@@ -139,7 +139,11 @@ export async function POST(request: NextRequest) {
 
       if (isContentPolicyViolation) {
         // Generate safe alternatives for the user
-        const safeAlternatives = generateSafeSora2Prompt(prompt);
+        const safeAlternatives = [
+          "A person walking through a beautiful landscape, with natural lighting and peaceful atmosphere",
+          "Someone enjoying a hobby or activity in a well-lit, positive environment",
+          "A character in a clean, modern setting with bright, natural lighting"
+        ];
         
         return NextResponse.json({
           success: false,

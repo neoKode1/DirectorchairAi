@@ -24,6 +24,7 @@ import {
   Settings,
   Monitor
 } from 'lucide-react';
+import { contentStorage } from '@/lib/content-storage';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -64,7 +65,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [showFloatingDialog, setShowFloatingDialog] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/nano-banana/edit');
+  const [duration, setDuration] = useState(4);
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/kling-video/v2.1/master/image-to-video');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const [userIntent, setUserIntent] = useState<'image' | 'video' | 'auto'>('image');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,59 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (model.includes('photon')) return '/ideogram.svg';
     if (model.includes('recraft')) return '/ideogram.svg';
     return '/gemini-color.svg'; // Default fallback
+  };
+
+  // Helper function to get supported durations for each model
+  const getSupportedDurations = (model: string) => {
+    if (model.includes('sora-2')) {
+      return [
+        { value: 4, label: '4 seconds' },
+        { value: 8, label: '8 seconds' },
+        { value: 12, label: '12 seconds' }
+      ];
+    }
+    if (model.includes('veo3')) {
+      return [
+        { value: 4, label: '4 seconds' },
+        { value: 8, label: '8 seconds' },
+        { value: 12, label: '12 seconds' }
+      ];
+    }
+    if (model.includes('kling')) {
+      return [
+        { value: 5, label: '5 seconds' },
+        { value: 10, label: '10 seconds' }
+      ];
+    }
+    if (model.includes('minimax')) {
+      return [
+        { value: 4, label: '4 seconds' },
+        { value: 6, label: '6 seconds' },
+        { value: 8, label: '8 seconds' }
+      ];
+    }
+    if (model.includes('luma')) {
+      return [
+        { value: 4, label: '4 seconds' },
+        { value: 8, label: '8 seconds' }
+      ];
+    }
+    // Default for image models or unknown models
+    return [
+      { value: 4, label: '4 seconds' },
+      { value: 6, label: '6 seconds' },
+      { value: 8, label: '8 seconds' }
+    ];
+  };
+
+  // Helper function to check if model supports duration
+  const isVideoModel = (model: string) => {
+    return model.includes('video') || 
+           model.includes('sora') || 
+           model.includes('veo') || 
+           model.includes('kling') || 
+           model.includes('minimax') || 
+           model.includes('luma');
   };
 
   useEffect(() => {
@@ -118,6 +173,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         const settings = JSON.parse(savedSettings);
         setAspectRatio(settings.aspectRatio || '16:9');
         setResolution(settings.resolution || '1080p');
+        setDuration(settings.duration || 4);
         setPreferredVideoModel(settings.preferredVideoModel || 'fal-ai/nano-banana/edit');
         setUserIntent(settings.userIntent || 'image');
       } catch (error) {
@@ -185,6 +241,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       const settings = {
         aspectRatio,
         resolution,
+        duration,
         preferredVideoModel,
         userIntent
       };
@@ -192,7 +249,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
-  }, [aspectRatio, resolution, preferredVideoModel, userIntent]);
+  }, [aspectRatio, resolution, duration, preferredVideoModel, userIntent]);
 
   // Event listener for model selection changes
   const handleModelSelectionChange = (newModel: string) => {
@@ -202,9 +259,20 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setPreferredVideoModel(newModel);
     
     // Set user intent based on model selection
-    if (newModel.includes('image-to-video') || newModel.includes('video')) {
+    if (isVideoModel(newModel)) {
       setUserIntent('video'); // User explicitly wants video
       console.log('🎯 [Chat] Intent set to VIDEO - user selected video model');
+      
+      // Adjust duration to a valid value for the new model
+      const supportedDurations = getSupportedDurations(newModel);
+      const currentDurationValid = supportedDurations.some(d => d.value === duration);
+      
+      if (!currentDurationValid) {
+        // Set to the first available duration for the new model
+        const newDuration = supportedDurations[0].value;
+        console.log(`🎯 [Chat] Adjusting duration from ${duration}s to ${newDuration}s for ${newModel}`);
+        setDuration(newDuration);
+      }
     } else {
       setUserIntent('image'); // User explicitly wants image (default behavior)
       console.log('🎯 [Chat] Intent set to IMAGE - user selected image model');
@@ -507,9 +575,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         model,
         aspect_ratio: aspectRatio,
         resolution: resolution,
+        duration: duration,
         wantsVideo,
         preferredVideoModel,
-        allSettings: { aspectRatio, resolution, preferredVideoModel },
+        allSettings: { aspectRatio, resolution, duration, preferredVideoModel },
         userAspectRatio: aspectRatio,
         userResolution: resolution,
         detectionReason: hasVideoTrigger ? 'explicit trigger' : hasVideoKeywords ? 'video keywords' : 'default image',
@@ -550,6 +619,34 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             "Animate the image with motion",
             "Create a cinematic video of this character"
           ]);
+        }
+
+        // Save to gallery storage
+        if (typeof window !== 'undefined') {
+          try {
+            const contentToStore = {
+              id: `generated-${Date.now()}`,
+              type: (result?.data?.videos?.length > 0 ? 'video' : 'image') as 'image' | 'video',
+              url: result?.data?.videos?.[0]?.url || result?.data?.images?.[0]?.url,
+              title: userInput.substring(0, 50) + (userInput.length > 50 ? '...' : ''),
+              prompt: userInput,
+              timestamp: new Date(),
+                  metadata: {
+                    format: generationData.model,
+                    duration: typeof generationData.duration === 'number' ? generationData.duration : 4,
+                    aspect_ratio: generationData.aspect_ratio,
+                    resolution: generationData.resolution
+                  }
+            };
+
+            console.log('💾 [Chat] Adding content to gallery storage:', contentToStore);
+            contentStorage.addContent(contentToStore);
+            
+            // Trigger a custom event to notify GalleryView to refresh
+            window.dispatchEvent(new CustomEvent('contentUpdated'));
+          } catch (error) {
+            console.error('❌ [Chat] Failed to save to gallery storage:', error);
+          }
         }
         
         onGenerationComplete?.();
@@ -622,6 +719,35 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 "Animate the image with motion",
                 "Create a cinematic video of this character"
               ]);
+            }
+
+            // Save to gallery storage (fallback generation)
+            if (typeof window !== 'undefined') {
+              try {
+                const contentToStore = {
+                  id: `generated-fallback-${Date.now()}`,
+                  type: (result?.data?.videos?.length > 0 ? 'video' : 'image') as 'image' | 'video',
+                  url: result?.data?.videos?.[0]?.url || result?.data?.images?.[0]?.url,
+                  title: userInput.substring(0, 50) + (userInput.length > 50 ? '...' : ''),
+                  prompt: userInput,
+                  timestamp: new Date(),
+                  metadata: {
+                    format: fallbackGenerationData.model,
+                    duration: typeof fallbackGenerationData.duration === 'number' ? fallbackGenerationData.duration : 4,
+                    aspect_ratio: fallbackGenerationData.aspect_ratio,
+                    resolution: fallbackGenerationData.resolution,
+                    fallback: true
+                  }
+                };
+
+                console.log('💾 [Chat] Adding fallback content to gallery storage:', contentToStore);
+                contentStorage.addContent(contentToStore);
+                
+                // Trigger a custom event to notify GalleryView to refresh
+                window.dispatchEvent(new CustomEvent('contentUpdated'));
+              } catch (error) {
+                console.error('❌ [Chat] Failed to save fallback content to gallery storage:', error);
+              }
             }
             
             onGenerationComplete?.();
@@ -824,13 +950,19 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 <SelectContent>
                   <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
                   <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">Sora 2 (Image-to-Video) - Disabled</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">Sora 2 Pro (Image-to-Video) - Disabled</SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                   <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
                 </SelectContent>
               </Select>
+              {/* Duration indicator for video models */}
+              {isVideoModel(preferredVideoModel) && (
+                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {duration}s
+                </div>
+              )}
             </div>
             {messages.length > 0 && (
               <button
@@ -1086,6 +1218,32 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     </Select>
                   </div>
 
+                  {/* Duration Control - Only show for video models */}
+                  {isVideoModel(preferredVideoModel) && (
+                    <div className="space-y-2">
+                      <Label htmlFor="duration">Duration (seconds)</Label>
+                      <Select value={duration.toString()} onValueChange={(value) => setDuration(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getSupportedDurations(preferredVideoModel).map((durationOption) => (
+                            <SelectItem key={durationOption.value} value={durationOption.value.toString()}>
+                              {durationOption.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500">
+                        Duration options for {preferredVideoModel.includes('sora') ? 'Sora 2' : 
+                        preferredVideoModel.includes('veo') ? 'Veo 3' :
+                        preferredVideoModel.includes('kling') ? 'Kling' :
+                        preferredVideoModel.includes('minimax') ? 'Minimax' :
+                        preferredVideoModel.includes('luma') ? 'Luma' : 'this model'}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="video-model">Preferred Model</Label>
                     <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
@@ -1095,8 +1253,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       <SelectContent>
                         <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
                         <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (Image-to-Video)</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">Sora 2 (Image-to-Video) - Temporarily Disabled</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">Sora 2 Pro (Image-to-Video) - Temporarily Disabled</SelectItem>
                         <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>

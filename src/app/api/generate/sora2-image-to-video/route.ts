@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
+import { filterSora2Content, generateSafeSora2Prompt, validateImageForSora2, getSora2ContentGuidance } from '@/lib/sora2-content-filter';
 
 // Sora 2 Image-to-Video API Route
 export async function POST(request: NextRequest) {
@@ -29,6 +30,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate image content
+    const imageValidation = validateImageForSora2(image_url);
+    if (!imageValidation.isValid) {
+      return NextResponse.json(
+        { 
+          error: 'Image validation failed',
+          issues: imageValidation.issues,
+          guidance: getSora2ContentGuidance()
+        },
+        { status: 400 }
+      );
+    }
+
+    // Skip pre-filtering for now - let Sora 2 handle content policy directly
+    // This avoids false positives from overly aggressive filtering
+    const finalPrompt = prompt;
+
     // Validate duration
     const validDurations = [4, 8, 12];
     if (!validDurations.includes(duration)) {
@@ -57,16 +75,18 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🎬 [Sora 2 I2V] Starting generation:', {
-      prompt: prompt.substring(0, 100) + '...',
+      originalPrompt: prompt.substring(0, 100) + '...',
+      finalPrompt: finalPrompt.substring(0, 100) + '...',
       image_url: image_url.substring(0, 50) + '...',
       resolution,
       aspect_ratio,
-      duration
+      duration,
+      contentFiltered: contentFilter.filteredPrompt !== prompt
     });
 
     // Prepare input for Sora 2
     const input = {
-      prompt,
+      prompt: finalPrompt,
       image_url,
       resolution,
       aspect_ratio,
@@ -107,12 +127,41 @@ export async function POST(request: NextRequest) {
 
     // Handle specific FAL API errors
     if (error.status === 422) {
-      return NextResponse.json({
-        success: false,
-        error: 'Content policy violation',
-        message: 'The prompt or image violates content policies. Please try with different content.',
-        details: error.body?.detail || error.message
-      }, { status: 422 });
+      // Check if this is a content policy violation
+      const isContentPolicyViolation = error.body?.detail && 
+        (Array.isArray(error.body.detail) ? 
+          error.body.detail.some((d: any) => 
+            d.msg && (d.msg.includes('content policy') || 
+                     d.msg.includes('flagged by a content checker') ||
+                     d.msg.includes('content could not be processed'))
+          ) :
+          error.body.detail.includes('content policy'));
+
+      if (isContentPolicyViolation) {
+        // Generate safe alternatives for the user
+        const safeAlternatives = generateSafeSora2Prompt(prompt);
+        
+        return NextResponse.json({
+          success: false,
+          error: 'Content policy violation',
+          message: 'The prompt or image violates Sora 2\'s content policies. Please try with different content.',
+          details: error.body?.detail || error.message,
+          safeAlternatives: safeAlternatives,
+          guidance: getSora2ContentGuidance(),
+          fallbackModels: [
+            'fal-ai/kling-video/v2.1/master/image-to-video',
+            'fal-ai/veo3/image-to-video',
+            'fal-ai/minimax/hailuo-02/standard/image-to-video'
+          ]
+        }, { status: 422 });
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: 'Validation error',
+          message: 'The request parameters are invalid. Please check your input.',
+          details: error.body?.detail || error.message
+        }, { status: 422 });
+      }
     }
 
     if (error.status === 400) {

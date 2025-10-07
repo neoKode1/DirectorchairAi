@@ -822,6 +822,108 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           timestamp: new Date().toISOString()
         }, { status: 422 });
       }
+
+      // Handle Sora 2 content policy violations with fallback to other video models
+      if (isContentPolicyViolation && model.includes('sora-2')) {
+        console.log(`🔄 [Generate API] [${requestId}] Sora 2 content policy violation, trying fallback models...`);
+        
+        const fallbackModels = [
+          'fal-ai/kling-video/v2.1/master/image-to-video',
+          'fal-ai/veo3/image-to-video',
+          'fal-ai/minimax/hailuo-02/standard/image-to-video'
+        ];
+
+        for (const fallbackModel of fallbackModels) {
+          try {
+            console.log(`🔄 [Generate API] [${requestId}] Trying fallback model: ${fallbackModel}`);
+            
+            // Adjust input for fallback model
+            let fallbackInput = { ...input };
+            
+            // Convert Sora 2 parameters to fallback model parameters
+            if (fallbackModel.includes('kling')) {
+              // Kling uses string duration and different parameters
+              if (fallbackInput.duration && typeof fallbackInput.duration === 'number') {
+                fallbackInput.duration = fallbackInput.duration.toString();
+              }
+              // Kling doesn't use resolution parameter, remove it
+              delete fallbackInput.resolution;
+              // Kling uses different aspect ratio format
+              if (fallbackInput.aspect_ratio === 'auto') {
+                delete fallbackInput.aspect_ratio;
+              }
+            } else if (fallbackModel.includes('veo3')) {
+              // Veo 3 uses different parameter format
+              if (fallbackInput.duration && typeof fallbackInput.duration === 'number') {
+                fallbackInput.duration = `${fallbackInput.duration}s`;
+              }
+              if (fallbackInput.resolution === 'auto') {
+                fallbackInput.resolution = '720p';
+              }
+            } else if (fallbackModel.includes('minimax')) {
+              // Minimax uses different parameter names
+              if (fallbackInput.duration && typeof fallbackInput.duration === 'number') {
+                fallbackInput.duration = fallbackInput.duration.toString();
+              }
+              if (fallbackInput.resolution === 'auto') {
+                fallbackInput.resolution = '768P';
+              }
+            }
+
+            // Use fal.run for fallback models to avoid polling issues
+            const fallbackResult = await fal.run(fallbackModel, fallbackInput);
+
+            console.log(`✅ [Generate API] [${requestId}] Fallback ${fallbackModel} successful`);
+            
+            // Save fallback generation to database
+            const fallbackOutputUrl = fallbackResult.data?.video?.url || null;
+            await saveGenerationToDatabase(
+              requestId,
+              prompt,
+              fallbackModel,
+              fallbackOutputUrl,
+              'completed',
+              userId,
+              sessionId
+            );
+
+            return NextResponse.json({
+              success: true,
+              data: fallbackResult.data,
+              requestId: fallbackResult.requestId,
+              status: 'completed',
+              model: fallbackModel,
+              prompt: prompt,
+              duration: Date.now() - startTime,
+              fallbackUsed: fallbackModel,
+              originalModel: model,
+              timestamp: new Date().toISOString()
+            });
+
+          } catch (fallbackError: any) {
+            console.log(`❌ [Generate API] [${requestId}] Fallback ${fallbackModel} failed:`, fallbackError.message);
+            console.log(`❌ [Generate API] [${requestId}] Fallback error details:`, {
+              status: fallbackError.status,
+              body: fallbackError.body,
+              message: fallbackError.message
+            });
+            continue; // Try next fallback model
+          }
+        }
+
+        // If all fallbacks failed, return content policy error
+        return NextResponse.json({
+          success: false,
+          error: 'Content policy violation',
+          message: 'The prompt violates content policies for all available video models. Please try with different content.',
+          details: 'All fallback models also rejected the content',
+          status: 422,
+          model: model,
+          prompt: prompt,
+          fallbackModels: fallbackModels,
+          timestamp: new Date().toISOString()
+        }, { status: 422 });
+      }
       
       // Return the original error if no fallback or fallback failed
       const originalStatus = falError.status || 500;

@@ -1481,11 +1481,11 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
                     minimax: minimaxModel?.endpointId
                   });
                   
-                  // Prioritize Sora 2 Pro as default for image-to-video, then Sora 2, then Veo 3, then other models
+                  // Prioritize Sora 2 Pro as default for image-to-video, then Sora 2, then Kling, then other models
                   selectedModel = sora2ProModel ||
                                  sora2Model ||
-                                 veo3Model ||
                                  klingModel ||
+                                 veo3Model ||
                                  minimaxModel ||
                                  imageToVideoModels[0];
               

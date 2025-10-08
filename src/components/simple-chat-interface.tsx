@@ -1034,55 +1034,55 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <SelectItem value="fal-ai/sora-2/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
-                      <span>Sora 2 (Image-to-Video)</span>
+                      <span>Sora 2 (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/sora-2/image-to-video/pro">
                     <div className="flex items-center gap-2">
                       <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
-                      <span>Sora 2 Pro (Image-to-Video)</span>
+                      <span>Sora 2 Pro (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
-                      <span>Veo 3 (Image-to-Video)</span>
+                      <span>Veo 3 (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                      <span>Kling v2.1 Master (Image-to-Video)</span>
+                      <span>Kling v2.1 Master (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                      <span>Kling V2.5 Turbo Pro (Image-to-Video)</span>
+                      <span>Kling V2.5 Turbo Pro (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
-                      <span>Minimax Hailuo 02 (Image-to-Video)</span>
+                      <span>Minimax Hailuo 02 (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/hunyuan-video">
                     <div className="flex items-center gap-2">
                       <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
-                      <span>Hunyuan Video (Image-to-Video)</span>
+                      <span>Hunyuan Video (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
                     <div className="flex items-center gap-2">
                       <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
-                      <span>Wan Pro (Image-to-Video) - Disabled</span>
+                      <span>Wan Pro (I2V) - Disabled</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
-                      <span>Wan v2.2-A14B (Image-to-Video)</span>
+                      <span>Wan v2.2-A14B (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/ovi/image-to-video">
@@ -1094,13 +1094,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
-                      <span>Luma Ray 2 (Image-to-Video)</span>
+                      <span>Luma Ray 2 (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/wan-25-preview/image-to-video">
                     <div className="flex items-center gap-2">
                       <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
-                      <span>Wan 2.5 Preview (Image-to-Video)</span>
+                      <span>Wan 2.5 Preview (I2V)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">
@@ -1479,55 +1479,55 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectItem value="fal-ai/sora-2/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
-                            <span>Sora 2 (Image-to-Video)</span>
+                            <span>Sora 2 (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/sora-2/image-to-video/pro">
                           <div className="flex items-center gap-2">
                             <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
-                            <span>Sora 2 Pro (Image-to-Video)</span>
+                            <span>Sora 2 Pro (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/veo3/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
-                            <span>Veo 3 (Image-to-Video)</span>
+                            <span>Veo 3 (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                            <span>Kling v2.1 Master (Image-to-Video)</span>
+                            <span>Kling v2.1 Master (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                            <span>Kling V2.5 Turbo Pro (Image-to-Video)</span>
+                            <span>Kling V2.5 Turbo Pro (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
-                            <span>Minimax Hailuo 02 (Image-to-Video)</span>
+                            <span>Minimax Hailuo 02 (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/hunyuan-video">
                           <div className="flex items-center gap-2">
                             <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
-                            <span>Hunyuan Video (Image-to-Video)</span>
+                            <span>Hunyuan Video (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
                           <div className="flex items-center gap-2">
                             <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
-                            <span>Wan Pro (Image-to-Video) - Disabled</span>
+                            <span>Wan Pro (I2V) - Disabled</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
-                            <span>Wan v2.2-A14B (Image-to-Video)</span>
+                            <span>Wan v2.2-A14B (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/ovi/image-to-video">
@@ -1539,13 +1539,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
-                            <span>Luma Ray 2 (Image-to-Video)</span>
+                            <span>Luma Ray 2 (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/wan-25-preview/image-to-video">
                           <div className="flex items-center gap-2">
                             <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
-                            <span>Wan 2.5 Preview (Image-to-Video)</span>
+                            <span>Wan 2.5 Preview (I2V)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">

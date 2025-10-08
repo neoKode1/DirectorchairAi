@@ -747,41 +747,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           : 'Sora 2 accepts duration: 4, 8, or 12 (numbers), resolution: auto or 720p, aspect_ratio: auto/9:16/16:9'
       });
       
-      // For Sora 2 Pro, use exact schema from FAL AI documentation
-      if (isSora2Pro) {
-        console.log(`🔧 [Generate API] [${requestId}] Applying Sora 2 Pro exact schema parameters`);
-        
-        // Build input according to exact FAL AI schema - ONLY include valid parameters
-        const sora2ProInput: Record<string, any> = {
-          prompt: input.prompt
-        };
-        
-        // Only add image_url if it exists and is valid
-        if (input.image_url) {
-          sora2ProInput.image_url = input.image_url;
-        }
-        
-        // Add optional parameters only if they have valid values
-        if (input.resolution && ['auto', '720p', '1080p'].includes(input.resolution)) {
-          sora2ProInput.resolution = input.resolution;
-        }
-        
-        if (input.aspect_ratio && ['auto', '9:16', '16:9'].includes(input.aspect_ratio)) {
-          sora2ProInput.aspect_ratio = input.aspect_ratio;
-        }
-        
-        if (input.duration && [4, 8, 12].includes(Number(input.duration))) {
-          sora2ProInput.duration = Number(input.duration);
-        }
-        
-        // Completely replace input with clean Sora 2 Pro parameters
-        // This ensures no extra parameters like image_urls are sent
-        Object.keys(input).forEach(key => delete input[key]);
-        Object.assign(input, sora2ProInput);
-        
-        console.log(`🔧 [Generate API] [${requestId}] Sora 2 Pro final input (exact schema):`, sora2ProInput);
-        console.log(`🔧 [Generate API] [${requestId}] Sora 2 Pro input keys:`, Object.keys(sora2ProInput));
+      // For both Sora 2 and Sora 2 Pro, use exact schema from FAL AI documentation
+      console.log(`🔧 [Generate API] [${requestId}] Applying Sora 2 exact schema parameters`);
+      
+      // Build input according to exact FAL AI schema - ONLY include valid parameters
+      const sora2Input: Record<string, any> = {
+        prompt: input.prompt
+      };
+      
+      // Only add image_url if it exists and is valid
+      if (input.image_url) {
+        sora2Input.image_url = input.image_url;
       }
+      
+      // Add optional parameters only if they have valid values
+      if (isSora2Pro) {
+        // Sora 2 Pro supports 1080p
+        if (input.resolution && ['auto', '720p', '1080p'].includes(input.resolution)) {
+          sora2Input.resolution = input.resolution;
+        }
+      } else {
+        // Sora 2 standard only supports auto and 720p
+        if (input.resolution && ['auto', '720p'].includes(input.resolution)) {
+          sora2Input.resolution = input.resolution;
+        }
+      }
+      
+      if (input.aspect_ratio && ['auto', '9:16', '16:9'].includes(input.aspect_ratio)) {
+        sora2Input.aspect_ratio = input.aspect_ratio;
+      }
+      
+      if (input.duration && [4, 8, 12].includes(Number(input.duration))) {
+        sora2Input.duration = Number(input.duration);
+      }
+      
+      // Completely replace input with clean Sora 2 parameters
+      // This ensures no extra parameters like image_urls (plural) are sent
+      Object.keys(input).forEach(key => delete input[key]);
+      Object.assign(input, sora2Input);
+      
+      console.log(`🔧 [Generate API] [${requestId}] Sora 2 final input (exact schema):`, sora2Input);
+      console.log(`🔧 [Generate API] [${requestId}] Sora 2 input keys:`, Object.keys(sora2Input));
+      console.log(`🔧 [Generate API] [${requestId}] Has image_url:`, !!sora2Input.image_url);
     }
 
 

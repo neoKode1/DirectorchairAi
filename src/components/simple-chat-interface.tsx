@@ -483,6 +483,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       }
     }
 
+    // Validate Sora 2 image-to-video requirements
+    if (preferredVideoModel.includes('sora-2/image-to-video')) {
+      if (uploadedImages.length === 0 && !lastGeneratedImage) {
+        alert('Sora 2 requires an image. Please upload an image or generate one first using an image model like Nano Banana Edit.');
+        return;
+      }
+    }
+
     // Detect if user wants video generation based on keywords (very specific to avoid false positives)
     const videoKeywords = [
       // Explicit video/animation terms

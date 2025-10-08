@@ -230,7 +230,7 @@ export async function compressImageFromUrl(
           compressionRatio: 1 // Unknown without original size
         });
 
-      } catch (error) {
+  } catch (error) {
         reject(new Error(`Image compression failed: ${error}`));
       }
     };
@@ -312,7 +312,7 @@ export async function compressBase64DataUri(
           compressionRatio: compressedSize / originalSize
         });
 
-      } catch (error) {
+  } catch (error) {
         reject(new Error(`Image compression failed: ${error}`));
       }
     };

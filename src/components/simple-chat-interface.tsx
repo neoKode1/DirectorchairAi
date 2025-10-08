@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { contentStorage } from '@/lib/content-storage';
 import { compressImage, validateImageFile, formatFileSize } from '@/lib/image-compression';
+import { processFile, validateFile, formatFileSize as formatFileSizeUtil } from '@/lib/file-processing';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -57,7 +58,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedAudio, setUploadedAudio] = useState<string | null>(null);
   const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
@@ -88,8 +91,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (model.includes('kling')) return '/kling-color.svg';
     if (model.includes('minimax')) return '/minimax-color.svg';
     if (model.includes('seedream') || model.includes('bytedance')) return '/bytedance-color.svg';
+    if (model.includes('hunyuan')) return '/bytedance-color.svg'; // Using ByteDance icon for Hunyuan
+    if (model.includes('wan-pro') || model.includes('wan/v2.2-a14b') || model.includes('wan-25-preview')) return '/alibaba-color.svg'; // Using Alibaba icon for Wan models
     if (model.includes('veo3')) return '/Gen4.png'; // Using Gen4 for Veo 3
-    if (model.includes('luma')) return '/dreammachine.png';
+    if (model.includes('ovi')) return '/Gen4.png'; // Using Gen4 for Ovi
+    if (model.includes('kling') && model.includes('avatar')) return '/kling-color.svg'; // Using Kling icon for AI Avatar
+    if (model.includes('luma')) return '/dreammachine.svg'; // Using Dream Machine SVG for Luma
     if (model.includes('imagen')) return '/Gen4.png';
     if (model.includes('photon')) return '/ideogram.svg';
     if (model.includes('recraft')) return '/ideogram.svg';
@@ -113,6 +120,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       ];
     }
     if (model.includes('kling')) {
+      if (model.includes('v2.5-turbo')) {
+        return [
+          { value: 5, label: '5 seconds' },
+          { value: 10, label: '10 seconds' }
+        ];
+      }
       return [
         { value: 5, label: '5 seconds' },
         { value: 10, label: '10 seconds' }
@@ -125,10 +138,35 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         { value: 8, label: '8 seconds' }
       ];
     }
-    if (model.includes('luma')) {
+    if (model.includes('hunyuan')) {
       return [
         { value: 4, label: '4 seconds' },
+        { value: 6, label: '6 seconds' },
         { value: 8, label: '8 seconds' }
+      ];
+    }
+    if (model.includes('wan-pro')) {
+      return [
+        { value: 6, label: '6 seconds' }
+      ];
+    }
+    if (model.includes('ovi')) {
+      return [
+        { value: 4, label: '4 seconds' },
+        { value: 6, label: '6 seconds' },
+        { value: 8, label: '8 seconds' }
+      ];
+    }
+    if (model.includes('luma')) {
+      return [
+        { value: 5, label: '5 seconds' },
+        { value: 9, label: '9 seconds' }
+      ];
+    }
+    if (model.includes('wan-25-preview')) {
+      return [
+        { value: 5, label: '5 seconds' },
+        { value: 10, label: '10 seconds' }
       ];
     }
     // Default for image models or unknown models
@@ -284,42 +322,47 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
   const processFiles = useCallback(async (files: FileList) => {
     setIsProcessingImages(true);
+    setIsProcessingAudio(true);
     
     try {
       for (const file of Array.from(files)) {
-        if (file.type.startsWith('image/')) {
-          try {
-            // Validate the file first
-            const validation = validateImageFile(file);
-            if (!validation.isValid) {
-              console.error('❌ [Chat] Image validation failed:', validation.error);
-              alert(`Image upload failed: ${validation.error}`);
-              continue;
-            }
-
-            console.log(`📸 [Chat] Processing image: ${file.name} (${formatFileSize(file.size)})`);
-
-            // Compress the image
-            const compressionResult = await compressImage(file, {
-              maxWidth: 1920,
-              maxHeight: 1080,
-              quality: 0.8,
-              maxSizeKB: 1024 // 1MB limit
-            });
-
-            console.log(`✅ [Chat] Image compressed: ${formatFileSize(compressionResult.originalSize)} → ${formatFileSize(compressionResult.compressedSize)} (${(compressionResult.compressionRatio * 100).toFixed(1)}% of original)`);
-
-            // Add the compressed image
-            setUploadedImages(prev => [...prev, compressionResult.compressedDataUrl]);
-
-          } catch (error) {
-            console.error('❌ [Chat] Image processing failed:', error);
-            alert(`Failed to process image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        try {
+          // Validate the file first
+          const validation = validateFile(file);
+          if (!validation.isValid) {
+            console.error('❌ [Chat] File validation failed:', validation.error);
+            alert(`File upload failed: ${validation.error}`);
+            continue;
           }
+
+          console.log(`📁 [Chat] Processing ${validation.fileType}: ${file.name} (${formatFileSizeUtil(file.size)})`);
+          
+          // Process the file (image or audio)
+          const result = await processFile(file, {
+            maxWidth: 1920,
+            maxHeight: 1080,
+            quality: 0.8,
+            maxSizeKB: 1024, // 1MB limit for images
+            maxAudioSizeKB: 5120 // 5MB limit for audio
+          });
+
+          console.log(`✅ [Chat] ${validation.fileType} processed: ${formatFileSizeUtil(result.originalSize)} → ${formatFileSizeUtil(result.processedSize)} (${result.compressionRatio.toFixed(2)}x compression)`);
+          
+          // Add to appropriate state based on file type
+          if (result.fileType === 'image') {
+            setUploadedImages(prev => [...prev, result.processedDataUrl]);
+          } else if (result.fileType === 'audio') {
+            setUploadedAudio(result.processedDataUrl);
+          }
+          
+        } catch (error) {
+          console.error('❌ [Chat] File processing failed:', error);
+          alert(`Failed to process file ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     } finally {
       setIsProcessingImages(false);
+      setIsProcessingAudio(false);
     }
   }, []);
 
@@ -427,6 +470,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim() && uploadedImages.length === 0) return;
+
+    // Validate Kling AI Avatar requirements
+    if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
+      if (uploadedImages.length === 0) {
+        alert('Please upload an image for the AI Avatar.');
+        return;
+      }
+      if (!uploadedAudio) {
+        alert('Please upload an audio file for the AI Avatar.');
+        return;
+      }
+    }
 
     // Detect if user wants video generation based on keywords (very specific to avoid false positives)
     const videoKeywords = [
@@ -575,6 +630,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         image_url: imageToUse,
         image_urls: imagesToUse,
         aspect_ratio: aspectRatio,
+        // Add audio_url for Kling AI Avatar
+        ...(model === 'fal-ai/kling-video/v1/pro/ai-avatar' && uploadedAudio && {
+          audio_url: uploadedAudio
+        }),
         // Add required video parameters for video models
         ...(wantsVideo && {
           duration: model.includes('sora-2') ? 4 : '5s', // Sora 2 expects number, others expect string
@@ -694,31 +753,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             model: 'fal-ai/bytedance/seedream/v4/edit'
           };
           
-          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
-          if (generationData.aspect_ratio) {
-            const aspectRatioToDimensions = (ratio: string) => {
-              switch (ratio) {
-                case '1:1':
-                  return { width: 1024, height: 1024 };
-                case '16:9':
-                  return { width: 1920, height: 1080 };
-                case '9:16':
-                  return { width: 1080, height: 1920 };
-                case '4:3':
-                  return { width: 1024, height: 768 };
-                case '3:4':
-                  return { width: 768, height: 1024 };
-                default:
-                  return { width: 1920, height: 1080 }; // Default to 16:9
-              }
-            };
-            
-            (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
-            // Remove aspect_ratio since Seedream uses image_size
-            delete (fallbackGenerationData as any).aspect_ratio;
-            
-            console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream queue fallback:', (fallbackGenerationData as any).image_size);
-          }
+          // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
+          (fallbackGenerationData as any).aspect_ratio = "match_input_image";
+          console.log('🔄 [Chat] Set aspect_ratio to match_input_image for Seedream queue fallback');
           
           try {
             const result = await onContentGenerated(fallbackGenerationData);
@@ -893,31 +930,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               model: 'fal-ai/bytedance/seedream/v4/edit'
             };
             
-            // Convert aspect_ratio to image_size for Seedream 4.0 Edit
-            if (generationData.aspect_ratio) {
-              const aspectRatioToDimensions = (ratio: string) => {
-                switch (ratio) {
-                  case '1:1':
-                    return { width: 1024, height: 1024 };
-                  case '16:9':
-                    return { width: 1920, height: 1080 };
-                  case '9:16':
-                    return { width: 1080, height: 1920 };
-                  case '4:3':
-                    return { width: 1024, height: 768 };
-                  case '3:4':
-                    return { width: 768, height: 1024 };
-                  default:
-                    return { width: 1920, height: 1080 }; // Default to 16:9
-                }
-              };
-              
-              (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
-              // Remove aspect_ratio since Seedream uses image_size
-              delete (fallbackGenerationData as any).aspect_ratio;
-              
-              console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream fallback:', (fallbackGenerationData as any).image_size);
-            }
+            // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
+            (fallbackGenerationData as any).aspect_ratio = "match_input_image";
+            console.log('🔄 [Chat] Set aspect_ratio to match_input_image for Seedream fallback');
             
             result = await onContentGenerated(fallbackGenerationData);
           } else {
@@ -976,13 +991,102 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
-                  <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">Sora 2 (Image-to-Video) - Disabled</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">Sora 2 Pro (Image-to-Video) - Disabled</SelectItem>
-                  <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
-                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/nano-banana/edit">
+                    <div className="flex items-center gap-2">
+                      <img src="/gemini-color.svg" alt="Nano Banana" className="w-4 h-4" />
+                      <span>Nano Banana Edit (Image)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/bytedance/seedream/v4/edit">
+                    <div className="flex items-center gap-2">
+                      <img src="/bytedance-color.svg" alt="Seedream" className="w-4 h-4" />
+                      <span>Seedream 4.0 Edit (Image)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/flux-pro/v1.1-ultra">
+                    <div className="flex items-center gap-2">
+                      <img src="/flux.svg" alt="Flux" className="w-4 h-4" />
+                      <span>Flux Pro (Image)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
+                      <span>Sora 2 (Image-to-Video) - Disabled</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
+                      <span>Sora 2 Pro (Image-to-Video) - Disabled</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/veo3/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
+                      <span>Veo 3 (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
+                      <span>Kling v2.1 Master (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
+                      <span>Kling V2.5 Turbo Pro (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
+                      <span>Minimax Hailuo 02 (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/hunyuan-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
+                      <span>Hunyuan Video (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
+                    <div className="flex items-center gap-2">
+                      <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
+                      <span>Wan Pro (Image-to-Video) - Disabled</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
+                      <span>Wan v2.2-A14B (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/ovi/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/Gen4.png" alt="Ovi" className="w-4 h-4" />
+                      <span>Ovi (Image-to-Video with Audio)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
+                      <span>Luma Ray 2 (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/wan-25-preview/image-to-video">
+                    <div className="flex items-center gap-2">
+                      <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
+                      <span>Wan 2.5 Preview (Image-to-Video)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">
+                    <div className="flex items-center gap-2">
+                      <img src="/kling-color.svg" alt="Kling Avatar" className="w-4 h-4" />
+                      <span>Kling AI Avatar Pro</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
               {/* Duration indicator for video models */}
@@ -1110,24 +1214,53 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               {uploadedImages.map((image, index) => {
                 const sizeKB = Math.round((image.length * 3) / 4 / 1024);
                 return (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Uploaded ${index + 1}`}
-                      className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
-                    />
+                <div key={index} className="relative group">
+                  <img 
+                    src={image} 
+                    alt={`Uploaded ${index + 1}`}
+                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
+                  />
                     <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
                       {sizeKB}KB
                     </div>
-                    <button
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Audio Upload for Kling AI Avatar */}
+        {preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar' && (
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">
+              Audio File (Required for AI Avatar):
+            </p>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+              {uploadedAudio ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="text-green-600">🎵</span>
+                  <span className="text-sm text-gray-600">Audio file uploaded</span>
+                  <button
+                    onClick={() => setUploadedAudio(null)}
+                    className="text-red-500 hover:text-red-700 ml-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <span className="text-gray-500">🎵</span>
+                  <p className="text-sm text-gray-500">Drop audio file here or click to upload</p>
+                  <p className="text-xs text-gray-400">Supports: MP3, WAV, M4A, AAC (Max 5MB)</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1139,22 +1272,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessingImages}
+              disabled={isProcessingImages || isProcessingAudio}
               className={`flex-shrink-0 p-3 border rounded-lg transition-all duration-200 group ${
-                isProcessingImages 
+                isProcessingImages || isProcessingAudio
                   ? 'text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed' 
                   : 'text-gray-500 hover:text-blue-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
               }`}
-              title={isProcessingImages ? "Processing images..." : "Upload images"}
+              title={isProcessingImages || isProcessingAudio ? "Processing files..." : "Upload images and audio"}
             >
               <div className="flex flex-col items-center">
-                {isProcessingImages ? (
+                {(isProcessingImages || isProcessingAudio) ? (
                   <RefreshCw className="w-5 h-5 mb-1 animate-spin" />
                 ) : (
-                  <FileImage className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
+                <FileImage className="w-5 h-5 mb-1 group-hover:scale-110 transition-transform" />
                 )}
                 <span className="text-xs font-medium">
-                  {isProcessingImages ? 'Processing...' : 'Upload'}
+                  {(isProcessingImages || isProcessingAudio) ? 'Processing...' : 'Upload'}
                 </span>
               </div>
             </button>
@@ -1284,9 +1417,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       <p className="text-xs text-gray-500">
                         Duration options for {preferredVideoModel.includes('sora') ? 'Sora 2' : 
                         preferredVideoModel.includes('veo') ? 'Veo 3' :
-                        preferredVideoModel.includes('kling') ? 'Kling' :
+                        preferredVideoModel.includes('kling') ? (preferredVideoModel.includes('v2.5-turbo') ? 'Kling V2.5 Turbo Pro' : 'Kling') :
                         preferredVideoModel.includes('minimax') ? 'Minimax' :
-                        preferredVideoModel.includes('luma') ? 'Luma' : 'this model'}
+                        preferredVideoModel.includes('hunyuan') ? 'Hunyuan' :
+                        preferredVideoModel.includes('wan-pro') ? 'Wan Pro' :
+                        preferredVideoModel.includes('wan/v2.2-a14b') ? 'Wan v2.2-A14B' :
+                        preferredVideoModel.includes('wan-25-preview') ? 'Wan 2.5 Preview' :
+                        preferredVideoModel.includes('ovi') ? 'Ovi' :
+                        preferredVideoModel.includes('luma') ? 'Luma Ray 2' : 'this model'}
                       </p>
                     </div>
                   )}
@@ -1298,13 +1436,102 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit (Image)</SelectItem>
-                        <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro (Image)</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">Sora 2 (Image-to-Video) - Temporarily Disabled</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">Sora 2 Pro (Image-to-Video) - Temporarily Disabled</SelectItem>
-                        <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
+                        <SelectItem value="fal-ai/nano-banana/edit">
+                          <div className="flex items-center gap-2">
+                            <img src="/gemini-color.svg" alt="Nano Banana" className="w-4 h-4" />
+                            <span>Nano Banana Edit (Image)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/bytedance/seedream/v4/edit">
+                          <div className="flex items-center gap-2">
+                            <img src="/bytedance-color.svg" alt="Seedream" className="w-4 h-4" />
+                            <span>Seedream 4.0 Edit (Image)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/flux-pro/v1.1-ultra">
+                          <div className="flex items-center gap-2">
+                            <img src="/flux.svg" alt="Flux" className="w-4 h-4" />
+                            <span>Flux Pro (Image)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
+                            <span>Sora 2 (Image-to-Video) - Temporarily Disabled</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
+                            <span>Sora 2 Pro (Image-to-Video) - Temporarily Disabled</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/veo3/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
+                            <span>Veo 3 (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
+                            <span>Kling v2.1 Master (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
+                            <span>Kling V2.5 Turbo Pro (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
+                            <span>Minimax Hailuo 02 (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/hunyuan-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
+                            <span>Hunyuan Video (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
+                            <span>Wan Pro (Image-to-Video) - Disabled</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
+                            <span>Wan v2.2-A14B (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/ovi/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/Gen4.png" alt="Ovi" className="w-4 h-4" />
+                            <span>Ovi (Image-to-Video with Audio)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
+                            <span>Luma Ray 2 (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/wan-25-preview/image-to-video">
+                          <div className="flex items-center gap-2">
+                            <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
+                            <span>Wan 2.5 Preview (Image-to-Video)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">
+                          <div className="flex items-center gap-2">
+                            <img src="/kling-color.svg" alt="Kling Avatar" className="w-4 h-4" />
+                            <span>Kling AI Avatar Pro</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">
@@ -1322,7 +1549,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,audio/*"
           multiple
           onChange={handleFileUpload}
           className="hidden"

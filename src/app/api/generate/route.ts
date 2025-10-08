@@ -26,7 +26,7 @@ async function saveGenerationToDatabase(
       model,
       output_url: outputUrl,
       status,
-      expires_at: userId ? null : new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours for anonymous
+      expires_at: userId ? null : new Date(Date.now() + 72 * 60 * 60 * 1000), // 72 hours for anonymous
       metadata: {
         timestamp: new Date().toISOString(),
         model_type: model.includes('video') ? 'video' : 'image'
@@ -421,6 +421,216 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    // Handle Wan v2.2-A14B model specific parameters
+    if (model.includes('wan/v2.2-a14b')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Wan v2.2-A14B model: ${model}`);
+      
+      // Wan v2.2-A14B uses specific parameters
+      // Resolution: '480p', '580p', or '720p' (default: '720p')
+      if (body.resolution) {
+        if (['480p', '580p', '720p'].includes(body.resolution)) {
+          input.resolution = body.resolution;
+        } else if (body.resolution === '1080p') {
+          input.resolution = '720p'; // Convert 1080p to 720p (highest available)
+        } else {
+          input.resolution = '720p'; // Default to 720p
+        }
+      } else {
+        input.resolution = '720p';
+      }
+      
+      // Aspect ratio: 'auto', '16:9', '9:16', '1:1' (default: 'auto')
+      if (body.aspect_ratio && ['auto', '16:9', '9:16', '1:1'].includes(body.aspect_ratio)) {
+        input.aspect_ratio = body.aspect_ratio;
+      } else {
+        input.aspect_ratio = 'auto';
+      }
+      
+      // Set default parameters for Wan v2.2-A14B
+      input.num_frames = input.num_frames || 81;
+      input.frames_per_second = input.frames_per_second || 16;
+      input.num_inference_steps = input.num_inference_steps || 27;
+      input.enable_safety_checker = input.enable_safety_checker !== undefined ? input.enable_safety_checker : true;
+      input.enable_output_safety_checker = input.enable_output_safety_checker !== undefined ? input.enable_output_safety_checker : false;
+      input.enable_prompt_expansion = input.enable_prompt_expansion !== undefined ? input.enable_prompt_expansion : false;
+      input.acceleration = input.acceleration || 'regular';
+      input.guidance_scale = input.guidance_scale || 3.5;
+      input.guidance_scale_2 = input.guidance_scale_2 || 3.5;
+      input.shift = input.shift || 5;
+      input.interpolator_model = input.interpolator_model || 'film';
+      input.num_interpolated_frames = input.num_interpolated_frames !== undefined ? input.num_interpolated_frames : 1;
+      input.adjust_fps_for_interpolation = input.adjust_fps_for_interpolation !== undefined ? input.adjust_fps_for_interpolation : true;
+      input.video_quality = input.video_quality || 'high';
+      input.video_write_mode = input.video_write_mode || 'balanced';
+      input.negative_prompt = input.negative_prompt || '';
+      
+      // Remove duration as Wan v2.2-A14B uses num_frames instead
+      delete input.duration;
+      
+      console.log(`🔧 [Generate API] [${requestId}] Wan v2.2-A14B model parameters:`, {
+        originalResolution: body.resolution,
+        finalResolution: input.resolution,
+        aspect_ratio: input.aspect_ratio,
+        num_frames: input.num_frames,
+        frames_per_second: input.frames_per_second,
+        note: 'Wan v2.2-A14B uses num_frames (17-161) and frames_per_second (4-60) instead of duration'
+      });
+    }
+
+    // Handle Wan 2.5 Preview model specific parameters
+    if (model.includes('wan-25-preview')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Wan 2.5 Preview model: ${model}`);
+      
+      // Wan 2.5 uses specific parameters
+      // Resolution: '480p', '720p', or '1080p' (default: '1080p')
+      if (body.resolution) {
+        if (['480p', '720p', '1080p'].includes(body.resolution)) {
+          input.resolution = body.resolution;
+        } else {
+          input.resolution = '1080p'; // Default to 1080p
+        }
+      } else {
+        input.resolution = '1080p';
+      }
+      
+      // Duration: '5' or '10' (as strings, not '5s' or '10s')
+      if (body.duration) {
+        if (typeof body.duration === 'string') {
+          // Remove 's' if present and validate
+          const durationNum = body.duration.replace('s', '');
+          if (['5', '10'].includes(durationNum)) {
+            input.duration = durationNum;
+          } else {
+            input.duration = '5';
+          }
+        } else if (typeof body.duration === 'number') {
+          // Convert number to string
+          input.duration = body.duration >= 10 ? '10' : '5';
+        } else {
+          input.duration = '5';
+        }
+      } else {
+        input.duration = '5';
+      }
+      
+      // Negative prompt (optional, max 500 characters)
+      if (body.negative_prompt) {
+        input.negative_prompt = body.negative_prompt.substring(0, 500);
+      } else {
+        input.negative_prompt = 'low resolution, error, worst quality, low quality, defects';
+      }
+      
+      // Enable prompt expansion (default: true)
+      if (body.enable_prompt_expansion !== undefined) {
+        input.enable_prompt_expansion = body.enable_prompt_expansion;
+      } else {
+        input.enable_prompt_expansion = true;
+      }
+      
+      // Remove aspect_ratio as Wan 2.5 doesn't use it
+      delete input.aspect_ratio;
+      
+      console.log(`🔧 [Generate API] [${requestId}] Wan 2.5 Preview model parameters:`, {
+        originalResolution: body.resolution,
+        finalResolution: input.resolution,
+        originalDuration: body.duration,
+        finalDuration: input.duration,
+        negative_prompt: input.negative_prompt,
+        enable_prompt_expansion: input.enable_prompt_expansion,
+        note: 'Wan 2.5 uses duration: 5 or 10 (strings without s), resolution: 480p/720p/1080p'
+      });
+    }
+
+    // Handle Luma Ray 2 model specific parameters
+    if (model.includes('luma-dream-machine/ray-2')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Luma Ray 2 model: ${model}`);
+      
+      // Luma Ray 2 uses specific parameters
+      // Resolution: '540p', '720p', or '1080p' (default: '540p')
+      // Note: 720p costs 2x more, 1080p costs 4x more
+      if (body.resolution) {
+        if (['540p', '720p', '1080p'].includes(body.resolution)) {
+          input.resolution = body.resolution;
+        } else {
+          input.resolution = '540p'; // Default to 540p
+        }
+      } else {
+        input.resolution = '540p';
+      }
+      
+      // Duration: '5s' or '9s' (default: '5s')
+      // Note: 9s costs 2x more
+      if (body.duration) {
+        if (typeof body.duration === 'string' && ['5s', '9s'].includes(body.duration)) {
+          input.duration = body.duration;
+        } else if (typeof body.duration === 'number') {
+          // Convert number to string format
+          if (body.duration >= 9) {
+            input.duration = '9s';
+          } else {
+            input.duration = '5s';
+          }
+        } else {
+          input.duration = '5s';
+        }
+      } else {
+        input.duration = '5s';
+      }
+      
+      // Aspect ratio: '16:9', '9:16', '4:3', '3:4', '21:9', '9:21' (default: '16:9')
+      if (body.aspect_ratio && ['16:9', '9:16', '4:3', '3:4', '21:9', '9:21'].includes(body.aspect_ratio)) {
+        input.aspect_ratio = body.aspect_ratio;
+      } else if (body.aspect_ratio === 'auto') {
+        input.aspect_ratio = '16:9'; // Convert auto to 16:9
+      } else {
+        input.aspect_ratio = '16:9';
+      }
+      
+      // Loop parameter (optional)
+      if (body.loop !== undefined) {
+        input.loop = body.loop;
+      } else {
+        input.loop = false;
+      }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 model parameters:`, {
+        originalResolution: body.resolution,
+        finalResolution: input.resolution,
+        originalDuration: body.duration,
+        finalDuration: input.duration,
+        aspect_ratio: input.aspect_ratio,
+        loop: input.loop,
+        note: 'Luma Ray 2 uses duration: 5s or 9s (string), resolution: 540p/720p/1080p, aspect_ratio: 16:9/9:16/4:3/3:4/21:9/9:21'
+      });
+    }
+
+    // Handle Ovi model specific parameters
+    if (model.includes('ovi')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Ovi model: ${model}`);
+      
+      // Ovi requires specific resolution format: '512x992', '992x512', '960x512', '512x960', '720x720', '448x1120', '1120x448'
+      if (body.resolution) {
+        // Convert common resolutions to Ovi format
+        if (body.resolution === '1080p') {
+          input.resolution = '992x512'; // Default to 992x512 for 1080p
+        } else if (body.resolution === '720p') {
+          input.resolution = '720x720'; // Use 720x720 for 720p
+        } else if (['512x992', '992x512', '960x512', '512x960', '720x720', '448x1120', '1120x448'].includes(body.resolution)) {
+          input.resolution = body.resolution; // Already valid
+        } else {
+          input.resolution = '992x512'; // Default to 992x512
+        }
+      } else {
+        input.resolution = '992x512'; // Default resolution for Ovi
+      }
+      
+      console.log(`🔧 [Generate API] [${requestId}] Ovi model parameters:`, {
+        originalResolution: body.resolution,
+        finalResolution: input.resolution,
+        note: 'Ovi requires specific resolution format: 512x992, 992x512, 960x512, 512x960, 720x720, 448x1120, 1120x448'
+      });
+    }
+
     // Handle Sora 2 and Sora 2 Pro model specific parameters
     if (model.includes('sora-2')) {
       console.log(`🔧 [Generate API] [${requestId}] Detected Sora 2 model: ${model}`);
@@ -561,7 +771,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let result;
     try {
       // Add timeout based on model type and quality (based on actual FAL AI timing data)
-      const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax');
+      const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax') || model.includes('wan-pro') || model.includes('wan/v2.2-a14b') || model.includes('wan-25-preview') || model.includes('hunyuan') || model.includes('ovi') || model.includes('luma-dream-machine');
       const isHighQualityImageModel = model.includes('flux-pro') || model.includes('imagen4') || model.includes('nano-banana');
       
       let timeoutDuration;
@@ -575,6 +785,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           timeoutDuration = 4 * 60 * 1000; // 4 minutes for Minimax (actual: ~2 min)
         } else if (model.includes('veo3')) {
           timeoutDuration = 3 * 60 * 1000; // 3 minutes for Veo 3 (actual: ~1 min)
+        } else if (model.includes('wan-pro')) {
+          timeoutDuration = 8 * 60 * 1000; // 8 minutes for Wan Pro (known to be slow)
+        } else if (model.includes('wan/v2.2-a14b')) {
+          timeoutDuration = 6 * 60 * 1000; // 6 minutes for Wan v2.2-A14B
+        } else if (model.includes('wan-25-preview')) {
+          timeoutDuration = 4 * 60 * 1000; // 4 minutes for Wan 2.5 Preview (1-3 minutes typical)
+        } else if (model.includes('hunyuan')) {
+          timeoutDuration = 6 * 60 * 1000; // 6 minutes for Hunyuan
+        } else if (model.includes('ovi')) {
+          timeoutDuration = 6 * 60 * 1000; // 6 minutes for Ovi (audio generation takes time)
+        } else if (model.includes('luma-dream-machine')) {
+          timeoutDuration = 5 * 60 * 1000; // 5 minutes for Luma Ray 2
         } else {
           timeoutDuration = 5 * 60 * 1000; // 5 minutes default for other video models
         }
@@ -744,31 +966,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             );
           }
           
-          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
-          if (body.aspect_ratio) {
-            const aspectRatioToDimensions = (ratio: string) => {
-              switch (ratio) {
-                case '1:1':
-                  return { width: 1024, height: 1024 };
-                case '16:9':
-                  return { width: 1920, height: 1080 };
-                case '9:16':
-                  return { width: 1080, height: 1920 };
-                case '4:3':
-                  return { width: 1024, height: 768 };
-                case '3:4':
-                  return { width: 768, height: 1024 };
-                default:
-                  return { width: 1920, height: 1080 }; // Default to 16:9
-              }
-            };
-            
-            fallbackInput.image_size = aspectRatioToDimensions(body.aspect_ratio);
-            // Remove aspect_ratio since Seedream uses image_size
-            delete fallbackInput.aspect_ratio;
-            
-            console.log(`🔄 [Generate API] [${requestId}] Converted aspect_ratio ${body.aspect_ratio} to image_size:`, fallbackInput.image_size);
-          }
+          // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
+          fallbackInput.aspect_ratio = "match_input_image";
+          console.log(`🔄 [Generate API] [${requestId}] Set aspect_ratio to match_input_image for Seedream 4.0 Edit`);
           
           // Add timeout to prevent hanging
           const fallbackTimeout = 300000; // 5 minutes timeout
@@ -931,9 +1131,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         console.log(`🔄 [Generate API] [${requestId}] Sora 2 content policy violation, trying fallback models...`);
         
         const fallbackModels = [
+          'fal-ai/kling-video/v2.5-turbo/pro/image-to-video',
           'fal-ai/kling-video/v2.1/master/image-to-video',
           'fal-ai/veo3/image-to-video',
-          'fal-ai/minimax/hailuo-02/standard/image-to-video'
+          'fal-ai/minimax/hailuo-02/standard/image-to-video',
+          'fal-ai/hunyuan-video',
+          'fal-ai/wan/v2.2-a14b/image-to-video',
+          'fal-ai/wan-25-preview/image-to-video',
+          'fal-ai/luma-dream-machine/ray-2/image-to-video',
+          'fal-ai/ovi/image-to-video'
         ];
 
         for (const fallbackModel of fallbackModels) {
@@ -955,6 +1161,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               if (fallbackInput.aspect_ratio === 'auto') {
                 delete fallbackInput.aspect_ratio;
               }
+              // Kling V2.5 Turbo Pro specific parameters
+              if (fallbackModel.includes('v2.5-turbo')) {
+                // Add default negative_prompt and cfg_scale if not present
+                if (!fallbackInput.negative_prompt) {
+                  fallbackInput.negative_prompt = "blur, distort, and low quality";
+                }
+                if (!fallbackInput.cfg_scale) {
+                  fallbackInput.cfg_scale = 0.5;
+                }
+              }
             } else if (fallbackModel.includes('veo3')) {
               // Veo 3 uses different parameter format
               if (fallbackInput.duration && typeof fallbackInput.duration === 'number') {
@@ -971,6 +1187,122 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               if (fallbackInput.resolution === 'auto') {
                 fallbackInput.resolution = '768P';
               }
+            } else if (fallbackModel.includes('hunyuan')) {
+              // Hunyuan uses standard parameters but with specific defaults
+              if (fallbackInput.duration && typeof fallbackInput.duration === 'number') {
+                // Hunyuan uses number duration
+                fallbackInput.duration = fallbackInput.duration;
+              }
+              if (fallbackInput.resolution === 'auto') {
+                fallbackInput.resolution = '720p';
+              }
+              if (fallbackInput.aspect_ratio === 'auto') {
+                fallbackInput.aspect_ratio = '16:9';
+              }
+            } else if (fallbackModel.includes('wan/v2.2-a14b')) {
+              // Wan v2.2-A14B uses specific parameters
+              if (fallbackInput.resolution) {
+                if (['480p', '580p', '720p'].includes(fallbackInput.resolution)) {
+                  // Already valid
+                } else if (fallbackInput.resolution === '1080p') {
+                  fallbackInput.resolution = '720p'; // Convert to highest available
+                } else {
+                  fallbackInput.resolution = '720p'; // Default
+                }
+              } else {
+                fallbackInput.resolution = '720p';
+              }
+              // Set Wan v2.2-A14B specific parameters
+              fallbackInput.num_frames = 81;
+              fallbackInput.frames_per_second = 16;
+              fallbackInput.num_inference_steps = 27;
+              fallbackInput.enable_safety_checker = true;
+              fallbackInput.enable_output_safety_checker = false;
+              fallbackInput.enable_prompt_expansion = false;
+              fallbackInput.acceleration = 'regular';
+              fallbackInput.guidance_scale = 3.5;
+              fallbackInput.guidance_scale_2 = 3.5;
+              fallbackInput.shift = 5;
+              fallbackInput.interpolator_model = 'film';
+              fallbackInput.num_interpolated_frames = 1;
+              fallbackInput.adjust_fps_for_interpolation = true;
+              fallbackInput.video_quality = 'high';
+              fallbackInput.video_write_mode = 'balanced';
+              fallbackInput.negative_prompt = '';
+              // Remove duration as Wan v2.2-A14B uses num_frames
+              delete fallbackInput.duration;
+            } else if (fallbackModel.includes('wan-25-preview')) {
+              // Wan 2.5 Preview uses specific parameters
+              if (fallbackInput.resolution) {
+                if (['480p', '720p', '1080p'].includes(fallbackInput.resolution)) {
+                  // Already valid
+                } else {
+                  fallbackInput.resolution = '1080p'; // Default
+                }
+              } else {
+                fallbackInput.resolution = '1080p';
+              }
+              // Convert duration to Wan 2.5 format (5 or 10 as strings)
+              if (fallbackInput.duration) {
+                if (typeof fallbackInput.duration === 'number') {
+                  fallbackInput.duration = fallbackInput.duration >= 10 ? '10' : '5';
+                } else if (typeof fallbackInput.duration === 'string') {
+                  const durationNum = fallbackInput.duration.replace('s', '');
+                  fallbackInput.duration = ['5', '10'].includes(durationNum) ? durationNum : '5';
+                }
+              } else {
+                fallbackInput.duration = '5';
+              }
+              // Set default parameters for Wan 2.5
+              fallbackInput.negative_prompt = 'low resolution, error, worst quality, low quality, defects';
+              fallbackInput.enable_prompt_expansion = true;
+              // Remove aspect_ratio as Wan 2.5 doesn't use it
+              delete fallbackInput.aspect_ratio;
+            } else if (fallbackModel.includes('luma-dream-machine')) {
+              // Luma Ray 2 uses specific parameters
+              if (fallbackInput.resolution) {
+                if (['540p', '720p', '1080p'].includes(fallbackInput.resolution)) {
+                  // Already valid
+                } else {
+                  fallbackInput.resolution = '540p'; // Default
+                }
+              } else {
+                fallbackInput.resolution = '540p';
+              }
+              // Convert duration to Luma format (5s or 9s)
+              if (fallbackInput.duration) {
+                if (typeof fallbackInput.duration === 'number') {
+                  fallbackInput.duration = fallbackInput.duration >= 9 ? '9s' : '5s';
+                } else if (typeof fallbackInput.duration === 'string' && !['5s', '9s'].includes(fallbackInput.duration)) {
+                  fallbackInput.duration = '5s';
+                }
+              } else {
+                fallbackInput.duration = '5s';
+              }
+              // Convert aspect_ratio to Luma format
+              if (fallbackInput.aspect_ratio === 'auto') {
+                fallbackInput.aspect_ratio = '16:9';
+              } else if (!['16:9', '9:16', '4:3', '3:4', '21:9', '9:21'].includes(fallbackInput.aspect_ratio)) {
+                fallbackInput.aspect_ratio = '16:9';
+              }
+              fallbackInput.loop = false;
+            } else if (fallbackModel.includes('ovi')) {
+              // Ovi uses specific resolution format
+              if (fallbackInput.resolution) {
+                // Convert to Ovi format
+                if (fallbackInput.resolution === '1080p') {
+                  fallbackInput.resolution = '992x512';
+                } else if (fallbackInput.resolution === '720p') {
+                  fallbackInput.resolution = '720x720';
+                } else if (!['512x992', '992x512', '960x512', '512x960', '720x720', '448x1120', '1120x448'].includes(fallbackInput.resolution)) {
+                  fallbackInput.resolution = '992x512'; // Default
+                }
+              } else {
+                fallbackInput.resolution = '992x512'; // Default
+              }
+              // Remove duration and aspect_ratio as Ovi doesn't use them
+              delete fallbackInput.duration;
+              delete fallbackInput.aspect_ratio;
             }
 
             // Use fal.run for fallback models to avoid polling issues

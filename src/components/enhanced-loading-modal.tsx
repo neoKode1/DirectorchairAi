@@ -62,8 +62,11 @@ export const EnhancedLoadingModal: React.FC<EnhancedLoadingModalProps> = ({
     if (model.includes('kling')) return '/kling-color.svg';
     if (model.includes('minimax')) return '/minimax-color.svg';
     if (model.includes('seedream') || model.includes('bytedance')) return '/bytedance-color.svg';
+    if (model.includes('hunyuan')) return '/bytedance-color.svg'; // Using ByteDance icon for Hunyuan
+    if (model.includes('wan-pro') || model.includes('wan/v2.2-a14b') || model.includes('wan-25-preview')) return '/alibaba-color.svg'; // Using Alibaba icon for Wan models
     if (model.includes('veo3')) return '/Gen4.png'; // Using Gen4 for Veo 3
-    if (model.includes('luma')) return '/dreammachine.png';
+    if (model.includes('ovi')) return '/Gen4.png'; // Using Gen4 for Ovi
+    if (model.includes('luma')) return '/dreammachine.svg'; // Using Dream Machine SVG for Luma
     if (model.includes('imagen')) return '/Gen4.png';
     if (model.includes('photon')) return '/ideogram.svg';
     if (model.includes('recraft')) return '/ideogram.svg';

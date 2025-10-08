@@ -71,7 +71,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [duration, setDuration] = useState(4);
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/kling-video/v2.1/master/image-to-video');
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/sora-2/image-to-video');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const [userIntent, setUserIntent] = useState<'image' | 'video' | 'auto'>('image');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1021,16 +1021,16 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       <span>Flux Pro (Image)</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">
+                  <SelectItem value="fal-ai/sora-2/image-to-video">
                     <div className="flex items-center gap-2">
-                      <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
-                      <span>Sora 2 (Image-to-Video) - Disabled</span>
+                      <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
+                      <span>Sora 2 (Image-to-Video)</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">
+                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">
                     <div className="flex items-center gap-2">
-                      <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
-                      <span>Sora 2 Pro (Image-to-Video) - Disabled</span>
+                      <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
+                      <span>Sora 2 Pro (Image-to-Video)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="fal-ai/veo3/image-to-video">
@@ -1466,16 +1466,16 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                             <span>Flux Pro (Image)</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video" disabled className="text-gray-400">
+                        <SelectItem value="fal-ai/sora-2/image-to-video">
                           <div className="flex items-center gap-2">
-                            <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
-                            <span>Sora 2 (Image-to-Video) - Temporarily Disabled</span>
+                            <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
+                            <span>Sora 2 (Image-to-Video)</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video/pro" disabled className="text-gray-400">
+                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">
                           <div className="flex items-center gap-2">
-                            <img src="/openai.svg" alt="Sora" className="w-4 h-4 opacity-50" />
-                            <span>Sora 2 Pro (Image-to-Video) - Temporarily Disabled</span>
+                            <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
+                            <span>Sora 2 Pro (Image-to-Video)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="fal-ai/veo3/image-to-video">

@@ -207,7 +207,7 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
       max_images: 1,
       enable_safety_checker: true,
-      aspect_ratio: "match_input_image",
+      image_size: "auto", // Seedream uses image_size, not aspect_ratio. "auto" maintains input aspect ratio
     },
   },
   {

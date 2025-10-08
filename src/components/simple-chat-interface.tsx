@@ -765,9 +765,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             model: 'fal-ai/bytedance/seedream/v4/edit'
           };
           
-          // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
-          (fallbackGenerationData as any).aspect_ratio = "match_input_image";
-          console.log('🔄 [Chat] Set aspect_ratio to match_input_image for Seedream queue fallback');
+          // Set image_size to auto for Seedream 4.0 Edit (maintains input aspect ratio)
+          (fallbackGenerationData as any).image_size = "auto";
+          delete (fallbackGenerationData as any).aspect_ratio; // Remove aspect_ratio as Seedream uses image_size
+          console.log('🔄 [Chat] Set image_size to auto for Seedream queue fallback');
           
           try {
             const result = await onContentGenerated(fallbackGenerationData);
@@ -942,9 +943,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               model: 'fal-ai/bytedance/seedream/v4/edit'
             };
             
-            // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
-            (fallbackGenerationData as any).aspect_ratio = "match_input_image";
-            console.log('🔄 [Chat] Set aspect_ratio to match_input_image for Seedream fallback');
+            // Set image_size to auto for Seedream 4.0 Edit (maintains input aspect ratio)
+            (fallbackGenerationData as any).image_size = "auto";
+            delete (fallbackGenerationData as any).aspect_ratio; // Remove aspect_ratio as Seedream uses image_size
+            console.log('🔄 [Chat] Set image_size to auto for Seedream fallback');
             
             result = await onContentGenerated(fallbackGenerationData);
           } else {

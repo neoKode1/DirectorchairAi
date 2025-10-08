@@ -299,6 +299,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.ratio = body.aspect_ratio;
       }
     }
+
+    // Handle Seedream 4.0 Edit model specific parameters
+    if (model.includes('bytedance/seedream/v4/edit')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Seedream 4.0 Edit model: ${model}`);
+      
+      // Seedream uses image_size, not aspect_ratio
+      // Convert aspect_ratio to image_size enum
+      if (body.aspect_ratio) {
+        const aspectRatioToImageSize: Record<string, string> = {
+          '16:9': 'landscape_16_9',
+          '9:16': 'portrait_16_9',
+          '4:3': 'landscape_4_3',
+          '3:4': 'portrait_4_3',
+          '1:1': 'square_hd',
+          'auto': 'auto'
+        };
+        
+        input.image_size = aspectRatioToImageSize[body.aspect_ratio] || 'auto';
+        console.log(`🔧 [Generate API] [${requestId}] Converted aspect_ratio to image_size:`, {
+          aspect_ratio: body.aspect_ratio,
+          image_size: input.image_size
+        });
+        
+        // Remove aspect_ratio as Seedream doesn't use it
+        delete input.aspect_ratio;
+      } else {
+        input.image_size = 'auto'; // Default to auto to maintain input aspect ratio
+      }
+      
+      // Set default parameters
+      input.num_images = input.num_images || 1;
+      input.max_images = input.max_images || 1;
+      input.enable_safety_checker = input.enable_safety_checker !== undefined ? input.enable_safety_checker : true;
+      
+      console.log(`🔧 [Generate API] [${requestId}] Seedream 4.0 Edit parameters:`, {
+        image_size: input.image_size,
+        num_images: input.num_images,
+        max_images: input.max_images,
+        note: 'Seedream uses image_size (auto/square_hd/landscape_16_9/portrait_16_9/etc), not aspect_ratio'
+      });
+    }
     
     // Handle other image models that might need special aspect ratio handling
     if (model.includes('flux') || model.includes('stable-diffusion') || model.includes('imagen')) {
@@ -966,9 +1007,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             );
           }
           
-          // Set aspect_ratio to match_input_image for Seedream 4.0 Edit
-          fallbackInput.aspect_ratio = "match_input_image";
-          console.log(`🔄 [Generate API] [${requestId}] Set aspect_ratio to match_input_image for Seedream 4.0 Edit`);
+          // Set image_size to auto for Seedream 4.0 Edit (maintains input aspect ratio)
+          fallbackInput.image_size = "auto";
+          delete fallbackInput.aspect_ratio; // Remove aspect_ratio as Seedream uses image_size
+          console.log(`🔄 [Generate API] [${requestId}] Set image_size to auto for Seedream 4.0 Edit`);
           
           // Add timeout to prevent hanging
           const fallbackTimeout = 300000; // 5 minutes timeout

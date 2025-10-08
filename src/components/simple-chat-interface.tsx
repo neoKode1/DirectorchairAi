@@ -711,6 +711,16 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         // Save to gallery storage
         if (typeof window !== 'undefined') {
           try {
+            // Debug: Log the full result to see what we're getting
+            console.log('🔍 [Chat] Full generation result:', {
+              hasVideos: !!result?.data?.videos,
+              videosCount: result?.data?.videos?.length || 0,
+              hasImages: !!result?.data?.images,
+              imagesCount: result?.data?.images?.length || 0,
+              videos: result?.data?.videos,
+              images: result?.data?.images
+            });
+
             const contentToStore = {
               id: `generated-${Date.now()}`,
               type: (result?.data?.videos?.length > 0 ? 'video' : 'image') as 'image' | 'video',
@@ -727,7 +737,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             };
 
             console.log('💾 [Chat] Adding content to gallery storage:', contentToStore);
+            console.log('💾 [Chat] Current gallery items before add:', contentStorage.loadContent().length);
             contentStorage.addContent(contentToStore);
+            console.log('💾 [Chat] Current gallery items after add:', contentStorage.loadContent().length);
             
             // Trigger a custom event to notify GalleryView to refresh
             window.dispatchEvent(new CustomEvent('contentUpdated'));

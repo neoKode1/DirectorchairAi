@@ -955,6 +955,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                                                  d.msg.includes('content could not be processed') ||
                                                  d.msg.includes('flagged by a content checker') ||
                                                  d.msg.includes('content policy') ||
+                                                 d.msg.includes('content is not passing') ||
+                                                 d.msg.includes('OpenAI could not generate') ||
+                                                 d.msg.includes('rejected by content filter') ||
                                                  d.type === 'content_policy_violation')
                                       ));
       

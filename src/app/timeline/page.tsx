@@ -11,6 +11,8 @@ import { Download, Edit, Trash2, Video } from "lucide-react";
 import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { ImageSelector, type ImageSelection } from "@/components/image-selector";
+import { UserCreditsDisplay } from "@/components/user-credits-display";
+import { SessionProvider } from "next-auth/react";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -361,7 +363,12 @@ function TimelineContent() {
     <div className="h-screen flex bg-white">
       {/* Left Column - Chat Interface (Yellow section from screenshot) */}
       <div className="w-80 border-r border-gray-200 flex flex-col">
-        <SimpleChatInterface 
+        {/* User Credits Display */}
+        <div className="p-4 border-b border-gray-200">
+          <UserCreditsDisplay />
+        </div>
+
+        <SimpleChatInterface
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}
             onGenerationComplete={() => console.log('Generation complete')}
@@ -581,14 +588,16 @@ function TimelineContent() {
 
 export default function TimelinePage() {
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <QueryClientProvider client={queryClient}>
-          <Suspense fallback={<LoadingSpinner />}>
-            <TimelineContent />
-          </Suspense>
-        </QueryClientProvider>
-      </ToastProvider>
-    </ErrorBoundary>
+    <SessionProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<LoadingSpinner />}>
+              <TimelineContent />
+            </Suspense>
+          </QueryClientProvider>
+        </ToastProvider>
+      </ErrorBoundary>
+    </SessionProvider>
   );
-} 
+}

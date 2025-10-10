@@ -17,9 +17,11 @@ export default function middleware(req: any) {
 }
 
 export const config = {
-  // Protect all routes under /api/auth
+  // Protect timeline and API routes
   matcher: [
+    "/timeline/:path*",
     "/api/auth/:path*",
+    "/api/generate/:path*",
     // Add other protected routes here
   ],
 };

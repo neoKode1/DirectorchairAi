@@ -20,12 +20,7 @@ const nextConfig = {
   // Error handling and fallbacks
   async redirects() {
     return [
-      // Redirect root to timeline for better UX
-      {
-        source: '/',
-        destination: '/timeline',
-        permanent: false,
-      },
+      // No redirects - let landing page handle routing
     ];
   },
 

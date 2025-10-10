@@ -12,7 +12,7 @@ import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { ImageSelector, type ImageSelection } from "@/components/image-selector";
 import { UserCreditsDisplay } from "@/components/user-credits-display";
-import { SessionProvider } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -588,16 +588,14 @@ function TimelineContent() {
 
 export default function TimelinePage() {
   return (
-    <SessionProvider>
-      <ErrorBoundary>
-        <ToastProvider>
-          <QueryClientProvider client={queryClient}>
-            <Suspense fallback={<LoadingSpinner />}>
-              <TimelineContent />
-            </Suspense>
-          </QueryClientProvider>
-        </ToastProvider>
-      </ErrorBoundary>
-    </SessionProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <QueryClientProvider client={queryClient}>
+          <Suspense fallback={<LoadingSpinner />}>
+            <TimelineContent />
+          </Suspense>
+        </QueryClientProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

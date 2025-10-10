@@ -1,16 +1,23 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useSupabaseContent } from "@/hooks/useSupabaseContent";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Coins, Database, User } from "lucide-react";
+import { Coins, Database, User, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function UserCreditsDisplay() {
-  const { data: session } = useSession();
+  const { user, signOut: authSignOut } = useAuth();
   const { userCredits, loading } = useSupabaseContent();
+  const router = useRouter();
 
-  if (!session?.user) {
+  const handleSignOut = async () => {
+    await authSignOut();
+    router.push('/');
+  };
+
+  if (!user) {
     return null;
   }
 
@@ -23,7 +30,7 @@ export function UserCreditsDisplay() {
           </div>
           <div>
             <p className="text-sm font-medium text-white">
-              {session.user.name || session.user.email}
+              {user.user_metadata?.name || user.email}
             </p>
             <div className="flex items-center space-x-2">
               <Database className="w-3 h-3 text-green-400" />
@@ -31,12 +38,19 @@ export function UserCreditsDisplay() {
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Coins className="w-4 h-4 text-yellow-400" />
           <Badge variant="secondary" className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30">
             {loading ? "..." : `${userCredits} credits`}
           </Badge>
+          <button
+            onClick={handleSignOut}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </Card>

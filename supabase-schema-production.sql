@@ -229,24 +229,38 @@ BEGIN
 END
 $$;
 
--- Helper function for user creation (called from NextAuth)
-CREATE OR REPLACE FUNCTION public.handle_new_user(
-  user_id UUID,
-  user_email TEXT,
-  user_name TEXT DEFAULT NULL,
-  user_avatar_url TEXT DEFAULT NULL
-)
-RETURNS void AS $$
+-- Helper function for user creation (called automatically on auth.users insert)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.users (id, email, name, avatar_url)
-  VALUES (user_id, user_email, user_name, user_avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', NEW.email),
+    NEW.raw_user_meta_data->>'avatar_url'
+  )
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     name = COALESCE(EXCLUDED.name, users.name),
     avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
     updated_at = NOW();
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger on auth.users table (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END
+$$;
 
 -- ============================================================================
 -- PERMISSIONS (SECURE DEFAULTS)
@@ -267,8 +281,8 @@ REVOKE ALL ON ALL FUNCTIONS IN SCHEMA public FROM anon, public;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
 
 -- Specific function permissions
-REVOKE ALL ON FUNCTION public.handle_new_user(uuid, text, text, text) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.handle_new_user(uuid, text, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;
 
 -- ============================================================================
 -- COMPLETION MESSAGE

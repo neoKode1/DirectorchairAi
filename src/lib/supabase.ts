@@ -36,15 +36,53 @@ export interface UserSession {
   updated_at: string
 }
 
-// Auth helpers
-export const signInWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/timeline`
-    }
-  })
-  return { data, error }
+// Auth helpers - Email/Password Authentication
+export const signInWithEmail = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    return { data, error }
+  } catch (error: any) {
+    console.error('Sign in error:', error)
+    return { data: null, error }
+  }
+}
+
+export const signUpWithEmail = async (email: string, password: string, name?: string) => {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name || email.split('@')[0]
+        }
+      }
+    })
+    return { data, error }
+  } catch (error: any) {
+    console.error('Sign up error:', error)
+    return { data: null, error }
+  }
+}
+
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+  return { error }
+}
+
+export const resetPassword = async (email: string) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    })
+    return { error }
+  } catch (error: any) {
+    console.error('Reset password error:', error)
+    return { error }
+  }
 }
 
 export const signOut = async () => {

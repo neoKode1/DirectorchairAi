@@ -4,7 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-// import { AuthProvider } from "@/components/providers/session-provider"; // Removed - component deleted
+import { AuthProvider } from "@/contexts/AuthContext";
 
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,7 @@ export default function RootLayout({
         )}
         suppressHydrationWarning
       >
-        {/* <AuthProvider> Removed - component deleted */}
+        <AuthProvider>
           <div className="flex flex-col min-h-screen">
             <header className="mobile-header border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="mobile-container flex h-16 sm:h-18 lg:h-20 max-w-screen-2xl items-center">
@@ -58,7 +58,7 @@ export default function RootLayout({
           </div>
           <Analytics />
           <SpeedInsights />
-        {/* </AuthProvider> */}
+        </AuthProvider>
       </body>
     </html>
   );

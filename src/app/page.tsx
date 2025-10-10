@@ -5,38 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { signInWithGoogle, getCurrentUser } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Sparkles, Video, Image as ImageIcon, Music, Mic, Zap, Users, Shield, Star, ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function LandingPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    checkUser();
-  }, []);
-
-  const checkUser = async () => {
-    const { user } = await getCurrentUser();
-    if (user) {
-      setUser(user);
+    // Redirect to timeline if user is already signed in
+    if (user && !loading) {
+      router.push('/timeline');
     }
+  }, [user, loading, router]);
+
+  const handleSignIn = () => {
+    setAuthMode('signin');
+    setIsAuthModalOpen(true);
   };
 
-  const handleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        console.error('Sign in error:', error);
-      }
-    } catch (error) {
-      console.error('Sign in error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSignUp = () => {
+    setAuthMode('signup');
+    setIsAuthModalOpen(true);
   };
 
   const features = [
@@ -137,10 +131,10 @@ export default function LandingPage() {
           </div>
           <Button
             onClick={handleSignIn}
-            disabled={isLoading}
+            disabled={loading}
             className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {loading ? "Loading..." : "Sign In"}
           </Button>
         </header>
 
@@ -159,8 +153,8 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
-                onClick={handleSignIn}
-                disabled={isLoading}
+                onClick={handleSignUp}
+                disabled={loading}
                 size="lg"
                 className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-lg px-8 py-4"
               >
@@ -219,13 +213,13 @@ export default function LandingPage() {
               Join thousands of creators using DirectorchairAI to bring their visions to life
             </p>
             <Button
-              onClick={handleSignIn}
-              disabled={isLoading}
+              onClick={handleSignUp}
+              disabled={loading}
               size="lg"
               className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-lg px-12 py-4"
             >
               <Users className="w-5 h-5 mr-2" />
-              {isLoading ? "Getting Started..." : "Get Started Free"}
+              {loading ? "Loading..." : "Get Started Free"}
             </Button>
           </Card>
         </section>
@@ -237,6 +231,13 @@ export default function LandingPage() {
           </div>
         </footer>
       </div>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode={authMode}
+      />
     </div>
   );
 }

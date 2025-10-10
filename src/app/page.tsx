@@ -11,7 +11,7 @@ import { Sparkles, Video, Image as ImageIcon, Music, Mic, Zap, Users, Shield, St
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {

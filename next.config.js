@@ -66,11 +66,6 @@ const nextConfig = {
     pagesBufferLength: 2,
   },
 
-  // Prevent static generation of API routes during build
-  async generateStaticParams() {
-    return [];
-  },
-
   // Disable static generation for problematic routes
   trailingSlash: false,
   poweredByHeader: false,

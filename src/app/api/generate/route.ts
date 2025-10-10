@@ -124,7 +124,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`👤 [Generate API] [${requestId}] Anonymous user, session: ${sessionId}`);
     }
     
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error(`❌ [Generate API] [${requestId}] Failed to parse request JSON:`, jsonError);
+      return NextResponse.json({
+        success: false,
+        error: "Invalid JSON in request body",
+        details: jsonError instanceof Error ? jsonError.message : 'Unknown JSON parsing error',
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      }, { status: 400 });
+    }
+    
     console.log(`🔍 [Generate API] [${requestId}] Request received:`, {
       model: body.model,
       prompt: body.prompt?.substring(0, 100) + '...',
@@ -135,6 +148,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       resolution: body.resolution,
       allKeys: Object.keys(body)
     });
+    
+    // Validate required fields
+    if (!body.model) {
+      console.error(`❌ [Generate API] [${requestId}] Missing model field`);
+      return NextResponse.json({
+        success: false,
+        error: "Missing required field: model",
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      }, { status: 400 });
+    }
+    
+    if (!body.prompt && !body.image_url && !body.image_urls) {
+      console.error(`❌ [Generate API] [${requestId}] Missing prompt or image`);
+      return NextResponse.json({
+        success: false,
+        error: "Missing required field: prompt or image_url/image_urls",
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      }, { status: 400 });
+    }
 
     // Extract model and prompt - these are required
     const model = body.model || body.endpoint || body.endpointId;

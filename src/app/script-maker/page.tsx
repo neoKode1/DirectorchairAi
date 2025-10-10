@@ -514,7 +514,8 @@ function ScriptMakerContent() {
         
         if (matches) {
           const trimmedNames = matches.map((name: string) => name.trim());
-          const uniqueCharacters = Array.from(new Set(trimmedNames))
+          const uniqueSet = new Set<string>(trimmedNames);
+          const uniqueCharacters = Array.from(uniqueSet)
             .filter((char: string) => 
               char.length > 1 && 
               !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.'].some(keyword => char.startsWith(keyword))

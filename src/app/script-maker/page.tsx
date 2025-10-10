@@ -513,11 +513,12 @@ function ScriptMakerContent() {
         const matches = screenplay.match(characterPattern);
         
         if (matches) {
-          const uniqueCharacters = [...new Set(matches.map((name: string) => name.trim()))]
+          const trimmedNames = matches.map((name: string) => name.trim());
+          const uniqueCharacters = [...new Set(trimmedNames)]
             .filter((char: string) => 
               char.length > 1 && 
               !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.'].some(keyword => char.startsWith(keyword))
-            ) as string[];
+            );
           
           setExtractedCharacters(uniqueCharacters);
           console.log('🎭 [ScriptMaker] Extracted characters from screenplay:', uniqueCharacters);

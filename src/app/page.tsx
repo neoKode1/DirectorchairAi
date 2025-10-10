@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, Video, Image as ImageIcon, Music, Mic, Zap, Users, Shield, Star, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthModal } from "@/components/AuthModal";
@@ -15,6 +15,7 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Redirect to timeline if user is already signed in
@@ -22,6 +23,15 @@ export default function LandingPage() {
       router.push('/timeline');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    // Check for URL parameters to open auth modal
+    const mode = searchParams.get('mode');
+    if (mode === 'signin' || mode === 'signup') {
+      setAuthMode(mode);
+      setIsAuthModalOpen(true);
+    }
+  }, [searchParams]);
 
   const handleSignIn = () => {
     setAuthMode('signin');

@@ -56,6 +56,7 @@ export const signUpWithEmail = async (email: string, password: string, name?: st
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
         data: {
           name: name || email.split('@')[0]
         }

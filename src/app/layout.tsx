@@ -43,6 +43,18 @@ export default function RootLayout({
                   </Link>
                   <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
                     <Link
+                      href="/timeline"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
+                    >
+                      Timeline
+                    </Link>
+                    <Link
+                      href="/script-maker"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
+                    >
+                      ScriptMaker
+                    </Link>
+                    <Link
                       href="https://deeptech.ai"
                       target="_blank"
                       rel="noreferrer"

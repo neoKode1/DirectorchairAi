@@ -1,0 +1,1487 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Script Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "@websim/use-query": "https://esm.websim.com/@websim/use-query",
+                "@websim/websim-socket": "https://esm.websim.com/@websim/websim-socket"
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module">
+        import { WebsimSocket } from '@websim/websim-socket';
+        window.WebsimSocket = WebsimSocket;
+    </script>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        const { createRoot } = ReactDOM;
+
+        // rate-limit queue + retry to avoid "Rate limit exceeded"
+        const __rlq = []; let __active = 0; const __limit = 2;
+        function __sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+        async function __run(){ if(__active>=__limit||!__rlq.length) return; __active++; const {job,res,rej}=__rlq.shift();
+          try { res(await job()); } catch(e){ rej(e); } finally { __active--; setTimeout(__run, 650); } }
+        function __enqueue(job){ return new Promise((res,rej)=>{ __rlq.push({job,res,rej}); __run(); }); }
+        async function __withRetry(fn, tries=5, base=800){
+          for(let i=0;i<tries;i++){
+            try{ return await fn(); }
+            catch(e){
+              const msg=e?.message||e?.toString()||'';
+              if(!/rate limit/i.test(msg)&&i>1) throw e;
+              await __sleep(base*Math.pow(1.6,i));
+            }
+          }
+          throw new Error('Failed after retries');
+        }
+
+        // Initialize WebsimSocket with proper schema
+        const room = new WebsimSocket({
+            schema: {
+                project: {
+                    id: "text",
+                    movieTitle: "text",
+                    plot: "text",
+                    genreIdea: "text", 
+                    eraSetting: "text",
+                    photoStyle: "text",
+                    minutesToExtract: "integer",
+                    zipFileUrl: "text",
+                    characterProfiles: "jsonb",
+                    extrasProfiles: "jsonb",
+                    finalScript: "text",
+                    created_at: "timestamptz"
+                }
+            }
+        });
+
+        (function __wrapWebsim(){
+            if(!window.websim) return setTimeout(__wrapWebsim, 100);
+            window.wsChat = (args)=>__enqueue(()=>__withRetry(()=>websim.chat.completions.create(args)));
+            window.wsImageGen = (args)=>__enqueue(()=>__withRetry(()=>websim.imageGen(args)));
+        })();
+
+        window.addEventListener('unhandledrejection', (e)=>{
+            const msg = e?.reason?.message || e?.reason?.toString() || '';
+            if(/rate limit/i.test(msg)){ console.warn('Rate limit hit; queued with backoff.'); e.preventDefault(); }
+        });
+
+        function SplashPage({ onStart }) {
+            return React.createElement('div', { className: 'splash-container' },
+                React.createElement('h1', { className: 'title' }, 'Movie Script Generator'),
+                React.createElement('p', { className: 'subtitle' }, 'Bring your cinematic vision to life. From idea to pitch deck, instantly.'),
+                React.createElement('button', { onClick: onStart, className: 'splash-button' }, 'Start Generating')
+            );
+        }
+
+        function TutorialPage({ onEnter }) {
+            return React.createElement('div', { className: 'tutorial-container' },
+                React.createElement('h1', { className: 'title' }, 'How It Works'),
+                React.createElement('div', { className: 'tutorial-steps' },
+                    React.createElement('div', { className: 'tutorial-step' },
+                        React.createElement('h3', null, '1. Craft Your Idea'),
+                        React.createElement('p', null, 'Start by defining your movie\'s title, plot, genre, setting, and visual style. The more detail, the better!')
+                    ),
+                    React.createElement('div', { className: 'tutorial-step' },
+                        React.createElement('h3', null, '2. Generate Characters'),
+                        React.createElement('p', null, 'Our AI will create detailed character profiles with specific physical descriptions to ensure visual consistency.')
+                    ),
+                    React.createElement('div', { className: 'tutorial-step' },
+                        React.createElement('h3', null, '3. Write the Script'),
+                        React.createElement('p', null, 'Generate a complete, professionally formatted screenplay based on your idea and characters.')
+                    ),
+                    React.createElement('div', { className: 'tutorial-step' },
+                        React.createElement('h3', null, '4. Build the Storyboard'),
+                        React.createElement('p', null, 'The AI will break down your script minute-by-minute, creating 12 visual shots for each minute to build a complete storyboard.')
+                    ),
+                    React.createElement('div', { className: 'tutorial-step' },
+                        React.createElement('h3', null, '5. Export Your Pitch Deck'),
+                        React.createElement('p', null, 'Download a complete pitch deck as a ZIP file, including a styled HTML presentation, all storyboard images, and the full screenplay.')
+                    )
+                ),
+                React.createElement('button', { onClick: onEnter, className: 'tutorial-button' }, 'Enter the Generator')
+            );
+        }
+
+        function ProgressHUD({ progress }) {
+            if (!progress.visible) return null;
+            return React.createElement('div',{className:'progress-hud'},
+                React.createElement('div',{className:'progress-inner'},
+                    React.createElement('div',{className:'progress-bar'},
+                        React.createElement('div',{className:'progress-fill',style:{width:`${progress.percent||0}%`}})
+                    ),
+                    React.createElement('div',{className:'progress-text'},progress.message||'Working...')
+                )
+            );
+        }
+
+        function MainApp() {
+            const [movieTitle, setMovieTitle] = useState('');
+            const [plot, setPlot] = useState('');
+            const [genreIdea, setGenreIdea] = useState('');
+            const [eraSetting, setEraSetting] = useState('');
+            const [photoStyle, setPhotoStyle] = useState('cinematic');
+            const [minutesToExtract, setMinutesToExtract] = useState(5);
+            const [minutes, setMinutes] = useState([]);
+            const [finalScript, setFinalScript] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [characterLoading, setCharacterLoading] = useState(false);
+            const [scriptLoading, setScriptLoading] = useState(false);
+            const [minuteLoading, setMinuteLoading] = useState(false);
+            const [currentMinute, setCurrentMinute] = useState(0);
+            const [characterProfiles, setCharacterProfiles] = useState([]);
+            const [extrasProfiles, setExtrasProfiles] = useState([]);
+            const [step, setStep] = useState(1); // 1: idea, 2: characters, 3: script, 4: minutes
+            const [imageBlobs, setImageBlobs] = useState(new Map()); // Store image blobs locally
+            const [regeneratingShot, setRegeneratingShot] = useState(null);
+            const [regeneratingCharacter, setRegeneratingCharacter] = useState(null);
+            const [generatingAvatar, setGeneratingAvatar] = useState(null); // new state for avatar generation indicator
+            const [avatarQueue, setAvatarQueue] = useState([]);
+            const [sceneRefs, setSceneRefs] = useState({});
+            const [progress, setProgress] = useState({ visible:false, percent:0, message:'' });
+            const showProgress = (message, percent=0)=>setProgress({visible:true,percent,message});
+            const hideProgress = (delay=1200)=>setTimeout(()=>setProgress(p=>({...p,visible:false})),delay);
+
+            const uuidv4 = () => {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            };
+
+            const buildCharacterSpec = (c) => {
+                const p = c.physical || {}, cl = c.clothing || {};
+                return `Character: ${c.name}.
+Physical: AGE ${p.age||'N/A'}; SEX ${p.sex||'N/A'}; HAIR ${p.hair||'N/A'}; EYES ${p.eyes||'N/A'}; NOSE ${p.nose||'N/A'}; MOUTH ${p.mouth||'N/A'}; BODY ${p.body||'N/A'}; TYPE ${p.bodyType||'N/A'}.
+Clothing (WARDROBE LOCK – IMMUTABLE): SHIRT ${cl.shirtColor||'N/A'} ${cl.shirtType||''}; PANTS ${cl.pants||'N/A'} ${cl.pantsColorTypeLength||''}; SKIRT ${cl.skirt||'N/A'} ${cl.skirtColor||''} ${cl.skirtTypeLength||''}; SHORTS ${cl.shorts||'N/A'} ${cl.shortsType||''} ${cl.shortsLength||''}.`;
+            };
+
+            const saveProjectState = useCallback(async (currentState) => {
+                const id = currentState.movieTitle.replace(/\s+/g, '_').toLowerCase();
+                if (!id) return;
+
+                await room.collection('project').upsert({
+                    id: id,
+                    ...currentState
+                });
+            }, []);
+
+            useEffect(() => {
+                // This effect will run whenever characterProfiles changes, and it will save the state.
+                const currentState = { movieTitle, plot, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, extrasProfiles, finalScript };
+                if (currentState.movieTitle) {
+                    saveProjectState(currentState);
+                }
+            }, [characterProfiles, extrasProfiles, finalScript, movieTitle, plot, genreIdea, eraSetting, photoStyle, minutesToExtract, saveProjectState]);
+
+            useEffect(() => {
+                const timer = setTimeout(async () => {
+                    if (!movieTitle) {
+                        setPlot(''); setGenreIdea(''); setEraSetting(''); setPhotoStyle('cinematic');
+                        setMinutesToExtract(5); setCharacterProfiles([]); setFinalScript(''); setMinutes([]); setStep(1);
+                        return;
+                    }
+                    const id = movieTitle.replace(/\s+/g, '_').toLowerCase();
+                    const projects = await room.collection('project').filter({ id }).getList();
+                    if (projects.length > 0) {
+                        const p = projects[0];
+                        setPlot(p.plot || '');
+                        setGenreIdea(p.genreIdea || '');
+                        setEraSetting(p.eraSetting || '');
+                        setPhotoStyle(p.photoStyle || 'cinematic');
+                        setMinutesToExtract(p.minutesToExtract || 5);
+                        const loadedProfiles = p.characterProfiles || [];
+                        setCharacterProfiles(loadedProfiles);
+                        setExtrasProfiles(p.extrasProfiles || []);
+                        setFinalScript(p.finalScript || '');
+                        if (p.finalScript) setStep(4);
+                        else if (loadedProfiles.length > 0) setStep(3);
+                        else if (p.plot) setStep(2);
+                        else setStep(1);
+                        showProgress(`Project "${p.movieTitle}" loaded.`, 100); hideProgress();
+                    }
+                }, 500);
+                return () => clearTimeout(timer);
+            }, [movieTitle]);
+            
+            useEffect(() => {
+                if (avatarQueue.length > 0) {
+                    const { index, profiles } = avatarQueue[0];
+                    generateCharacterAvatar(index, profiles).finally(() => {
+                        setAvatarQueue(q => q.slice(1));
+                    });
+                }
+            }, [avatarQueue]);
+
+            // generate 1:1 portrait avatar for a character
+            const generateCharacterAvatar = async (index, profiles) => {
+                const currentProfiles = profiles || characterProfiles;
+                const char = currentProfiles[index];
+                if (!char) return;
+
+                setGeneratingAvatar(index);
+
+                const promptPayload = {
+                    movieTitle, genreIdea, eraSetting, photoStyle,
+                    shot: { camera: "CLOSE-UP portrait", environment: "neutral gray studio backdrop", action: "head-and-shoulders, neutral expression, facing camera, high-detail, photorealistic" },
+                    characterSheet: [buildCharacterSpec(char)]
+                };
+
+                if (char.faceRefUrl) {
+                    promptPayload.shot.action += ` Must perfectly match the provided reference image for face, hair, and build.`;
+                }
+
+                const prompt = await nanoBananaVisualPrompt(promptPayload);
+                
+                const imageGenPayload = { prompt, aspect_ratio: "1:1" };
+                if (char.faceRefUrl) {
+                    try {
+                        const dataUrl = await urlToDataUrl(char.faceRefUrl);
+                        imageGenPayload.image_inputs = [{ url: dataUrl }];
+                    } catch (e) {
+                        console.error("Failed to convert reference image to data URL for avatar generation:", e);
+                    }
+                }
+
+                try {
+                    const res = await wsImageGen(imageGenPayload);
+                    setCharacterProfiles(prevProfiles => {
+                        const newProfiles = JSON.parse(JSON.stringify(prevProfiles));
+                        if (newProfiles[index]) {
+                            newProfiles[index].avatarUrl = res.url;
+                        }
+                        return newProfiles;
+                    });
+                } catch(e) {
+                    console.error("Error generating character avatar:", e);
+                    showProgress(`Failed to generate avatar for ${char?.name||'character'}`, 100); hideProgress();
+                } finally {
+                    setGeneratingAvatar(null);
+                }
+            };
+
+            const urlToDataUrl = async (url) => {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            };
+
+            const generateAvatarsForAll = async (profiles) => {
+                const updatedProfilesWithPlaceholders = profiles.map(p => ({...p, avatarUrl: null}));
+                setCharacterProfiles(updatedProfilesWithPlaceholders);
+                for (let i = 0; i < profiles.length; i++) {
+                    await generateCharacterAvatar(i, profiles);
+                }
+            };
+
+            const generateExtrasAvatarsForAll = async (profiles) => {
+                const extrasWithPlaceholders = profiles.map(p => ({...p, avatarUrl: p.avatarUrl || null, isExtra: true}));
+                setExtrasProfiles(extrasWithPlaceholders);
+                for (let i = 0; i < extrasWithPlaceholders.length; i++) {
+                    const idx = i; // separate queue: generate avatars without faceRef
+                    setAvatarQueue(q => [...q, { index: -1, profiles: [] }]); // placeholder to trigger queue
+                    const prompt = await nanoBananaVisualPrompt({ movieTitle, genreIdea, eraSetting, photoStyle, shot:{camera:"CLOSE-UP",environment:"neutral gray studio",action:"head-and-shoulders portrait"}, characterSheet:[buildCharacterSpec(extrasWithPlaceholders[i])] });
+                    const res = await wsImageGen({ prompt, aspect_ratio: "1:1" });
+                    setExtrasProfiles(prev => { const np=[...prev]; np[idx]={...np[idx], avatarUrl: res.url}; return np; });
+                }
+            };
+
+            const extractCharactersFromScript = () => {
+                if (!finalScript) return [];
+                const characterPattern = /^([A-Z][A-Z\s.-]+)(?=\s*$|\s*\(.*\)\s*$)/gm;
+                const matches = finalScript.match(characterPattern);
+                if (!matches) return [];
+                
+                const uniqueCharacters = [...new Set(matches.map(name => name.trim()))];
+                
+                return uniqueCharacters.filter(char => 
+                    char.length > 1 && 
+                    !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.'].some(keyword => char.startsWith(keyword)) &&
+                    !/^\s*$/.test(char)
+                );
+            };
+
+            const generateCharacterProfiles = async (characterIndexToRegenerate = null) => {
+                if (!movieTitle || !plot || !genreIdea || !eraSetting || !photoStyle) {
+                    showProgress('Please complete the movie idea first', 100); hideProgress();
+                    return;
+                }
+
+                let systemPromptContent, userPromptContent;
+
+                if (characterIndexToRegenerate !== null) {
+                    setRegeneratingCharacter(characterIndexToRegenerate);
+                    const characterToRegenerate = characterProfiles[characterIndexToRegenerate];
+                    if (!characterToRegenerate) {
+                        alert("Character not found for regeneration.");
+                        setRegeneratingCharacter(null);
+                        return;
+                    }
+
+                    showProgress(characterIndexToRegenerate!==null?'Refining character...':'Generating character profiles...', 10);
+                    systemPromptContent = `You are a world-class casting director and character designer. Your task is to **refine and enhance the profile for a specific character**, keeping their core identity intact.
+The output MUST be a JSON object with a "characters" array containing only this single character.
+CRITICAL: Do NOT change the character's name.
+For the character, provide:
+- name
+- physical: { age, sex, hair, eyes, nose, mouth, body, bodyType }
+- clothing: { shirtColor, shirtType, pants, pantsColorTypeLength, skirt, skirtColor, skirtTypeLength, shorts, shortsType, shortsLength } (use "N/A" when not worn)
+- personality
+- role
+Return ONLY the JSON.`;
+
+                    userPromptContent = `Movie: ${movieTitle}
+Plot: ${plot}
+Genre: ${genreIdea}
+Era: ${eraSetting}
+
+Refine the character profile for **${characterToRegenerate.name}**. Maintain their name and core role, but enhance the physical and clothing descriptions to be even more specific and detailed for the AI image generator.
+The current profile is:
+${JSON.stringify(characterToRegenerate, null, 2)}
+
+Make the new profile more detailed and visually descriptive. Do not change the name.`;
+
+                } else {
+                    setCharacterLoading(true);
+                    const characterNamesFromScript = extractCharactersFromScript();
+                    const characterPromptInfo = characterNamesFromScript.length > 0
+                        ? `The screenplay has been written. The primary characters detected are: ${characterNamesFromScript.join(', ')}. Base your profiles on these characters.`
+                        : `Create 3-5 main characters for the movie concept.`;
+                    
+                    const existingCharactersPrompt = characterProfiles.length > 0
+                        ? `Current characters are already defined: ${JSON.stringify(characterProfiles.map(p => p.name))}. If the script introduces new characters, create profiles for them. If the script contains characters from the existing list, you can either ignore them or refine their profiles based on the script's context. The script is the source of truth for characters.`
+                        : ``;
+
+                    systemPromptContent = `You are a world-class casting director and character designer. Create hyper-detailed character profiles for a ${genreIdea} movie set in ${eraSetting}.
+Output MUST be {"characters":[...], "extras":[...]}.
+For "characters": primary cast with:
+ - name
+ - physical: { age, sex, hair, eyes, nose, mouth, body, bodyType } with precise, immutable values
+ - clothing: { shirtColor, shirtType, pants, pantsColorTypeLength, skirt, skirtColor, skirtTypeLength, shorts, shortsType, shortsLength } (use "N/A" when not worn)
+ - personality
+ - role
+For "extras": create 4-8 consistent, reusable extras labeled with unique names (e.g., "Bar Patron 1", "City Commuter 2") with the same physical/clothing schema; add field isExtra: true. Make them generic to the setting and lock wardrobe for continuity.
+CRITICAL: Use concrete specifics to ensure visual consistency. Return ONLY JSON.`;
+
+                    userPromptContent = `Movie: ${movieTitle}
+Plot: ${plot}
+Genre: ${genreIdea}
+Era: ${eraSetting}
+Photo Style: ${photoStyle}
+${existingCharactersPrompt}
+
+Create character profiles for this movie concept with hyper-detailed, consistent physical descriptions.`;
+                }
+                
+                try {
+                    const completion = await wsChat({
+                        messages: [
+                            { role: "system", content: systemPromptContent },
+                            { role: "user", content: userPromptContent }
+                        ],
+                        json: true
+                    });
+
+                    const characterData = JSON.parse(completion.content);
+                    
+                    if (!characterData.characters || !Array.isArray(characterData.characters) || characterData.characters.length === 0) {
+                        throw new Error('No characters array generated or it is empty');
+                    }
+
+                    if (characterIndexToRegenerate !== null) {
+                        // When regenerating, create a new profile but preserve the existing avatar and face ref
+                        const newProfileData = characterData.characters[0];
+                        const oldProfile = characterProfiles[characterIndexToRegenerate] || {};
+
+                        // CRITICAL: Verify the name has not changed.
+                        if (newProfileData.name && oldProfile.name && newProfileData.name.toLowerCase() !== oldProfile.name.toLowerCase()) {
+                            console.warn("AI changed character name during regeneration. Forcing original name.");
+                            newProfileData.name = oldProfile.name;
+                        }
+
+                        const newProfiles = [...characterProfiles];
+                        newProfiles[characterIndexToRegenerate] = {
+                            ...newProfileData, // new data from LLM
+                            avatarUrl: oldProfile.avatarUrl, // keep old avatar for now
+                            faceRefUrl: oldProfile.faceRefUrl, // keep old face ref
+                        };
+                        
+                        setCharacterProfiles(newProfiles);
+                        // Now regenerate the avatar based on the *new* profile data
+                        setAvatarQueue(q => [...q, { index: characterIndexToRegenerate, profiles: newProfiles }]);
+                    } else {
+                        // MERGE LOGIC: Instead of replacing, merge new profiles with existing ones.
+                        const newProfilesFromAI = characterData.characters;
+                        let updatedProfiles = [...characterProfiles]; // Start with a copy of existing profiles
+                        let profilesWereAdded = false;
+
+                        newProfilesFromAI.forEach(newChar => {
+                            const existingIndex = updatedProfiles.findIndex(p => p.name.toLowerCase() === newChar.name.toLowerCase());
+                            if (existingIndex > -1) {
+                                // Character exists, update it but keep avatar/ref and id
+                                const oldProfile = updatedProfiles[existingIndex];
+                                updatedProfiles[existingIndex] = {
+                                    ...newChar,
+                                    characterId: oldProfile.characterId,
+                                    avatarUrl: oldProfile.avatarUrl,
+                                    faceRefUrl: oldProfile.faceRefUrl
+                                };
+                            } else {
+                                // New character, add it with a new ID
+                                updatedProfiles.push({ ...newChar, characterId: uuidv4(), avatarUrl: null, faceRefUrl: null });
+                                profilesWereAdded = true;
+                            }
+                        });
+
+                        setCharacterProfiles(updatedProfiles);
+                        
+                        // If we added new characters, generate avatars for them all.
+                        // This avoids re-generating for existing characters unnecessarily.
+                        if (profilesWereAdded || characterProfiles.length === 0) {
+                             await generateAvatarsForAll(updatedProfiles);
+                        }
+
+                        // Handle extras
+                        if (characterData.extras && Array.isArray(characterData.extras)) {
+                            const newExtrasFromAI = characterData.extras.map(e=>({ ...e, isExtra: true }));
+                            const mergedExtras = [...extrasProfiles];
+                            newExtrasFromAI.forEach(ne => {
+                                const idx = mergedExtras.findIndex(e => e.name?.toLowerCase() === ne.name?.toLowerCase());
+                                if (idx > -1) mergedExtras[idx] = { ...ne, avatarUrl: mergedExtras[idx].avatarUrl || null, characterId: mergedExtras[idx].characterId || uuidv4() };
+                                else mergedExtras.push({ ...ne, avatarUrl: null, characterId: uuidv4(), isExtra: true });
+                            });
+                            setExtrasProfiles(mergedExtras);
+                            await generateExtrasAvatarsForAll(mergedExtras);
+                        }
+                    }
+                    
+                    if (characterIndexToRegenerate === null) {
+                        setStep(2);
+                        showProgress('Character profiles ready', 100); hideProgress();
+                    } else {
+                        showProgress(`Character updated: ${characterData.characters[0].name}`, 100); hideProgress();
+                    }
+
+                } catch (error) {
+                    console.error('Error generating character profiles:', error);
+                    showProgress('Failed to generate character profiles', 100); hideProgress();
+                } finally {
+                    if (characterIndexToRegenerate !== null) {
+                        setRegeneratingCharacter(null);
+                    } else {
+                        setCharacterLoading(false);
+                    }
+                }
+            };
+
+            const generateScript = async () => {
+                if (characterProfiles.length === 0) { showProgress('Add characters before writing the script', 100); hideProgress(); return; }
+                setScriptLoading(true); showProgress('Writing screenplay...', 15);
+                try {
+                    const characterList = characterProfiles.map(char => 
+                        `${char.name} - ${char.role}`
+                    ).join(', ');
+
+                    const completion = await wsChat({
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are a professional screenplay writer. Create a ${minutesToExtract}-minute movie script in proper screenplay format.
+Include character names in ALL CAPS when they speak, scene headings, action lines, and dialogue.
+Use these specific characters (schema enforced for consistency): ${JSON.stringify(characterProfiles)}`
+                            },
+                            {
+                                role: "user",
+                                content: `Write a ${minutesToExtract}-minute ${genreIdea} movie script titled "${movieTitle}" set in ${eraSetting}. 
+                                Plot: ${plot}
+                                Use these characters: ${characterList}`
+                            }
+                        ]
+                    });
+
+                    setFinalScript(completion.content);
+                    setStep(3);
+                    showProgress('Screenplay generated', 100); hideProgress();
+                } catch (error) {
+                    console.error('Error generating script:', error);
+                    showProgress('Failed to generate script', 100); hideProgress();
+                } finally { setScriptLoading(false); }
+            };
+
+            // Store image locally when generated
+            const storeImageLocally = async (imageUrl, imageKey) => {
+                try {
+                    const response = await fetch(imageUrl);
+                    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+                    const blob = await response.blob();
+                    setImageBlobs(prev => new Map(prev.set(imageKey, blob)));
+                    return true;
+                } catch (error) {
+                    console.error(`Error storing image ${imageKey}:`, error);
+                    return false;
+                }
+            };
+
+            const generateImageForShot = async (shot, minute, shotNumber, isRegenerate = false, previousShotImageUrl = null) => {
+                try {
+                    // Create a detailed character sheet for the prompt
+                    const characterSheet = [];
+                    const character_ref_urls = [];
+                    const allPeople = [...characterProfiles, ...extrasProfiles];
+
+                    if (shot.cast?.characters && allPeople.length > 0) {
+                         for (const charName of shot.cast?.characters || []) {
+                            const charDetail = allPeople.find(c => {
+                                const cNameLower = c.name.toLowerCase();
+                                const charNameLower = charName.toLowerCase().trim();
+                                return cNameLower === charNameLower || cNameLower.split(' ')[0] === charNameLower;
+                            });
+
+                            if (charDetail) {
+                                characterSheet.push(buildCharacterSpec(charDetail));
+                                const refUrl = (!charDetail.isExtra && (charDetail.faceRefUrl || charDetail.avatarUrl)) ? (charDetail.faceRefUrl || charDetail.avatarUrl) : null;
+                                if(refUrl) {
+                                    character_ref_urls.push(refUrl);
+                                }
+                            }
+                        }
+                    }
+
+                    // REQUIRE face reference for every character in this shot
+                    const genericCrowdTerms = /(extra|extras|crowd|bystander|patron|commuter|passer|students|audience|spectator)/i;
+                    const missingRefs = (shot.cast?.characters||[]).filter(n=>{
+                        if (genericCrowdTerms.test(n)) return false;
+                        const c = allPeople.find(x=>x.name.toLowerCase()===n.toLowerCase().trim()||x.name.split(' ')[0].toLowerCase()===n.toLowerCase().trim());
+                        if (!c) return false; // unrecognized names won't block generation
+                        return !c.isExtra && !(c.faceRefUrl || c.avatarUrl);
+                    });
+                    if (missingRefs.length) {
+                        showProgress(`Shot ${shotNumber}: missing face refs: ${missingRefs.join(', ')}`, 100); 
+                        shot.imageUrl = null; return false;
+                    }
+
+                    // If scene implies background people or listed "extras", pad the sheet with consistent extras
+                    if ((shot.cast?.characters?.some(n=>genericCrowdTerms.test(n)) || /crowd|busy|market|bar|street|audience|school|station/i.test(shot.environment+ ' ' + shot.action)) && extrasProfiles.length) {
+                        const toAdd = Math.min(4, extrasProfiles.length);
+                        for (let i=0;i<toAdd;i++) {
+                            characterSheet.push(buildCharacterSpec(extrasProfiles[i]));
+                            if (extrasProfiles[i].avatarUrl) character_ref_urls.push(extrasProfiles[i].avatarUrl);
+                        }
+                    }
+
+                    const sKey = getSceneKey(shot.environment);
+                    const continuityImageUrl = sceneRefs[sKey] || previousShotImageUrl;
+                    
+                    let image_inputs = [];
+                    if (character_ref_urls.length > 0) {
+                        try {
+                            const dataUrls = await Promise.all(character_ref_urls.map(url => urlToDataUrl(url)));
+                            image_inputs = dataUrls.map(dataUrl => ({ url: dataUrl }));
+                        } catch (e) {
+                            console.error(`Error converting reference images for shot ${shotNumber}:`, e);
+                            // Proceed without image inputs if conversion fails
+                        }
+                    }
+
+                    // Create enhanced director-style visual prompt with clear sections
+                    const visualPrompt = await nanoBananaVisualPrompt({
+                        movieTitle, genreIdea, eraSetting, photoStyle,
+                        shot: {
+                          camera: shot.camera, environment: shot.environment,
+                          action: shot.action.replace(/['"“”‘’].*?['"“”‘’]|says|tells|speaks|shouts|whispers|dialogue/gi, '')
+                        },
+                        characterSheet,
+                        continuityImageUrl // Pass the continuity URL to the prompter
+                    });
+
+                    const imageGenPayload = { prompt: visualPrompt, aspect_ratio: "16:9" };
+                    if (image_inputs.length > 0) {
+                        imageGenPayload.image_inputs = image_inputs;
+                    }
+                    const imageResult = await wsImageGen(imageGenPayload);
+
+                    shot.imageUrl = imageResult.url;
+                    
+                    // Store image locally
+                    const imageKey = `${movieTitle}_${minute}_${shotNumber}`;
+                    await storeImageLocally(imageResult.url, imageKey);
+
+                    if (sKey && !sceneRefs[sKey]) setSceneRefs(prev => ({ ...prev, [sKey]: imageResult.url }));
+                    
+                    return true;
+                } catch (error) {
+                    console.error(`Error generating image for shot ${shotNumber}:`, error);
+                    showProgress(`Shot ${shotNumber} failed`, 100); 
+                    shot.imageUrl = null; return false;
+                }
+            };
+
+            const getSceneKey = (env) => (env || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+            const regenerateShot = async (minuteIndex, shotIndex) => {
+                const shotKey = `${minuteIndex}_${shotIndex}`;
+                setRegeneratingShot(shotKey); showProgress(`Regenerating shot ${shotIndex+1}...`, 10);
+                
+                try {
+                    const shot = minutes[minuteIndex].shots[shotIndex];
+                    
+                    let previousShotImageUrl = null;
+                    if (shotIndex > 0) {
+                        previousShotImageUrl = minutes[minuteIndex].shots[shotIndex - 1].imageUrl;
+                    } else if (minuteIndex > 0) {
+                        const prevMinute = minutes[minuteIndex - 1];
+                        if (prevMinute && prevMinute.shots.length > 0) {
+                            previousShotImageUrl = prevMinute.shots[prevMinute.shots.length - 1].imageUrl;
+                        }
+                    }
+
+                    const success = await generateImageForShot(shot, minuteIndex + 1, shotIndex + 1, true, previousShotImageUrl);
+                    
+                    if (success) {
+                        // Force re-render by updating the minutes array
+                        const newMinutes = [...minutes];
+                        setMinutes(newMinutes);
+                        showProgress(`Shot ${shotIndex+1} updated`, 100); hideProgress();
+                    }
+                } catch (error) {
+                    console.error('Error regenerating shot:', error);
+                    showProgress('Failed to regenerate shot', 100); hideProgress();
+                } finally {
+                    setRegeneratingShot(null);
+                }
+            };
+
+            const generateMinute = async (minuteNumber) => {
+                if (!finalScript) { showProgress('Generate the screenplay first', 100); hideProgress(); return; }
+                setMinuteLoading(true); setCurrentMinute(minuteNumber);
+                try {
+                    showProgress(`Breaking down minute ${minuteNumber}...`, 10);
+                    // Generate minute breakdown with exactly 12 shots
+                    const completion = await wsChat({
+                        messages: [
+                            {
+                                role: "system",
+                                content: `Analyze minute ${minuteNumber} of this ${minutesToExtract}-minute script and create exactly 12 shots. Return JSON with this structure:
+                                {
+                                    "script": "The script content for this minute",
+                                    "shots": [
+                                        {
+                                            "shotNumber": 1,
+                                            "camera": "camera angle/movement (e.g., CLOSE-UP, MEDIUM SHOT, WIDE SHOT, etc.)",
+                                            "environment": "detailed location description",
+                                            "action": "what happens in this shot",
+                                            "cast": {
+                                                "characters": ["character names in this shot"]
+                                            }
+                                        }
+                                    ]
+                                }
+                                Make sure to return exactly 12 shots numbered 1-12.`
+                            },
+                            {
+                                role: "user",
+                                content: `Script: ${finalScript}\n\nBreak down minute ${minuteNumber} of ${minutesToExtract} total minutes into exactly 12 shots.`
+                            }
+                        ],
+                        json: true
+                    });
+
+                    const minuteBreakdown = JSON.parse(completion.content);
+                    
+                    // Ensure exactly 12 shots
+                    if (minuteBreakdown.shots.length !== 12) {
+                        // Pad or trim to exactly 12 shots
+                        while (minuteBreakdown.shots.length < 12) {
+                            const lastShot = minuteBreakdown.shots[minuteBreakdown.shots.length - 1];
+                            minuteBreakdown.shots.push({
+                                shotNumber: minuteBreakdown.shots.length + 1,
+                                camera: lastShot?.camera || "MEDIUM SHOT",
+                                environment: lastShot?.environment || "Same location",
+                                action: "Continue scene",
+                                cast: lastShot?.cast || { characters: [] }
+                            });
+                        }
+                        minuteBreakdown.shots = minuteBreakdown.shots.slice(0, 12);
+                        minuteBreakdown.shots.forEach((shot, index) => {
+                            shot.shotNumber = index + 1;
+                        });
+                    }
+                    
+                    // Find the URL of the last shot of the previous minute for continuity
+                    let previousShotImageUrl = null;
+                    if (minuteNumber > 1) {
+                        const prevMinute = minutes[minuteNumber - 2];
+                        if (prevMinute && prevMinute.shots && prevMinute.shots.length > 0) {
+                            previousShotImageUrl = prevMinute.shots[prevMinute.shots.length - 1].imageUrl;
+                        }
+                    }
+                    
+                    // Generate images for each shot, passing the previous shot's URL
+                    let completed = 0;
+                    for (const shot of minuteBreakdown.shots) {
+                        await generateImageForShot(shot, minuteNumber, shot.shotNumber, false, previousShotImageUrl);
+                        previousShotImageUrl = shot.imageUrl;
+                        completed++; showProgress(`Minute ${minuteNumber}: rendering shot ${completed}/12`, Math.round((completed/12)*100));
+                    }
+
+                    // Update minutes array
+                    const newMinutes = [...minutes];
+                    newMinutes[minuteNumber - 1] = minuteBreakdown;
+                    setMinutes(newMinutes);
+                    
+                    showProgress(`Minute ${minuteNumber} complete`, 100); hideProgress();
+                    
+                    if (minuteNumber === minutesToExtract) {
+                        setStep(4);
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error processing minute ${minuteNumber}:`, error);
+                    showProgress(`Failed to generate minute ${minuteNumber}`, 100); hideProgress();
+                } finally {
+                    setMinuteLoading(false);
+                    setCurrentMinute(0);
+                }
+            };
+
+            const exportPitchDeck = async () => {
+                setLoading(true); showProgress('Packaging pitch deck...', 10);
+                try {
+                    // Create JSZip instance
+                    const JSZip = window.JSZip;
+                    const zip = new JSZip();
+                    const imgFolder = zip.folder("images");
+                    
+                    let imageCounter = 1;
+
+                    // Add character profiles to HTML with enhanced styling
+                    let deckHTML = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>${movieTitle} - Pitch Deck</title>
+                        <style>
+                            :root {
+                                --primary-color: #ff006e;
+                                --secondary-color: #00f5ff;
+                                --background-color: #0a0a0a;
+                                --text-color: #e0e0e0;
+                                --panel-color: #1a0033;
+                                --accent-color: #8338ec;
+                                --success-color: #39ff14;
+                                --highlight-color: #ffffff;
+                                --neon-pink: #ff10f0;
+                                --neon-cyan: #00ffff;
+                            }
+
+                            * {
+                                box-sizing: border-box;
+                                margin: 0;
+                                padding: 0;
+                            }
+
+                            body { 
+                                font-family: 'Courier New', monospace; 
+                                background: 
+                                    linear-gradient(rgba(0, 255, 255, 0.03) 50%, transparent 50%),
+                                    linear-gradient(90deg, rgba(255, 0, 110, 0.03) 50%, transparent 50%),
+                                    radial-gradient(circle, rgba(26, 0, 51, 0.8) 0%, #0a0a0a 100%);
+                                background-size: 4px 4px, 4px 4px, 100% 100%;
+                                color: var(--text-color);
+                                max-width: 1200px; 
+                                margin: 0 auto; 
+                                padding: 20px;
+                                animation: flicker 0.15s infinite linear alternate;
+                            }
+
+                            @keyframes flicker {
+                                0% { opacity: 1; }
+                                100% { opacity: 0.98; }
+                            }
+
+                            body::before {
+                                content: '';
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                width: 100%;
+                                height: 100%;
+                                background: 
+                                    repeating-linear-gradient(
+                                        0deg,
+                                        transparent,
+                                        transparent 2px,
+                                        rgba(0, 255, 255, 0.1) 2px,
+                                        rgba(0, 255, 255, 0.1) 4px
+                                    );
+                                pointer-events: none;
+                                z-index: 1000;
+                            }
+
+                            .title-page { 
+                                text-align: center; 
+                                margin-bottom: 50px; 
+                                background: linear-gradient(135deg, rgba(26, 0, 51, 0.9) 0%, rgba(10, 10, 10, 0.9) 100%);
+                                padding: 40px; 
+                                border: 2px solid var(--accent-color);
+                                box-shadow: 0 0 20px rgba(131, 56, 236, 0.3);
+                                position: relative;
+                            }
+
+                            .title-page::before {
+                                content: '';
+                                position: absolute;
+                                top: -2px;
+                                left: -2px;
+                                right: -2px;
+                                bottom: -2px;
+                                background: linear-gradient(45deg, var(--neon-pink), var(--neon-cyan), var(--accent-color));
+                                z-index: -1;
+                            }
+
+                            h1 { 
+                                font-size: 3rem;
+                                background: linear-gradient(45deg, var(--neon-pink), var(--neon-cyan));
+                                -webkit-background-clip: text;
+                                -webkit-text-fill-color: transparent;
+                                background-clip: text;
+                                margin-bottom: 10px;
+                                text-shadow: 0 0 20px rgba(255, 16, 240, 0.5);
+                            }
+
+                            h2 { 
+                                color: var(--neon-cyan); 
+                                border-bottom: 3px solid var(--primary-color); 
+                                padding-bottom: 15px;
+                                text-transform: uppercase;
+                                letter-spacing: 3px;
+                                text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+                                margin-bottom: 20px;
+                            }
+
+                            .minute { 
+                                margin-bottom: 40px; 
+                                background: linear-gradient(135deg, rgba(26, 0, 51, 0.9) 0%, rgba(10, 10, 10, 0.9) 100%);
+                                padding: 25px; 
+                                border: 2px solid var(--accent-color);
+                                box-shadow: 0 0 20px rgba(131, 56, 236, 0.3);
+                                position: relative;
+                            }
+
+                            .minute::before {
+                                content: '';
+                                position: absolute;
+                                top: -2px;
+                                left: -2px;
+                                right: -2px;
+                                bottom: -2px;
+                                background: linear-gradient(45deg, var(--neon-pink), var(--neon-cyan), var(--accent-color));
+                                z-index: -1;
+                            }
+
+                            .shots-grid { 
+                                display: grid; 
+                                grid-template-columns: repeat(3, 1fr); 
+                                gap: 20px; 
+                                margin-top: 20px; 
+                            }
+
+                            .shot { 
+                                background: rgba(26, 0, 51, 0.95);
+                                border: 2px solid var(--primary-color);
+                                padding: 15px; 
+                                border-radius: 0;
+                                box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
+                            }
+
+                            .shot img { 
+                                width: 100%; 
+                                height: auto; 
+                                border: 1px solid var(--accent-color);
+                                margin-bottom: 10px;
+                            }
+
+                            .shot-details { 
+                                margin-top: 10px; 
+                                font-size: 14px; 
+                            }
+
+                            .shot-details p {
+                                margin-bottom: 5px;
+                            }
+
+                            .shot-details strong {
+                                color: var(--neon-cyan);
+                            }
+
+                            .script { 
+                                background: rgba(0, 0, 0, 0.9);
+                                padding: 20px; 
+                                font-family: 'Courier New', monospace; 
+                                white-space: pre-wrap; 
+                                border: 2px solid var(--neon-cyan);
+                                box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2);
+                                margin-bottom: 20px;
+                            }
+
+                            .character-card { 
+                                background: rgba(26, 0, 51, 0.9);
+                                border: 2px solid var(--neon-pink);
+                                padding: 15px; 
+                                margin-bottom: 20px; 
+                                box-shadow: 0 0 15px rgba(255, 16, 240, 0.3);
+                            }
+
+                            .character-card h3 {
+                                color: var(--neon-pink);
+                                text-transform: uppercase;
+                                letter-spacing: 1px;
+                                text-shadow: 0 0 10px rgba(255, 16, 240, 0.5);
+                                margin-bottom: 10px;
+                            }
+
+                            .character-profiles { 
+                                display: grid; 
+                                grid-template-columns: repeat(2, 1fr); 
+                                gap: 20px; 
+                                margin-bottom: 40px; 
+                            }
+
+                            h3 {
+                                color: var(--success-color);
+                                margin-bottom: 10px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="title-page">
+                            <h1>${movieTitle}</h1>
+                            <h2>A ${genreIdea} film set in ${eraSetting}</h2>
+                            <p><strong>Plot:</strong> ${plot}</p>
+                            <p><strong>Duration:</strong> ${minutesToExtract} minutes</p>
+                            <p><strong>Photo Style:</strong> ${photoStyle}</p>
+                        </div>
+                    `;
+                    
+                    // Add character profiles
+                    if (characterProfiles.length > 0) {
+                        deckHTML += `<h2>Character Profiles</h2>
+                        <div class="character-profiles">`;
+                        
+                        characterProfiles.forEach(char => {
+                            deckHTML += `
+                            <div class="character-card">
+                                <h3>${char.name}</h3>
+                                <p><strong>Physical:</strong> ${char.physical?.age||'N/A'} yrs, SEX ${char.physical?.sex||'N/A'}, HAIR ${char.physical?.hair||'N/A'}, EYES ${char.physical?.eyes||'N/A'}, NOSE ${char.physical?.nose||'N/A'}, MOUTH ${char.physical?.mouth||'N/A'}, BODY ${char.physical?.body||'N/A'}, TYPE ${char.physical?.bodyType||'N/A'}</p>
+                                <p><strong>Clothing:</strong> ${char.clothing?.shirtColor||'N/A'} ${char.clothing?.shirtType||''}; PANTS ${char.clothing?.pants||'N/A'} ${char.clothing?.pantsColorTypeLength||''}; SKIRT ${char.clothing?.skirt||'N/A'} ${char.clothing?.skirtColor||''} ${char.clothing?.skirtTypeLength||''}; SHORTS ${char.clothing?.shorts||'N/A'} ${char.clothing?.shortsType||''} ${char.clothing?.shortsLength||''}</p>
+                                <p><strong>Personality:</strong> ${char.personality}</p>
+                                <p><strong>Role:</strong> ${char.role}</p>
+                            </div>`;
+                        });
+                        
+                        deckHTML += `</div>`;
+                    }
+
+                    // Add shot details organized by minute
+                    for (let minute = 1; minute <= minutesToExtract; minute++) {
+                        const minuteData = minutes.find((m, index) => index + 1 === minute);
+                        
+                        if (minuteData) {
+                            deckHTML += `
+                            <div class="minute">
+                                <h2>Minute ${minute}</h2>`;
+                            
+                            if (minuteData.script) {
+                                deckHTML += `<h3>Scene Overview</h3>
+                                <div class="script">${minuteData.script.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+                            }
+                            
+                            if (minuteData.shots && minuteData.shots.length > 0) {
+                                deckHTML += `
+                                <h3>Storyboard (12 Shots)</h3>
+                                <div class="shots-grid">`;
+                                
+                                minuteData.shots.forEach((shot) => {
+                                    if (shot.imageUrl) {
+                                        const imageName = `image_${imageCounter++}.jpg`;
+                                        const imageKey = `${movieTitle}_${minute}_${shot.shotNumber}`;
+                                        
+                                        // Add image blob to zip if we have it stored locally
+                                        const imageBlob = imageBlobs.get(imageKey);
+                                        if (imageBlob) {
+                                            imgFolder.file(imageName, imageBlob);
+                                        }
+                                        
+                                        deckHTML += `
+                                        <div class="shot">
+                                            <img src="images/${imageName}" alt="Shot ${shot.shotNumber}">
+                                            <div class="shot-details">
+                                                <p><strong>Shot ${shot.shotNumber}/12</strong></p>
+                                                <p><strong>Camera:</strong> ${shot.camera}</p>
+                                                <p><strong>Environment:</strong> ${shot.environment}</p>
+                                                <p><strong>Action:</strong> ${shot.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+                                                <p><strong>Characters:</strong> ${shot.cast?.characters?.join(', ') || 'None'}</p>
+                                            </div>
+                                        </div>`;
+                                    }
+                                });
+                                
+                                deckHTML += `</div>`;
+                            }
+                            
+                            deckHTML += `</div>`;
+                        }
+                    }
+                    
+                    deckHTML += `
+                    </body>
+                    </html>`;
+
+                    // Add HTML to zip
+                    zip.file("pitch_deck.html", deckHTML);
+                    showProgress('Adding screenplay...', 50);
+                    
+                    // Add screenplay to zip
+                    const scriptContent = `TITLE: ${movieTitle}
+PLOT: ${plot}
+ERA: ${eraSetting}
+GENRE: ${genreIdea}
+DURATION: ${minutesToExtract} minutes
+PHOTO STYLE: ${photoStyle}
+
+CHARACTERS:
+${characterProfiles.map(char => `${char.name} - ${char.role}`).join('\n')}
+
+EXTRAS:
+${extrasProfiles.map(ex => `${ex.name} - ${ex.role}`).join('\n')}
+
+SCREENPLAY:
+${finalScript}`;
+                    
+                    zip.file("screenplay.txt", scriptContent);
+                    
+                    const zipContent = await zip.generateAsync({type: 'blob'});
+                    showProgress('Uploading...', 75);
+                    const zipFileUrl = await websim.upload(zipContent);
+                    
+                    // Store project in database with zip file URL
+                    await saveProjectState({
+                        movieTitle, plot, genreIdea, eraSetting, photoStyle, minutesToExtract,
+                        zipFileUrl: zipFileUrl,
+                        characterProfiles: characterProfiles,
+                        extrasProfiles: extrasProfiles,
+                        finalScript: finalScript
+                    });
+                    
+                    // Also trigger download for user
+                    const element = document.createElement("a");
+                    element.href = URL.createObjectURL(zipContent);
+                    element.download = `${movieTitle.replace(/\s+/g, '_')}_pitch_deck.zip`;
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    
+                    showProgress('Download ready', 100); hideProgress();
+                    
+                } catch (error) {
+                    console.error("Error creating zip file:", error);
+                    showProgress('Error creating zip file', 100); hideProgress();
+                } finally { setLoading(false); }
+            };
+
+            const canProceedToCharacters = movieTitle && plot && genreIdea && eraSetting && photoStyle;
+            const canProceedToScript = characterProfiles.length > 0;
+            const canProceedToMinutes = finalScript && characterProfiles.length > 0;
+
+            // Add this function inside the MainApp component, before the return statement
+            const handleUploadFaceRef = async (index) => {
+                const input = document.createElement('input'); 
+                input.type = 'file'; 
+                input.accept = 'image/*';
+                input.onchange = async (e) => {
+                    const file = e.target.files?.[0]; 
+                    if (!file) return;
+                    
+                    const character = characterProfiles[index];
+                    if (!character) return;
+                    
+                    // Create a new File object with a unique name based on characterId
+                    const uniqueFileName = `character_ref_${character.characterId || uuidv4()}.${file.name.split('.').pop()}`;
+                    const renamedFile = new File([file], uniqueFileName, { type: file.type });
+                    
+                    setGeneratingAvatar(index);
+                    try {
+                        showProgress('Uploading face reference...', 10);
+                        const url = await websim.upload(renamedFile);
+                        
+                        // Use a functional update to ensure we're working with the latest state
+                        setCharacterProfiles(currentProfiles => {
+                            const newProfiles = JSON.parse(JSON.stringify(currentProfiles));
+                            if (newProfiles[index]) {
+                                newProfiles[index].faceRefUrl = url;
+                            }
+                             // Queue the avatar generation to run after state update
+                            setAvatarQueue(q => [...q, { index, profiles: newProfiles }]);
+                            return newProfiles;
+                        });
+
+                        showProgress('Face reference saved. Updating avatar...', 60);
+                    } catch (error) {
+                        console.error("Error uploading file:", error);
+                        showProgress('Failed to upload face reference', 100); hideProgress();
+                    }
+                };
+                input.click();
+            };
+
+            return React.createElement('div', { className: 'container' },
+                React.createElement(ProgressHUD, { progress }),
+                React.createElement('header', null,
+                    React.createElement('h1', { className: 'title' }, 'Movie Script Generator'),
+                    React.createElement('p', { className: 'subtitle' }, 'Generate professional movie scripts with storyboard visuals')
+                ),
+
+                // Step 1: Movie Idea
+                React.createElement('div', { className: `panel ${step >= 1 ? 'active' : ''}` },
+                    React.createElement('h2', { className: 'step-title' }, 'Step 1: Movie Idea'),
+                    React.createElement('div', { className: 'control-panel' },
+                        React.createElement('div', { className: 'input-group grid-col-span-2' },
+                            React.createElement('label', { className: 'label' }, 'Movie Title'),
+                            React.createElement('input', {
+                                type: 'text',
+                                value: movieTitle,
+                                onChange: (e) => setMovieTitle(e.target.value),
+                                placeholder: 'Enter movie title'
+                            })
+                        ),
+
+                        React.createElement('div', { className: 'input-group' },
+                            React.createElement('label', { className: 'label' }, 'Genre'),
+                            React.createElement('select', {
+                                value: genreIdea,
+                                onChange: (e) => setGenreIdea(e.target.value)
+                            },
+                                React.createElement('option', { value: '' }, 'Select Genre'),
+                                React.createElement('option', { value: 'Action' }, 'Action'),
+                                React.createElement('option', { value: 'Comedy' }, 'Comedy'),
+                                React.createElement('option', { value: 'Drama' }, 'Drama'),
+                                React.createElement('option', { value: 'Horror' }, 'Horror'),
+                                React.createElement('option', { value: 'Romance' }, 'Romance'),
+                                React.createElement('option', { value: 'Sci-Fi' }, 'Sci-Fi'),
+                                React.createElement('option', { value: 'Thriller' }, 'Thriller'),
+                                React.createElement('option', { value: 'Fantasy' }, 'Fantasy')
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'input-group grid-col-span-3' },
+                            React.createElement('label', { className: 'label' }, 'Plot/Story'),
+                            React.createElement('textarea', {
+                                value: plot,
+                                onChange: (e) => setPlot(e.target.value),
+                                placeholder: 'Enter the main plot or story concept...',
+                                style: { height: '80px', resize: 'vertical' }
+                            })
+                        ),
+
+                        React.createElement('div', { className: 'input-group' },
+                            React.createElement('label', { className: 'label' }, 'Era/Setting'),
+                            React.createElement('input', {
+                                type: 'text',
+                                value: eraSetting,
+                                onChange: (e) => setEraSetting(e.target.value),
+                                placeholder: 'e.g., Present Day, 1920s, Medieval'
+                            })
+                        ),
+
+                        React.createElement('div', { className: 'input-group' },
+                            React.createElement('label', { className: 'label' }, 'Photo Style'),
+                            React.createElement('select', {
+                                value: photoStyle,
+                                onChange: (e) => setPhotoStyle(e.target.value)
+                            },
+                                React.createElement('option', { value: 'cinematic' }, 'Cinematic'),
+                                React.createElement('option', { value: 'vhs-aesthetic' }, 'VHS Aesthetic'),
+                                React.createElement('option', { value: 'retro' }, 'Retro'),
+                                React.createElement('option', { value: 'animation' }, 'Animation'),
+                                React.createElement('option', { value: 'manga' }, 'Manga/Anime'),
+                                React.createElement('option', { value: 'retro-futuristic' }, 'Retro Futuristic'),
+                                React.createElement('option', { value: 'steampunk' }, 'Steampunk'),
+                                React.createElement('option', { value: 'bioluminescent' }, 'Bioluminescent'),
+                                React.createElement('option', { value: 'noir' }, 'Film Noir'),
+                                React.createElement('option', { value: 'cyberpunk' }, 'Cyberpunk')
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'input-group' },
+                            React.createElement('label', { className: 'label' }, 'Duration (minutes)'),
+                            React.createElement('input', {
+                                type: 'number',
+                                value: minutesToExtract,
+                                onChange: (e) => setMinutesToExtract(parseInt(e.target.value)),
+                                min: '1',
+                                max: '30'
+                            })
+                        )
+                    ),
+                    canProceedToCharacters && step === 1 && React.createElement('button', {
+                        onClick: () => setStep(2),
+                        className: 'step-button'
+                    }, 'Proceed to Characters')
+                ),
+
+                // Step 2: Characters
+                React.createElement('div', { className: `panel ${step >= 2 ? 'active' : 'disabled'}` },
+                    React.createElement('h2', { className: 'step-title' }, 'Step 2: Character Profiles'),
+                    React.createElement('button', {
+                        onClick: () => generateCharacterProfiles(),
+                        disabled: !canProceedToCharacters || characterLoading,
+                        className: 'step-button'
+                    }, characterLoading ? 'Creating Characters...' : 'Generate Character Profiles'),
+                    
+                    characterProfiles.length > 0 && React.createElement('div', { className: 'character-grid' },
+                        characterProfiles.map((char, index) =>
+                            React.createElement('div', { key: index, className: 'character-card' },
+                                (char.avatarUrl
+                                    ? React.createElement('img', { className: 'character-face', src: char.avatarUrl, alt: `${char.name} face` })
+                                    : React.createElement('div', { className: 'character-face-placeholder' },
+                                        generatingAvatar === index ? React.createElement('div', { className: 'spinner' }) : null
+                                    )
+                                ),
+                                React.createElement('div', { className: 'character-name' }, char.name),
+                                React.createElement('div', { className: 'character-detail' },
+                                    React.createElement('strong', null, 'Physical: '),
+                                    `${char.physical?.age||'N/A'} yrs, SEX ${char.physical?.sex||'N/A'}, HAIR ${char.physical?.hair||'N/A'}, EYES ${char.physical?.eyes||'N/A'}, NOSE ${char.physical?.nose||'N/A'}, MOUTH ${char.physical?.mouth||'N/A'}, BODY ${char.physical?.body||'N/A'}, TYPE ${char.physical?.bodyType||'N/A'}`
+                                ),
+                                React.createElement('div', { className: 'character-detail' },
+                                    React.createElement('strong', null, 'Outfit: '),
+                                    `SHIRT ${char.clothing?.shirtColor||'N/A'} ${char.clothing?.shirtType||''}; PANTS ${char.clothing?.pants||'N/A'} ${char.clothing?.pantsColorTypeLength||''}; SKIRT ${char.clothing?.skirt||'N/A'} ${char.clothing?.skirtColor||''} ${char.clothing?.skirtTypeLength||''}; SHORTS ${char.clothing?.shorts||'N/A'} ${char.clothing?.shortsType||''} ${char.clothing?.shortsLength||''}`
+                                ),
+                                React.createElement('div', { className: 'character-actions' },
+                                    React.createElement('button', {
+                                        onClick: () => generateCharacterProfiles(index),
+                                        disabled: regeneratingCharacter === index,
+                                        className: 'small-button'
+                                    }, regeneratingCharacter === index ? '...' : 'Regenerate'),
+                                    React.createElement('button', {
+                                        onClick: () => handleUploadFaceRef(index),
+                                        disabled: generatingAvatar === index,
+                                        className: 'small-button'
+                                    }, generatingAvatar === index ? 'Uploading...' : (char.faceRefUrl ? 'Update Face' : 'Upload Face Ref'))
+                                )
+                            )
+                        ),
+                    ),
+                    extrasProfiles.length > 0 && React.createElement('div', { className: 'character-panel' },
+                        React.createElement('h3', null, 'Main Extras (auto for crowd continuity)'),
+                        React.createElement('div', { className: 'character-grid' },
+                            extrasProfiles.map((ex, i) =>
+                                React.createElement('div', { key: `ex-${i}`, className: 'character-card' },
+                                    ex.avatarUrl
+                                        ? React.createElement('img', { className: 'character-face', src: ex.avatarUrl, alt: `${ex.name} face` })
+                                        : React.createElement('div', { className: 'character-face-placeholder' }),
+                                    React.createElement('div', { className: 'character-name' }, ex.name),
+                                    React.createElement('div', { className: 'character-detail' },
+                                        React.createElement('strong', null, 'Physical: '),
+                                        `${ex.physical?.age||'N/A'} yrs, SEX ${ex.physical?.sex||'N/A'}, HAIR ${ex.physical?.hair||'N/A'}, EYES ${ex.physical?.eyes||'N/A'}`
+                                    ),
+                                    React.createElement('div', { className: 'character-detail' },
+                                        React.createElement('strong', null, 'Outfit: '),
+                                        `SHIRT ${ex.clothing?.shirtColor||'N/A'} ${ex.clothing?.shirtType||''}; PANTS ${ex.clothing?.pants||'N/A'} ${ex.clothing?.pantsColorTypeLength||''}; SKIRT ${ex.clothing?.skirt||'N/A'} ${ex.clothing?.skirtColor||''} ${ex.clothing?.skirtTypeLength||''}; SHORTS ${ex.clothing?.shorts||'N/A'} ${ex.clothing?.shortsType||''} ${ex.clothing?.shortsLength||''}`
+                                    )
+                                )
+                            )
+                        )
+                    ),
+
+                    characterProfiles.length > 0 && React.createElement('button', {
+                        onClick: () => setStep(3),
+                        className: 'step-button',
+                        style: { marginTop: '20px', width: '100%' }
+                    }, 'Proceed to Screenplay')
+                ),
+
+                // Step 3: Screenplay
+                React.createElement('div', { className: `panel ${step >= 3 ? 'active' : 'disabled'}` },
+                    React.createElement('h2', { className: 'step-title' }, 'Step 3: Generate Screenplay'),
+                    React.createElement('button', {
+                        onClick: generateScript,
+                        disabled: !canProceedToScript || scriptLoading,
+                        className: 'step-button'
+                    }, scriptLoading ? 'Writing Script...' : 'Generate Screenplay'),
+                    
+                    finalScript && React.createElement('div', { className: 'script-preview' },
+                        React.createElement('h4', null, 'Screenplay Preview'),
+                        React.createElement('div', { className: 'final-script' }, 
+                            finalScript.substring(0, 500) + (finalScript.length > 500 ? '...' : '')
+                        ),
+                        React.createElement('button', {
+                            onClick: () => setStep(4),
+                            className: 'step-button'
+                        }, 'Proceed to Storyboard')
+                    )
+                ),
+
+                // Step 4: Minutes Generation
+                React.createElement('div', { className: `panel ${step >= 4 ? 'active' : 'disabled'}` },
+                    React.createElement('h2', { className: 'step-title' }, 'Step 4: Generate Storyboard (12 shots per minute)'),
+                    React.createElement('div', { className: 'minutes-buttons' },
+                        Array.from({ length: minutesToExtract }, (_, i) => i + 1).map(minute =>
+                            React.createElement('button', {
+                                key: minute,
+                                onClick: () => generateMinute(minute),
+                                disabled: !canProceedToMinutes || (minuteLoading && currentMinute !== minute),
+                                className: `minute-button ${minutes[minute - 1] ? 'completed' : ''}`
+                            }, 
+                                minuteLoading && currentMinute === minute 
+                                    ? `Generating Minute ${minute}...` 
+                                    : minutes[minute - 1] 
+                                        ? `Minute ${minute}` 
+                                        : `Generate Minute ${minute}`
+                            )
+                        )
+                    ),
+                    
+                    minutes.length === minutesToExtract && React.createElement('button', {
+                        onClick: exportPitchDeck,
+                        disabled: loading,
+                        className: 'export-button'
+                    }, loading ? 'Exporting...' : 'Download Pitch Deck & Script')
+                ),
+
+                minutes.length > 0 && React.createElement('div', { className: 'minutes-container' },
+                    React.createElement('h2', null, 'Storyboard Results'),
+                    minutes.map((minute, mIndex) =>
+                        minute && React.createElement('div', { key: mIndex, className: 'minute' },
+                            React.createElement('div', { className: 'minute-header' },
+                                React.createElement('h3', null, `Minute ${mIndex + 1} - 12 Shots`)
+                            ),
+                            
+                            minute.script && React.createElement('div', { className: 'panel' },
+                                React.createElement('h4', null, 'Scene'),
+                                React.createElement('div', { className: 'final-script' }, minute.script)
+                            ),
+                            
+                            minute.shots && minute.shots.length > 0 && React.createElement('div', { className: 'shots-container' },
+                                minute.shots.map((shot, sIndex) =>
+                                    React.createElement('div', { key: sIndex, className: 'shot' },
+                                        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                            React.createElement('h3', null, `Shot ${shot.shotNumber}/12`),
+                                            React.createElement('button', {
+                                                onClick: () => regenerateShot(mIndex, sIndex),
+                                                disabled: regeneratingShot === `${mIndex}_${sIndex}`,
+                                                className: 'small-button',
+                                                style: { 
+                                                    padding: '5px 10px', 
+                                                    fontSize: '0.8rem',
+                                                    backgroundColor: regeneratingShot === `${mIndex}_${sIndex}` ? '#6c757d' : 'var(--secondary-color)'
+                                                }
+                                            }, regeneratingShot === `${mIndex}_${sIndex}` ? 'Regenerating...' : 'Regenerate')
+                                        ),
+                                        shot.imageUrl 
+                                            ? React.createElement('div', { className: 'shot-image' }, React.createElement('img', { src: shot.imageUrl, alt: `Shot ${shot.shotNumber}` }))
+                                            : React.createElement('div', { className: 'shot-image-placeholder' }, React.createElement('div', {className: 'spinner-container'}, React.createElement('div', {className: 'loading-spinner'}))),
+                                        React.createElement('div', { className: 'shot-content' },
+                                            React.createElement('div', { className: 'shot-detail' },
+                                                React.createElement('span', { className: 'shot-detail-label' }, 'Camera: '),
+                                                shot.camera
+                                            ),
+                                            React.createElement('div', { className: 'shot-detail' },
+                                                React.createElement('span', { className: 'shot-detail-label' }, 'Environment: '),
+                                                shot.environment
+                                            ),
+                                            React.createElement('div', { className: 'shot-detail' },
+                                                React.createElement('span', { className: 'shot-detail-label' }, 'Action: '),
+                                                shot.action
+                                            ),
+                                            React.createElement('div', { className: 'shot-detail' },
+                                                React.createElement('span', { className: 'shot-detail-label' }, 'Characters: '),
+                                                shot.cast?.characters?.join(', ') || 'None'
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                finalScript && React.createElement('div', { className: 'panel' },
+                    React.createElement('div', { className: 'script-header' }, 'Full Screenplay'),
+                    React.createElement('div', { className: 'final-script' }, finalScript)
+                ),
+
+                minutes.length > 0 && minutes.length === minutesToExtract && React.createElement('div', { className: 'export-section' },
+                    React.createElement('button', {
+                        onClick: exportPitchDeck,
+                        disabled: loading,
+                        className: 'export-button'
+                    }, loading ? 'Exporting...' : 'Download Pitch Deck & Script')
+                )
+            );
+        }
+
+        const nanoBananaVisualPrompt = async ({ movieTitle, genreIdea, eraSetting, photoStyle, shot, characterSheet, continuityImageUrl }) => {
+            const continuityInstruction = continuityImageUrl
+                ? "5.  **Scene Continuity (CRITICAL):** A reference image from the immediately preceding shot is provided. Maintain the overall composition, lighting, environment, and character appearances from this reference as a direct visual baseline. The current action should be a logical continuation from this previous shot."
+                : "5.  **Action:** Describe the action of the scene. Be concise and visual. Remove all non-visual elements like dialogue, sounds, or internal thoughts.";
+
+            const completion = await wsChat({
+                messages: [
+                    { 
+                        role: "system", 
+                        content: `You are an expert prompt engineer for the Gemini 2.5 Flash image generation model. Convert a scene description into a single, dense, visual-only prompt using the NANO BANANA methodology for MAXIMUM CHARACTER CONSISTENCY.
+Rules:
+1) STYLE FIRST: Begin with core visual style using provided photoStyle; add precise cinematography/lighting.
+2) SCENE COMPOSITION: camera, angle, lens, lighting, depth of field.
+3) ENVIRONMENT: concrete background details and atmosphere. LOCATION LOCK (CRITICAL): For the same location (e.g., cafeteria), preserve layout, furniture, windows, signage, color palette, and lighting across all shots.
+4) CHARACTER SHEET (ABSOLUTE PRIORITY): For EACH listed character, include their sheet exactly as provided. Apply:
+   - IDENTITY LOCK (CRITICAL): Perfectly replicate the reference face, hair, build from provided reference images.
+   - WARDROBE LOCK (CRITICAL): Clothing must exactly match the sheet for scenes at the same time/date.
+5) ${continuityInstruction}
+6) QUALITY: photorealistic, hyperdetailed, 8k, filmic color, sharp focus.
+7) FORBIDDEN: text, speech bubbles, on-screen text, dialogue.
+SIGNATURE: end with token "NANO BANANA".
+Output ONLY JSON: {"prompt":"<your_prompt>"}` 
+                    },
+                    { role: "user", content: JSON.stringify({ movieTitle, genreIdea, eraSetting, photoStyle, shot, characterSheet, continuityImageUrl }) }
+                ],
+                json: true
+            });
+            const { prompt } = JSON.parse(completion.content || '{"prompt":""}');
+            return prompt;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('splash'); // 'splash', 'tutorial', 'app'
+
+            if (view === 'splash') {
+                return React.createElement(SplashPage, { onStart: () => setView('tutorial') });
+            }
+
+            if (view === 'tutorial') {
+                return React.createElement(TutorialPage, { onEnter: () => setView('app') });
+            }
+
+            return React.createElement(MainApp);
+        };
+
+        const root = createRoot(document.getElementById('app'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>

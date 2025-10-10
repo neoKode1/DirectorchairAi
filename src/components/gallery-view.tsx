@@ -20,7 +20,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Edit,
-  Trash2
+  Trash2,
+  FileText,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { contentStorage, type StoredContent } from '@/lib/content-storage';
@@ -29,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface GalleryItem {
   id: string;
-  type: 'image' | 'video' | 'audio';
+  type: 'image' | 'video' | 'audio' | 'screenplay';
   url: string;
   title: string;
   prompt: string;
@@ -41,6 +43,7 @@ interface GalleryItem {
     format?: string;
     duration?: number;
   };
+  screenplayData?: any; // For screenplay projects
 }
 
 interface GalleryViewProps {
@@ -66,6 +69,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [videoThumbnails, setVideoThumbnails] = useState<Record<string, string>>({});
   const [isDownloading, setIsDownloading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'screenplays'>('content');
 
   // Generate video thumbnails for video items
   const generateVideoThumbnails = useCallback(async (items: GalleryItem[]) => {
@@ -209,11 +213,18 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const items = useLocalStorage ? localItems : (propItems || []);
 
   const handleItemClick = (item: GalleryItem) => {
-    const index = items.findIndex(i => i.id === item.id);
-    setCurrentIndex(index);
-    setSelectedItem(item);
-    setIsFullscreen(true);
-    onItemClick?.(item);
+    if (item.type === 'screenplay') {
+      // For screenplays, we'll handle this differently - open a screenplay viewer
+      setSelectedItem(item);
+      setIsFullscreen(true);
+      onItemClick?.(item);
+    } else {
+      const index = items.findIndex(i => i.id === item.id);
+      setCurrentIndex(index);
+      setSelectedItem(item);
+      setIsFullscreen(true);
+      onItemClick?.(item);
+    }
   };
 
   const handlePrevious = () => {
@@ -370,6 +381,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         return <Video className="w-4 h-4" />;
       case 'audio':
         return <Music className="w-4 h-4" />;
+      case 'screenplay':
+        return <FileText className="w-4 h-4" />;
       default:
         return <ImageIcon className="w-4 h-4" />;
     }
@@ -383,6 +396,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
       case 'audio':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'screenplay':
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
@@ -408,26 +423,62 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Filter items based on active tab
+  const filteredItems = activeTab === 'content' 
+    ? localItems.filter(item => item.type !== 'screenplay')
+    : localItems.filter(item => item.type === 'screenplay');
+
+  const contentCount = localItems.filter(item => item.type !== 'screenplay').length;
+  const screenplayCount = localItems.filter(item => item.type === 'screenplay').length;
+
   return (
     <div className={cn("w-full h-full", className)}>
       {/* Gallery Header */}
-      <div className="flex items-center justify-between p-6 border-b border-border/50">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col">
-            <h2 className="text-4xl font-bold leading-none">YOUR</h2>
-            <span className="text-sm font-bold text-muted-foreground">beautiful mind</span>
+      <div className="p-6 border-b border-border/50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <h2 className="text-4xl font-bold leading-none">YOUR</h2>
+              <span className="text-sm font-bold text-muted-foreground">beautiful mind</span>
+            </div>
+            <Badge variant="secondary" className="badge-enhanced">
+              {activeTab === 'content' ? contentCount : screenplayCount} {activeTab === 'content' ? 'items' : 'screenplays'}
+            </Badge>
           </div>
-          <Badge variant="secondary" className="badge-enhanced">
-            {items.length} items
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="btn-ghost">
+              <Share2 className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="btn-ghost">
+              <Download className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="btn-ghost">
-            <Share2 className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="btn-ghost">
-            <Download className="w-4 h-4" />
-          </Button>
+        
+        {/* Tabs */}
+        <div className="flex gap-1 bg-muted/30 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('content')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'content' 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            Content ({contentCount})
+          </button>
+          <button
+            onClick={() => setActiveTab('screenplays')}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'screenplays' 
+                ? 'bg-background text-foreground shadow-sm' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Screenplays ({screenplayCount})
+          </button>
         </div>
       </div>
 
@@ -445,21 +496,26 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
               </p>
             </div>
           </div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
               <ImageIcon className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-subheading font-medium">No content yet</h3>
+              <h3 className="text-subheading font-medium">
+                {activeTab === 'content' ? 'No content yet' : 'No screenplays yet'}
+              </h3>
               <p className="text-caption text-muted-foreground max-w-sm">
-                Generated images, videos, and audio will appear here. Start by describing what you want to create in the chat.
+                {activeTab === 'content' 
+                  ? 'Generated images, videos, and audio will appear here. Start by describing what you want to create in the chat.'
+                  : 'Complete screenplay projects will appear here. Create a script in ScriptMaker and export it to see it here.'
+                }
               </p>
             </div>
           </div>
         ) : (
           <div className="gallery-grid">
-            {items.map((item, index) => (
+            {filteredItems.map((item, index) => (
               <div
                 key={item.id}
                 className={cn(
@@ -510,6 +566,15 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 {item.type === 'audio' && (
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
                     <Music className="w-12 h-12 text-muted-foreground" />
+                  </div>
+                )}
+                {item.type === 'screenplay' && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-red-500/20 flex flex-col items-center justify-center p-4">
+                    <FileText className="w-12 h-12 text-orange-400 mb-2" />
+                    <div className="text-center">
+                      <div className="text-xs font-medium text-orange-300 mb-1">Screenplay</div>
+                      <div className="text-xs text-orange-200/80 line-clamp-2">{item.title}</div>
+                    </div>
                   </div>
                 )}
 
@@ -632,6 +697,72 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
               {selectedItem.type === 'audio' && (
                 <div className="w-full max-w-md bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg p-8 flex items-center justify-center">
                   <audio src={selectedItem.url} controls className="w-full" />
+                </div>
+              )}
+              {selectedItem.type === 'screenplay' && selectedItem.screenplayData && (
+                <div className="w-full max-w-4xl max-h-[80vh] bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-lg p-6 overflow-y-auto">
+                  <div className="space-y-6">
+                    {/* Screenplay Header */}
+                    <div className="text-center border-b border-orange-500/20 pb-4">
+                      <h2 className="text-2xl font-bold text-orange-300 mb-2">{selectedItem.screenplayData.title}</h2>
+                      <div className="flex justify-center gap-4 text-sm text-orange-200/80">
+                        <span>{selectedItem.screenplayData.genre}</span>
+                        <span>•</span>
+                        <span>{selectedItem.screenplayData.era}</span>
+                        <span>•</span>
+                        <span>{selectedItem.screenplayData.duration} minutes</span>
+                      </div>
+                    </div>
+
+                    {/* Plot */}
+                    <div>
+                      <h3 className="text-lg font-semibold text-orange-300 mb-2">Plot</h3>
+                      <p className="text-orange-200/90 leading-relaxed">{selectedItem.screenplayData.enhancedPlot}</p>
+                    </div>
+
+                    {/* Characters */}
+                    {selectedItem.screenplayData.characters.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-orange-300 mb-3">Characters</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {selectedItem.screenplayData.characters.map((char: any, index: number) => (
+                            <div key={index} className="bg-orange-500/10 rounded-lg p-3">
+                              <div className="text-sm font-medium text-orange-300">{char.name}</div>
+                              {char.analysis && (
+                                <div className="text-xs text-orange-200/70 mt-1 line-clamp-2">{char.analysis}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Generated Shots */}
+                    {selectedItem.screenplayData.minutes.map((minute: any, minuteIndex: number) => (
+                      <div key={minuteIndex} className="bg-orange-500/5 rounded-lg p-4">
+                        <h4 className="text-md font-semibold text-orange-300 mb-3">Minute {minuteIndex + 1}</h4>
+                        {minute.script && (
+                          <p className="text-orange-200/80 text-sm mb-3 leading-relaxed">{minute.script}</p>
+                        )}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {minute.shots.map((shot: any, shotIndex: number) => (
+                            <div key={shotIndex} className="bg-orange-500/10 rounded-lg p-3">
+                              <div className="text-xs font-medium text-orange-300 mb-1">Shot {shot.shotNumber}</div>
+                              <div className="text-xs text-orange-200/70 mb-1">{shot.shotType} • {shot.camera}</div>
+                              <div className="text-xs text-orange-200/60 line-clamp-2">{shot.action}</div>
+                              {shot.imageUrl && (
+                                <img 
+                                  src={shot.imageUrl} 
+                                  alt={`Shot ${shot.shotNumber}`}
+                                  className="w-full h-20 object-cover rounded mt-2"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

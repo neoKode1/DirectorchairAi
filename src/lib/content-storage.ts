@@ -3,7 +3,7 @@
 
 export interface StoredContent {
   id: string;
-  type: 'image' | 'video' | 'audio' | 'text';
+  type: 'image' | 'video' | 'audio' | 'text' | 'screenplay';
   url: string;
   title: string;
   prompt?: string;
@@ -21,9 +21,43 @@ export interface StoredContent {
   images?: string[];
   imageCount?: number;
   selectedImageIndex?: number;
+  // For screenplay projects
+  screenplayData?: ScreenplayProject;
   // Storage metadata
   savedAt: Date;
   version: string;
+}
+
+export interface ScreenplayProject {
+  id: string;
+  title: string;
+  plot: string;
+  enhancedPlot: string;
+  genre: string;
+  era: string;
+  photoStyle: string;
+  duration: number;
+  script: string;
+  characters: Array<{
+    name: string;
+    imageUrl?: string;
+    analysis?: string;
+  }>;
+  minutes: Array<{
+    script: string;
+    shots: Array<{
+      shotNumber: number;
+      shotType: string;
+      camera: string;
+      action: string;
+      lighting: string;
+      characters: string[];
+      imageUrl?: string;
+      generatedBy?: string;
+    }>;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ContentStorageStats {
@@ -34,6 +68,7 @@ export interface ContentStorageStats {
     video: number;
     audio: number;
     text: number;
+    screenplay: number;
   };
   oldestItem?: Date;
   newestItem?: Date;
@@ -176,6 +211,40 @@ export class ContentStorageManager {
     console.log('🧹 [ContentStorage] Cleared all content');
   }
 
+  // Save screenplay project
+  public saveScreenplayProject(project: ScreenplayProject): void {
+    const screenplayContent: StoredContent = {
+      id: project.id,
+      type: 'screenplay',
+      url: '', // No direct URL for screenplays
+      title: project.title,
+      prompt: project.plot,
+      timestamp: project.createdAt,
+      screenplayData: project,
+      savedAt: new Date(),
+      version: this.version
+    };
+
+    this.addContent(screenplayContent);
+    console.log('🎬 [ContentStorage] Saved screenplay project:', project.title);
+  }
+
+  // Get all screenplay projects
+  public getScreenplayProjects(): ScreenplayProject[] {
+    const content = this.loadContent();
+    return content
+      .filter(item => item.type === 'screenplay' && item.screenplayData)
+      .map(item => item.screenplayData!)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  // Get screenplay project by ID
+  public getScreenplayProject(id: string): ScreenplayProject | null {
+    const content = this.loadContent();
+    const item = content.find(item => item.type === 'screenplay' && item.id === id);
+    return item?.screenplayData || null;
+  }
+
   // Get storage statistics
   public getStorageStats(): ContentStorageStats {
     const content = this.loadContent();
@@ -184,7 +253,8 @@ export class ContentStorageManager {
       image: content.filter(item => item.type === 'image').length,
       video: content.filter(item => item.type === 'video').length,
       audio: content.filter(item => item.type === 'audio').length,
-      text: content.filter(item => item.type === 'text').length
+      text: content.filter(item => item.type === 'text').length,
+      screenplay: content.filter(item => item.type === 'screenplay').length
     };
 
     const timestamps = content.map(item => item.timestamp).filter(Boolean);

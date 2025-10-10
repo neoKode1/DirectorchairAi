@@ -1,0 +1,340 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { claudeAPI } from '@/lib/claude-api';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { movieTitle, plot, screenplay, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, analysisType } = body;
+
+    console.log('🎬 [Script Maker API] Received analysis request:', { 
+      movieTitle, 
+      genre: genreIdea,
+      analysisType 
+    });
+
+    // Check if Claude API is available
+    if (!claudeAPI.isAPIAvailable()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Claude API is not available. Please check your ANTHROPIC_API_KEY environment variable.'
+      }, { status: 503 });
+    }
+
+    let systemPrompt = '';
+    let userPrompt = '';
+
+    // Handle different analysis types
+    switch (analysisType) {
+      case 'plot-formalization':
+        systemPrompt = `You are a professional screenplay consultant with expertise in story structure and narrative development. Your task is to analyze and formalize stream-of-consciousness plot ideas into structured, coherent movie plot summaries.
+
+**Your Process:**
+1. **Identify Core Elements**: Extract the main conflict, protagonist, antagonist, setting, and stakes
+2. **Structure the Narrative**: Organize the plot into a clear beginning, middle, and end
+3. **Add Professional Detail**: Include character motivations, emotional arcs, and thematic elements
+4. **Maintain Genre Conventions**: Ensure the plot fits ${genreIdea} genre expectations
+5. **Cinematic Focus**: Think about visual storytelling and how scenes would play out on screen
+
+**Output Format:**
+Provide a well-structured plot summary (3-5 paragraphs) that:
+- Opens with a compelling hook
+- Introduces the protagonist and their world
+- Establishes the central conflict
+- Outlines the rising action and stakes
+- Suggests the climactic moment
+- Hints at the resolution (without spoiling the ending)
+
+Keep the tone professional but engaging, as if pitching to a studio executive. Make it ${minutesToExtract} minutes of screen time worth of content.`;
+
+        userPrompt = `Movie Title: "${movieTitle}"
+Genre: ${genreIdea}
+Era/Setting: ${eraSetting}
+Photo Style: ${photoStyle}
+Target Duration: ${minutesToExtract} minutes
+
+Raw Plot Idea (stream of consciousness):
+"${plot}"
+
+Please formalize this into a professional movie plot summary that maintains the original creative vision while adding structure, clarity, and cinematic appeal.`;
+        break;
+
+      case 'character-generation':
+        systemPrompt = `You are a world-class casting director and character designer. Create hyper-detailed character profiles for a ${genreIdea} movie set in ${eraSetting}.
+
+**CRITICAL OUTPUT REQUIREMENTS:**
+- Return ONLY valid JSON - no markdown, no code blocks, no explanations
+- Use proper JSON escaping for all strings (escape quotes, newlines, etc.)
+- Return a simple array of character objects
+- Do not wrap in markdown code blocks
+
+**Character Profile Requirements:**
+For each character, provide:
+1. **name**: Memorable and appropriate for the setting
+2. **age**: Specific age (not ranges)
+3. **physical**: Hair, eyes, build, distinctive features (single string)
+4. **personality**: Core traits, quirks, speech patterns (single string)
+5. **background**: Brief history that informs their motivations (single string)
+6. **role**: Their function in the narrative (single string)
+
+**Important:**
+- Create 3-5 main characters
+- Make physical descriptions detailed enough for AI image generation
+- Ensure characters feel authentic to ${eraSetting}
+- Match the tone of ${genreIdea} genre
+- Consider visual style: ${photoStyle}
+- Escape all special characters in JSON strings
+- Keep descriptions concise (1-2 sentences each)
+
+Example format:
+[
+  {
+    "name": "John Smith",
+    "age": 35,
+    "physical": "Athletic build, short brown hair, piercing blue eyes, strong jawline",
+    "personality": "Determined and resourceful with a dry sense of humor",
+    "background": "Former soldier turned private investigator",
+    "role": "Protagonist seeking redemption"
+  }
+]`;
+
+        userPrompt = `Movie: "${movieTitle}"
+Plot: ${plot}
+
+Create detailed character profiles that bring this story to life. Focus on making them visually distinct and narratively compelling.
+
+IMPORTANT: Return ONLY the JSON array, no other text or formatting.`;
+        break;
+
+      case 'screenplay-generation':
+        systemPrompt = `You are a professional screenwriter with credits in ${genreIdea} films. Write a properly formatted ${minutesToExtract}-minute screenplay.
+
+**Screenplay Format:**
+Use proper screenplay formatting:
+- FADE IN: / FADE OUT:
+- Scene headings: INT./EXT. LOCATION - TIME OF DAY
+- Action lines in present tense
+- Character names in ALL CAPS when first introduced
+- Dialogue with character name centered above
+- Parentheticals for tone/action during dialogue
+- Proper spacing and structure
+
+**Story Requirements:**
+- Duration: Approximately ${minutesToExtract} minutes (1 page = 1 minute)
+- Genre: ${genreIdea} conventions and tropes
+- Setting: ${eraSetting}
+- Visual Style: ${photoStyle} aesthetic
+- Story beats that work for the runtime
+
+**Characters:**
+${characterProfiles && characterProfiles.length > 0 ? characterProfiles.map((c: any) => `- ${c.name}: ${c.role || c.description || ''}`).join('\n') : 'Create compelling characters that fit the story'}
+
+**Cinematic Considerations:**
+- Write visually - show, don't tell
+- Include specific camera directions sparingly (only when essential)
+- Create memorable, quotable dialogue
+- Build tension appropriate to ${genreIdea}
+- Include at least 3 distinct locations
+- End with a satisfying climax and resolution`;
+
+        userPrompt = `Movie: "${movieTitle}"
+Plot: ${plot}
+
+Write a complete, professionally formatted ${minutesToExtract}-minute screenplay that captures this story with cinematic flair.`;
+        break;
+
+      case 'storyboard-breakdown':
+        systemPrompt = `You are a storyboard artist and shot designer. Break down a screenplay into detailed shot-by-shot descriptions for visual generation.
+
+**CRITICAL OUTPUT REQUIREMENTS:**
+- Return ONLY valid JSON - no text before or after
+- Do not wrap in markdown code blocks
+- Use proper JSON escaping for all strings
+- Return a JSON object with a "minutes" array
+
+**Shot Breakdown Format:**
+For EACH MINUTE of the ${minutesToExtract}-minute script, create exactly 12 shots.
+
+Each shot object needs:
+- shotNumber: 1-12
+- shotType: (e.g., "WIDE SHOT", "CLOSE-UP", "MEDIUM SHOT")
+- camera: (e.g., "STATIC", "TRACKING", "PAN")
+- action: What happens in the frame (escape quotes!)
+- lighting: Mood description
+- characters: Array of character names present
+
+Example format:
+{
+  "minutes": [
+    {
+      "minuteNumber": 1,
+      "script": "Brief scene description",
+      "shots": [
+        {
+          "shotNumber": 1,
+          "shotType": "WIDE SHOT",
+          "camera": "CRANE DOWN",
+          "action": "Establishing shot of city skyline at sunset",
+          "lighting": "Golden hour, warm tones",
+          "characters": []
+        }
+      ]
+    }
+  ]
+}
+
+**Important:**
+- Escape all quotes in strings
+- Keep descriptions concise
+- Match lighting to ${photoStyle} style
+- Create exactly 12 shots per minute
+- Base shots on the screenplay scenes and action`;
+
+        userPrompt = `Movie: "${movieTitle}"
+Duration: ${minutesToExtract} minutes
+Genre: ${genreIdea}
+Setting: ${eraSetting}
+
+SCREENPLAY:
+${screenplay || plot}
+
+${characterProfiles && characterProfiles.length > 0 ? `\nCHARACTERS:\n${characterProfiles.map((c: any) => `- ${c.name}: ${c.description || c.role || ''}`).join('\n')}` : ''}
+
+Analyze this screenplay and create a detailed shot-by-shot breakdown for each minute. Break down the story into exactly 12 shots per minute, describing the camera work, action, lighting, and characters in each shot.
+
+IMPORTANT: Return ONLY the JSON object, no other text or markdown formatting.`;
+        break;
+
+      default:
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid analysis type'
+        }, { status: 400 });
+    }
+
+    // Generate response using Claude with appropriate token limit
+    let response: string;
+    
+    if (analysisType === 'plot-formalization' || analysisType === 'screenplay-generation') {
+      // Use enhancePromptWithClaude for text generation (supports up to 4000 tokens)
+      response = await claudeAPI.enhancePromptWithClaude(
+        userPrompt,
+        analysisType === 'storyboard-breakdown' ? 'storyboard' : 'screenplay',
+        systemPrompt
+      );
+    } else {
+      // For character-generation and storyboard-breakdown, call Claude API directly with higher token limit
+      if (!claudeAPI.isAPIAvailable()) {
+        return NextResponse.json({
+          success: false,
+          error: 'Claude API is not available'
+        }, { status: 503 });
+      }
+
+      // Call Claude API directly for full control over token limits
+      const Anthropic = (await import('@anthropic-ai/sdk')).default;
+      const client = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+
+      const claudeResponse = await client.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8192, // Claude's actual maximum for this model
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ]
+      });
+
+      if (claudeResponse.content && claudeResponse.content.length > 0) {
+        const result = claudeResponse.content[0];
+        if (result.type === 'text') {
+          response = result.text.trim();
+        } else {
+          throw new Error('No text content in Claude response');
+        }
+      } else {
+        throw new Error('Empty response from Claude');
+      }
+    }
+
+    console.log('✅ [Script Maker API] Analysis complete');
+    console.log('📊 [Script Maker API] Response length:', response.length);
+
+    // Try to parse as JSON if it's character generation or storyboard breakdown
+    let parsedResponse = response;
+    if (analysisType === 'character-generation' || analysisType === 'storyboard-breakdown') {
+      try {
+        console.log('🔍 [Script Maker API] Raw Claude response length:', response.length);
+        console.log('🔍 [Script Maker API] First 200 chars:', response.substring(0, 200));
+        
+        // Extract JSON from response if it's wrapped in markdown code blocks
+        const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/```\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          console.log('✅ [Script Maker API] Found JSON in markdown code block');
+          parsedResponse = JSON.parse(jsonMatch[1]);
+        } else {
+          console.log('🔍 [Script Maker API] Attempting direct JSON parse');
+          // Clean up the response before parsing
+          let cleanedResponse = response.trim();
+          
+          // Try to find JSON boundaries (both array and object)
+          const firstArrayBrace = cleanedResponse.indexOf('[');
+          const lastArrayBrace = cleanedResponse.lastIndexOf(']');
+          const firstObjectBrace = cleanedResponse.indexOf('{');
+          const lastObjectBrace = cleanedResponse.lastIndexOf('}');
+          
+          // Determine which JSON structure to extract
+          let startPos = -1;
+          let endPos = -1;
+          
+          if (analysisType === 'character-generation') {
+            // Characters should be an array
+            if (firstArrayBrace !== -1 && lastArrayBrace !== -1) {
+              startPos = firstArrayBrace;
+              endPos = lastArrayBrace + 1;
+              console.log('🔍 [Script Maker API] Extracting JSON array');
+            }
+          } else if (analysisType === 'storyboard-breakdown') {
+            // Storyboard should be an object with minutes array
+            if (firstObjectBrace !== -1 && lastObjectBrace !== -1) {
+              startPos = firstObjectBrace;
+              endPos = lastObjectBrace + 1;
+              console.log('🔍 [Script Maker API] Extracting JSON object');
+            }
+          }
+          
+          if (startPos !== -1 && endPos !== -1) {
+            cleanedResponse = cleanedResponse.substring(startPos, endPos);
+            console.log('🔍 [Script Maker API] Extracted JSON from position', startPos, 'to', endPos);
+          }
+          
+          parsedResponse = JSON.parse(cleanedResponse);
+          console.log('✅ [Script Maker API] Successfully parsed JSON');
+        }
+      } catch (parseError) {
+        console.error('❌ [Script Maker API] JSON parse error:', parseError);
+        console.error('❌ [Script Maker API] Failed response (first 500 chars):', response.substring(0, 500));
+        console.warn('⚠️ [Script Maker API] Returning raw response as fallback');
+        // If parsing fails, return the raw response
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      result: parsedResponse,
+      analysisType
+    });
+
+  } catch (error) {
+    console.error('❌ [Script Maker API] Error:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
+  }
+}
+

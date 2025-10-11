@@ -304,7 +304,10 @@ export async function GET(request: NextRequest) {
     // Check task status
     const status = statusData.status || (statusData.data && statusData.data.status);
     
-    if (status === 'Success' || status === 'completed') {
+    console.log('📊 Task status value:', status);
+    
+    // Check for completion with video URL
+    if (status === 'Success' || status === 'completed' || status === 'Finished') {
       const videoUrl = statusData.file_url || statusData.video_url || (statusData.data && (statusData.data.file_url || statusData.data.video_url));
       
       if (videoUrl) {
@@ -315,32 +318,46 @@ export async function GET(request: NextRequest) {
           status: 'completed',
           taskId: taskId
         } as EndFrameResponse);
+      } else {
+        console.warn('⚠️ Status is success but no video URL found in response');
       }
-    } else if (status === 'Processing' || status === 'Queueing' || status === 'IN_PROGRESS') {
-      console.log('⏳ Task still in progress');
+    }
+    
+    // Check for in-progress statuses (Minimax uses various status names)
+    if (status === 'Processing' || 
+        status === 'Queueing' || 
+        status === 'Preparing' || 
+        status === 'IN_PROGRESS' || 
+        status === 'Running' ||
+        status === 'Pending') {
+      console.log('⏳ Task still in progress, status:', status);
       return NextResponse.json({
         success: true,
         status: 'IN_PROGRESS',
         taskId: taskId
       } as EndFrameResponse);
-    } else if (status === 'Failed' || status === 'failed') {
-      console.error('❌ Task failed');
+    }
+    
+    // Check for failure
+    if (status === 'Failed' || status === 'failed' || status === 'Error') {
+      console.error('❌ Task failed with status:', status);
+      const errorMessage = statusData.error || statusData.message || 'Video generation task failed';
       return NextResponse.json({
         success: false,
-        error: 'Video generation task failed',
+        error: errorMessage,
         status: 'failed',
         taskId: taskId,
         retryable: false
       } as EndFrameResponse, { status: 500 });
     }
 
-    // Unknown status
-    console.warn('⚠️ Unknown task status:', status);
+    // Unknown status - treat as still in progress to continue polling
+    console.warn('⚠️ Unknown task status (treating as in-progress):', status);
     return NextResponse.json({
-      success: false,
-      error: `Unknown task status: ${status}`,
-      retryable: true
-    } as EndFrameResponse, { status: 500 });
+      success: true,
+      status: 'IN_PROGRESS',
+      taskId: taskId
+    } as EndFrameResponse);
 
   } catch (error) {
     console.error('💥 Error checking task status:', error);

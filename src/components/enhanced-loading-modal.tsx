@@ -60,6 +60,7 @@ export const EnhancedLoadingModal: React.FC<EnhancedLoadingModalProps> = ({
     if (model.includes('nano-banana')) return '/gemini-color.svg';
     if (model.includes('flux')) return '/flux.svg';
     if (model.includes('kling')) return '/kling-color.svg';
+    if (model.includes('endframe') || model.includes('MiniMax-Hailuo-02')) return '/minimax-color.svg'; // EndFrame uses Minimax
     if (model.includes('minimax')) return '/minimax-color.svg';
     if (model.includes('seedream') || model.includes('bytedance')) return '/bytedance-color.svg';
     if (model.includes('hunyuan')) return '/bytedance-color.svg'; // Using ByteDance icon for Hunyuan

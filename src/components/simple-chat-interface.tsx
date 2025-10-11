@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { EnhancedLoadingModal } from '@/components/enhanced-loading-modal';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Send, 
   Plus,
@@ -68,6 +69,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [floatingSuggestions, setFloatingSuggestions] = useState<string[]>([]);
   const [showFloatingDialog, setShowFloatingDialog] = useState(false);
+  const [endFrameMode, setEndFrameMode] = useState(false);
+  const { toast } = useToast();
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [duration, setDuration] = useState(4);
@@ -467,9 +470,153 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   }, [onImageInjected, userInput]);
 
+  // Detect when two images are uploaded for EndFrame mode
+  useEffect(() => {
+    if (uploadedImages.length === 2) {
+      setEndFrameMode(true);
+      toast({
+        title: "EndFrame Mode Enabled",
+        description: "Two images detected! Describe the transition between your start and end frames.",
+      });
+    } else {
+      setEndFrameMode(false);
+    }
+  }, [uploadedImages.length, toast]);
+
+  // Handle EndFrame generation
+  const handleEndFrameGeneration = async () => {
+    if (uploadedImages.length !== 2) {
+      toast({
+        title: "Error",
+        description: "Please upload exactly two images for EndFrame generation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!userInput.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please describe the transition between your start and end frames",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      console.log('🎬 Starting EndFrame generation...');
+      console.log('📝 Prompt:', userInput);
+      console.log('🖼️ Start frame (first image):', uploadedImages[0]);
+      console.log('🖼️ End frame (second image):', uploadedImages[1]);
+
+      // Convert images to base64 for the API
+      const startFrameBase64 = uploadedImages[0].split(',')[1]; // Remove data:image/...;base64, prefix
+      const endFrameBase64 = uploadedImages[1].split(',')[1];
+
+      const response = await fetch('/api/endframe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstImage: startFrameBase64,
+          secondImage: endFrameBase64,
+          prompt: userInput.trim(),
+          model: 'MiniMax-Hailuo-02'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'EndFrame generation failed');
+      }
+
+      if (data.success && data.videoUrl) {
+        console.log('✅ EndFrame video generated successfully:', data.videoUrl);
+        
+        // Add to gallery
+        if (typeof window !== 'undefined') {
+          const { contentStorage } = await import('@/lib/content-storage');
+          const endFrameContent = {
+            id: `endframe-${Date.now()}`,
+            type: 'video' as const,
+            url: data.videoUrl,
+            title: `EndFrame: ${userInput.substring(0, 50)}...`,
+            prompt: userInput,
+            timestamp: new Date(),
+            metadata: {
+              format: 'MiniMax EndFrame',
+              model: 'MiniMax-Hailuo-02'
+            }
+          };
+          
+          contentStorage.addContent(endFrameContent);
+          window.dispatchEvent(new CustomEvent('contentUpdated'));
+        }
+
+        toast({
+          title: "EndFrame Video Generated!",
+          description: "Your start-to-end frame video has been created successfully.",
+        });
+
+        // Clear input after successful generation
+        setUserInput('');
+        setUploadedImages([]);
+        setEndFrameMode(false);
+        
+        // Add success message to chat
+        const successMessage = {
+          id: Date.now().toString(),
+          type: 'assistant' as const,
+          content: `🎬 EndFrame video generated successfully! The transition from your start frame to end frame has been created.`,
+          timestamp: new Date(),
+          media: {
+            type: 'video' as const,
+            url: data.videoUrl,
+            filename: `endframe-${Date.now()}.mp4`
+          }
+        };
+        
+        setMessages(prev => [...prev, successMessage]);
+      } else {
+        throw new Error(data.error || 'No video URL returned');
+      }
+    } catch (error) {
+      console.error('❌ EndFrame generation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'EndFrame generation failed';
+      
+      toast({
+        title: "EndFrame Generation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+
+      // Add error message to chat
+      const errorChatMessage = {
+        id: Date.now().toString(),
+        type: 'assistant' as const,
+        content: `❌ EndFrame generation failed: ${errorMessage}`,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorChatMessage]);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim() && uploadedImages.length === 0) return;
+
+    // Handle EndFrame generation when two images are uploaded
+    if (endFrameMode && uploadedImages.length === 2) {
+      await handleEndFrameGeneration();
+      return;
+    }
 
     // Validate Kling AI Avatar requirements
     if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
@@ -1255,6 +1402,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* EndFrame Mode Indicator */}
+        {endFrameMode && (
+          <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <p className="text-sm font-medium text-purple-800">
+                🎬 EndFrame Mode Active
+              </p>
+            </div>
+            <p className="text-xs text-purple-600 mt-1">
+              Describe the transition between your start frame (first image) and end frame (second image)
+            </p>
           </div>
         )}
 

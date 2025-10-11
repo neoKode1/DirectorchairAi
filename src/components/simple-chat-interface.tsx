@@ -663,16 +663,20 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     // Trigger onContentGenerated callback to update center panel
     try {
       console.log('✅ Calling onContentGenerated callback for center panel');
-      await onContentGenerated({
-        type: 'video',
-        url: videoUrl,
+      
+      // Create the proper data structure that handleGenerate expects
+      const endFrameResult = {
+        data: {
+          videos: [{ url: videoUrl }],
+          video: { url: videoUrl }
+        },
+        videos: [{ url: videoUrl }],
+        timestamp: new Date().toISOString(),
         prompt: userInput || 'EndFrame transition',
-        model: 'MiniMax-Hailuo-02',
-        metadata: {
-          format: 'MiniMax EndFrame',
-          duration: 6
-        }
-      });
+        model: 'endframe/minimax-hailuo-02'
+      };
+      
+      await onContentGenerated(endFrameResult);
       console.log('✅ Center panel updated with EndFrame video');
     } catch (error) {
       console.error('❌ Error updating center panel:', error);

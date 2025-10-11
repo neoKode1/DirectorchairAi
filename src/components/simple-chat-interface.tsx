@@ -535,56 +535,47 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         throw new Error(data.error || 'EndFrame generation failed');
       }
 
+      // Handle async task - need to poll for completion
+      if (data.success && data.taskId && data.status === 'IN_PROGRESS') {
+        console.log('⏳ EndFrame task created, polling for completion:', data.taskId);
+        
+        // Poll for task completion
+        const maxPolls = 60; // Max 60 polls (5 minutes at 5s intervals)
+        const pollInterval = 5000; // 5 seconds
+        let pollCount = 0;
+        
+        while (pollCount < maxPolls) {
+          await new Promise(resolve => setTimeout(resolve, pollInterval));
+          pollCount++;
+          
+          console.log(`🔄 Polling attempt ${pollCount}/${maxPolls}...`);
+          
+          const statusResponse = await fetch(`/api/endframe?taskId=${data.taskId}`);
+          const statusData = await statusResponse.json();
+          
+          if (statusData.success && statusData.videoUrl) {
+            console.log('✅ EndFrame video ready:', statusData.videoUrl);
+            
+            // Video is ready, proceed to add to gallery
+            await addVideoToGallery(statusData.videoUrl);
+            return;
+          } else if (statusData.status === 'failed') {
+            throw new Error('EndFrame generation failed during processing');
+          }
+          // Otherwise, continue polling
+        }
+        
+        throw new Error('EndFrame generation timeout - please try again');
+      }
+
+      // Handle immediate completion (if video URL is returned directly)
       if (data.success && data.videoUrl) {
         console.log('✅ EndFrame video generated successfully:', data.videoUrl);
-        
-        // Add to gallery
-        if (typeof window !== 'undefined') {
-          const { contentStorage } = await import('@/lib/content-storage');
-          const endFrameContent = {
-            id: `endframe-${Date.now()}`,
-            type: 'video' as const,
-            url: data.videoUrl,
-            title: `EndFrame: ${userInput.substring(0, 50)}...`,
-            prompt: userInput,
-            timestamp: new Date(),
-            metadata: {
-              format: 'MiniMax EndFrame',
-              model: 'MiniMax-Hailuo-02'
-            }
-          };
-          
-          contentStorage.addContent(endFrameContent);
-          window.dispatchEvent(new CustomEvent('contentUpdated'));
-        }
-
-        toast({
-          title: "EndFrame Video Generated!",
-          description: "Your start-to-end frame video has been created successfully.",
-        });
-
-        // Clear input after successful generation
-        setUserInput('');
-        setUploadedImages([]);
-        setEndFrameMode(false);
-        
-        // Add success message to chat
-        const successMessage = {
-          id: Date.now().toString(),
-          type: 'assistant' as const,
-          content: `🎬 EndFrame video generated successfully! The transition from your start frame to end frame has been created.`,
-          timestamp: new Date(),
-          media: {
-            type: 'video' as const,
-            url: data.videoUrl,
-            filename: `endframe-${Date.now()}.mp4`
-          }
-        };
-        
-        setMessages(prev => [...prev, successMessage]);
-      } else {
-        throw new Error(data.error || 'No video URL returned');
+        await addVideoToGallery(data.videoUrl);
+        return;
       }
+      
+      throw new Error(data.error || 'No video URL returned');
     } catch (error) {
       console.error('❌ EndFrame generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'EndFrame generation failed';
@@ -607,6 +598,54 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     } finally {
       setIsGenerating(false);
     }
+  };
+  
+  // Helper function to add video to gallery and chat
+  const addVideoToGallery = async (videoUrl: string) => {
+    // Add to gallery
+    if (typeof window !== 'undefined') {
+      const { contentStorage } = await import('@/lib/content-storage');
+      const endFrameContent = {
+        id: `endframe-${Date.now()}`,
+        type: 'video' as const,
+        url: videoUrl,
+        title: `EndFrame: ${userInput.substring(0, 50)}...`,
+        prompt: userInput,
+        timestamp: new Date(),
+        metadata: {
+          format: 'MiniMax EndFrame',
+          model: 'MiniMax-Hailuo-02'
+        }
+      };
+      
+      contentStorage.addContent(endFrameContent);
+      window.dispatchEvent(new CustomEvent('contentUpdated'));
+    }
+
+    toast({
+      title: "EndFrame Video Generated!",
+      description: "Your start-to-end frame video has been created successfully.",
+    });
+
+    // Clear input after successful generation
+    setUserInput('');
+    setUploadedImages([]);
+    setEndFrameMode(false);
+    
+    // Add success message to chat
+    const successMessage = {
+      id: Date.now().toString(),
+      type: 'assistant' as const,
+      content: `🎬 EndFrame video generated successfully! The transition from your start frame to end frame has been created.`,
+      timestamp: new Date(),
+      media: {
+        type: 'video' as const,
+        url: videoUrl,
+        filename: `endframe-${Date.now()}.mp4`
+      }
+    };
+    
+    setMessages(prev => [...prev, successMessage]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

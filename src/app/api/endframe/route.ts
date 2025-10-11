@@ -88,56 +88,129 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Preparing request for Minimax EndFrame API...');
     console.log('📝 Prompt:', body.prompt);
 
-    // Make request to Minimax EndFrame API via FAL.ai
-    console.log('🔄 Making request to Minimax EndFrame API via FAL.ai...');
+    // Get Minimax API key from environment
+    const minimaxApiKey = process.env.MINIMAX_API_KEY;
+    if (!minimaxApiKey) {
+      console.error('❌ MINIMAX_API_KEY not found in environment variables');
+      return NextResponse.json({
+        success: false,
+        error: 'Minimax API key not configured. Please add MINIMAX_API_KEY to your environment variables.',
+        retryable: false
+      } as EndFrameResponse, { status: 500 });
+    }
+
+    // Make request to Minimax video generation API
+    console.log('🔄 Making request to Minimax video generation API...');
     
-    // Use FAL.ai's Minimax Video-01 endpoint which supports frame-to-frame generation
-    const falRequestBody = {
+    // Build request body for Minimax MiniMax-Hailuo-02 model with first_frame_image and last_frame_image
+    const minimaxRequestBody: {
+      model: string;
+      first_frame_image: string;
+      last_frame_image: string;
+      prompt?: string;
+      duration: number;
+      resolution: string;
+    } = {
+      model: 'MiniMax-Hailuo-02',
       first_frame_image: firstImageUri,
       last_frame_image: secondImageUri,
-      prompt: body.prompt
+      duration: 6, // 6 seconds (6s or 10s supported for 768P)
+      resolution: '768P' // 768P supports both first and last frame (6s and 10s)
     };
 
+    // Add prompt if provided (optional when using both first and last frame)
+    if (body.prompt && body.prompt.trim()) {
+      minimaxRequestBody.prompt = body.prompt.trim();
+    }
+
     console.log('📤 Request payload:', {
-      prompt: falRequestBody.prompt,
-      hasFirstFrame: !!falRequestBody.first_frame_image,
-      hasLastFrame: !!falRequestBody.last_frame_image
+      model: minimaxRequestBody.model,
+      prompt: minimaxRequestBody.prompt || '(auto-generated from frames)',
+      hasFirstFrame: !!minimaxRequestBody.first_frame_image,
+      hasLastFrame: !!minimaxRequestBody.last_frame_image,
+      duration: minimaxRequestBody.duration,
+      resolution: minimaxRequestBody.resolution
     });
 
-    // Use FAL.ai client to call Minimax Video-01 with frame-to-frame
-    const { fal } = await import('@fal-ai/client');
-    
-    console.log('🔄 Calling FAL.ai Minimax Video-01 with frame-to-frame...');
-    const minimaxResponse = await fal.subscribe('fal-ai/minimax/video-01', {
-      input: falRequestBody,
-      logs: true,
-      onQueueUpdate: (update: any) => {
-        if (update.status === 'IN_PROGRESS') {
-          console.log('⏳ Minimax generation in progress...');
+    const minimaxResponse = await fetch('https://api.minimax.io/v1/video_generation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${minimaxApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(minimaxRequestBody)
+    });
+
+    console.log('📥 Minimax API response status:', minimaxResponse.status);
+
+    if (!minimaxResponse.ok) {
+      const errorText = await minimaxResponse.text();
+      console.error('❌ Minimax API error:', errorText);
+      
+      let errorMessage = 'Minimax EndFrame generation failed';
+      let statusCode = 500;
+      let retryable = true;
+
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error) {
+          errorMessage = errorData.error.message || errorMessage;
         }
+      } catch (e) {
+        // If error is not JSON, use text as is
+        errorMessage = errorText || errorMessage;
       }
-    });
 
-    console.log('✅ Minimax generation completed via FAL.ai');
-    console.log('📦 Response data:', minimaxResponse.data);
+      if (minimaxResponse.status === 400) {
+        errorMessage = `Invalid request: ${errorMessage}. Please check your images meet requirements (JPG/PNG/WebP, aspect ratio 2:5 to 5:2, shortest side > 300px, < 20MB).`;
+        retryable = false;
+        statusCode = 400;
+      } else if (minimaxResponse.status === 401 || minimaxResponse.status === 403) {
+        errorMessage = 'Authentication failed. Please check your MINIMAX_API_KEY configuration.';
+        retryable = false;
+        statusCode = 500;
+      } else if (minimaxResponse.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please try again later.';
+        retryable = true;
+        statusCode = 429;
+      }
 
-    // FAL.ai response format: minimaxResponse.data contains the video object
-    const videoData = minimaxResponse.data;
-    
-    // Check if the response contains a video URL
-    if (videoData && videoData.video && videoData.video.url) {
-      console.log('🎬 Video URL received from Minimax:', videoData.video.url);
+      return NextResponse.json({
+        success: false,
+        error: errorMessage,
+        retryable: retryable
+      } as EndFrameResponse, { status: statusCode });
+    }
+
+    const minimaxData = await minimaxResponse.json();
+    console.log('✅ Minimax API response received:', JSON.stringify(minimaxData, null, 2));
+
+    // Minimax returns a task_id for async video generation
+    // The response will contain either a video URL (if completed) or a task_id for polling
+    if (minimaxData.video_url || (minimaxData.data && minimaxData.data.video_url)) {
+      const videoUrl = minimaxData.video_url || minimaxData.data.video_url;
+      console.log('🎬 Video URL received from Minimax:', videoUrl);
       
       return NextResponse.json({
         success: true,
-        videoUrl: videoData.video.url,
+        videoUrl: videoUrl,
         status: 'completed'
       } as EndFrameResponse);
+    } else if (minimaxData.task_id || (minimaxData.data && minimaxData.data.task_id)) {
+      // Task created, need to poll for completion
+      const taskId = minimaxData.task_id || minimaxData.data.task_id;
+      console.log('⏳ Minimax task created:', taskId);
+      
+      return NextResponse.json({
+        success: true,
+        taskId: taskId,
+        status: 'IN_PROGRESS'
+      } as EndFrameResponse);
     } else {
-      console.error('❌ No video URL in Minimax response:', videoData);
+      console.error('❌ Unexpected Minimax response format:', minimaxData);
       return NextResponse.json({
         success: false,
-        error: 'EndFrame generation completed but no video was returned',
+        error: 'Unexpected response format from Minimax API',
         retryable: true
       } as EndFrameResponse, { status: 500 });
     }
@@ -177,20 +250,104 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint to check task status (for async operations)
 export async function GET(request: NextRequest) {
+  console.log('🔍 API Route: /api/endframe - Task status check');
+  
   const { searchParams } = new URL(request.url);
   const taskId = searchParams.get('taskId');
 
   if (!taskId) {
+    console.error('❌ Missing taskId parameter');
     return NextResponse.json({
       success: false,
-      error: 'Task ID is required'
+      error: 'Task ID is required for status check'
     } as EndFrameResponse, { status: 400 });
   }
 
-  // For now, we'll return a simple response since Minimax sync API doesn't use async tasks
-  // In the future, if you switch to async API, you can implement proper task polling here
-  return NextResponse.json({
-    success: false,
-    error: 'Task polling not implemented for sync API'
-  } as EndFrameResponse, { status: 501 });
+  console.log('🔍 Checking status for task:', taskId);
+
+  try {
+    // Get Minimax API key from environment
+    const minimaxApiKey = process.env.MINIMAX_API_KEY;
+    if (!minimaxApiKey) {
+      console.error('❌ MINIMAX_API_KEY not found in environment variables');
+      return NextResponse.json({
+        success: false,
+        error: 'Minimax API key not configured',
+        retryable: false
+      } as EndFrameResponse, { status: 500 });
+    }
+
+    // Query Minimax task status
+    const statusResponse = await fetch(`https://api.minimax.io/v1/query/video_generation?task_id=${taskId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${minimaxApiKey}`
+      }
+    });
+
+    console.log('📥 Minimax status response:', statusResponse.status);
+
+    if (!statusResponse.ok) {
+      const errorText = await statusResponse.text();
+      console.error('❌ Minimax status check error:', errorText);
+      
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to check task status',
+        retryable: true
+      } as EndFrameResponse, { status: 500 });
+    }
+
+    const statusData = await statusResponse.json();
+    console.log('📦 Task status:', statusData);
+
+    // Check task status
+    const status = statusData.status || (statusData.data && statusData.data.status);
+    
+    if (status === 'Success' || status === 'completed') {
+      const videoUrl = statusData.file_url || statusData.video_url || (statusData.data && (statusData.data.file_url || statusData.data.video_url));
+      
+      if (videoUrl) {
+        console.log('✅ Task completed, video URL:', videoUrl);
+        return NextResponse.json({
+          success: true,
+          videoUrl: videoUrl,
+          status: 'completed',
+          taskId: taskId
+        } as EndFrameResponse);
+      }
+    } else if (status === 'Processing' || status === 'Queueing' || status === 'IN_PROGRESS') {
+      console.log('⏳ Task still in progress');
+      return NextResponse.json({
+        success: true,
+        status: 'IN_PROGRESS',
+        taskId: taskId
+      } as EndFrameResponse);
+    } else if (status === 'Failed' || status === 'failed') {
+      console.error('❌ Task failed');
+      return NextResponse.json({
+        success: false,
+        error: 'Video generation task failed',
+        status: 'failed',
+        taskId: taskId,
+        retryable: false
+      } as EndFrameResponse, { status: 500 });
+    }
+
+    // Unknown status
+    console.warn('⚠️ Unknown task status:', status);
+    return NextResponse.json({
+      success: false,
+      error: `Unknown task status: ${status}`,
+      retryable: true
+    } as EndFrameResponse, { status: 500 });
+
+  } catch (error) {
+    console.error('💥 Error checking task status:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to check task status',
+      retryable: true
+    } as EndFrameResponse, { status: 500 });
+  }
 }

@@ -18,7 +18,9 @@ Add the following environment variable to your `.env.local` file:
 MINIMAX_API_KEY=your_minimax_api_key_here
 ```
 
-You can obtain a Minimax API key from: https://api.minimax.chat/
+You can obtain a Minimax API key from: https://platform.minimaxi.com/
+
+**Important**: This feature uses the direct Minimax API (not FAL.ai) to ensure access to the latest MiniMax-Hailuo-02 model with full first_frame_image and last_frame_image support.
 
 ### API Endpoint
 The feature uses a new API endpoint: `/api/endframe`
@@ -42,7 +44,9 @@ The feature uses a new API endpoint: `/api/endframe`
 
 ### Key Features
 - **Automatic Mode Detection**: Detects when exactly 2 images are uploaded
-- **Base64 Image Processing**: Converts uploaded images to the format required by Minimax
+- **Async Task Polling**: Handles Minimax's async video generation with automatic polling
+- **Base64 Image Processing**: Converts uploaded images to data URIs required by Minimax
+- **768P Resolution**: Uses 768P resolution for optimal quality (supports 6s and 10s durations)
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Gallery Integration**: Generated videos are automatically added to the content gallery
 - **Chat Integration**: Success/error messages appear in the chat interface

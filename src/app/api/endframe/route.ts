@@ -308,7 +308,41 @@ export async function GET(request: NextRequest) {
     
     // Check for completion with video URL
     if (status === 'Success' || status === 'completed' || status === 'Finished') {
-      const videoUrl = statusData.file_url || statusData.video_url || (statusData.data && (statusData.data.file_url || statusData.data.video_url));
+      console.log('✅ Task completed with status:', status);
+      
+      // Try to get video URL from various possible fields
+      let videoUrl = statusData.file_url || statusData.video_url || (statusData.data && (statusData.data.file_url || statusData.data.video_url));
+      
+      // If no direct video URL, check if we have a file_id and need to fetch the file
+      if (!videoUrl && statusData.file_id) {
+        console.log('📥 No direct video URL, fetching file using file_id:', statusData.file_id);
+        
+        try {
+          // Query the file endpoint to get the video URL
+          const fileResponse = await fetch(`https://api.minimax.io/v1/files/retrieve?file_id=${statusData.file_id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${minimaxApiKey}`
+            }
+          });
+          
+          if (fileResponse.ok) {
+            const fileData = await fileResponse.json();
+            console.log('📦 File data received:', fileData);
+            
+            // Extract video URL from file data
+            videoUrl = fileData.file?.download_url || fileData.download_url || fileData.url || fileData.file_url;
+            
+            if (videoUrl) {
+              console.log('✅ Video URL extracted from file:', videoUrl);
+            }
+          } else {
+            console.error('❌ Failed to fetch file:', await fileResponse.text());
+          }
+        } catch (fileError) {
+          console.error('❌ Error fetching file:', fileError);
+        }
+      }
       
       if (videoUrl) {
         console.log('✅ Task completed, video URL:', videoUrl);
@@ -319,7 +353,15 @@ export async function GET(request: NextRequest) {
           taskId: taskId
         } as EndFrameResponse);
       } else {
-        console.warn('⚠️ Status is success but no video URL found in response');
+        console.error('❌ Status is success but no video URL found in response or file endpoint');
+        console.log('📦 Full status data:', JSON.stringify(statusData, null, 2));
+        
+        // Return error instead of continuing to poll
+        return NextResponse.json({
+          success: false,
+          error: 'Video generation completed but video URL not available. Please try again.',
+          retryable: true
+        } as EndFrameResponse, { status: 500 });
       }
     }
     

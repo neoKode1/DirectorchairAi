@@ -88,89 +88,53 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Preparing request for Minimax EndFrame API...');
     console.log('📝 Prompt:', body.prompt);
 
-    // Get Minimax API key from environment
-    const minimaxApiKey = process.env.MINIMAX_API_KEY;
-    if (!minimaxApiKey) {
-      console.error('❌ MINIMAX_API_KEY not found in environment variables');
-      return NextResponse.json({
-        success: false,
-        error: 'Minimax API key not configured',
-        retryable: false
-      } as EndFrameResponse, { status: 500 });
-    }
-
-    // Make request to Minimax EndFrame API
-    console.log('🔄 Making request to Minimax EndFrame API...');
+    // Make request to Minimax EndFrame API via FAL.ai
+    console.log('🔄 Making request to Minimax EndFrame API via FAL.ai...');
     
-    const minimaxRequestBody = {
-      first_frame_image: firstImageUri, // Use the first image as the starting frame
-      last_frame_image: secondImageUri, // Use the second image as the ending frame
-      prompt: body.prompt,
-      model: body.model || 'MiniMax-Hailuo-02'
+    // Use FAL.ai's Minimax Video-01 endpoint which supports frame-to-frame generation
+    const falRequestBody = {
+      first_frame_image: firstImageUri,
+      last_frame_image: secondImageUri,
+      prompt: body.prompt
     };
 
     console.log('📤 Request payload:', {
-      model: minimaxRequestBody.model,
-      prompt: minimaxRequestBody.prompt,
-      hasFirstFrame: !!minimaxRequestBody.first_frame_image,
-      hasLastFrame: !!minimaxRequestBody.last_frame_image
+      prompt: falRequestBody.prompt,
+      hasFirstFrame: !!falRequestBody.first_frame_image,
+      hasLastFrame: !!falRequestBody.last_frame_image
     });
 
-    const minimaxResponse = await fetch('https://api.minimax.chat/v1/text_to_video_sync', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${minimaxApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(minimaxRequestBody)
-    });
-
-    console.log('📥 Minimax API response status:', minimaxResponse.status);
-
-    if (!minimaxResponse.ok) {
-      const errorText = await minimaxResponse.text();
-      console.error('❌ Minimax API error:', errorText);
-      
-      let errorMessage = 'Minimax EndFrame generation failed';
-      let statusCode = 500;
-      let retryable = true;
-
-      if (minimaxResponse.status === 400) {
-        errorMessage = 'Invalid request parameters. Please check your images and prompt.';
-        retryable = false;
-        statusCode = 400;
-      } else if (minimaxResponse.status === 401) {
-        errorMessage = 'Authentication failed. Please check API key configuration.';
-        retryable = false;
-        statusCode = 500;
-      } else if (minimaxResponse.status === 429) {
-        errorMessage = 'Rate limit exceeded. Please try again later.';
-        retryable = true;
-        statusCode = 429;
+    // Use FAL.ai client to call Minimax Video-01 with frame-to-frame
+    const { fal } = await import('@fal-ai/client');
+    
+    console.log('🔄 Calling FAL.ai Minimax Video-01 with frame-to-frame...');
+    const minimaxResponse = await fal.subscribe('fal-ai/minimax/video-01', {
+      input: falRequestBody,
+      logs: true,
+      onQueueUpdate: (update: any) => {
+        if (update.status === 'IN_PROGRESS') {
+          console.log('⏳ Minimax generation in progress...');
+        }
       }
+    });
 
-      return NextResponse.json({
-        success: false,
-        error: errorMessage,
-        retryable: retryable,
-        details: errorText
-      } as EndFrameResponse, { status: statusCode });
-    }
+    console.log('✅ Minimax generation completed via FAL.ai');
+    console.log('📦 Response data:', minimaxResponse.data);
 
-    const minimaxData = await minimaxResponse.json();
-    console.log('✅ Minimax API response received');
-
+    // FAL.ai response format: minimaxResponse.data contains the video object
+    const videoData = minimaxResponse.data;
+    
     // Check if the response contains a video URL
-    if (minimaxData.video_url) {
-      console.log('🎬 Video URL received from Minimax:', minimaxData.video_url);
+    if (videoData && videoData.video && videoData.video.url) {
+      console.log('🎬 Video URL received from Minimax:', videoData.video.url);
       
       return NextResponse.json({
         success: true,
-        videoUrl: minimaxData.video_url,
+        videoUrl: videoData.video.url,
         status: 'completed'
       } as EndFrameResponse);
     } else {
-      console.error('❌ No video URL in Minimax response:', minimaxData);
+      console.error('❌ No video URL in Minimax response:', videoData);
       return NextResponse.json({
         success: false,
         error: 'EndFrame generation completed but no video was returned',

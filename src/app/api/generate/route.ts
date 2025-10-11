@@ -215,7 +215,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const isVideoModel = model.includes('video') || 
                         model.includes('veo') || 
                         model.includes('kling') || 
-                        model.includes('minimax');
+                        model.includes('minimax') ||
+                        model.includes('endframe');
 
     const isImageModel = model.includes('flux') || 
                         model.includes('imagen') || 
@@ -706,6 +707,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
+    // Handle EndFrame model specific parameters
+    if (model.includes('endframe')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected EndFrame model: ${model}`);
+      
+      // EndFrame requires two images - redirect to EndFrame API
+      console.log(`🎬 [Generate API] [${requestId}] Redirecting EndFrame request to dedicated API`);
+      
+      // For EndFrame, we should redirect to the /api/endframe endpoint
+      // This is handled by the client-side logic, so we'll return an error here
+      return NextResponse.json({
+        success: false,
+        error: "EndFrame requests should be sent directly to /api/endframe endpoint",
+        requestId: requestId,
+        timestamp: new Date().toISOString()
+      }, { status: 400 });
+    }
+
     // Handle Sora 2 and Sora 2 Pro model specific parameters
     if (model.includes('sora-2')) {
       console.log(`🔧 [Generate API] [${requestId}] Detected Sora 2 model: ${model}`);
@@ -853,7 +871,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     let result;
     try {
       // Add timeout based on model type and quality (based on actual FAL AI timing data)
-      const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax') || model.includes('wan-pro') || model.includes('wan/v2.2-a14b') || model.includes('wan-25-preview') || model.includes('hunyuan') || model.includes('ovi') || model.includes('luma-dream-machine');
+      const isVideoModel = model.includes('sora-2') || model.includes('veo3') || model.includes('kling-video') || model.includes('minimax') || model.includes('wan-pro') || model.includes('wan/v2.2-a14b') || model.includes('wan-25-preview') || model.includes('hunyuan') || model.includes('ovi') || model.includes('luma-dream-machine') || model.includes('endframe');
       const isHighQualityImageModel = model.includes('flux-pro') || model.includes('imagen4') || model.includes('nano-banana');
       
       let timeoutDuration;

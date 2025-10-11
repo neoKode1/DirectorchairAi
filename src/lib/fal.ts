@@ -605,4 +605,19 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       frame_type: "first", // "first", "middle", or "last"
     },
   },
+  {
+    endpointId: "endframe/minimax-hailuo-02",
+    label: "EndFrame (Minimax)",
+    description: "Create smooth video transitions between two images using Minimax's EndFrame technology. Upload a start frame and end frame, then describe the transition",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      firstImage: "",
+      secondImage: "",
+      prompt: "Describe the transition between your start and end frames",
+      model: "MiniMax-Hailuo-02"
+    },
+  },
 ];

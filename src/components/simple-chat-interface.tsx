@@ -187,7 +187,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
            model.includes('veo') || 
            model.includes('kling') || 
            model.includes('minimax') || 
-           model.includes('luma');
+           model.includes('luma') ||
+           model.includes('endframe');
   };
 
   useEffect(() => {
@@ -488,7 +489,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (uploadedImages.length !== 2) {
       toast({
         title: "Error",
-        description: "Please upload exactly two images for EndFrame generation",
+        description: "EndFrame requires exactly two images (start frame and end frame)",
         variant: "destructive",
       });
       return;
@@ -612,8 +613,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.preventDefault();
     if (!userInput.trim() && uploadedImages.length === 0) return;
 
-    // Handle EndFrame generation when two images are uploaded
-    if (endFrameMode && uploadedImages.length === 2) {
+    // Handle EndFrame generation when EndFrame model is selected or when two images are uploaded
+    if (preferredVideoModel === 'endframe/minimax-hailuo-02' || (endFrameMode && uploadedImages.length === 2)) {
       await handleEndFrameGeneration();
       return;
     }
@@ -1256,6 +1257,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       <span>Kling AI Avatar Pro</span>
                     </div>
                   </SelectItem>
+                  <SelectItem value="endframe/minimax-hailuo-02">
+                    <div className="flex items-center gap-2">
+                      <img src="/minimax-color.svg" alt="EndFrame" className="w-4 h-4" />
+                      <span>EndFrame (Minimax)</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
               {/* Duration indicator for video models */}
@@ -1714,6 +1721,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                           <div className="flex items-center gap-2">
                             <img src="/kling-color.svg" alt="Kling Avatar" className="w-4 h-4" />
                             <span>Kling AI Avatar Pro</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="endframe/minimax-hailuo-02">
+                          <div className="flex items-center gap-2">
+                            <img src="/minimax-color.svg" alt="EndFrame" className="w-4 h-4" />
+                            <span>EndFrame (Minimax)</span>
                           </div>
                         </SelectItem>
                       </SelectContent>

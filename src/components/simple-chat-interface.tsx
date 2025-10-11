@@ -602,7 +602,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   
   // Helper function to add video to gallery and chat
   const addVideoToGallery = async (videoUrl: string) => {
-    // Add to gallery
+    console.log('📦 Adding EndFrame video to gallery and center panel:', videoUrl);
+    
+    // Add to gallery storage
     if (typeof window !== 'undefined') {
       const { contentStorage } = await import('@/lib/content-storage');
       const endFrameContent = {
@@ -610,18 +612,28 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         type: 'video' as const,
         url: videoUrl,
         title: `EndFrame: ${userInput.substring(0, 50)}...`,
-        prompt: userInput,
+        prompt: userInput || 'EndFrame transition',
         timestamp: new Date(),
         metadata: {
           format: 'MiniMax EndFrame',
-          model: 'MiniMax-Hailuo-02'
+          model: 'MiniMax-Hailuo-02',
+          duration: 6
         }
       };
       
       contentStorage.addContent(endFrameContent);
+      console.log('✅ EndFrame content added to storage');
+      
+      // Dispatch event to update gallery
       window.dispatchEvent(new CustomEvent('contentUpdated'));
+      console.log('✅ Gallery update event dispatched');
     }
 
+    // Update lastGeneratedImage to the video URL (for reference in other operations)
+    setLastGeneratedImage(videoUrl);
+    console.log('✅ Updated lastGeneratedImage state');
+
+    // Show success toast
     toast({
       title: "EndFrame Video Generated!",
       description: "Your start-to-end frame video has been created successfully.",
@@ -632,7 +644,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setUploadedImages([]);
     setEndFrameMode(false);
     
-    // Add success message to chat
+    // Add success message to chat with video preview
     const successMessage = {
       id: Date.now().toString(),
       type: 'assistant' as const,
@@ -646,6 +658,26 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
     
     setMessages(prev => [...prev, successMessage]);
+    console.log('✅ EndFrame success message added to chat');
+    
+    // Trigger onContentGenerated callback to update center panel
+    try {
+      console.log('✅ Calling onContentGenerated callback for center panel');
+      await onContentGenerated({
+        type: 'video',
+        url: videoUrl,
+        prompt: userInput || 'EndFrame transition',
+        model: 'MiniMax-Hailuo-02',
+        metadata: {
+          format: 'MiniMax EndFrame',
+          duration: 6
+        }
+      });
+      console.log('✅ Center panel updated with EndFrame video');
+    } catch (error) {
+      console.error('❌ Error updating center panel:', error);
+      // Non-blocking error - video is still in gallery and chat
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -233,8 +233,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'decart/lucy-14b/image-to-video', label: 'Lucy-14B (Lightning Fast)', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['decart/lucy-14b/image-to-video'] },
       { value: 'fal-ai/wan/v2.2-a14b/image-to-video/lora', label: 'Wan 2.2 I2V (LoRA)', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan/v2.2-a14b/image-to-video/lora'] },
       { value: 'fal-ai/bytedance/omnihuman', label: 'OmniHuman (Avatar)', icon: '/bytedance-color.svg', isNew: true, description: modelDescriptions['fal-ai/bytedance/omnihuman'] },
-      // DISABLED: Upstream service issues - use alternatives instead
-      // { value: 'fal-ai/kling-video/v1/pro/ai-avatar', label: 'Kling AI Avatar Pro', icon: '/kling-color.svg', disabled: true, description: 'Kling AI Avatar Pro (temporarily disabled - use OmniHuman instead)' },
+      { value: 'fal-ai/kling-video/v1/pro/ai-avatar', label: 'Kling AI Avatar Pro ⏰', icon: '/kling-color.svg', description: 'Kling AI Avatar Pro - Premium avatar generation (⚠️ ~20 min processing time)' },
+      // DISABLED: Sync Lipsync v2 - Proxy routing issue (404 error)
       // { value: 'fal-ai/sync-lipsync/v2', label: 'Sync Lipsync v2', icon: '/sync.svg', disabled: true, description: 'Sync Lipsync v2 (temporarily disabled - use VEED Lipsync instead)' },
       { value: 'veed/lipsync', label: 'VEED Lipsync', icon: '/veed.svg', isNew: true, description: modelDescriptions['veed/lipsync'] },
       { value: 'fal-ai/wan-pro/image-to-video', label: 'Wan Pro (I2V) - Disabled', icon: '/alibaba-color.svg', disabled: true, description: 'Wan Pro image-to-video (currently disabled)' },
@@ -982,17 +982,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       return;
     }
 
-    // DISABLED: Kling AI Avatar validation (model temporarily disabled - use OmniHuman instead)
-    // if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
-    //   if (uploadedImages.length === 0) {
-    //     alert('Please upload an image for the AI Avatar.');
-    //     return;
-    //   }
-    //   if (!uploadedAudio) {
-    //     alert('Please upload an audio file for the AI Avatar.');
-    //     return;
-    //   }
-    // }
+    // Validate Kling AI Avatar requirements (⚠️ ~20 min processing time)
+    if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
+      if (uploadedImages.length === 0) {
+        alert('Please upload an image for the AI Avatar.');
+        return;
+      }
+      if (!uploadedAudio) {
+        alert('Please upload an audio file for the AI Avatar.');
+        return;
+      }
+      // Warning about long processing time
+      const confirmed = confirm('⚠️ Kling AI Avatar Pro takes approximately 20 minutes to generate. Continue?');
+      if (!confirmed) {
+        return;
+      }
+    }
 
     // Validate Sora 2 image-to-video requirements
     if (preferredVideoModel.includes('sora-2/image-to-video')) {
@@ -1156,10 +1161,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         image_url: imageToUse,
         image_urls: imagesToUse,
         aspect_ratio: aspectRatio,
-        // DISABLED: Kling AI Avatar audio handling (model disabled)
-        // ...(model === 'fal-ai/kling-video/v1/pro/ai-avatar' && uploadedAudio && {
-        //   audio_url: uploadedAudio
-        // }),
+        // Add audio_url for Kling AI Avatar (⚠️ ~20 min processing)
+        ...(model === 'fal-ai/kling-video/v1/pro/ai-avatar' && uploadedAudio && {
+          audio_url: uploadedAudio
+        }),
         // Add required video parameters for video models
         ...(wantsVideo && {
           duration: model.includes('sora-2') ? 4 : '5s', // Sora 2 expects number, others expect string
@@ -1783,17 +1788,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           })()
         )}
 
-        {/* DISABLED: Audio Upload for Kling AI Avatar (model disabled - use OmniHuman instead) */}
-        {/* {preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar' && (
+        {/* Audio Upload for Kling AI Avatar (⚠️ ~20 min processing time) */}
+        {preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar' && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Audio File (Required for AI Avatar):
             </p>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+            <div className="mb-2 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                ⏰ <strong>Note:</strong> Kling AI Avatar Pro takes approximately 20 minutes to process
+              </p>
+            </div>
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
               {uploadedAudio ? (
                 <div className="flex items-center justify-center space-x-2">
                   <span className="text-green-600">🎵</span>
-                  <span className="text-sm text-gray-600">Audio file uploaded</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Audio file uploaded</span>
                   <button
                     onClick={() => setUploadedAudio(null)}
                     className="text-red-500 hover:text-red-700 ml-2"
@@ -1804,13 +1814,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               ) : (
                 <div className="space-y-2">
                   <span className="text-gray-500">🎵</span>
-                  <p className="text-sm text-gray-500">Drop audio file here or click to upload</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Drop audio file here or click to upload</p>
                   <p className="text-xs text-gray-400">Supports: MP3, WAV, M4A, AAC (Max 5MB)</p>
                 </div>
               )}
             </div>
           </div>
-        )} */}
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Input Row */}

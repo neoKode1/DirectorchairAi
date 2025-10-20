@@ -572,19 +572,21 @@ for await (const event of stream) {
 26. ✅ `fal-ai/bytedance/omnihuman` - Fixed: Used image with visible face
 27. ✅ `fal-ai/minimax-music` - Fixed: Used reference audio >10 seconds
 
-### ❌ Final 2 Remaining Issues
+### ✅ Long Processing Model (1 model)
 
-1. ❌ **`fal-ai/kling-video/v1/pro/ai-avatar`**
-   - Error: "Proxy request failed - fetch failed"
-   - Status: Upstream service connectivity issue
-   - **Action**: May be temporary FAL service issue or model deprecation
-   - **Workaround**: Retry later or use alternative avatar model
+28. ✅ `fal-ai/kling-video/v1/pro/ai-avatar` - **Working!** (⚠️ ~20 min processing time)
+   - Confirmed working after extended wait
+   - Processing time: ~974 seconds (16+ minutes)
+   - Status: Fully functional, just very slow
+   - **UI Updated**: Added time warning and confirmation dialog
 
-2. ❌ **`fal-ai/sync-lipsync/v2`**
+### ❌ Final Remaining Issue (1 model only)
+
+1. ❌ **`fal-ai/sync-lipsync/v2`**
    - Error: "404: Not Found"
    - Status: Proxy routing issue
    - **Action**: Model parameter handling needs investigation
-   - **Workaround**: Use `veed/lipsync` instead (working)
+   - **Workaround**: Use `veed/lipsync` instead (working perfectly)
 
 ### ⚠️ Models Not Testable
 

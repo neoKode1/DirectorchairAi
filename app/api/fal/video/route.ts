@@ -186,6 +186,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Other Minimax models require minimum 6s
       input.duration = '6s';
       console.log('🎬 [FAL Video Proxy] Setting duration to 6s for Minimax model (minimum requirement)');
+    } else if (model.includes('pixverse')) {
+      // Pixverse expects "5" or "8" (string without "s" suffix)
+      if (body.duration) {
+        let durationValue = body.duration;
+        if (typeof durationValue === 'number') {
+          durationValue = String(durationValue);
+        }
+        if (typeof durationValue === 'string') {
+          durationValue = durationValue.replace(/s$/i, '');
+        }
+        const permitted = ['5', '8'];
+        if (permitted.includes(durationValue)) {
+          input.duration = durationValue;
+        } else {
+          input.duration = '5';
+        }
+      } else {
+        input.duration = '5';
+      }
+      console.log('🎬 [FAL Video Proxy] Setting duration for Pixverse model:', input.duration);
     } else if (model.includes('luma-dream-machine/ray-2-flash')) {
       // Luma Ray 2 Flash only accepts 5s or 9s
       input.duration = '5s';

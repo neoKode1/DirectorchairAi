@@ -1,0 +1,131 @@
+{
+  "summary": {
+    "total": 12,
+    "passed": 5,
+    "failed": 7,
+    "successRate": 41.7,
+    "totalTime": 394038
+  },
+  "results": [
+    {
+      "model": "fal-ai/reve/text-to-image",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 1883,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:29:27.414Z"
+    },
+    {
+      "model": "fal-ai/reve/edit",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 180,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:29:28.600Z"
+    },
+    {
+      "model": "fal-ai/reve/remix",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 31348,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:30:00.950Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/v1.1-ultra",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 12193,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:30:14.148Z"
+    },
+    {
+      "model": "fal-ai/veo3.1",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 236,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:30:15.393Z"
+    },
+    {
+      "model": "fal-ai/sora-2/text-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 532,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:30:16.929Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.1/master/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 263780,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:34:41.711Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 2287,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:34:45.013Z"
+    },
+    {
+      "model": "fal-ai/pixverse/v5/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 64357,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:35:50.373Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 2297,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:35:53.676Z"
+    },
+    {
+      "model": "fal-ai/minimax-music/v1.5",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 2296,
+      "hasData": false,
+      "error": "Unprocessable Entity",
+      "timestamp": "2025-10-20T08:35:56.980Z"
+    },
+    {
+      "model": "fal-ai/elevenlabs-tts",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 570,
+      "hasData": false,
+      "error": null,
+      "timestamp": "2025-10-20T08:35:58.554Z"
+    }
+  ]
+}

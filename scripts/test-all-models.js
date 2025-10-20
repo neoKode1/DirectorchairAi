@@ -22,7 +22,8 @@ const MODEL_TESTS = {
       model: 'fal-ai/reve/text-to-image',
       prompt: 'A beautiful sunset over mountains',
       aspect_ratio: '16:9',
-      output_format: 'jpeg'
+      num_images: 1,
+      output_format: 'png'
     },
     expectedStatus: 200,
     description: 'Reve Text-to-Image generation'
@@ -35,8 +36,8 @@ const MODEL_TESTS = {
       model: 'fal-ai/reve/edit',
       prompt: 'Make the sky more dramatic',
       image_url: 'https://picsum.photos/512/512',
-      aspect_ratio: '16:9',
-      output_format: 'jpeg'
+      num_images: 1,
+      output_format: 'png'
     },
     expectedStatus: 200,
     description: 'Reve Edit image transformation'
@@ -78,7 +79,7 @@ const MODEL_TESTS = {
     body: {
       model: 'fal-ai/veo3.1',
       prompt: 'A cat playing with a ball',
-      duration: '4',
+      duration: '8s',
       aspect_ratio: '16:9',
       resolution: '720p'
     },
@@ -120,7 +121,7 @@ const MODEL_TESTS = {
       model: 'fal-ai/veo3.1/image-to-video',
       prompt: 'Animate this image with gentle movement',
       image_url: 'https://picsum.photos/512/512',
-      duration: '4',
+      duration: '8s',
       resolution: '720p'
     },
     expectedStatus: 200,
@@ -147,7 +148,7 @@ const MODEL_TESTS = {
       model: 'fal-ai/luma-dream-machine/ray-2/image-to-video',
       prompt: 'Create a cinematic video from this image',
       image_url: 'https://picsum.photos/512/512',
-      duration: '5'
+      duration: '5s'
     },
     expectedStatus: 200,
     description: 'Luma Ray 2 image-to-video'

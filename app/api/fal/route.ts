@@ -65,8 +65,6 @@ function sanitizeInput(model: string, input: any) {
   // Models that need duration without "s" suffix (expect plain string numbers like "5", "8")
   const modelsNeedingPlainDuration = [
     'minimax',
-    'veo3',
-    'luma-dream-machine',
     'pixverse',
     'kling',
     'hunyuan',
@@ -78,10 +76,23 @@ function sanitizeInput(model: string, input: any) {
     'omnihuman'
   ];
 
+  // Models that need duration WITH "s" suffix (expect "5s", "8s", etc.)
+  const modelsNeedingSDuration = [
+    'veo3',
+    'luma-dream-machine'
+  ];
+
   if (modelsNeedingPlainDuration.some(modelName => model.includes(modelName))) {
     // Strip "s" suffix from duration for models expecting plain numbers
     if (sanitized.duration && typeof sanitized.duration === 'string') {
       sanitized.duration = sanitized.duration.replace('s', '');
+    }
+  }
+
+  if (modelsNeedingSDuration.some(modelName => model.includes(modelName))) {
+    // Add "s" suffix to duration for models expecting "5s", "8s" format
+    if (sanitized.duration && typeof sanitized.duration === 'string' && !sanitized.duration.endsWith('s')) {
+      sanitized.duration = sanitized.duration + 's';
     }
   }
 
@@ -90,6 +101,13 @@ function sanitizeInput(model: string, input: any) {
     if (sanitized.text && !sanitized.prompt) {
       sanitized.prompt = sanitized.text;
       delete sanitized.text;
+    }
+    
+    // MiniMax Music requires lyrics_prompt field
+    if (model.includes('minimax-music')) {
+      if (sanitized.prompt && !sanitized.lyrics_prompt) {
+        sanitized.lyrics_prompt = sanitized.prompt;
+      }
     }
   }
 

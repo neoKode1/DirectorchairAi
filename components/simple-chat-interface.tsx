@@ -1599,6 +1599,47 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   };
 
+  // Helper to get a friendly model display name from a model id/endpoint
+  const getFriendlyModelName = (modelId: string): string => {
+    if (!modelId) return '';
+    // Known friendly mappings first
+    const map: Record<string, string> = {
+      'fal-ai/nano-banana/edit': 'Nano Banana Edit',
+      'fal-ai/bytedance/seedream/v4/edit': 'Seedream 4.0 Edit',
+      'fal-ai/reve/text-to-image': 'Reve Text-to-Image',
+      'fal-ai/reve/edit': 'Reve Edit',
+      'fal-ai/reve/remix': 'Reve Remix',
+      'fal-ai/veo3.1': 'Veo 3.1',
+      'fal-ai/veo3.1/fast': 'Veo 3.1 Fast',
+      'fal-ai/veo3.1/image-to-video': 'Veo 3.1 (I2V)',
+      'fal-ai/veo3.1/first-last-frame-to-video': 'Veo 3.1 First/Last',
+      'fal-ai/veo3.1/fast/first-last-frame-to-video': 'Veo 3.1 Fast First/Last',
+      'fal-ai/veo3.1/reference-to-video': 'Veo 3.1 Reference',
+      'fal-ai/sora-2/text-to-video': 'Sora 2 (T2V)',
+      'fal-ai/sora-2/text-to-video/pro': 'Sora 2 Pro (T2V)',
+      'fal-ai/sora-2/image-to-video': 'Sora 2 (I2V)',
+      'fal-ai/sora-2/image-to-video/pro': 'Sora 2 Pro (I2V)',
+      'fal-ai/kling-video/v1/pro/ai-avatar': 'Kling AI Avatar Pro',
+      'fal-ai/kling-video/v2.1/master/text-to-video': 'Kling 2.1 Master (T2V)',
+      'fal-ai/kling-video/v2.1/master/image-to-video': 'Kling 2.1 Master (I2V)',
+      'fal-ai/kling-video/v2.5-turbo/pro/text-to-video': 'Kling 2.5 Turbo Pro (T2V)',
+      'fal-ai/kling-video/v2.5-turbo/pro/image-to-video': 'Kling 2.5 Turbo Pro (I2V)',
+      'fal-ai/wan-25-preview/text-to-image': 'Wan 2.5 (T2I)',
+      'fal-ai/wan-25-preview/image-to-image': 'Wan 2.5 (I2I)',
+      'fal-ai/wan-25-preview/text-to-video': 'Wan 2.5 (T2V)',
+      'fal-ai/wan-25-preview/image-to-video': 'Wan 2.5 (I2V)',
+      'endframe/minimax-hailuo-02': 'EndFrame',
+    };
+    if (map[modelId]) return map[modelId];
+    // Fallback: extract the last segment after the last '/'
+    const parts = modelId.split('/');
+    const last = parts[parts.length - 1] || modelId;
+    // Replace hyphens with spaces and capitalize words
+    return last
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-black">
       {/* Header */}
@@ -1917,7 +1958,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   {config.description}
                 </p>
                 <p className={`text-xs ${config.textColor.replace('800', '500')} mt-1`}>
-                  Model: {getRecommendedModel(intent)}
+                  Model: {getFriendlyModelName(getRecommendedModel(intent))}
                 </p>
               </div>
             );

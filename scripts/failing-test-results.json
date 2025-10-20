@@ -1,0 +1,41 @@
+{
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "successRate": 100,
+    "totalTime": 102554
+  },
+  "results": [
+    {
+      "model": "fal-ai/reve/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 6739,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:06:13.720Z"
+    },
+    {
+      "model": "fal-ai/reve/edit",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 24468,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:06:38.190Z"
+    },
+    {
+      "model": "fal-ai/sora-2/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 71342,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:07:49.533Z"
+    }
+  ]
+}

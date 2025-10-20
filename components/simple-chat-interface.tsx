@@ -233,8 +233,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'decart/lucy-14b/image-to-video', label: 'Lucy-14B (Lightning Fast)', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['decart/lucy-14b/image-to-video'] },
       { value: 'fal-ai/wan/v2.2-a14b/image-to-video/lora', label: 'Wan 2.2 I2V (LoRA)', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan/v2.2-a14b/image-to-video/lora'] },
       { value: 'fal-ai/bytedance/omnihuman', label: 'OmniHuman (Avatar)', icon: '/bytedance-color.svg', isNew: true, description: modelDescriptions['fal-ai/bytedance/omnihuman'] },
-      { value: 'fal-ai/kling-video/v1/pro/ai-avatar', label: 'Kling AI Avatar Pro', icon: '/kling-color.svg', description: modelDescriptions['fal-ai/kling-video/v1/pro/ai-avatar'] },
-      { value: 'fal-ai/sync-lipsync/v2', label: 'Sync Lipsync v2', icon: '/sync.svg', isNew: true, description: modelDescriptions['fal-ai/sync-lipsync/v2'] },
+      // DISABLED: Upstream service issues - use alternatives instead
+      // { value: 'fal-ai/kling-video/v1/pro/ai-avatar', label: 'Kling AI Avatar Pro', icon: '/kling-color.svg', disabled: true, description: 'Kling AI Avatar Pro (temporarily disabled - use OmniHuman instead)' },
+      // { value: 'fal-ai/sync-lipsync/v2', label: 'Sync Lipsync v2', icon: '/sync.svg', disabled: true, description: 'Sync Lipsync v2 (temporarily disabled - use VEED Lipsync instead)' },
       { value: 'veed/lipsync', label: 'VEED Lipsync', icon: '/veed.svg', isNew: true, description: modelDescriptions['veed/lipsync'] },
       { value: 'fal-ai/wan-pro/image-to-video', label: 'Wan Pro (I2V) - Disabled', icon: '/alibaba-color.svg', disabled: true, description: 'Wan Pro image-to-video (currently disabled)' },
       { value: 'fal-ai/wan-trainer/i2v-720p', label: 'Wan Trainer I2V 720p', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-trainer/i2v-720p'] },
@@ -981,17 +982,17 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       return;
     }
 
-    // Validate Kling AI Avatar requirements
-    if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
-      if (uploadedImages.length === 0) {
-        alert('Please upload an image for the AI Avatar.');
-        return;
-      }
-      if (!uploadedAudio) {
-        alert('Please upload an audio file for the AI Avatar.');
-        return;
-      }
-    }
+    // DISABLED: Kling AI Avatar validation (model temporarily disabled - use OmniHuman instead)
+    // if (preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar') {
+    //   if (uploadedImages.length === 0) {
+    //     alert('Please upload an image for the AI Avatar.');
+    //     return;
+    //   }
+    //   if (!uploadedAudio) {
+    //     alert('Please upload an audio file for the AI Avatar.');
+    //     return;
+    //   }
+    // }
 
     // Validate Sora 2 image-to-video requirements
     if (preferredVideoModel.includes('sora-2/image-to-video')) {
@@ -1155,10 +1156,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         image_url: imageToUse,
         image_urls: imagesToUse,
         aspect_ratio: aspectRatio,
-        // Add audio_url for Kling AI Avatar
-        ...(model === 'fal-ai/kling-video/v1/pro/ai-avatar' && uploadedAudio && {
-          audio_url: uploadedAudio
-        }),
+        // DISABLED: Kling AI Avatar audio handling (model disabled)
+        // ...(model === 'fal-ai/kling-video/v1/pro/ai-avatar' && uploadedAudio && {
+        //   audio_url: uploadedAudio
+        // }),
         // Add required video parameters for video models
         ...(wantsVideo && {
           duration: model.includes('sora-2') ? 4 : '5s', // Sora 2 expects number, others expect string
@@ -1782,8 +1783,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           })()
         )}
 
-        {/* Audio Upload for Kling AI Avatar */}
-        {preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar' && (
+        {/* DISABLED: Audio Upload for Kling AI Avatar (model disabled - use OmniHuman instead) */}
+        {/* {preferredVideoModel === 'fal-ai/kling-video/v1/pro/ai-avatar' && (
           <div className="mb-4">
             <p className="text-sm font-medium text-gray-700 mb-2">
               Audio File (Required for AI Avatar):
@@ -1809,7 +1810,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               )}
             </div>
           </div>
-        )}
+        )} */}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Input Row */}

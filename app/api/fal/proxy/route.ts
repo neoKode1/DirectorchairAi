@@ -20,13 +20,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('📊 [FAL Proxy] Response status:', response.status);
     console.log('📊 [FAL Proxy] Response headers:', Object.fromEntries(response.headers.entries()));
     
+    // Clone the response body to avoid 'disturbed or locked' error
+    const responseBody = response.body ? await response.clone().text() : null;
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Proxy request failed' }));
-      console.error('❌ [FAL Proxy] Error response:', errorData);
+      console.error('❌ [FAL Proxy] Error response status:', response.status);
+      console.error('❌ [FAL Proxy] Error response body:', responseBody);
     }
     
     // Convert Response to NextResponse
-    const nextResponse = new NextResponse(response.body, {
+    const nextResponse = new NextResponse(responseBody, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
@@ -52,8 +55,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const response = await route.GET(request);
     
+    // Clone the response body to avoid 'disturbed or locked' error
+    const responseBody = response.body ? await response.clone().text() : null;
+    
     // Convert Response to NextResponse
-    const nextResponse = new NextResponse(response.body, {
+    const nextResponse = new NextResponse(responseBody, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,

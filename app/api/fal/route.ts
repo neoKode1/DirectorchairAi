@@ -132,6 +132,47 @@ function sanitizeInput(model: string, input: any) {
     }
   }
 
+  if (model.includes('reve/text-to-image') || model.includes('reve/edit')) {
+    // Reve models expect specific parameters
+    console.log('🔧 [FAL API] Processing Reve model parameters:', model);
+    console.log('🔧 [FAL API] Input before sanitization:', sanitized);
+    
+    // Ensure required parameters are present
+    if (model.includes('reve/text-to-image')) {
+      if (!sanitized.prompt) {
+        console.error('❌ [FAL API] Reve text-to-image requires prompt');
+        throw new Error('Prompt is required for Reve text-to-image');
+      }
+    }
+    
+    if (model.includes('reve/edit')) {
+      if (!sanitized.prompt) {
+        console.error('❌ [FAL API] Reve edit requires prompt');
+        throw new Error('Prompt is required for Reve edit');
+      }
+      if (!sanitized.image_url) {
+        console.error('❌ [FAL API] Reve edit requires image_url');
+        throw new Error('Image URL is required for Reve edit');
+      }
+    }
+    
+    // Set default values if not provided
+    if (!sanitized.aspect_ratio) {
+      sanitized.aspect_ratio = '3:2'; // Default from documentation
+    }
+    if (!sanitized.num_images) {
+      sanitized.num_images = 1; // Default from documentation
+    }
+    if (!sanitized.output_format) {
+      sanitized.output_format = 'png'; // Default from documentation
+    }
+    if (sanitized.sync_mode === undefined) {
+      sanitized.sync_mode = false; // Default from documentation
+    }
+    
+    console.log('🔧 [FAL API] Sanitized input for Reve model:', sanitized);
+  }
+
   return sanitized;
 }
 

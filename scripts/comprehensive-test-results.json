@@ -1,0 +1,1217 @@
+{
+  "summary": {
+    "total": 73,
+    "passed": 38,
+    "failed": 35,
+    "successRate": 52,
+    "totalTime": 3680800
+  },
+  "results": [
+    {
+      "model": "fal-ai/reve/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 6578,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:20:10.119Z"
+    },
+    {
+      "model": "fal-ai/reve/edit",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 22605,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:20:32.725Z"
+    },
+    {
+      "model": "fal-ai/reve/remix",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 23867,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:20:56.594Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/v1.1-ultra",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 9862,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:21:06.458Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 17503,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:21:23.962Z"
+    },
+    {
+      "model": "fal-ai/imagen4/preview",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 8191,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:21:32.155Z"
+    },
+    {
+      "model": "fal-ai/recraft/v3/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 8383,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:21:40.539Z"
+    },
+    {
+      "model": "fal-ai/hidream-i1-full",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 12113,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:21:52.653Z"
+    },
+    {
+      "model": "fal-ai/flux-krea-lora/stream",
+      "status": 0,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 4016,
+      "hasData": false,
+      "error": "Unexpected token 'd', \"data: {\"im\"... is not valid JSON",
+      "timestamp": "2025-10-20T09:21:56.669Z"
+    },
+    {
+      "model": "fal-ai/qwen-image-edit/image-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 4077,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:22:00.747Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/image-to-image",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 272,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:22:01.021Z"
+    },
+    {
+      "model": "fal-ai/nano-banana/edit",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 201,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "Field required",
+            "input": {
+              "model": "fal-ai/nano-banana/edit",
+              "prompt": "Make this image more vibrant and colorful",
+              "image_url": "https://picsum.photos/512/512",
+              "aspect_ratio": "16:9",
+              "num_images": 1,
+              "output_format": "png"
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:22:01.225Z"
+    },
+    {
+      "model": "fal-ai/bytedance/seedream/v4/edit",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 175,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:22:01.401Z"
+    },
+    {
+      "model": "fal-ai/dreamomni2/edit",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 218,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:22:01.622Z"
+    },
+    {
+      "model": "fal-ai/luma-photon/flash/reframe",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 30499,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:22:32.121Z"
+    },
+    {
+      "model": "fal-ai/flux-kontext-lora",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 45600,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:23:17.724Z"
+    },
+    {
+      "model": "fal-ai/flux-kontext-lora/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 29748,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:23:47.474Z"
+    },
+    {
+      "model": "fal-ai/flux-kontext-lora/inpaint",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 11456,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "reference_image_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:23:58.931Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/text-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 4721,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:24:03.653Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/max",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 229,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:24:03.884Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/max/multi",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 205,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:24:04.090Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/multi",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 206,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:24:04.297Z"
+    },
+    {
+      "model": "fal-ai/veo3.1",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 69639,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:25:13.938Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 216,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '4s', '6s', '8s'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "5s",
+              "permitted": [
+                "4s",
+                "6s",
+                "8s"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:25:14.155Z"
+    },
+    {
+      "model": "fal-ai/sora-2/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 66778,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:26:20.934Z"
+    },
+    {
+      "model": "fal-ai/sora-2/text-to-video/pro",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 226899,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:30:07.834Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.1/master/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 161196,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:32:49.033Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 176,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '5', '10'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "8",
+              "permitted": [
+                "5",
+                "10"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:32:49.212Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/text-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 217,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '5', '10'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "8",
+              "permitted": [
+                "5",
+                "10"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:32:49.431Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 98477,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:34:27.909Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 89630,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:35:57.540Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 349,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "prompt"
+            ],
+            "msg": "The content could not be processed because it contained material flagged by a content checker.",
+            "type": "content_policy_violation",
+            "url": "https://docs.fal.ai/errors#content_policy_violation",
+            "input": {
+              "prompt": "A fast-paced action sequence",
+              "aspect_ratio": "16:9",
+              "loop": false,
+              "resolution": "540p",
+              "duration": "5s"
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:35:57.895Z"
+    },
+    {
+      "model": "fal-ai/hunyuan-video",
+      "status": 0,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 303883,
+      "hasData": false,
+      "error": "fetch failed",
+      "timestamp": "2025-10-20T09:41:01.779Z"
+    },
+    {
+      "model": "fal-ai/wan/v2.2-a14b/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 33998,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:41:35.778Z"
+    },
+    {
+      "model": "fal-ai/ovi",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 38252,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:42:14.032Z"
+    },
+    {
+      "model": "fal-ai/kandinsky5/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 137395,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:44:31.427Z"
+    },
+    {
+      "model": "fal-ai/wan-alpha",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 188074,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:47:39.501Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 68181,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:48:47.683Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 231,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '8s'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "5s",
+              "permitted": [
+                "8s"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:48:47.915Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/first-last-frame-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 60711,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:49:48.828Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast/first-last-frame-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 612,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '8s'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "5s",
+              "permitted": [
+                "8s"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:49:49.515Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/reference-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 950,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:49:50.481Z"
+    },
+    {
+      "model": "fal-ai/sora-2/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 70110,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:51:00.595Z"
+    },
+    {
+      "model": "fal-ai/sora-2/image-to-video/pro",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 7728,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "prompt"
+            ],
+            "msg": "The content could not be processed because it contained material flagged by a content checker.",
+            "type": "content_policy_violation",
+            "url": "https://docs.fal.ai/errors#content_policy_violation",
+            "input": "Create a professional video from this image"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:51:08.325Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.1/master/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 229,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '5', '10'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "8",
+              "permitted": [
+                "5",
+                "10"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:51:08.560Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 81720,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:52:30.282Z"
+    },
+    {
+      "model": "fal-ai/minimax/hailuo-02/standard/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 233,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '6', '10'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "8",
+              "permitted": [
+                "6",
+                "10"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:52:30.518Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/image-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 304,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "duration"
+            ],
+            "msg": "unexpected value; permitted: '5', '10'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "8",
+              "permitted": [
+                "5",
+                "10"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:52:30.825Z"
+    },
+    {
+      "model": "fal-ai/wan/v2.2-a14b/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 62586,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:53:33.412Z"
+    },
+    {
+      "model": "fal-ai/wan/v2.2-a14b/image-to-video/lora",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 36817,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:54:10.232Z"
+    },
+    {
+      "model": "fal-ai/ovi/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 36959,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:54:47.192Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 99706,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:56:26.899Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 54570,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:57:21.470Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 39152,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:58:00.623Z"
+    },
+    {
+      "model": "fal-ai/ltxv-13b-098-distilled/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 15500,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:58:16.125Z"
+    },
+    {
+      "model": "decart/lucy-14b/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 54306,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:59:10.446Z"
+    },
+    {
+      "model": "fal-ai/bytedance/omnihuman",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 209,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "audio_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:59:10.656Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v1/pro/ai-avatar",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 199,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "audio_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:59:10.857Z"
+    },
+    {
+      "model": "fal-ai/pixverse/v5/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 44102,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T09:59:54.960Z"
+    },
+    {
+      "model": "fal-ai/sora-2/video-to-video/remix",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 227,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_id"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T09:59:55.193Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/modify",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 244038,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_url"
+            ],
+            "msg": "Failed to process video file",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:03:59.232Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash/modify",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 244529,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_url"
+            ],
+            "msg": "Failed to process video file",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:08:03.763Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/reframe",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 244599,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_url"
+            ],
+            "msg": "Failed to process video file",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:12:08.363Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash/reframe",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 244359,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_url"
+            ],
+            "msg": "Failed to process video file",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:16:12.723Z"
+    },
+    {
+      "model": "fal-ai/minimax-music/v1.5",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 26656,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:16:39.379Z"
+    },
+    {
+      "model": "fal-ai/minimax-music",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 163,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "reference_audio_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:16:39.543Z"
+    },
+    {
+      "model": "fal-ai/meshy/v5/multi-image-to-3d",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 101187,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:18:20.734Z"
+    },
+    {
+      "model": "fal-ai/sync-lipsync/v2",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 525,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "model"
+            ],
+            "msg": "unexpected value; permitted: 'lipsync-2', 'lipsync-2-pro'",
+            "type": "value_error.const",
+            "ctx": {
+              "given": "fal-ai/sync-lipsync/v2",
+              "permitted": [
+                "lipsync-2",
+                "lipsync-2-pro"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:18:21.261Z"
+    },
+    {
+      "model": "veed/lipsync",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 140004,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_url"
+            ],
+            "msg": "Error downloading file from https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4: HTTPSConnectionPool(host='sample-videos.com', port=443): Max retries exceeded with url: /zip/10/mp4/SampleVideo_1280x720_1mb.mp4 (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x736f5818ad40>, 'Connection to sample-videos.com timed out. (connect timeout=300)'))",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:20:41.266Z"
+    },
+    {
+      "model": "fal-ai/moondream3-preview/detect",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 3254,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:20:44.522Z"
+    },
+    {
+      "model": "fal-ai/wan-trainer/t2v-14b",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 17451,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "training_data_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:21:01.976Z"
+    },
+    {
+      "model": "fal-ai/wan-trainer/t2v",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 14232,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "training_data_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:21:16.210Z"
+    },
+    {
+      "model": "fal-ai/wan-trainer/i2v-720p",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 8125,
+      "hasData": false,
+      "error": "Unknown error",
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "training_data_url"
+            ],
+            "msg": "field required",
+            "type": "value_error.missing"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:21:24.337Z"
+    }
+  ]
+}

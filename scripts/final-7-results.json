@@ -1,0 +1,65 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 4,
+    "failed": 2,
+    "successRate": 67,
+    "totalTime": 636263
+  },
+  "results": [
+    {
+      "model": "fal-ai/dreamomni2/edit",
+      "status": 200,
+      "success": true,
+      "responseTime": 32980,
+      "timestamp": "2025-10-20T11:23:51.063Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/reference-to-video",
+      "status": 200,
+      "success": true,
+      "responseTime": 86037,
+      "timestamp": "2025-10-20T11:25:17.101Z"
+    },
+    {
+      "model": "fal-ai/bytedance/omnihuman",
+      "status": 200,
+      "success": true,
+      "responseTime": 189131,
+      "timestamp": "2025-10-20T11:28:26.233Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v1/pro/ai-avatar",
+      "status": 500,
+      "success": false,
+      "responseTime": 304397,
+      "error": {
+        "success": false,
+        "error": "Proxy request failed",
+        "details": "fetch failed",
+        "errorType": "TypeError",
+        "timestamp": "2025-10-20T11:33:30.629Z"
+      },
+      "timestamp": "2025-10-20T11:33:30.633Z"
+    },
+    {
+      "model": "fal-ai/minimax-music",
+      "status": 200,
+      "success": true,
+      "responseTime": 23562,
+      "timestamp": "2025-10-20T11:33:54.196Z"
+    },
+    {
+      "model": "fal-ai/sync-lipsync/v2",
+      "status": 404,
+      "success": false,
+      "responseTime": 147,
+      "error": {
+        "streaming": true,
+        "preview": "404: Not Found"
+      },
+      "timestamp": "2025-10-20T11:33:54.344Z"
+    }
+  ],
+  "timestamp": "2025-10-20T11:33:54.344Z"
+}

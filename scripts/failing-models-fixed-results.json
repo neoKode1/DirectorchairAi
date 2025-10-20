@@ -1,0 +1,476 @@
+{
+  "summary": {
+    "total": 30,
+    "passed": 23,
+    "failed": 7,
+    "successRate": 77,
+    "totalTime": 1646220
+  },
+  "results": [
+    {
+      "model": "fal-ai/wan-25-preview/image-to-image",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 46586,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:35:44.078Z"
+    },
+    {
+      "model": "fal-ai/nano-banana/edit",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 9975,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:35:54.055Z"
+    },
+    {
+      "model": "fal-ai/bytedance/seedream/v4/edit",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 17544,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:11.601Z"
+    },
+    {
+      "model": "fal-ai/dreamomni2/edit",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 237,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body",
+            "image_urls"
+          ],
+          "msg": "You can only use 2 images. Please use 2 images.",
+          "type": "value_error"
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_urls"
+            ],
+            "msg": "You can only use 2 images. Please use 2 images.",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:36:11.839Z"
+    },
+    {
+      "model": "fal-ai/flux-kontext-lora",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 3204,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:15.044Z"
+    },
+    {
+      "model": "fal-ai/flux-kontext-lora/inpaint",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 9825,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:24.869Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/max",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 11070,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:35.941Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/max/multi",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 9415,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:45.357Z"
+    },
+    {
+      "model": "fal-ai/flux-pro/kontext/multi",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 8899,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:36:54.257Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 65539,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:37:59.797Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 60294,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:39:00.091Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/fast/first-last-frame-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 55700,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:39:55.792Z"
+    },
+    {
+      "model": "fal-ai/veo3.1/reference-to-video",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 6846,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body",
+            "prompt"
+          ],
+          "msg": "The content could not be processed because it contained material flagged by a content checker.",
+          "type": "content_policy_violation",
+          "url": "https://docs.fal.ai/errors#content_policy_violation",
+          "ctx": {
+            "support_codes": [
+              "17301594"
+            ]
+          },
+          "input": "Create a video using these reference images"
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "prompt"
+            ],
+            "msg": "The content could not be processed because it contained material flagged by a content checker.",
+            "type": "content_policy_violation",
+            "url": "https://docs.fal.ai/errors#content_policy_violation",
+            "ctx": {
+              "support_codes": [
+                "17301594"
+              ]
+            },
+            "input": "Create a video using these reference images"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:40:02.639Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 161165,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:42:43.808Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v2.1/master/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 182508,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:45:46.317Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/text-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 154092,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:48:20.409Z"
+    },
+    {
+      "model": "fal-ai/wan-25-preview/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 101865,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:50:02.275Z"
+    },
+    {
+      "model": "fal-ai/minimax/hailuo-02/standard/image-to-video",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 81050,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:51:23.327Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 31518,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:51:54.846Z"
+    },
+    {
+      "model": "fal-ai/sora-2/image-to-video/pro",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 208970,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:55:23.817Z"
+    },
+    {
+      "model": "fal-ai/bytedance/omnihuman",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 10405,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body",
+            "image_url"
+          ],
+          "msg": "No face detected in the image. Please ensure the image contains a clearly visible face.",
+          "type": "face_detection_error",
+          "url": "https://docs.fal.ai/errors#face_detection_error",
+          "input": "https://picsum.photos/512/512"
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "image_url"
+            ],
+            "msg": "No face detected in the image. Please ensure the image contains a clearly visible face.",
+            "type": "face_detection_error",
+            "url": "https://docs.fal.ai/errors#face_detection_error",
+            "input": "https://picsum.photos/512/512"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:55:34.223Z"
+    },
+    {
+      "model": "fal-ai/kling-video/v1/pro/ai-avatar",
+      "status": 504,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 28875,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body"
+          ],
+          "msg": "Downstream service error",
+          "type": "downstream_service_error",
+          "url": "https://docs.fal.ai/errors#downstream_service_error",
+          "input": {
+            "image_url": "https://picsum.photos/512/512",
+            "audio_url": "https://v3.fal.media/files/rabbit/Ql3ade3wEKlZXRQLRbhxm_tts.mp3",
+            "prompt": ""
+          }
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body"
+            ],
+            "msg": "Downstream service error",
+            "type": "downstream_service_error",
+            "url": "https://docs.fal.ai/errors#downstream_service_error",
+            "input": {
+              "image_url": "https://picsum.photos/512/512",
+              "audio_url": "https://v3.fal.media/files/rabbit/Ql3ade3wEKlZXRQLRbhxm_tts.mp3",
+              "prompt": ""
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:56:03.099Z"
+    },
+    {
+      "model": "fal-ai/sora-2/video-to-video/remix",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 1112,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body",
+            "video_id"
+          ],
+          "msg": "Invalid video ID in input; failed to read or process.",
+          "type": "value_error"
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "video_id"
+            ],
+            "msg": "Invalid video ID in input; failed to read or process.",
+            "type": "value_error"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T10:56:04.213Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/modify",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 114860,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:57:59.074Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash/modify",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 65956,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T10:59:05.031Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2/reframe",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 104066,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T11:00:49.098Z"
+    },
+    {
+      "model": "fal-ai/luma-dream-machine/ray-2-flash/reframe",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 50845,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T11:01:39.944Z"
+    },
+    {
+      "model": "fal-ai/minimax-music",
+      "status": 422,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 726,
+      "hasData": false,
+      "error": [
+        {
+          "loc": [
+            "body",
+            "reference_audio_url"
+          ],
+          "msg": "Audio duration is too short. Minimum is 10 seconds.",
+          "type": "audio_duration_too_short",
+          "url": "https://docs.fal.ai/errors#audio_duration_too_short",
+          "ctx": {
+            "min_duration": 10
+          },
+          "input": "https://v3.fal.media/files/rabbit/Ql3ade3wEKlZXRQLRbhxm_tts.mp3"
+        }
+      ],
+      "fullResponse": {
+        "detail": [
+          {
+            "loc": [
+              "body",
+              "reference_audio_url"
+            ],
+            "msg": "Audio duration is too short. Minimum is 10 seconds.",
+            "type": "audio_duration_too_short",
+            "url": "https://docs.fal.ai/errors#audio_duration_too_short",
+            "ctx": {
+              "min_duration": 10
+            },
+            "input": "https://v3.fal.media/files/rabbit/Ql3ade3wEKlZXRQLRbhxm_tts.mp3"
+          }
+        ]
+      },
+      "timestamp": "2025-10-20T11:01:40.676Z"
+    },
+    {
+      "model": "fal-ai/sync-lipsync/v2",
+      "status": 0,
+      "expectedStatus": 200,
+      "success": false,
+      "responseTime": 144,
+      "hasData": false,
+      "error": "Unexpected non-whitespace character after JSON at position 3 (line 1 column 4)",
+      "timestamp": "2025-10-20T11:01:40.820Z"
+    },
+    {
+      "model": "veed/lipsync",
+      "status": 200,
+      "expectedStatus": 200,
+      "success": true,
+      "responseTime": 42880,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T11:02:23.708Z"
+    }
+  ],
+  "timestamp": "2025-10-20T11:02:23.712Z"
+}

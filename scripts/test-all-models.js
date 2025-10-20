@@ -23,7 +23,8 @@ const MODEL_TESTS = {
       prompt: 'A beautiful sunset over mountains',
       aspect_ratio: '16:9',
       num_images: 1,
-      output_format: 'png'
+      output_format: 'png',
+      sync_mode: false
     },
     expectedStatus: 200,
     description: 'Reve Text-to-Image generation'
@@ -37,7 +38,8 @@ const MODEL_TESTS = {
       prompt: 'Make the sky more dramatic',
       image_url: 'https://picsum.photos/512/512',
       num_images: 1,
-      output_format: 'png'
+      output_format: 'png',
+      sync_mode: false
     },
     expectedStatus: 200,
     description: 'Reve Edit image transformation'

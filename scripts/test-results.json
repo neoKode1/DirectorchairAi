@@ -1,10 +1,10 @@
 {
   "summary": {
     "total": 12,
-    "passed": 5,
-    "failed": 7,
-    "successRate": 41.7,
-    "totalTime": 394038
+    "passed": 9,
+    "failed": 3,
+    "successRate": 75,
+    "totalTime": 502770
   },
   "results": [
     {
@@ -12,120 +12,120 @@
       "status": 422,
       "expectedStatus": 200,
       "success": false,
-      "responseTime": 1883,
+      "responseTime": 1593,
       "hasData": false,
       "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:29:27.414Z"
+      "timestamp": "2025-10-20T08:40:49.838Z"
     },
     {
       "model": "fal-ai/reve/edit",
       "status": 422,
       "expectedStatus": 200,
       "success": false,
-      "responseTime": 180,
+      "responseTime": 171,
       "hasData": false,
       "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:29:28.600Z"
+      "timestamp": "2025-10-20T08:40:51.025Z"
     },
     {
       "model": "fal-ai/reve/remix",
       "status": 200,
       "expectedStatus": 200,
       "success": true,
-      "responseTime": 31348,
+      "responseTime": 43755,
       "hasData": true,
       "error": null,
-      "timestamp": "2025-10-20T08:30:00.950Z"
+      "timestamp": "2025-10-20T08:41:35.793Z"
     },
     {
       "model": "fal-ai/flux-pro/v1.1-ultra",
       "status": 200,
       "expectedStatus": 200,
       "success": true,
-      "responseTime": 12193,
+      "responseTime": 10541,
       "hasData": true,
       "error": null,
-      "timestamp": "2025-10-20T08:30:14.148Z"
+      "timestamp": "2025-10-20T08:41:47.342Z"
     },
     {
       "model": "fal-ai/veo3.1",
-      "status": 422,
+      "status": 200,
       "expectedStatus": 200,
-      "success": false,
-      "responseTime": 236,
-      "hasData": false,
-      "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:30:15.393Z"
+      "success": true,
+      "responseTime": 64676,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:42:53.035Z"
     },
     {
       "model": "fal-ai/sora-2/text-to-video",
       "status": 422,
       "expectedStatus": 200,
       "success": false,
-      "responseTime": 532,
+      "responseTime": 307,
       "hasData": false,
       "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:30:16.929Z"
+      "timestamp": "2025-10-20T08:42:54.349Z"
     },
     {
       "model": "fal-ai/kling-video/v2.1/master/text-to-video",
       "status": 200,
       "expectedStatus": 200,
       "success": true,
-      "responseTime": 263780,
+      "responseTime": 162028,
       "hasData": true,
       "error": null,
-      "timestamp": "2025-10-20T08:34:41.711Z"
+      "timestamp": "2025-10-20T08:45:37.391Z"
     },
     {
       "model": "fal-ai/veo3.1/image-to-video",
-      "status": 422,
+      "status": 200,
       "expectedStatus": 200,
-      "success": false,
-      "responseTime": 2287,
-      "hasData": false,
-      "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:34:45.013Z"
+      "success": true,
+      "responseTime": 66917,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:46:45.320Z"
     },
     {
       "model": "fal-ai/pixverse/v5/image-to-video",
       "status": 200,
       "expectedStatus": 200,
       "success": true,
-      "responseTime": 64357,
+      "responseTime": 43764,
       "hasData": true,
       "error": null,
-      "timestamp": "2025-10-20T08:35:50.373Z"
+      "timestamp": "2025-10-20T08:47:30.091Z"
     },
     {
       "model": "fal-ai/luma-dream-machine/ray-2/image-to-video",
-      "status": 422,
+      "status": 200,
       "expectedStatus": 200,
-      "success": false,
-      "responseTime": 2297,
-      "hasData": false,
-      "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:35:53.676Z"
+      "success": true,
+      "responseTime": 73466,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:48:44.571Z"
     },
     {
       "model": "fal-ai/minimax-music/v1.5",
-      "status": 422,
+      "status": 200,
       "expectedStatus": 200,
-      "success": false,
-      "responseTime": 2296,
-      "hasData": false,
-      "error": "Unprocessable Entity",
-      "timestamp": "2025-10-20T08:35:56.980Z"
+      "success": true,
+      "responseTime": 23162,
+      "hasData": true,
+      "error": null,
+      "timestamp": "2025-10-20T08:49:08.737Z"
     },
     {
       "model": "fal-ai/elevenlabs-tts",
       "status": 200,
       "expectedStatus": 200,
       "success": true,
-      "responseTime": 570,
+      "responseTime": 248,
       "hasData": false,
       "error": null,
-      "timestamp": "2025-10-20T08:35:58.554Z"
+      "timestamp": "2025-10-20T08:49:09.988Z"
     }
   ]
 }

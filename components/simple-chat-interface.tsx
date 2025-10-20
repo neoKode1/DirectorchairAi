@@ -80,6 +80,35 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const [userIntent, setUserIntent] = useState<'image' | 'video' | 'auto'>('image');
   const [showModelSelector, setShowModelSelector] = useState(false);
+
+  // Helper function to get image limits for multi-image models
+  const getModelImageLimits = (model: string): { min: number; max: number; optimal: number; description: string } => {
+    const multiImageLimits: Record<string, { min: number; max: number; optimal: number; description: string }> = {
+      // Exactly 2 images required
+      'fal-ai/dreamomni2/edit': { min: 2, max: 2, optimal: 2, description: 'Source image + Style reference' },
+      'endframe/minimax-hailuo-02': { min: 2, max: 2, optimal: 2, description: 'Start frame + End frame' },
+      
+      // 1-2 images
+      'fal-ai/wan-25-preview/image-to-image': { min: 1, max: 2, optimal: 1, description: 'Single edit or multi-ref fusion' },
+      
+      // 1-4 images
+      'fal-ai/reve/remix': { min: 1, max: 4, optimal: 2, description: 'Combine reference images' },
+      'fal-ai/flux-pro/kontext/max/multi': { min: 2, max: 4, optimal: 2, description: 'Multi-context editing' },
+      'fal-ai/flux-pro/kontext/multi': { min: 1, max: 4, optimal: 1, description: 'Create variations' },
+      
+      // 1-10 images
+      'fal-ai/nano-banana/edit': { min: 1, max: 10, optimal: 2, description: 'Gemini multi-image editing' },
+      'fal-ai/bytedance/seedream/v4/edit': { min: 1, max: 10, optimal: 4, description: 'Professional multi-image editing' },
+      
+      // Multiple reference images
+      'fal-ai/veo3.1/reference-to-video': { min: 1, max: 10, optimal: 3, description: 'Reference images for video' },
+      'fal-ai/meshy/v5/multi-image-to-3d': { min: 2, max: 10, optimal: 4, description: '3D from multiple angles' },
+      'fal-ai/veo3.1/first-last-frame-to-video': { min: 2, max: 2, optimal: 2, description: 'First frame + Last frame' },
+      'fal-ai/veo3.1/fast/first-last-frame-to-video': { min: 2, max: 2, optimal: 2, description: 'First frame + Last frame' },
+    };
+    
+    return multiImageLimits[model] || { min: 1, max: 1, optimal: 1, description: 'Single image' };
+  };
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -167,7 +196,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     'text-to-image': [
       { value: 'fal-ai/reve/text-to-image', label: 'Reve (Text Rendering)', icon: '/Gen4.png', isNew: true, description: modelDescriptions['fal-ai/reve/text-to-image'] },
       { value: 'fal-ai/reve/edit', label: 'Reve Edit (I2I)', icon: '/Gen4.png', isNew: true, description: modelDescriptions['fal-ai/reve/edit'] },
-      { value: 'fal-ai/reve/remix', label: 'Reve Remix (Multi-Image)', icon: '/Gen4.png', isNew: true, description: modelDescriptions['fal-ai/reve/remix'] },
+      { value: 'fal-ai/reve/remix', label: 'Reve Remix 🖼️×4', icon: '/Gen4.png', isNew: true, description: modelDescriptions['fal-ai/reve/remix'] },
       { value: 'fal-ai/wan-25-preview/text-to-image', label: 'Wan 2.5 Text-to-Image', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-25-preview/text-to-image'] },
       { value: 'fal-ai/imagen4/preview', label: 'Imagen 4 (Google)', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/imagen4/preview'] },
       { value: 'fal-ai/flux-pro/v1.1-ultra', label: 'Flux Pro Ultra', icon: '/flux.svg', description: 'Flux Pro Ultra with enhanced quality and prompt adherence' },
@@ -175,10 +204,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'fal-ai/hidream-i1-full', label: 'HiDream-I1 (17B)', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['fal-ai/hidream-i1-full'] },
       { value: 'fal-ai/flux-krea-lora/stream', label: 'Flux Krea LoRA Stream', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-krea-lora/stream'] },
       { value: 'fal-ai/qwen-image-edit/image-to-image', label: 'Qwen Image Edit (I2I)', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['fal-ai/qwen-image-edit/image-to-image'] },
-      { value: 'fal-ai/wan-25-preview/image-to-image', label: 'Wan 2.5 Image-to-Image', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-25-preview/image-to-image'] },
-      { value: 'fal-ai/nano-banana/edit', label: 'Nano Banana Edit', icon: '/gemini-color.svg', description: modelDescriptions['fal-ai/nano-banana/edit'] },
-      { value: 'fal-ai/bytedance/seedream/v4/edit', label: 'Seedream 4.0 Edit', icon: '/bytedance-color.svg', description: modelDescriptions['fal-ai/bytedance/seedream/v4/edit'] },
-      { value: 'fal-ai/dreamomni2/edit', label: 'DreamOmni2 Edit', icon: '/bytedance-color.svg', isNew: true, description: modelDescriptions['fal-ai/dreamomni2/edit'] },
+      { value: 'fal-ai/wan-25-preview/image-to-image', label: 'Wan 2.5 I2I 🖼️×2', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-25-preview/image-to-image'] },
+      { value: 'fal-ai/nano-banana/edit', label: 'Nano Banana 🖼️×10', icon: '/gemini-color.svg', description: modelDescriptions['fal-ai/nano-banana/edit'] },
+      { value: 'fal-ai/bytedance/seedream/v4/edit', label: 'Seedream 4.0 🖼️×10', icon: '/bytedance-color.svg', description: modelDescriptions['fal-ai/bytedance/seedream/v4/edit'] },
+      { value: 'fal-ai/dreamomni2/edit', label: 'DreamOmni2 🖼️×2', icon: '/bytedance-color.svg', isNew: true, description: modelDescriptions['fal-ai/dreamomni2/edit'] },
       { value: 'fal-ai/luma-photon/flash/reframe', label: 'Luma Photon Flash Reframe', icon: '/dreammachine.svg', isNew: true, description: modelDescriptions['fal-ai/luma-photon/flash/reframe'] },
       { value: 'fal-ai/flux-kontext-lora', label: 'Flux Kontext LoRA', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-kontext-lora'] },
       { value: 'fal-ai/flux-kontext-lora/text-to-image', label: 'Flux Kontext LoRA T2I', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-kontext-lora/text-to-image'] },
@@ -186,8 +215,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'fal-ai/flux-pro/kontext/max/text-to-image', label: 'Flux Pro Kontext Max T2I', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/max/text-to-image'] },
       { value: 'fal-ai/flux-pro/kontext/text-to-image', label: 'Flux Pro Kontext T2I', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/text-to-image'] },
       { value: 'fal-ai/flux-pro/kontext/max', label: 'Flux Pro Kontext Max', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/max'] },
-      { value: 'fal-ai/flux-pro/kontext/max/multi', label: 'Flux Pro Kontext Max Multi', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/max/multi'] },
-      { value: 'fal-ai/flux-pro/kontext/multi', label: 'Flux Pro Kontext Multi', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/multi'] },
+      { value: 'fal-ai/flux-pro/kontext/max/multi', label: 'Kontext Max Multi 🖼️×4', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/max/multi'] },
+      { value: 'fal-ai/flux-pro/kontext/multi', label: 'Kontext Multi 🖼️×4', icon: '/flux.svg', isNew: true, description: modelDescriptions['fal-ai/flux-pro/kontext/multi'] },
     ],
     'text-to-video': [
       { value: 'fal-ai/wan-alpha', label: 'Wan Alpha (Transparent BG)', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-alpha'] },
@@ -202,7 +231,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'fal-ai/luma-dream-machine', label: 'Luma Dream Machine v1.5', icon: '/dreammachine.svg', isNew: true, description: modelDescriptions['fal-ai/luma-dream-machine'] },
       { value: 'fal-ai/kling-video/v2.5-turbo/pro/text-to-video', label: 'Kling 2.5 Turbo Pro T2V', icon: '/kling-color.svg', isNew: true, description: modelDescriptions['fal-ai/kling-video/v2.5-turbo/pro/text-to-video'] },
       { value: 'fal-ai/kling-video/v2.1/master/text-to-video', label: 'Kling 2.1 Master T2V', icon: '/kling-color.svg', isNew: true, description: modelDescriptions['fal-ai/kling-video/v2.1/master/text-to-video'] },
-      { value: 'fal-ai/veo3.1/reference-to-video', label: 'Veo 3.1 Reference-to-Video', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/reference-to-video'] },
+      { value: 'fal-ai/veo3.1/reference-to-video', label: 'Veo 3.1 Reference 🖼️×10', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/reference-to-video'] },
       { value: 'fal-ai/wan-trainer/t2v-14b', label: 'Wan Trainer T2V 14B', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-trainer/t2v-14b'] },
       { value: 'fal-ai/wan-trainer/t2v', label: 'Wan Trainer T2V', icon: '/alibaba-color.svg', isNew: true, description: modelDescriptions['fal-ai/wan-trainer/t2v'] },
       { value: 'fal-ai/bytedance/omnihuman', label: 'OmniHuman (Avatar)', icon: '/bytedance-color.svg', isNew: true, description: modelDescriptions['fal-ai/bytedance/omnihuman'] },
@@ -210,15 +239,15 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     'image-to-video': [
       { value: 'fal-ai/veo3.1/image-to-video', label: 'Veo 3.1 (I2V)', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/image-to-video'] },
       { value: 'fal-ai/veo3.1/fast/image-to-video', label: 'Veo 3.1 Fast (I2V)', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/fast/image-to-video'] },
-      { value: 'fal-ai/veo3.1/first-last-frame-to-video', label: 'Veo 3.1 First/Last Frame', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/first-last-frame-to-video'] },
-      { value: 'fal-ai/veo3.1/fast/first-last-frame-to-video', label: 'Veo 3.1 Fast First/Last Frame', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/fast/first-last-frame-to-video'] },
+      { value: 'fal-ai/veo3.1/first-last-frame-to-video', label: 'Veo 3.1 First/Last 🖼️×2', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/first-last-frame-to-video'] },
+      { value: 'fal-ai/veo3.1/fast/first-last-frame-to-video', label: 'Veo 3.1 Fast FL 🖼️×2', icon: '/gemini-color.svg', isNew: true, description: modelDescriptions['fal-ai/veo3.1/fast/first-last-frame-to-video'] },
       { value: 'fal-ai/sora-2/image-to-video', label: 'Sora 2 (I2V)', icon: '/openai.svg', description: modelDescriptions['fal-ai/sora-2/image-to-video'] },
       { value: 'fal-ai/sora-2/image-to-video/pro', label: 'Sora 2 Pro (I2V)', icon: '/openai.svg', description: modelDescriptions['fal-ai/sora-2/image-to-video/pro'] },
       { value: 'fal-ai/veo3/image-to-video', label: 'Veo 3 (I2V)', icon: '/Gen4.png', description: 'Veo 3 image-to-video generation with advanced capabilities' },
       { value: 'fal-ai/kling-video/v2.1/master/image-to-video', label: 'Kling v2.1 Master (I2V)', icon: '/kling-color.svg', description: modelDescriptions['fal-ai/kling-video/v2.1/master/image-to-video'] },
       { value: 'fal-ai/kling-video/v2.5-turbo/pro/image-to-video', label: 'Kling V2.5 Turbo Pro (I2V)', icon: '/kling-color.svg', description: modelDescriptions['fal-ai/kling-video/v2.5-turbo/pro/image-to-video'] },
       { value: 'fal-ai/minimax/hailuo-02/standard/image-to-video', label: 'Minimax Hailuo 02 (I2V)', icon: '/minimax-color.svg', description: modelDescriptions['fal-ai/minimax/hailuo-02/standard/image-to-video'] },
-      { value: 'endframe/minimax-hailuo-02', label: 'EndFrame (Minimax Hailuo 02)', icon: '/minimax-color.svg', description: modelDescriptions['endframe/minimax-hailuo-02'] },
+      { value: 'endframe/minimax-hailuo-02', label: 'EndFrame 🖼️×2', icon: '/minimax-color.svg', description: modelDescriptions['endframe/minimax-hailuo-02'] },
       { value: 'fal-ai/hunyuan-video', label: 'Hunyuan Video (I2V)', icon: '/bytedance-color.svg', description: modelDescriptions['fal-ai/hunyuan-video'] },
       { value: 'fal-ai/wan/v2.2-a14b/image-to-video', label: 'Wan v2.2-A14B (I2V)', icon: '/alibaba-color.svg', description: modelDescriptions['fal-ai/wan/v2.2-a14b/image-to-video'] },
       { value: 'fal-ai/ovi/image-to-video', label: 'Ovi (I2V with Audio)', icon: '/Gen4.png', description: modelDescriptions['fal-ai/ovi/image-to-video'] },
@@ -252,7 +281,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       { value: 'fal-ai/minimax-music', label: 'MiniMax Music', icon: '/minimax-color.svg', isNew: true, description: modelDescriptions['fal-ai/minimax-music'] },
     ],
     '3d': [
-      { value: 'fal-ai/meshy/v5/multi-image-to-3d', label: 'Meshy V5 Multi-Image-to-3D', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['fal-ai/meshy/v5/multi-image-to-3d'] },
+      { value: 'fal-ai/meshy/v5/multi-image-to-3d', label: 'Meshy V5 3D 🖼️×10', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['fal-ai/meshy/v5/multi-image-to-3d'] },
     ],
     'specialized': [
       { value: 'fal-ai/moondream3-preview/detect', label: 'MoonDream3 Detect', icon: '/deepseek-color.svg', isNew: true, description: modelDescriptions['fal-ai/moondream3-preview/detect'] },
@@ -593,6 +622,25 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setIsProcessingAudio(true);
     
     try {
+      // Get limits for current model
+      const limits = getModelImageLimits(preferredVideoModel);
+      
+      // Count image files being uploaded
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      const newImageTotal = uploadedImages.length + imageFiles.length;
+      
+      // Validate total count before processing
+      if (newImageTotal > limits.max && imageFiles.length > 0) {
+        toast({
+          title: "Too Many Images",
+          description: `${preferredVideoModel} accepts maximum ${limits.max} images. You have ${uploadedImages.length} uploaded. You can add ${limits.max - uploadedImages.length} more.`,
+          variant: "destructive"
+        });
+        setIsProcessingImages(false);
+        setIsProcessingAudio(false);
+        return;
+      }
+      
       for (const file of Array.from(files)) {
         try {
           // Validate the file first
@@ -632,7 +680,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       setIsProcessingImages(false);
       setIsProcessingAudio(false);
     }
-  }, []);
+  }, [preferredVideoModel, uploadedImages.length, toast]);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -980,6 +1028,19 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (preferredVideoModel === 'endframe/minimax-hailuo-02' || endFrameMode) {
       await handleEndFrameGeneration();
       return;
+    }
+
+    // Validate multi-image model requirements
+    const limits = getModelImageLimits(preferredVideoModel);
+    if (uploadedImages.length > 0) {
+      if (uploadedImages.length > limits.max) {
+        alert(`${preferredVideoModel} accepts maximum ${limits.max} images. Please remove ${uploadedImages.length - limits.max} image(s).`);
+        return;
+      }
+      if (uploadedImages.length < limits.min) {
+        alert(`${preferredVideoModel} requires at least ${limits.min} images. Please upload ${limits.min - uploadedImages.length} more image(s).`);
+        return;
+      }
     }
 
     // Validate Kling AI Avatar requirements (⚠️ ~20 min processing time)
@@ -1683,35 +1744,110 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-        {/* Uploaded Images Preview */}
+        {/* Contextual Help for Multi-Image Models */}
+        {(() => {
+          const limits = getModelImageLimits(preferredVideoModel);
+          const isMultiImageModel = limits.max > 1;
+          
+          if (!isMultiImageModel || uploadedImages.length >= limits.min) return null;
+          
+          const helpMessages: Record<string, string> = {
+            'fal-ai/reve/remix': '💡 Upload 1-4 reference images to combine into a beautiful new composition',
+            'fal-ai/dreamomni2/edit': '💡 Upload 2 images: First = source to edit, Second = style reference',
+            'endframe/minimax-hailuo-02': '💡 Upload exactly 2 images: First = start frame, Second = end frame',
+            'fal-ai/nano-banana/edit': '💡 Upload 1-10 images to edit and combine with Gemini AI',
+            'fal-ai/bytedance/seedream/v4/edit': '💡 Upload 1-10 images for professional multi-image editing',
+            'fal-ai/wan-25-preview/image-to-image': '💡 Upload 1-2 images for subject-consistent editing or fusion',
+            'fal-ai/flux-pro/kontext/max/multi': '💡 Upload 2-4 images for multi-context editing',
+            'fal-ai/flux-pro/kontext/multi': '💡 Upload 1-4 images to create variations',
+            'fal-ai/veo3.1/reference-to-video': '💡 Upload 1+ reference images for consistent video generation',
+            'fal-ai/meshy/v5/multi-image-to-3d': '💡 Upload 2-10 images from different angles for 3D model generation',
+            'fal-ai/veo3.1/first-last-frame-to-video': '💡 Upload 2 images: First = start frame, Second = end frame',
+            'fal-ai/veo3.1/fast/first-last-frame-to-video': '💡 Upload 2 images: First = start frame, Second = end frame',
+          };
+          
+          return (
+            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex gap-2">
+                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  <strong>Multi-Image Model:</strong> {helpMessages[preferredVideoModel] || 
+                    `This model supports ${limits.min}-${limits.max} images. Upload ${limits.optimal} for best results.`}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Uploaded Images Preview with Multi-Image Support */}
         {uploadedImages.length > 0 && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Uploaded Images ({uploadedImages.length}):
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {uploadedImages.map((image, index) => {
-                const sizeKB = Math.round((image.length * 3) / 4 / 1024);
-                return (
-                <div key={index} className="relative group">
-                  <img 
-                    src={image} 
-                    alt={`Uploaded ${index + 1}`}
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
-                  />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                      {sizeKB}KB
-                    </div>
-                  <button
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
+            {(() => {
+              const limits = getModelImageLimits(preferredVideoModel);
+              const isMultiImageModel = limits.max > 1;
+              
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Uploaded Images: {uploadedImages.length}
+                      {isMultiImageModel && (
+                        <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                          (Max: {limits.max}, Recommended: {limits.optimal})
+                        </span>
+                      )}
+                    </p>
+                    
+                    {isMultiImageModel && (
+                      <div className="flex gap-1" title={`${uploadedImages.length}/${limits.max} images uploaded`}>
+                        {Array.from({ length: limits.max }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              i < uploadedImages.length ? 'bg-green-500' :
+                              i < limits.min ? 'bg-red-300' :
+                              'bg-gray-300'
+                            }`}
+                            title={
+                              i < uploadedImages.length ? 'Uploaded' :
+                              i < limits.min ? 'Required' :
+                              'Optional'
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {uploadedImages.map((image, index) => {
+                      const sizeKB = Math.round((image.length * 3) / 4 / 1024);
+                      return (
+                      <div key={index} className="relative group">
+                        <div className="absolute -top-2 -left-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10">
+                          {index + 1}
+                        </div>
+                        <img 
+                          src={image} 
+                          alt={`Uploaded ${index + 1}`}
+                          className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 transition-colors"
+                        />
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            {sizeKB}KB
+                          </div>
+                        <button
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
 

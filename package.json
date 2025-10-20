@@ -5,6 +5,8 @@
     "build": "next build",
     "start": "next start",
     "deploy:feature": "pnpm build && vercel deploy --prebuilt --prod --yes",
+    "test:models": "node scripts/test-all-models.js",
+    "test:models:local": "BASE_URL=http://localhost:3000 node scripts/test-all-models.js",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",

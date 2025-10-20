@@ -94,7 +94,8 @@ const MODEL_TESTS = {
       model: 'fal-ai/sora-2/text-to-video',
       prompt: 'Ocean waves crashing on rocks',
       duration: 4,
-      resolution: 'auto'
+      resolution: '720p',
+      aspect_ratio: '16:9'
     },
     expectedStatus: 200,
     description: 'Sora 2 text-to-video'
@@ -176,6 +177,35 @@ const MODEL_TESTS = {
     },
     expectedStatus: 200,
     description: 'ElevenLabs TTS generation'
+  },
+
+  'fal-ai/sora-2/image-to-video': {
+    endpoint: '/api/fal',
+    method: 'POST',
+    body: {
+      model: 'fal-ai/sora-2/image-to-video',
+      prompt: 'Animate this image with gentle movement',
+      image_url: 'https://picsum.photos/512/512',
+      duration: 4,
+      resolution: 'auto',
+      aspect_ratio: 'auto'
+    },
+    expectedStatus: 200,
+    description: 'Sora 2 image-to-video'
+  },
+
+  'fal-ai/sora-2/text-to-video/pro': {
+    endpoint: '/api/fal',
+    method: 'POST',
+    body: {
+      model: 'fal-ai/sora-2/text-to-video/pro',
+      prompt: 'A dramatic Hollywood breakup scene at dusk',
+      duration: 4,
+      resolution: '1080p',
+      aspect_ratio: '16:9'
+    },
+    expectedStatus: 200,
+    description: 'Sora 2 Pro text-to-video'
   }
 };
 

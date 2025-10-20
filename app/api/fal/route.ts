@@ -173,6 +173,38 @@ function sanitizeInput(model: string, input: any) {
     console.log('🔧 [FAL API] Sanitized input for Reve model:', sanitized);
   }
 
+  // Pixverse image-to-video expects:
+  // - image_url (single)
+  // - duration as string without 's' suffix, permitted: '5', '8'
+  if (model.includes('pixverse')) {
+    console.log('🔧 [FAL API] Applying Pixverse sanitization');
+
+    // If only image_urls provided, pick the first as image_url
+    if (!sanitized.image_url && Array.isArray(sanitized.image_urls) && sanitized.image_urls.length > 0) {
+      sanitized.image_url = sanitized.image_urls[0];
+      delete sanitized.image_urls;
+    }
+
+    // Normalize duration to '5' | '8' (string, no 's')
+    let durationValue = sanitized.duration;
+    if (durationValue !== undefined && durationValue !== null) {
+      // Convert numbers to string
+      if (typeof durationValue === 'number') {
+        durationValue = String(durationValue);
+      }
+      if (typeof durationValue === 'string') {
+        durationValue = durationValue.replace(/s$/i, '');
+      }
+    }
+
+    // Default to '5' if missing or invalid
+    const permitted = ['5', '8'];
+    if (!durationValue || !permitted.includes(durationValue)) {
+      durationValue = '5';
+    }
+    sanitized.duration = durationValue;
+  }
+
   return sanitized;
 }
 

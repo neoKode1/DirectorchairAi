@@ -26,14 +26,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env*.local
 .env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
 .env.production
-.env.production.local
+.env.test
+.env.development
 
 # vercel
 .vercel
@@ -41,8 +38,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.vscode
 
-# Docker
-postgres_data/
-.env*.local
+# content filtering logs
+/logs

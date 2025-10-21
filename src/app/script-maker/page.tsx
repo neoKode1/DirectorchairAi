@@ -39,7 +39,7 @@ function ScriptMakerContent() {
   const [characterProfiles, setCharacterProfiles] = useState<any[]>([]);
   const [finalScript, setFinalScript] = useState('');
   const [minutes, setMinutes] = useState<any[]>([]);
-  const [currentStep, setCurrentStep] = useState(1); // 1: idea, 2: screenplay, 3: character upload, 4: shot list, 5: visual generation
+  const [currentStep, setCurrentStep] = useState(1); // 1: idea, 2: screenplay, 3: character upload, 4: style reference, 5: shot list, 6: visual generation
   const [extractedCharacters, setExtractedCharacters] = useState<string[]>([]); // Character names from screenplay
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzingPlot, setIsAnalyzingPlot] = useState(false);
@@ -49,6 +49,8 @@ function ScriptMakerContent() {
   const [characterReferenceImages, setCharacterReferenceImages] = useState<Array<{ url: string; analysis: string; characterName?: string; fileName?: string }>>([]);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState<{url: string, title: string} | null>(null);
+  const [styleReferenceImage, setStyleReferenceImage] = useState<{ url: string; analysis: string; fileName?: string } | null>(null);
+  const [isAnalyzingStyle, setIsAnalyzingStyle] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -74,6 +76,103 @@ function ScriptMakerContent() {
 
     return () => clearTimeout(timer);
   }, [userPlotInput]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleStyleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzingStyle(true);
+    
+    try {
+      // Upload image
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadResponse = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const uploadData = await uploadResponse.json();
+      
+      if (!uploadData.success || !uploadData.url) {
+        throw new Error('Upload failed');
+      }
+
+      // Analyze image for style
+      const analysisResponse = await fetch('/api/script-maker/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          movieTitle,
+          plot,
+          genreIdea,
+          eraSetting,
+          photoStyle,
+          minutesToExtract,
+          characterProfiles,
+          analysisType: 'style-analysis',
+          styleImageUrl: uploadData.url
+        })
+      });
+
+      if (!analysisResponse.ok) {
+        throw new Error('Failed to analyze style');
+      }
+
+      const analysisData = await analysisResponse.json();
+      
+      if (analysisData.success) {
+        setStyleReferenceImage({
+          url: uploadData.url,
+          analysis: analysisData.result,
+          fileName: file.name
+        });
+        
+        toast({
+          title: "Style Reference Added",
+          description: "Style analysis complete! This will guide all scene generations.",
+        });
+      } else {
+        throw new Error(analysisData.error || 'Style analysis failed');
+      }
+    } catch (error) {
+      console.error('❌ Style image upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload and analyze style image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzingStyle(false);
+    }
+  };
 
   const handleCharacterImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, characterName?: string) => {
     const files = event.target.files;
@@ -626,7 +725,7 @@ function ScriptMakerContent() {
         const minutes = storyboard.minutes || (Array.isArray(storyboard) ? storyboard : []);
         
         setMinutes(minutes);
-        setCurrentStep(5); // Move to visual generation step
+        setCurrentStep(6); // Move to visual generation step
         
         toast({
           title: "Shot List Ready",
@@ -707,6 +806,11 @@ function ScriptMakerContent() {
         `${genreIdea} genre`,
         `set in ${eraSetting}`
       ];
+
+      // Add style reference analysis to prompt if available
+      if (styleReferenceImage && styleReferenceImage.analysis) {
+        promptParts.push(`Style: ${styleReferenceImage.analysis}`);
+      }
 
       // Add matched character analysis to prompt
       if (matchedCharacterAnalysis.length > 0) {
@@ -1135,17 +1239,80 @@ function ScriptMakerContent() {
                 disabled={characterReferenceImages.length === 0}
                 className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                Next: Style Reference →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Step 4: Style Reference */}
+        <div className={`p-4 border-b border-gray-200 ${currentStep >= 4 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 4: Style Reference</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            {currentStep < 4 ? 'Complete Step 3 to unlock' : 'Upload a style reference image to guide all scene generations'}
+          </p>
+          
+          {currentStep >= 4 && !styleReferenceImage && (
+            <div className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleStyleImageUpload}
+                  disabled={isAnalyzingStyle}
+                  className="hidden"
+                  id="style-upload"
+                />
+                <label
+                  htmlFor="style-upload"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Video className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {isAnalyzingStyle ? 'Analyzing style...' : 'Upload Style Reference Image'}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    Upload an image that represents the visual style you want for all scenes
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+          
+          {currentStep >= 4 && styleReferenceImage && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Video className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-green-800">Style Reference Added</div>
+                  <div className="text-xs text-green-600">{styleReferenceImage.fileName}</div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="text-xs text-gray-600 mb-2">Style Analysis:</div>
+                <div className="text-sm text-gray-800">{styleReferenceImage.analysis}</div>
+              </div>
+              
+              <button
+                onClick={() => setCurrentStep(5)}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+              >
                 Next: Shot List →
               </button>
             </div>
           )}
         </div>
 
-        {/* Step 4: Shot List Breakdown */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 4 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 4: Shot List</h3>
+        {/* Step 5: Shot List Breakdown */}
+        <div className={`p-4 border-b border-gray-200 ${currentStep >= 5 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 5: Shot List</h3>
           <p className="text-xs text-gray-500 mb-3">
-            {currentStep < 4 ? 'Complete Step 3 to unlock' : 'Extract shots from screenplay'}
+            {currentStep < 5 ? 'Complete Step 4 to unlock' : 'Extract shots from screenplay'}
           </p>
           
           {currentStep >= 4 && (
@@ -1159,14 +1326,14 @@ function ScriptMakerContent() {
           )}
         </div>
 
-        {/* Step 5: Generate Visual Scenes */}
-        <div className={`p-4 ${currentStep >= 5 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 5: Visual Scenes</h3>
+        {/* Step 6: Generate Visual Scenes */}
+        <div className={`p-4 ${currentStep >= 6 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 6: Visual Scenes</h3>
           <p className="text-xs text-gray-500 mb-3">
-            {currentStep < 5 ? 'Complete Step 4 to unlock' : 'Generate scene images (12 per minute)'}
+            {currentStep < 6 ? 'Complete Step 5 to unlock' : 'Generate scene images (12 per minute)'}
           </p>
           
-          {currentStep >= 5 && (
+          {currentStep >= 6 && (
             <div className="space-y-2">
               {Array.from({ length: minutesToExtract }, (_, i) => i + 1).map(minute => (
                 <button
@@ -1223,7 +1390,7 @@ function ScriptMakerContent() {
             </div>
           )}
 
-          {currentStep === 2 && finalScript && (
+          {finalScript && (
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">Screenplay</h2>
@@ -1480,7 +1647,7 @@ function ScriptMakerContent() {
                 }`}>
                   4
                 </div>
-                <span className="text-sm font-medium text-gray-900">Shot List</span>
+                <span className="text-sm font-medium text-gray-900">Style Reference</span>
               </div>
             </div>
 
@@ -1490,6 +1657,17 @@ function ScriptMakerContent() {
                   currentStep >= 5 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
                 }`}>
                   5
+                </div>
+                <span className="text-sm font-medium text-gray-900">Shot List</span>
+              </div>
+            </div>
+
+            <div className={`p-3 rounded-lg border ${currentStep >= 6 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+              <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  currentStep >= 6 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                }`}>
+                  6
                 </div>
                 <span className="text-sm font-medium text-gray-900">Visual Scenes</span>
               </div>

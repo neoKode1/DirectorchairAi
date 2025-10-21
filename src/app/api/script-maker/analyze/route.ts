@@ -4,7 +4,7 @@ import { claudeAPI } from '@/lib/claude-api';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { movieTitle, plot, screenplay, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, analysisType } = body;
+    const { movieTitle, plot, screenplay, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, analysisType, styleImageUrl } = body;
 
     console.log('🎬 [Script Maker API] Received analysis request:', { 
       movieTitle, 
@@ -202,6 +202,36 @@ ${characterProfiles && characterProfiles.length > 0 ? `\nCHARACTERS:\n${characte
 Analyze this screenplay and create a detailed shot-by-shot breakdown for each minute. Break down the story into exactly 12 shots per minute, describing the camera work, action, lighting, and characters in each shot.
 
 IMPORTANT: Return ONLY the JSON object, no other text or markdown formatting.`;
+        break;
+
+      case 'style-analysis':
+        systemPrompt = `You are a professional visual style consultant for film and media production. Your task is to analyze an uploaded reference image and extract detailed visual style information that can be used to guide consistent image generation for a movie project.
+
+**Your Analysis Should Include:**
+1. **Visual Style Category**: Identify the overall style (e.g., photorealistic, animated, cartoon, oil painting, watercolor, digital art, etc.)
+2. **Color Palette**: Describe dominant colors, color temperature, saturation levels
+3. **Lighting Style**: Analyze lighting approach (natural, dramatic, soft, harsh, etc.)
+4. **Artistic Technique**: Identify rendering style, brushwork, or digital effects
+5. **Mood and Atmosphere**: Describe the emotional tone and visual mood
+6. **Technical Details**: Camera angle, composition style, depth of field
+7. **Genre Indicators**: How the style relates to movie genres (horror, sci-fi, fantasy, etc.)
+
+**Output Format:**
+Provide a comprehensive style analysis (2-3 paragraphs) that describes:
+- The visual style category and artistic approach
+- Color palette and lighting characteristics  
+- Mood, atmosphere, and emotional tone
+- Technical and compositional elements
+- How this style would work for the movie genre: ${genreIdea}
+
+Focus on creating a detailed style guide that can be used to generate consistent visual content.`;
+
+        userPrompt = `Movie Title: "${movieTitle}"
+Genre: ${genreIdea}
+Setting: ${eraSetting}
+Visual Style Reference: ${styleImageUrl}
+
+Please analyze this reference image and provide a detailed style analysis that can guide consistent visual generation for this ${genreIdea} movie project.`;
         break;
 
       default:

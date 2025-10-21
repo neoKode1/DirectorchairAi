@@ -1860,32 +1860,32 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap gap-2">
-                    {uploadedImages.map((image, index) => {
-                      const sizeKB = Math.round((image.length * 3) / 4 / 1024);
-                      return (
-                      <div key={index} className="relative group">
+            <div className="flex flex-wrap gap-2">
+              {uploadedImages.map((image, index) => {
+                const sizeKB = Math.round((image.length * 3) / 4 / 1024);
+                return (
+                <div key={index} className="relative group">
                         <div className="absolute -top-2 -left-2 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold z-10">
                           {index + 1}
                         </div>
-                        <img 
-                          src={image} 
-                          alt={`Uploaded ${index + 1}`}
+                  <img 
+                    src={image} 
+                    alt={`Uploaded ${index + 1}`}
                           className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 transition-colors"
-                        />
-                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                            {sizeKB}KB
-                          </div>
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                      );
-                    })}
-                  </div>
+                  />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white text-xs p-1 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                      {sizeKB}KB
+                    </div>
+                  <button
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                );
+              })}
+            </div>
                 </>
               );
             })()}

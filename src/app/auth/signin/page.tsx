@@ -35,7 +35,7 @@ export default function SignInPage() {
         {/* Hero Section */}
         <div className="flex-1 text-white">
           <h1 className="text-6xl lg:text-8xl font-bold mb-6 text-gray-300 drop-shadow-lg">
-            DirectorchairAI
+            DirectorchairAi
           </h1>
           <p className="text-3xl font-semibold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300 drop-shadow-md">
             AI-Powered Media Studio with Film Director Intelligence
@@ -154,7 +154,7 @@ export default function SignInPage() {
 
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-cyan-200/70 z-10 drop-shadow-sm">
-        <p>© 2024 DirectorchairAI. All rights reserved.</p>
+        <p>© 2024 DirectorchairAi. All rights reserved.</p>
       </div>
     </div>
   );

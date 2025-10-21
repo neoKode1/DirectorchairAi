@@ -33,12 +33,13 @@ export default function ModelsPage() {
   );
 
   // Category display order and labels
-  const categoryOrder = ["image", "video", "music", "voiceover"] as const;
+  const categoryOrder = ["image", "video", "music", "voiceover", "lipsync"] as const;
   const categoryLabels: Record<(typeof categoryOrder)[number], string> = {
     image: "Image Models",
     video: "Video Models", 
     music: "Music Models",
     voiceover: "Voice Models",
+    lipsync: "Lip Sync Models",
   };
 
   // Category icons
@@ -47,6 +48,7 @@ export default function ModelsPage() {
     video: VideoIcon,
     music: MusicIcon,
     voiceover: MicIcon,
+    lipsync: MicIcon, // Use MicIcon for lipsync as well
   };
 
   // Model-specific icon mapping to actual files in public folder
@@ -69,6 +71,17 @@ export default function ModelsPage() {
     
     // Voice models
     if (modelId.includes('elevenlabs')) return '/elevenlabs.png'; // ElevenLabs
+    if (modelId.includes('minimax')) return '/minimax-color.png'; // MiniMax
+    
+    // Lip sync models
+    if (modelId.includes('sync-lipsync')) return '/flux.png'; // Sync LipSync
+    if (modelId.includes('veed')) return '/flux.png'; // VEED
+    
+    // New models
+    if (modelId.includes('wan-25')) return '/kling-color.png'; // Wan 2.5
+    if (modelId.includes('omnihuman')) return '/bytedance-color.webp'; // DreamOmni
+    if (modelId.includes('sora-2')) return '/openai.svg'; // Sora 2
+    if (modelId.includes('veo3.1')) return '/gemini-color.png'; // Veo 3.1
     
     return '/gemini-color.png'; // default fallback
   };
@@ -79,6 +92,7 @@ export default function ModelsPage() {
     video: "hover:bg-red-500/20 border-red-500/30", 
     music: "hover:bg-green-500/20 border-green-500/30",
     voiceover: "hover:bg-pink-500/20 border-pink-500/30",
+    lipsync: "hover:bg-purple-500/20 border-purple-500/30",
   };
 
   // Function to set model as preferred and redirect to chat

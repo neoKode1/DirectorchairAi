@@ -110,7 +110,7 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
   },
-  "fal-ai/flux-pro/kontext": {
+  "fal-ai/flux-pro/kontext/max": {
     supportsStyleReference: true,
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
@@ -227,9 +227,9 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/flux-pro/kontext",
-    label: "Flux Pro Kontext",
-    description: "Advanced image generation with context-aware editing and manipulation capabilities",
+    endpointId: "fal-ai/flux-pro/kontext/max",
+    label: "Flux Pro Kontext Max",
+    description: "FLUX.1 Kontext [max] with greatly improved prompt adherence and typography generation for premium consistency in editing",
     category: "image",
     inputAsset: ["image"],
     initialInput: {
@@ -237,10 +237,11 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       image_url: "",
       guidance_scale: 3.5,
       num_images: 1,
-      output_format: "jpeg",
-      safety_tolerance: "2",
-      enhance_prompt: true,
-      num_inference_steps: 28,
+      output_format: "jpeg", // jpeg or png
+      safety_tolerance: "2", // 1-6, default 2
+      enhance_prompt: false,
+      // aspect_ratio: "16:9", // Optional: 21:9, 16:9, 4:3, 3:2, 1:1, 2:3, 3:4, 9:16, 9:21
+      // seed: undefined // Optional for reproducibility
     },
   },
   {
@@ -262,17 +263,18 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
   {
     endpointId: "fal-ai/nano-banana/edit",
-    label: "Nano Banana Edit (Advanced Controls)",
-    description: "Advanced image editing with fine-grained controls (strength, guidance scale) for precise modifications. Perfect for users who want detailed control over editing parameters and artistic style adjustments.",
+    label: "Nano Banana Edit",
+    description: "Google's state-of-the-art image generation and editing model with multi-image support for precise modifications",
     category: "image",
     inputAsset: ["image"],
+    supportsMultipleImages: true,
     initialInput: {
       prompt: "Edit this image with creative modifications",
       image_urls: [],
       num_images: 1,
-      output_format: "jpeg",
-      strength: 0.9,
-      guidance_scale: 7.5,
+      output_format: "jpeg", // jpeg, png, webp
+      // aspect_ratio: "16:9", // Optional: 21:9, 1:1, 4:3, 3:2, 2:3, 5:4, 4:5, 3:4, 16:9, 9:16
+      // sync_mode: false, // Optional: If True, media returned as data URI
     },
   },
   {
@@ -306,6 +308,35 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       negative_prompt: "blurry, ugly, low quality",
       acceleration: "regular",
       sync_mode: false,
+    },
+  },
+  {
+    endpointId: "fal-ai/wan-25-preview/image-to-image",
+    label: "Wan 2.5 (Image-to-Image)",
+    description: "Wan 2.5 image-to-image model for editing images using text prompts with subject-consistent editing, multi-image fusion, and resolution support from 384-5000 pixels",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    initialInput: {
+      prompt: "Reimagine the scene under a raging thunderstorm at night",
+      image_urls: [],
+      image_size: "square", // Can be: square_hd, square, portrait_4_3, portrait_16_9, landscape_4_3, landscape_16_9 or custom {width, height}
+      num_images: 1, // 1-4 images
+      negative_prompt: "low resolution, error, worst quality, low quality, defects",
+      enable_safety_checker: true,
+      // seed: undefined // Optional: for reproducibility
+    },
+  },
+  {
+    endpointId: "fal-ai/bytedance/omnihuman",
+    label: "DreamOmni",
+    description: "DreamOmni is a cutting-edge AI model that generates high-quality human images with exceptional detail and realism",
+    category: "image",
+    initialInput: {
+      prompt: "A professional portrait of a person in a business setting",
+      num_images: 1,
+      output_format: "jpeg",
+      enable_safety_checker: true,
     },
   },
 
@@ -342,21 +373,32 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
           duration: 4,
         },
       },
+      {
+        endpointId: "fal-ai/sora-2/video-to-video/remix",
+        label: "Sora 2 (Video-to-Video Remix)",
+        description: "Video-to-video remix endpoint for Sora 2, OpenAI's advanced model that transforms existing videos based on new text or image prompts allowing rich edits, style changes, and creative reinterpretations while preserving motion and structure",
+        category: "video",
+        inputAsset: ["video"],
+        initialInput: {
+          video_id: "video_123",
+          prompt: "Change the cat's fur color to purple.",
+        },
+      },
   {
-    endpointId: "fal-ai/veo3/image-to-video",
-    label: "Veo 3",
-    description: "Google DeepMind's latest state-of-the-art video generation model for animating images",
+    endpointId: "fal-ai/veo3.1/fast/image-to-video",
+    label: "Veo 3.1 Fast (I2V)",
+    description: "Google's Veo 3.1 Fast model for generating videos from images with 720p/1080p support and optional audio generation",
     category: "video",
-    inputAsset: ["image"], // Image-to-video only
+    inputAsset: ["image"],
     supportsMultipleImages: false,
     maxImages: 1,
     initialInput: {
       prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
       image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
-      aspect_ratio: "16:9",
-      duration: "8s",
+      aspect_ratio: "16:9", // 9:16 or 16:9
+      duration: "8s", // Only 8s supported
       generate_audio: true,
-      resolution: "720p",
+      resolution: "720p", // 720p or 1080p
     },
   },
   {
@@ -582,16 +624,16 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/sync-lipsync",
-    label: "Sync LipSync",
-    description: "Advanced lip sync with multiple sync modes and model versions",
+    endpointId: "fal-ai/sync-lipsync/v2",
+    label: "Sync LipSync 2.0",
+    description: "Generate realistic lipsync animations from audio using advanced algorithms. Supports lipsync-2 and lipsync-2-pro models with multiple sync modes",
     category: "lipsync",
     inputAsset: ["video", "audio"],
     initialInput: {
-      model: "lipsync-1.9.0-beta",
+      model: "lipsync-2", // lipsync-2 or lipsync-2-pro (pro costs 1.67x more)
       video_url: "",
       audio_url: "",
-      sync_mode: "cut_off"
+      sync_mode: "cut_off" // cut_off, loop, bounce, silence, remap
     },
   },
   {
@@ -618,6 +660,28 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       secondImage: "",
       prompt: "Describe the transition between your start and end frames",
       model: "MiniMax-Hailuo-02"
+    },
+  },
+  {
+    endpointId: "fal-ai/metadata",
+    label: "Metadata Extraction",
+    description: "Extract metadata from media files including images, videos, and audio files",
+    category: "image",
+    inputAsset: ["image", "video", "audio"],
+    initialInput: {
+      file_url: "",
+    },
+  },
+  {
+    endpointId: "fal-ai/veed/lipsync",
+    label: "VEED LipSync",
+    description: "Advanced lip sync technology for creating realistic mouth movements synchronized with audio",
+    category: "lipsync",
+    inputAsset: ["video", "audio"],
+    initialInput: {
+      video_url: "",
+      audio_url: "",
+      sync_mode: "cut_off"
     },
   },
 ];

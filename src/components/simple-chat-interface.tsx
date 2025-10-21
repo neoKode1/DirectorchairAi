@@ -28,6 +28,7 @@ import {
 import { contentStorage } from '@/lib/content-storage';
 import { compressImage, validateImageFile, formatFileSize } from '@/lib/image-compression';
 import { processFile, validateFile, formatFileSize as formatFileSizeUtil } from '@/lib/file-processing';
+import { AVAILABLE_ENDPOINTS } from '@/lib/fal';
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -1236,108 +1237,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <SelectValue placeholder="Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fal-ai/nano-banana/edit">
-                    <div className="flex items-center gap-2">
-                      <img src="/gemini-color.svg" alt="Nano Banana" className="w-4 h-4" />
-                      <span>Nano Banana Edit (Image)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/bytedance/seedream/v4/edit">
-                    <div className="flex items-center gap-2">
-                      <img src="/bytedance-color.svg" alt="Seedream" className="w-4 h-4" />
-                      <span>Seedream 4.0 Edit (Image)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/flux-pro/v1.1-ultra">
-                    <div className="flex items-center gap-2">
-                      <img src="/flux.svg" alt="Flux" className="w-4 h-4" />
-                      <span>Flux Pro (Image)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
-                      <span>Sora 2 (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">
-                    <div className="flex items-center gap-2">
-                      <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
-                      <span>Sora 2 Pro (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/veo3/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
-                      <span>Veo 3 (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                      <span>Kling v2.1 Master (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                      <span>Kling V2.5 Turbo Pro (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
-                      <span>Minimax Hailuo 02 (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/hunyuan-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
-                      <span>Hunyuan Video (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
-                      <span>Wan Pro (I2V) - Disabled</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
-                      <span>Wan v2.2-A14B (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/ovi/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/Gen4.png" alt="Ovi" className="w-4 h-4" />
-                      <span>Ovi (Image-to-Video with Audio)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
-                      <span>Luma Ray 2 (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/wan-25-preview/image-to-video">
-                    <div className="flex items-center gap-2">
-                      <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
-                      <span>Wan 2.5 Preview (I2V)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">
-                    <div className="flex items-center gap-2">
-                      <img src="/kling-color.svg" alt="Kling Avatar" className="w-4 h-4" />
-                      <span>Kling AI Avatar Pro</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="endframe/minimax-hailuo-02">
-                    <div className="flex items-center gap-2">
-                      <img src="/minimax-color.svg" alt="EndFrame" className="w-4 h-4" />
-                      <span>EndFrame (Minimax)</span>
-                    </div>
-                  </SelectItem>
+                  {AVAILABLE_ENDPOINTS.map((model) => (
+                    <SelectItem key={model.endpointId} value={model.endpointId}>
+                      <div className="flex items-center gap-2">
+                        <img src={getModelIcon(model.endpointId)} alt={model.label} className="w-4 h-4" />
+                        <span>{model.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               {/* Duration indicator for video models */}
@@ -1702,108 +1609,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="fal-ai/nano-banana/edit">
-                          <div className="flex items-center gap-2">
-                            <img src="/gemini-color.svg" alt="Nano Banana" className="w-4 h-4" />
-                            <span>Nano Banana Edit (Image)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/bytedance/seedream/v4/edit">
-                          <div className="flex items-center gap-2">
-                            <img src="/bytedance-color.svg" alt="Seedream" className="w-4 h-4" />
-                            <span>Seedream 4.0 Edit (Image)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/flux-pro/v1.1-ultra">
-                          <div className="flex items-center gap-2">
-                            <img src="/flux.svg" alt="Flux" className="w-4 h-4" />
-                            <span>Flux Pro (Image)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/openai.svg" alt="Sora 2" className="w-4 h-4" />
-                            <span>Sora 2 (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">
-                          <div className="flex items-center gap-2">
-                            <img src="/openai.svg" alt="Sora 2 Pro" className="w-4 h-4" />
-                            <span>Sora 2 Pro (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/veo3/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/Gen4.png" alt="Veo" className="w-4 h-4" />
-                            <span>Veo 3 (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                            <span>Kling v2.1 Master (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/kling-color.svg" alt="Kling" className="w-4 h-4" />
-                            <span>Kling V2.5 Turbo Pro (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/minimax-color.svg" alt="Minimax" className="w-4 h-4" />
-                            <span>Minimax Hailuo 02 (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/hunyuan-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/bytedance-color.svg" alt="Hunyuan" className="w-4 h-4" />
-                            <span>Hunyuan Video (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/wan-pro/image-to-video" disabled className="text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <img src="/alibaba-color.svg" alt="Wan Pro" className="w-4 h-4 opacity-50" />
-                            <span>Wan Pro (I2V) - Disabled</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/alibaba-color.svg" alt="Wan v2.2-A14B" className="w-4 h-4" />
-                            <span>Wan v2.2-A14B (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/ovi/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/Gen4.png" alt="Ovi" className="w-4 h-4" />
-                            <span>Ovi (Image-to-Video with Audio)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/dreammachine.svg" alt="Luma Ray 2" className="w-4 h-4" />
-                            <span>Luma Ray 2 (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/wan-25-preview/image-to-video">
-                          <div className="flex items-center gap-2">
-                            <img src="/alibaba-color.svg" alt="Wan 2.5 Preview" className="w-4 h-4" />
-                            <span>Wan 2.5 Preview (I2V)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">
-                          <div className="flex items-center gap-2">
-                            <img src="/kling-color.svg" alt="Kling Avatar" className="w-4 h-4" />
-                            <span>Kling AI Avatar Pro</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="endframe/minimax-hailuo-02">
-                          <div className="flex items-center gap-2">
-                            <img src="/minimax-color.svg" alt="EndFrame" className="w-4 h-4" />
-                            <span>EndFrame (Minimax)</span>
-                          </div>
-                        </SelectItem>
+                        {AVAILABLE_ENDPOINTS.map((model) => (
+                          <SelectItem key={model.endpointId} value={model.endpointId}>
+                            <div className="flex items-center gap-2">
+                              <img src={getModelIcon(model.endpointId)} alt={model.label} className="w-4 h-4" />
+                              <span>{model.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">

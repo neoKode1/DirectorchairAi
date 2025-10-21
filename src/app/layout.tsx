@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DirectorChair AI - AI Video Studio",
+  title: "DirectorchairAi - AI Video Studio",
   description: "Create stunning videos with AI",
 };
 
@@ -39,7 +39,7 @@ export default function RootLayout({
                     href="/"
                     className="mr-4 sm:mr-6 flex items-center space-x-2 hover:opacity-80 mobile-touch-target"
                   >
-                    <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorChair AI</h1>
+                    <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorchairAi</h1>
                   </Link>
                   <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
                     <Link

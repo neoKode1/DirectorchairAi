@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Video, Image, Music, Mic, Play, Pause } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { SimpleVideoGallery } from "@/components/simple-video-gallery";
 // Content filtering removed - user has full control over prompts
 
 export default function HomePage() {
@@ -27,33 +28,31 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-cyan-500/10 to-blue-500/10" />
         
         <div className="relative z-20 mobile-container py-12 sm:py-16 lg:py-20">
-          <div className="text-center space-y-6 sm:space-y-8">
-            <h1 className="mobile-text-4xl sm:text-6xl lg:text-8xl font-black text-foreground leading-tight drop-shadow-lg">
-              DirectorChair AI
-            </h1>
-            
-            <p className="mobile-text-lg sm:text-2xl lg:text-3xl font-semibold text-muted-foreground mobile-container-sm">
-              AI-Powered Media Studio with Film Director Intelligence
-            </p>
-            
-            <p className="mobile-text-base sm:text-lg text-muted-foreground mobile-container-sm">
-              Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-6 sm:pt-8">
-              <Button asChild size="lg" className="mobile-btn-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-4 mobile-touch-target shadow-lg">
-                <Link href="/timeline">
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Start Creating
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Link>
-              </Button>
+          <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
+              <h1 className="mobile-text-4xl sm:text-6xl lg:text-8xl font-black text-foreground leading-tight drop-shadow-lg">
+                DirectorchairAi
+                <span className="block text-purple-500">Your Creative Studio</span>
+              </h1>
               
-              <Button asChild variant="outline" size="lg" className="mobile-btn-lg mobile-touch-target bg-transparent border-2 border-foreground text-foreground hover:bg-foreground hover:text-background font-bold text-lg px-8 py-4">
-                <Link href="/auth/signin">
-                  Sign In
-                </Link>
-              </Button>
+              <p className="mt-3 text-base text-muted-foreground sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
+                Access all your favorite AI models in one clean interface. 
+                Simple dropdowns, drag-and-drop uploads, and intuitive controls 
+                for intermediate to professional creators.
+              </p>
+              
+              <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
+                <Button asChild size="lg" className="text-lg rounded-full bg-purple-600 hover:bg-purple-700">
+                  <Link href="/timeline">
+                    <Sparkles className="mr-2 h-5 w-5" />
+                    Start Creating Free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+            <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
+              <SimpleVideoGallery />
             </div>
           </div>
         </div>
@@ -119,6 +118,58 @@ export default function HomePage() {
                description="Close-up portrait of digital elegance"
                overlayColor="from-pink-500/20 to-rose-500/20"
              />
+          </div>
+        </div>
+      </div>
+
+      {/* AI Models Section */}
+      <div className="py-16 bg-white w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+            <div>
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white">
+                <Image className="h-6 w-6" />
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Image Models
+                </h2>
+                <p className="mt-2 text-base text-gray-500">
+                  Access Flux Pro, Stable Diffusion, Google Imagen, and other 
+                  leading image generation models in one interface.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 lg:mt-0">
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white">
+                <Video className="h-6 w-6" />
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Video Models
+                </h2>
+                <p className="mt-2 text-base text-gray-500">
+                  Use Sora, Kling, Luma Dream Machine, and other video models 
+                  without switching between different platforms.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-10 lg:mt-0">
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white">
+                <Music className="h-6 w-6" />
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-medium text-gray-900">
+                  Audio & Voice Models
+                </h2>
+                <p className="mt-2 text-base text-gray-500">
+                  ElevenLabs, MiniMax voice cloning, TTS, and audio generation 
+                  models accessible through one streamlined interface.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -246,21 +297,35 @@ export default function HomePage() {
       </div>
 
       {/* CTA Section */}
-      <div className="mobile-py bg-background/30 relative z-20">
-        <div className="mobile-container text-center">
-          <h2 className="mobile-text-2xl sm:text-4xl font-black text-foreground mb-4 drop-shadow-lg">
-            Ready to Create?
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
+            Ready to Create with AI?
           </h2>
-          <p className="mobile-text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 mobile-container-sm">
-            Join thousands of creators using AI to bring their vision to life
+          <p className="mt-3 text-lg text-gray-500 mb-8">
+            Skip the platform hopping. Access all your favorite AI models in one place 
+            with simple controls and professional-grade tools.
           </p>
-          <Button asChild size="lg" className="mobile-btn-lg bg-primary text-primary-foreground hover:bg-primary/90 font-bold text-lg px-8 py-4 mobile-touch-target shadow-lg">
-            <Link href="/timeline">
-              <Sparkles className="w-5 h-5 mr-2" />
-              Get Started Free
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button asChild
+              size="lg"
+              className="text-lg bg-purple-600 hover:bg-purple-700"
+            >
+              <Link href="/timeline">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Get Started Free
+              </Link>
+            </Button>
+            <Button asChild
+              size="lg"
+              variant="outline"
+              className="text-lg"
+            >
+              <Link href="/auth/signin">
+                Sign In
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -268,7 +333,7 @@ export default function HomePage() {
       <footer className="mobile-py border-t border-border/30 relative z-20 bg-background/40">
         <div className="mobile-container text-center">
           <p className="mobile-text-sm text-muted-foreground">
-            © 2024 DirectorChair AI. All rights reserved. Built by DeeptechAi.
+            © 2024 DirectorchairAi. All rights reserved. Built by DeeptechAi.
           </p>
         </div>
       </footer>

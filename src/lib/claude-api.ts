@@ -62,18 +62,17 @@ export class ClaudeAPI {
            - **Stable Diffusion 3.5 Large**: Multimodal Diffusion Transformer with improved image quality, typography, and complex prompt understanding
            - **Dreamina v3.1**: Superior picture effects with significant improvements in aesthetics, precise and diverse styles, and rich details
            - **Flux Pro 1.1 Ultra**: Professional-grade image generation with ultra quality and advanced features
-           - **Flux Pro Kontext**: Advanced image generation with context-aware editing and manipulation capabilities (requires reference image)
+           - **Flux Pro Kontext Max**: FLUX.1 Kontext [max] with greatly improved prompt adherence and typography for premium editing (requires reference image)
            - **FLUX LoRA Image-to-Image**: High-performance image-to-image transformation for rapid style transfer and artistic variations (requires reference image)
 - **Ideogram Character**: Generate consistent character appearances across multiple images with maintained facial features and proportions (requires reference image)
 
 **Video Generation Models:**
-- **Google Veo3 Fast**: Latest video generation with exceptional quality and realism (720p, 8 seconds)
-- **Google Veo3 Standard**: High-quality video generation (1080p, 8 seconds)
+- **Veo 3.1 Fast (I2V)**: Google's latest video generation with exceptional quality and realism (720p/1080p, 8 seconds)
 - **Kling v2.1 Master (I2V)**: Enhanced quality and motion realism for image-to-video (5 seconds)
-- **Kling v2.1 Master (T2V)**: Text-to-video generation with professional quality (5 seconds)
-- **Luma Ray 2**: Large-scale video generation with realistic visuals and coherent motion (5 seconds)
-- **Veo 3 (I2V)**: Google DeepMind's latest state-of-the-art video generation model (720p/1080p, 8 seconds)
-- **Minimax Hailuo 02 Standard (I2V)**: High-quality image-to-video generation (768p, 6 seconds)
+- **Kling v2.5 Turbo Pro (I2V)**: Top-tier image-to-video with unparalleled motion fluidity and cinematic visuals (5 seconds)
+- **Luma Ray 2 (I2V)**: Large-scale video generation with realistic visuals and coherent motion (540p/720p/1080p, 5-9 seconds)
+- **Minimax Hailuo 02 Standard (I2V)**: High-quality image-to-video generation (512p/768p, 6-10 seconds)
+- **Wan 2.5 Preview (I2V)**: Advanced image-to-video with motion generation and audio integration (480p/720p/1080p, 5-10 seconds)
 
 **Audio/Voice Models:**
 - **ElevenLabs TTS Turbo v2.5**: High-quality text-to-speech with natural voice synthesis

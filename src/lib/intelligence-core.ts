@@ -2123,13 +2123,51 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
 
       case 'video':
         // Video generation models - minimal parameters for FAL compatibility
-        // Check if this is HALU Minimax model and use correct parameters
+        // Handle model-specific duration and resolution formats
         if (model.endpointId === 'fal-ai/minimax/hailuo-02/standard/image-to-video') {
           return {
             ...baseParams,
-            duration: "6", // HALU expects "6" or "10" without "s" suffix
-            resolution: "768P", // HALU expects "512P" or "768P"
+            duration: "6", // Minimax Hailuo expects "6" or "10" without "s" suffix
+            resolution: "768P", // Minimax expects "512P" or "768P"
+            prompt_optimizer: true,
             negative_prompt: defaultNegativePrompt
+          };
+        } else if (model.endpointId === 'fal-ai/veo3.1/fast/image-to-video') {
+          return {
+            ...baseParams,
+            duration: "8s", // Veo 3.1 Fast only supports 8s
+            resolution: "720p",
+            aspect_ratio: "16:9",
+            generate_audio: true
+          };
+        } else if (model.endpointId.includes('wan-25-preview') || model.endpointId.includes('wan-pro')) {
+          return {
+            ...baseParams,
+            duration: "5", // Wan models use "5" or "10" without "s" suffix
+            resolution: "1080p",
+            negative_prompt: defaultNegativePrompt,
+            enable_prompt_expansion: true
+          };
+        } else if (model.endpointId.includes('kling-video')) {
+          return {
+            ...baseParams,
+            duration: "5", // Kling expects "5" or "10" without "s" suffix
+            negative_prompt: "blur, distort, and low quality",
+            cfg_scale: 0.5
+          };
+        } else if (model.endpointId.includes('luma-dream-machine')) {
+          return {
+            ...baseParams,
+            duration: "5s", // Luma Ray 2 expects "5s" or "9s" with suffix
+            resolution: "540p",
+            aspect_ratio: "16:9"
+          };
+        } else if (model.endpointId.includes('sora-2/video-to-video')) {
+          return {
+            ...baseParams,
+            // Sora 2 video-to-video uses video_id instead of image_url
+            video_id: baseParams.image_url || "video_123",
+            prompt: userPrompt
           };
         } else {
           return {
@@ -2155,6 +2193,15 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
           voice: "Dexter (English (US)/American)",
           quality: "medium",
           output_format: "mp3"
+        };
+
+      case 'lipsync':
+        // Lip sync models - minimal parameters for FAL compatibility
+        return {
+          ...baseParams,
+          video_url: baseParams.image_url || "",
+          audio_url: "",
+          sync_mode: "cut_off"
         };
 
       default:

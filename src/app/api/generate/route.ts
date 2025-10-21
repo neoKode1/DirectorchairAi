@@ -933,7 +933,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`✅ [Generate API] [${requestId}] Generation successful`);
       console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
       
-      // Save generation to database (temporarily disabled until table is created)
+      // Save generation to database
       const outputUrl = result.data?.video?.url || result.data?.images?.[0]?.url || null;
       try {
         await saveGenerationToDatabase(
@@ -974,7 +974,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Save failed generation to database
       try {
         await saveGenerationToDatabase(
-          requestId,
+          `${requestId}-failed`,
           prompt,
           model,
           null,
@@ -1099,7 +1099,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           // Save fallback generation to database
           const fallbackOutputUrl = fallbackResult.data?.video?.url || fallbackResult.data?.images?.[0]?.url || null;
           await saveGenerationToDatabase(
-            requestId,
+            `${requestId}-fallback`,
             prompt,
             'fal-ai/bytedance/seedream/v4/edit',
             fallbackOutputUrl,
@@ -1162,7 +1162,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             // Save Flux Pro generation to database
             const fluxOutputUrl = fluxResult.data?.images?.[0]?.url || null;
             await saveGenerationToDatabase(
-              requestId,
+              `${requestId}-flux`,
               prompt,
               'fal-ai/flux-pro/v1.1-ultra',
               fluxOutputUrl,

@@ -1,7 +1,7 @@
 # AI Model Configuration Guide
 
 > **Last Updated**: October 20, 2025  
-> **Application**: All Models AI  
+> **Application**: Director's Chair AI  
 > **Total Models**: 80+ models across 12 categories  
 > **Test Coverage**: 77% passing (23/30 tested models)
 

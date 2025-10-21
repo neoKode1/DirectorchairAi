@@ -105,7 +105,7 @@ export default async function PricingPage() {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-            Unlock the full potential of All Models AI with our flexible pricing
+            Unlock the full potential of Director's Chair AI with our flexible pricing
             plans. Create stunning images, videos, and audio with all your
             favorite AI models.
           </p>

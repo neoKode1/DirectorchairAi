@@ -97,7 +97,7 @@ function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center">
           <Sparkles className="h-6 w-6 text-purple-500 dark:text-purple-400" />
-          <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">All Models AI</span>
+          <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">Director's Chair AI</span>
         </Link>
         <div className="flex items-center space-x-2">
           <ThemeToggle />

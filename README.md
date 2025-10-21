@@ -1,14 +1,16 @@
-# DirectorChair AI
+# Director's Chair AI
 
 **AI-Powered Media Studio with Film Director Intelligence**
 
 Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance with automated smart controls.
 
-![DirectorChair AI Screenshot](https://raw.githubusercontent.com/neoKode1/DirectorchairAi/main/public/Screenshot%20(2159).webp)
+🌐 **Live at**: [directorchairai.com](https://directorchairai.com)
+
+![Director's Chair AI Screenshot](https://raw.githubusercontent.com/neoKode1/DirectorchairAi/main/public/Screenshot%20(2159).webp)
 
 ## 🎬 Demo Video
 
-Watch DirectorChair AI in action:
+Watch Director's Chair AI in action:
 
 <div align="center">
   <a href="https://youtu.be/tssJN3-TwvI?si=16X4QB_AZXq0NgAq">
@@ -16,7 +18,7 @@ Watch DirectorChair AI in action:
   </a>
 </div>
 
-*Click the badge above to watch the full demo video showcasing DirectorChair AI's capabilities*
+*Click the badge above to watch the full demo video showcasing Director's Chair AI's capabilities*
 
 ## 🚀 Features
 

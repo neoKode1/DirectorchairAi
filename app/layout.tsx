@@ -6,7 +6,7 @@ import { SWRConfig } from 'swr';
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'All Models AI - AI-Powered Media Studio',
+  title: 'Director's Chair AI - AI-Powered Media Studio',
   description: 'Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language.'
 };
 

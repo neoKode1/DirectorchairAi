@@ -498,7 +498,7 @@ function TimelineContent() {
                   )}
                   
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Model: {content.model}</span>
+                    <span className="text-xs text-gray-500">Model: {content.model?.split('/').pop() || content.model}</span>
                     <div className="flex space-x-2">
                       <button className="text-gray-400 hover:text-gray-600 text-sm">
                         Share

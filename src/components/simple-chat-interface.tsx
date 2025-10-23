@@ -81,6 +81,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const lastToastStateRef = useRef<string>(''); // Track last toast to avoid duplicates
 
 
   const scrollToBottom = () => {
@@ -472,18 +473,68 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   }, [onImageInjected, userInput]);
 
-  // Detect when two images are uploaded for EndFrame mode
+  // Detect when multiple images are uploaded - check model to determine behavior
   useEffect(() => {
-    if (uploadedImages.length === 2) {
+    // Models that support multiple images as character/style references (NOT end frames)
+    const multiImageReferenceModels = [
+      'nano-banana/edit',
+      'seedream/v4/edit',
+      'bytedance/seedream',
+      'flux',
+      'stable-diffusion',
+      'ideogram'
+    ];
+    
+    // Check if the current model supports multi-image references
+    const supportsMultiImageReference = multiImageReferenceModels.some(model => 
+      preferredVideoModel.toLowerCase().includes(model.toLowerCase())
+    );
+    
+    // Create a state key to track if we should show a toast
+    const currentStateKey = `${uploadedImages.length}-${preferredVideoModel}-${supportsMultiImageReference}`;
+    
+    // Only enable EndFrame mode if:
+    // 1. Exactly two images are uploaded AND
+    // 2. The model is NOT one that uses images as character/style references
+    // 3. The model is NOT already the EndFrame model (it will handle it separately)
+    if (uploadedImages.length === 2 && 
+        !supportsMultiImageReference && 
+        preferredVideoModel !== 'endframe/minimax-hailuo-02') {
       setEndFrameMode(true);
-      toast({
-        title: "EndFrame Mode Enabled",
-        description: "Two images detected! Describe the transition between your start and end frames.",
-      });
+      
+      // Only show toast if state changed
+      if (lastToastStateRef.current !== currentStateKey) {
+        toast({
+          title: "EndFrame Mode Enabled",
+          description: "Two images detected! Describe the transition between your start and end frames.",
+        });
+        lastToastStateRef.current = currentStateKey;
+      }
+    } else if (uploadedImages.length > 1 && supportsMultiImageReference) {
+      setEndFrameMode(false);
+      
+      // Show helpful message for models that use images as references (only for 2 images)
+      if (uploadedImages.length === 2 && lastToastStateRef.current !== currentStateKey) {
+        const modelName = preferredVideoModel.includes('nano-banana') ? 'Nano Banana' : 
+                          preferredVideoModel.includes('seedream') ? 'SeeDream' :
+                          preferredVideoModel.includes('flux') ? 'Flux' :
+                          'This model';
+        
+        toast({
+          title: "Multiple Images Ready",
+          description: `${modelName} will use these images as character/style references.`,
+        });
+        lastToastStateRef.current = currentStateKey;
+      }
     } else {
       setEndFrameMode(false);
+      
+      // Reset toast state when images are cleared
+      if (uploadedImages.length === 0) {
+        lastToastStateRef.current = '';
+      }
     }
-  }, [uploadedImages.length, toast]);
+  }, [uploadedImages.length, preferredVideoModel, toast]);
 
   // Handle EndFrame generation
   const handleEndFrameGeneration = async () => {
@@ -689,7 +740,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.preventDefault();
     if (!userInput.trim() && uploadedImages.length === 0) return;
 
-    // Handle EndFrame generation when EndFrame model is selected or when two images are uploaded
+    // Handle EndFrame generation when:
+    // 1. EndFrame model is explicitly selected, OR
+    // 2. EndFrame mode is active (which only happens for 2 images + non-edit models)
+    // Note: Models like Nano Banana Edit and SeeDream 4.0 Edit won't trigger this
+    // because they use multiple images as character/style references, not end frames
     if (preferredVideoModel === 'endframe/minimax-hailuo-02' || (endFrameMode && uploadedImages.length === 2)) {
       await handleEndFrameGeneration();
       return;

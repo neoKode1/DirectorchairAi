@@ -1,27 +1,16 @@
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// In development mode, skip middleware entirely
+// Authentication disabled for development
+// All routes are accessible without authentication
 export default function middleware(req: any) {
-  if (process.env.NODE_ENV === "development") {
-    return NextResponse.next();
-  }
-  
-  return withAuth(req, {
-    callbacks: {
-      authorized({ req, token }) {
-        return !!token;
-      },
-    },
-  });
+  return NextResponse.next();
 }
 
 export const config = {
-  // Protect timeline and API routes
+  // Middleware applies to all routes but does not enforce authentication
   matcher: [
     "/timeline/:path*",
     "/api/auth/:path*",
     "/api/generate/:path*",
-    // Add other protected routes here
   ],
 };

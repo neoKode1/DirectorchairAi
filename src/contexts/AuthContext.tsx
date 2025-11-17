@@ -34,6 +34,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // DEVELOPMENT MODE: Skip authentication, provide mock user
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
+      console.log('🔓 Auth disabled - using mock user for development')
+      const mockUser = {
+        id: 'dev-user-123',
+        email: 'dev@directorchair.ai',
+        user_metadata: { name: 'Dev User' },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+      } as User
+
+      setUser(mockUser)
+      setSession({
+        access_token: 'dev-token',
+        refresh_token: 'dev-refresh',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: mockUser,
+      } as Session)
+      setLoading(false)
+      return
+    }
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -57,11 +81,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     getInitialSession()
 
+    // Skip auth state listener in development mode
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DISABLE_AUTH === 'true') {
+      return
+    }
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
-        
+
         switch (event) {
           case 'SIGNED_IN':
             setSession(session)
@@ -87,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setSession(session)
             setUser(session?.user ?? null)
         }
-        
+
         setLoading(false)
       }
     )

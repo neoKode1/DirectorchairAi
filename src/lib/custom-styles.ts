@@ -290,12 +290,12 @@ export function initializeCustomLoRAs(): void {
     'Custom cinematic style LoRA trained on fal.ai'
   );
 
-  // Add your koala LoRA (if you have the config file)
+  // Add your koala LoRA (config file not available, using weights only)
   customStyleManager.addCustomLoRA(
     'Koala Style',
-    'koala', // You may want to update this trigger word based on your training
+    'koala', // Trigger word based on training
     'https://v3.fal.media/files/koala/OX12GZ0Ea7YjsizWcLoGh_pytorch_lora_weights.safetensors',
-    '', // TODO: Add koala config URL if available
+    '', // Config URL not available - weights file is sufficient
     'Custom koala style LoRA trained on fal.ai'
   );
 

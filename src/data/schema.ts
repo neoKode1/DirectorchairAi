@@ -83,7 +83,14 @@ export type MediaItem = {
   input?: Record<string, any>;
   output?: Record<string, any>;
   url?: string;
-  metadata?: Record<string, any>; // TODO: Define the metadata schema
+  metadata?: {
+    duration?: string;
+    width?: number;
+    height?: number;
+    format?: string;
+    model?: string;
+    [key: string]: any;
+  };
 } & (
   | {
       kind: "generated";

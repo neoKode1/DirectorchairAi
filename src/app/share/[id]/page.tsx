@@ -84,9 +84,9 @@ export async function generateMetadata(
 
     // Additional metadata
     other: {
-      // TODO resolve duration
-      "og:video:duration": "15",
-      "video:duration": "15",
+      // Default duration for generated videos (typically 5-10 seconds)
+      "og:video:duration": video.metadata?.duration || "10",
+      "video:duration": video.metadata?.duration || "10",
       "video:release_date": new Date(video.createdAt).toISOString(),
     },
   };

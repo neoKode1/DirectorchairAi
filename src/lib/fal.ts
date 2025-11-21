@@ -419,6 +419,24 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/veo3.1/fast/first-last-frame-to-video",
+    label: "Veo 3.1 Fast First/Last Frame",
+    description: "Animate between a starting and ending frame using Google Veo 3.1 Fast for natural motion and cinematic continuity",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      first_frame_url: "https://storage.googleapis.com/falserverless/example_inputs/veo31-flf2v-input-1.jpeg",
+      last_frame_url: "https://storage.googleapis.com/falserverless/example_inputs/veo31-flf2v-input-2.jpeg",
+      prompt: "Describe how the first frame transforms into the last frame with motion, style, camera notes, and ambiance",
+      duration: "8s",
+      aspect_ratio: "16:9",
+      resolution: "1080p",
+      generate_audio: true
+    },
+  },
+  {
     endpointId: "fal-ai/kling-video/v2.1/master/image-to-video",
     label: "Kling v2.1 Master (I2V)",
     description: "Latest Kling video generation with enhanced quality and motion realism",

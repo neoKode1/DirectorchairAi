@@ -242,6 +242,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const modelPromptLimits: Record<string, number> = {
       'fal-ai/nano-banana/edit': 2000,           // Nano Banana Edit has stricter limits
       'fal-ai/nano-banana-pro/edit': 2000,       // Nano Banana Pro has the same limits
+      'fal-ai/veo3.1/fast/first-last-frame-to-video': 2000,
       'fal-ai/bytedance/seedream/v4/edit': 2000, // Seedream also has limits
       'fal-ai/flux-pro': 3000,                   // Flux Pro allows longer prompts
       'fal-ai/imagen4': 3000,                    // Imagen 4 allows longer prompts
@@ -334,6 +335,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // Some models might also accept 'ratio' or 'size'
         input.ratio = body.aspect_ratio;
       }
+    }
+
+    if (model === 'fal-ai/veo3.1/fast/first-last-frame-to-video') {
+      if (!body.first_frame_url || !body.last_frame_url) {
+        console.error(`❌ [Generate API] [${requestId}] Missing first_frame_url or last_frame_url for Veo first/last frame model`);
+        return NextResponse.json({
+          success: false,
+          error: "first_frame_url and last_frame_url are required for this model",
+          requestId
+        }, { status: 400 });
+      }
+
+      const allowedDurations = ['4s', '6s', '8s'];
+      const allowedAspectRatios = ['auto', '16:9', '9:16', '1:1'];
+      const allowedResolutions = ['720p', '1080p'];
+
+      input.first_frame_url = await processImageWithCompression(body.first_frame_url);
+      input.last_frame_url = await processImageWithCompression(body.last_frame_url);
+      input.duration = allowedDurations.includes(body.duration) ? body.duration : '8s';
+      input.aspect_ratio = allowedAspectRatios.includes(body.aspect_ratio) ? body.aspect_ratio : '16:9';
+      input.resolution = allowedResolutions.includes(body.resolution) ? body.resolution : '720p';
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+
+      delete input.image_url;
+      delete input.image_urls;
     }
 
     // Handle Seedream 4.0 Edit model specific parameters

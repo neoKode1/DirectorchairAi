@@ -66,6 +66,13 @@ export const MODEL_TIMING_DATA: Record<string, ModelTimingData> = {
     minTime: 18,
     maxTime: 45,
     category: 'image'
+  },
+  'fal-ai/veo3.1/fast/first-last-frame-to-video': {
+    model: 'fal-ai/veo3.1/fast/first-last-frame-to-video',
+    averageExecutionTime: 80, // Based on observed queue times for Veo 3.1 Fast video jobs
+    minTime: 60,
+    maxTime: 120,
+    category: 'video'
   }
 };
 

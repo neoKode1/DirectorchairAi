@@ -482,7 +482,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'bytedance/seedream',
       'flux',
       'stable-diffusion',
-      'ideogram'
+      'ideogram',
+      'first-last-frame-to-video'
     ];
     
     // Check if the current model supports multi-image references
@@ -514,15 +515,27 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       setEndFrameMode(false);
       
       // Show helpful message for models that use images as references (only for 2 images)
-      if (uploadedImages.length === 2 && lastToastStateRef.current !== currentStateKey) {
+      if (preferredVideoModel.includes('first-last-frame-to-video') &&
+          uploadedImages.length === 1 &&
+          lastToastStateRef.current !== currentStateKey) {
+        toast({
+          title: "Need Last Frame",
+          description: "Veo 3.1 First/Last Frame needs both a starting and ending frame. Upload the final frame next.",
+        });
+        lastToastStateRef.current = currentStateKey;
+      } else if (uploadedImages.length === 2 && lastToastStateRef.current !== currentStateKey) {
+        const isFirstLastFrameModel = preferredVideoModel.includes('first-last-frame-to-video');
         const modelName = preferredVideoModel.includes('nano-banana') ? 'Nano Banana' : 
                           preferredVideoModel.includes('seedream') ? 'SeeDream' :
                           preferredVideoModel.includes('flux') ? 'Flux' :
+                          preferredVideoModel.includes('first-last-frame-to-video') ? 'Veo 3.1 First/Last Frame' :
                           'This model';
         
         toast({
-          title: "Multiple Images Ready",
-          description: `${modelName} will use these images as character/style references.`,
+          title: isFirstLastFrameModel ? "First & Last Frames Ready" : "Multiple Images Ready",
+          description: isFirstLastFrameModel
+            ? "We'll treat the first upload as the starting frame and the second as the ending frame for Veo 3.1."
+            : `${modelName} will use these images as character/style references.`,
         });
         lastToastStateRef.current = currentStateKey;
       }
@@ -909,9 +922,24 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       // Use the selected model directly
       model = preferredVideoModel;
+      const firstLastFrameModelId = 'fal-ai/veo3.1/fast/first-last-frame-to-video';
+      const isFirstLastFrameModel = model === firstLastFrameModelId;
+
+      if (isFirstLastFrameModel && (!imagesToUse || imagesToUse.length < 2)) {
+        setIsGenerating(false);
+        setUploadedImages(imagesToUse || uploadedImages);
+        setUserInput(userInput);
+        onGenerationComplete?.();
+        toast({
+          title: "First & Last Frames Required",
+          description: "Upload both a starting frame and an ending frame to use Veo 3.1 First/Last Frame.",
+          variant: "destructive"
+        });
+        return;
+      }
       console.log('🎯 [Chat] Using selected model:', model);
 
-      const generationData = {
+      const generationData: Record<string, any> = {
         model,
         prompt: userInput.trim(),
         image_url: imageToUse,
@@ -927,6 +955,29 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           resolution: model.includes('sora-2') ? 'auto' : resolution // Sora 2 defaults to 'auto'
         })
       };
+
+      if (isFirstLastFrameModel && imagesToUse) {
+        const firstFrame = imagesToUse[0];
+        const lastFrame = imagesToUse[imagesToUse.length - 1];
+        const allowedDurationValues = ['4s', '6s', '8s'];
+        const durationValue = allowedDurationValues.includes(`${duration}s`) ? `${duration}s` : '8s';
+        const allowedAspectRatios = ['16:9', '9:16', '1:1'];
+        const aspectValue = allowedAspectRatios.includes(aspectRatio) ? aspectRatio : '16:9';
+        const allowedResolutions = ['720p', '1080p'];
+        const resolutionValue = allowedResolutions.includes(resolution) ? resolution : '720p';
+
+        delete generationData.image_url;
+        delete generationData.image_urls;
+
+        Object.assign(generationData, {
+          first_frame_url: firstFrame,
+          last_frame_url: lastFrame,
+          duration: durationValue,
+          aspect_ratio: aspectValue,
+          resolution: resolutionValue,
+          generate_audio: true
+        });
+      }
 
       // Set the current model for the spinning icon
       setCurrentModel(model);
@@ -1047,7 +1098,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           console.log('🔄 [Chat] Content policy violation detected, trying Seedream 4.0 Edit as fallback...');
           
           // Retry with Seedream 4.0 Edit
-          const fallbackGenerationData = {
+          const fallbackGenerationData: Record<string, any> = {
             ...generationData,
             model: 'fal-ai/bytedance/seedream/v4/edit'
           };
@@ -1225,7 +1276,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             console.log('🔄 [Chat] Content policy violation detected in variation, trying Seedream 4.0 Edit as fallback...');
             
             // Retry with Seedream 4.0 Edit
-            const fallbackGenerationData = {
+            const fallbackGenerationData: Record<string, any> = {
               ...generationData,
               model: 'fal-ai/bytedance/seedream/v4/edit'
             };

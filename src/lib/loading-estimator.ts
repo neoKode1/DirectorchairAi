@@ -59,6 +59,13 @@ export const MODEL_TIMING_DATA: Record<string, ModelTimingData> = {
     minTime: 15,
     maxTime: 40,
     category: 'image'
+  },
+  'fal-ai/nano-banana-pro/edit': {
+    model: 'fal-ai/nano-banana-pro/edit',
+    averageExecutionTime: 28, // Slightly higher due to enhanced fidelity
+    minTime: 18,
+    maxTime: 45,
+    category: 'image'
   }
 };
 

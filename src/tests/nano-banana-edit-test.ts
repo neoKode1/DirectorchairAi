@@ -110,13 +110,94 @@ async function testNanoBananaEditVariations() {
   }
 }
 
+/**
+ * Test the fal-ai/nano-banana-pro/edit model (text-to-image)
+ */
+async function testNanoBananaProImage() {
+  console.log('🧪 Testing fal-ai/nano-banana-pro/edit model (text-to-image)...');
+
+  try {
+    const result: Result<NanoBananaEditResult> = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
+      input: {
+        prompt: "make a photo of the man driving the car down the california coastline",
+        num_images: 1,
+        aspect_ratio: "16:9",
+        output_format: "png",
+        resolution: "1K"
+      },
+      logs: true,
+      onQueueUpdate: (update: any) => {
+        console.log('📊 Nano Banana Pro queue update:', update.status);
+        if (update.status === "IN_PROGRESS" && update.logs) {
+          update.logs.map((log: any) => log.message).forEach(console.log);
+        }
+      },
+    });
+
+    console.log('✅ Nano Banana Pro text-to-image test successful!');
+    console.log('📦 Result:', result);
+
+    return result;
+  } catch (error) {
+    console.error('❌ Nano Banana Pro text-to-image test failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Test Nano Banana Pro with optional reference images
+ */
+async function testNanoBananaProVariations() {
+  console.log('🧪 Testing nano-banana-pro/edit variations...');
+
+  const testCases = [
+    {
+      prompt: "Create a cinematic shot of a neon-lit alley in Tokyo at night",
+      description: "Text-only generation"
+    },
+    {
+      prompt: "Blend these references into a cohesive cinematic portrait",
+      description: "Multi-image reference blend",
+      imageUrls: [
+        "https://storage.googleapis.com/falserverless/example_inputs/nano-banana-edit-input.png",
+        "https://storage.googleapis.com/falserverless/example_inputs/nano-banana-edit-input-2.png"
+      ]
+    }
+  ];
+
+  for (const testCase of testCases) {
+    console.log(`\n🎨 Nano Banana Pro: ${testCase.description}`);
+    try {
+      const result = await fal.subscribe("fal-ai/nano-banana-pro/edit", {
+        input: {
+          prompt: testCase.prompt,
+          num_images: 1,
+          aspect_ratio: "16:9",
+          output_format: "png",
+          resolution: "1K",
+          ...(testCase.imageUrls ? { image_urls: testCase.imageUrls } : {})
+        },
+        logs: false
+      });
+      console.log(`✅ ${testCase.description} - Success`);
+      if (result.data?.images?.[0]) {
+        console.log(`   Output: ${result.data.images[0].url}`);
+      }
+    } catch (error) {
+      console.error(`❌ ${testCase.description} - Failed:`, error);
+    }
+  }
+}
+
 // Run tests if this file is executed directly
 if (require.main === module) {
   (async () => {
     try {
       await testNanoBananaEdit();
       await testNanoBananaEditVariations();
-      console.log('\n🎉 All nano-banana/edit tests completed!');
+      await testNanoBananaProImage();
+      await testNanoBananaProVariations();
+      console.log('\n🎉 All Nano Banana tests completed!');
     } catch (error) {
       console.error('\n💥 Test suite failed:', error);
       process.exit(1);
@@ -124,4 +205,9 @@ if (require.main === module) {
   })();
 }
 
-export { testNanoBananaEdit, testNanoBananaEditVariations };
+export { 
+  testNanoBananaEdit, 
+  testNanoBananaEditVariations,
+  testNanoBananaProImage,
+  testNanoBananaProVariations
+};

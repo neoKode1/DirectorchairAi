@@ -262,6 +262,23 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/nano-banana-pro/edit",
+    label: "Nano Banana Pro Image",
+    description: "Gemini 3 Pro Image model offering high fidelity text-to-image and multi-image reference editing with enhanced prompt grounding",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 5,
+    initialInput: {
+      prompt: "make a photo of the man driving the car down the california coastline",
+      image_urls: [],
+      num_images: 1,
+      aspect_ratio: "16:9",
+      output_format: "png",
+      resolution: "1K",
+    },
+  },
+  {
     endpointId: "fal-ai/nano-banana/edit",
     label: "Nano Banana Edit",
     description: "Google's state-of-the-art image generation and editing model with multi-image support for precise modifications",

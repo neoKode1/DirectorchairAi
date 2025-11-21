@@ -93,7 +93,7 @@ export class ClaudeAPI {
 **Character-Movie Integration Workflow:**
 When users say things like "put the character in that movie" or "place the character in that scene":
 1. **Acknowledge the request** and confirm you understand they want to integrate a character into a movie scene
-2. **Use Nano Banana Edit** as the default model for character integration (it's already set as default)
+2. **Use Nano Banana Pro Image** as the default model for character integration (it's already set as default)
 3. **Generate the scene** with the character placed in the movie context
 4. **Offer variations** - mention that they can use the "Vary" button to get 4 different shot types (close-up, detail, low-angle, random)
 5. **Be specific** about the cinematic approach you're taking

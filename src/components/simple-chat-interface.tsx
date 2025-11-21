@@ -75,7 +75,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [duration, setDuration] = useState(4);
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/nano-banana/edit');
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/nano-banana-pro/edit');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const [userIntent, setUserIntent] = useState<'image' | 'video' | 'auto'>('image');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -220,7 +220,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         setAspectRatio(settings.aspectRatio || '16:9');
         setResolution(settings.resolution || '1080p');
         setDuration(settings.duration || 4);
-        setPreferredVideoModel(settings.preferredVideoModel || 'fal-ai/nano-banana/edit');
+        setPreferredVideoModel(settings.preferredVideoModel || 'fal-ai/nano-banana-pro/edit');
         setUserIntent(settings.userIntent || 'image');
       } catch (error) {
         console.error('Error loading saved settings:', error);
@@ -477,7 +477,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   useEffect(() => {
     // Models that support multiple images as character/style references (NOT end frames)
     const multiImageReferenceModels = [
-      'nano-banana/edit',
+      'nano-banana',
       'seedream/v4/edit',
       'bytedance/seedream',
       'flux',
@@ -743,7 +743,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     // Handle EndFrame generation when:
     // 1. EndFrame model is explicitly selected, OR
     // 2. EndFrame mode is active (which only happens for 2 images + non-edit models)
-    // Note: Models like Nano Banana Edit and SeeDream 4.0 Edit won't trigger this
+    // Note: Models like Nano Banana (Pro/Legacy) and SeeDream 4.0 Edit won't trigger this
     // because they use multiple images as character/style references, not end frames
     if (preferredVideoModel === 'endframe/minimax-hailuo-02' || (endFrameMode && uploadedImages.length === 2)) {
       await handleEndFrameGeneration();
@@ -765,7 +765,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     // Validate Sora 2 image-to-video requirements
     if (preferredVideoModel.includes('sora-2/image-to-video')) {
       if (uploadedImages.length === 0 && !lastGeneratedImage) {
-        alert('Sora 2 requires an image. Please upload an image or generate one first using an image model like Nano Banana Edit.');
+        alert('Sora 2 requires an image. Please upload an image or generate one first using an image model like Nano Banana Pro.');
         return;
       }
     }
@@ -1038,10 +1038,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         onGenerationComplete?.();
         
       } catch (error: any) {
-        // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
+        // If we get a content policy violation with a Nano Banana model, try Seedream 4.0 Edit as fallback
         if (error.message?.includes('content policy') && 
             error.message?.includes('violation') && 
-            generationData.model === 'fal-ai/nano-banana/edit' &&
+            generationData.model?.includes('nano-banana') &&
             imageToUse) {
           
           console.log('🔄 [Chat] Content policy violation detected, trying Seedream 4.0 Edit as fallback...');
@@ -1207,7 +1207,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         const enhancedPrompt = `${prompt}. ${variationPrompt}`;
         
         const generationData = {
-          model: 'fal-ai/nano-banana/edit', // Nano Banana Edit for image variations
+          model: 'fal-ai/nano-banana-pro/edit', // Nano Banana Pro for image variations
           prompt: enhancedPrompt,
           image_urls: [imageUrl],
           aspect_ratio: '16:9'
@@ -1217,10 +1217,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         try {
           result = await onContentGenerated(generationData);
         } catch (error: any) {
-          // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
+          // If we get a content policy violation with a Nano Banana model, try Seedream 4.0 Edit as fallback
           if (error.message?.includes('content policy') && 
               error.message?.includes('violation') && 
-              generationData.model === 'fal-ai/nano-banana/edit') {
+              generationData.model?.includes('nano-banana')) {
             
             console.log('🔄 [Chat] Content policy violation detected in variation, trying Seedream 4.0 Edit as fallback...');
             

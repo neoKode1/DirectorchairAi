@@ -120,7 +120,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image = body.image;
     }
 
-    // Add image_urls if provided (for nano-banana/edit)
+    // Add image_urls if provided (for Nano Banana models)
     if (body.image_urls) {
       // Convert URLs in image_urls array to base64 with compression
       const convertedImageUrls = await Promise.all(
@@ -456,6 +456,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('🔧 [FAL Image Proxy] Nano Banana image_urls count:', input.image_urls.length);
     }
 
+    if (model.includes('nano-banana-pro/edit')) {
+      console.log('🔧 [FAL Image Proxy] Processing Nano Banana Pro Image model parameters');
+      
+      if (body.image_urls && body.image_urls.length > 0) {
+        input.image_urls = body.image_urls;
+        console.log('🔧 [FAL Image Proxy] Using provided image_urls array for Nano Banana Pro:', body.image_urls.length);
+      }
+      
+      if (body.num_images !== undefined) {
+        input.num_images = body.num_images;
+      }
+      if (body.aspect_ratio) {
+        input.aspect_ratio = body.aspect_ratio;
+      }
+      if (body.output_format) {
+        input.output_format = body.output_format;
+      }
+      if (body.resolution) {
+        input.resolution = body.resolution;
+      }
+      if (body.sync_mode !== undefined) {
+        input.sync_mode = body.sync_mode;
+      }
+      
+      console.log('🔧 [FAL Image Proxy] Nano Banana Pro input parameters:', input);
+    }
+
     if (model.includes('gemini-25-flash-image/edit')) {
       console.log('🔧 [FAL Image Proxy] Processing Gemini 2.5 Flash (Multi-Image Optimized) model parameters');
       console.log('🔧 [FAL Image Proxy] Body received:', body);
@@ -670,6 +697,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       "fal-ai/flux-pro/kontext",
       "fal-ai/flux-krea-lora/image-to-image",
       "fal-ai/nano-banana/edit",
+      "fal-ai/nano-banana-pro/edit",
       "fal-ai/gemini-25-flash-image/edit",
       "fal-ai/qwen-image-edit",
       "fal-ai/ideogram/character",

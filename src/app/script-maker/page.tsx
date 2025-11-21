@@ -55,6 +55,15 @@ function ScriptMakerContent() {
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const getModelFriendlyName = (modelId?: string) => {
+    if (!modelId) return 'Unknown Model';
+    if (modelId === 'fal-ai/nano-banana-pro/edit') return 'Nano Banana Pro';
+    if (modelId === 'fal-ai/nano-banana/edit') return 'Nano Banana (Legacy)';
+    if (modelId === 'fal-ai/bytedance/seedream/v4/edit') return 'Seedream 4.0 Edit';
+    if (modelId === 'fal-ai/stable-diffusion-v35-large') return 'Stable Diffusion 3.5';
+    return modelId;
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -819,141 +828,141 @@ function ScriptMakerContent() {
 
       const prompt = promptParts.filter(Boolean).join(', ');
 
-      console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Edit:', {
+      console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Pro:', {
         minute: minuteIndex + 1,
         shot: shotIndex + 1,
         prompt,
         matchedCharacters: matchedCharacterAnalysis
       });
 
-      let imageUrl: string | null = null;
-      let usedModel = 'fal-ai/nano-banana/edit';
+      const primaryModelId = 'fal-ai/nano-banana-pro/edit';
+      const legacyModelId = 'fal-ai/nano-banana/edit';
+      const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
+      const stableDiffModelId = 'fal-ai/stable-diffusion-v35-large';
+      const hasCharacterReferences = matchedImageUrls.length > 0;
 
-      // Choose model based on whether we have matched character images for this shot
-      let primaryModel: string;
-      let requestBody: any;
+      type ModelAttempt = {
+        payload: Record<string, any>;
+        fallbackToast?: string;
+      };
 
-      if (matchedImageUrls.length > 0) {
-        // Use Nano Banana Edit with character references
-        primaryModel = 'fal-ai/nano-banana/edit';
-        requestBody = {
-          model: primaryModel,
-          prompt: prompt,  // Scene description with character details
-          image_urls: matchedImageUrls,  // Character reference images
-          aspect_ratio: '16:9',
-          num_images: 1,
-          output_format: 'jpeg',
-          safety_tolerance: '2'
-        };
-        
-        console.log('🎬 [ScriptMaker] Using Nano Banana Edit with character references');
+      const buildNanoBananaPayload = (modelId: string) => ({
+        model: modelId,
+        prompt,
+        aspect_ratio: '16:9',
+        num_images: 1,
+        output_format: 'png',
+        resolution: '1K',
+        ...(hasCharacterReferences ? { image_urls: matchedImageUrls } : {})
+      });
+
+      const modelAttempts: ModelAttempt[] = [
+        {
+          payload: buildNanoBananaPayload(primaryModelId),
+          fallbackToast: hasCharacterReferences
+            ? 'Nano Banana Pro failed, switching to Nano Banana (Legacy)...'
+            : 'Nano Banana Pro failed, switching to Stable Diffusion 3.5...'
+        }
+      ];
+
+      if (hasCharacterReferences) {
+        modelAttempts.push({
+          payload: buildNanoBananaPayload(legacyModelId),
+          fallbackToast: 'Nano Banana (Legacy) failed, trying Seedream 4.0 Edit...'
+        });
+
+        if (matchedImageUrls.length > 0) {
+          modelAttempts.push({
+            payload: {
+              model: seedreamModelId,
+              prompt,
+              image_url: matchedImageUrls[0],
+              image_size: 'landscape_16_9',
+              num_images: 1,
+              output_format: 'jpeg'
+            }
+          });
+        }
       } else {
-        // No character images for this shot - use text-to-image model
-        primaryModel = 'fal-ai/stable-diffusion-v35-large';
-        requestBody = {
-          model: primaryModel,
-          prompt: prompt,
-          aspect_ratio: '16:9',
-          num_images: 1,
-          output_format: 'jpeg',
-          num_inference_steps: 28,
-          guidance_scale: 3.5,
-          enable_safety_checker: true
-        };
-        
-        console.log('🎬 [ScriptMaker] No character images for this shot, using Stable Diffusion');
+        modelAttempts.push({
+          payload: {
+            model: stableDiffModelId,
+            prompt,
+            aspect_ratio: '16:9',
+            num_images: 1,
+            output_format: 'jpeg',
+            num_inference_steps: 28,
+            guidance_scale: 3.5,
+            enable_safety_checker: true
+          }
+        });
       }
 
-      // Try primary model
-      try {
-        console.log('🎬 [ScriptMaker] Primary model request:', {
-          model: primaryModel,
-          imageUrlsCount: requestBody.image_urls?.length || 0,
-          matchedCharacters: matchedCharacterAnalysis,
+      const runModelAttempt = async (payload: Record<string, any>) => {
+        console.log('🎬 [ScriptMaker] Model request attempt:', {
+          model: payload.model,
+          imageUrlsCount: Array.isArray(payload.image_urls)
+            ? payload.image_urls.length
+            : payload.image_url
+              ? 1
+              : 0,
           promptPreview: prompt.substring(0, 100)
         });
 
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(payload)
         });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Nano Banana Edit failed');
-        }
 
         const result = await response.json();
-        imageUrl = result.data?.images?.[0]?.url || result.images?.[0]?.url;
 
-        if (!imageUrl) {
-          throw new Error('No image URL from Nano Banana Edit');
+        if (!response.ok) {
+          throw new Error(result.error || `${payload.model} failed`);
         }
 
-        usedModel = primaryModel;
-        console.log('✅ [ScriptMaker] Shot generated with Nano Banana Edit');
+        const generatedUrl = result.data?.images?.[0]?.url || result.images?.[0]?.url;
 
-      } catch (primaryError) {
-        console.warn('⚠️ [ScriptMaker] Nano Banana Edit failed, trying Seedream 4.0 Edit fallback:', primaryError);
-        
-        toast({
-          title: "Trying Fallback Model",
-          description: "Nano Banana failed, using Seedream 4.0 Edit...",
-        });
+        if (!generatedUrl) {
+          throw new Error(`No image URL from ${payload.model}`);
+        }
 
-        // Fallback to Seedream 4.0 Edit (also image-to-image)
+        return generatedUrl;
+      };
+
+      let imageUrl: string | null = null;
+      let usedModel = primaryModelId;
+      let lastError: Error | null = null;
+
+      for (let i = 0; i < modelAttempts.length; i++) {
+        const attempt = modelAttempts[i];
         try {
-          const fallbackRequestBody: any = {
-            model: 'fal-ai/bytedance/seedream/v4/edit',
-            prompt: prompt,
-            image_url: matchedImageUrls[0], // Seedream uses singular image_url
-            image_size: 'landscape_16_9',  // Use specific 16:9 format
-            num_images: 1,
-            output_format: 'jpeg'
-          };
+          imageUrl = await runModelAttempt(attempt.payload);
+          usedModel = attempt.payload.model;
 
-          console.log('🎬 [ScriptMaker] Seedream fallback request:', {
-            model: 'fal-ai/bytedance/seedream/v4/edit',
-            hasImageUrl: !!fallbackRequestBody.image_url,
-            imageSize: fallbackRequestBody.image_size,
-            matchedCharacters: matchedCharacterAnalysis
-          });
-
-          const fallbackResponse = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fallbackRequestBody)
-          });
-
-          if (!fallbackResponse.ok) {
-            const fallbackErrorData = await fallbackResponse.json();
-            throw new Error(fallbackErrorData.error || 'Seedream 4.0 Edit also failed');
+          if (usedModel !== primaryModelId) {
+            toast({
+              title: "Fallback Successful",
+              description: `Shot generated with ${getModelFriendlyName(usedModel)}`
+            });
           }
 
-          const fallbackResult = await fallbackResponse.json();
-          imageUrl = fallbackResult.data?.images?.[0]?.url || fallbackResult.images?.[0]?.url;
+          break;
+        } catch (attemptError) {
+          lastError = attemptError instanceof Error ? attemptError : new Error('Unknown generation error');
+          console.warn(`⚠️ [ScriptMaker] ${attempt.payload.model} failed:`, attemptError);
 
-          if (!imageUrl) {
-            throw new Error('No image URL from Seedream 4.0 Edit');
+          if (attempt.fallbackToast && i < modelAttempts.length - 1) {
+            toast({
+              title: "Trying Fallback Model",
+              description: attempt.fallbackToast,
+            });
           }
-
-          usedModel = 'fal-ai/bytedance/seedream/v4/edit';
-          console.log('✅ [ScriptMaker] Shot generated with Seedream 4.0 Edit fallback');
-
-          toast({
-            title: "Fallback Successful",
-            description: "Shot generated with Seedream 4.0 Edit",
-          });
-
-        } catch (fallbackError) {
-          console.error('❌ [ScriptMaker] Both models failed:', fallbackError);
-          throw new Error('Both Nano Banana Edit and Seedream 4.0 Edit failed');
         }
       }
 
       if (!imageUrl) {
-        throw new Error('Failed to generate shot with any model');
+        throw lastError || new Error('Failed to generate shot with any model');
       }
 
       // Update the shot with the generated image and model info
@@ -1489,7 +1498,7 @@ function ScriptMakerContent() {
             <div className="max-w-6xl mx-auto">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Visual Storyboard</h2>
               <p className="text-sm text-gray-600 mb-6">
-                Shot-by-shot breakdown ready for visual generation with Nano Banana Edit
+                Shot-by-shot breakdown ready for visual generation with Nano Banana Pro
               </p>
               
               {minutes.map((minute: any, minuteIndex: number) => (
@@ -1585,7 +1594,7 @@ function ScriptMakerContent() {
                           {shot.lighting && <p className="text-xs text-gray-500 mb-1"><strong>Lighting:</strong> {shot.lighting}</p>}
                           {shot.generatedBy && (
                             <p className="text-xs text-blue-600 font-medium">
-                              {shot.generatedBy === 'fal-ai/nano-banana/edit' ? '✓ Nano Banana Edit' : '✓ Seedream Edit (Fallback)'}
+                              ✓ {getModelFriendlyName(shot.generatedBy)}
                             </p>
                           )}
                         </div>

@@ -1843,8 +1843,9 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
               const hasImage = intent.imageUrl && intent.imageUrl.trim() !== '';
               
               if (hasImage) {
-                // Default to Nano Banana Edit, but also consider Gemini and Qwen for image editing
+                // Default to Nano Banana Pro (or legacy Nano Banana Edit) and consider Gemini/Qwen for image editing
                 selectedModel = this.getModelCapabilities().find(model => 
+                  model.endpointId === 'fal-ai/nano-banana-pro/edit' ||
                   model.endpointId === 'fal-ai/nano-banana/edit' || 
                   model.endpointId === 'fal-ai/gemini-25-flash-image/edit' ||
                   model.endpointId === 'fal-ai/qwen-image-edit'

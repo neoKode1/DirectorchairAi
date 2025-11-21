@@ -240,11 +240,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Validate prompt length for different models
     const promptLength = prompt.trim().length;
     const modelPromptLimits: Record<string, number> = {
-      'fal-ai/nano-banana/edit': 2000,        // Nano Banana Edit has stricter limits
+      'fal-ai/nano-banana/edit': 2000,           // Nano Banana Edit has stricter limits
+      'fal-ai/nano-banana-pro/edit': 2000,       // Nano Banana Pro has the same limits
       'fal-ai/bytedance/seedream/v4/edit': 2000, // Seedream also has limits
-      'fal-ai/flux-pro': 3000,                // Flux Pro allows longer prompts
-      'fal-ai/imagen4': 3000,                 // Imagen 4 allows longer prompts
-      'default': 2500                         // Default limit for other models
+      'fal-ai/flux-pro': 3000,                   // Flux Pro allows longer prompts
+      'fal-ai/imagen4': 3000,                    // Imagen 4 allows longer prompts
+      'default': 2500                            // Default limit for other models
     };
     
     const maxLength = modelPromptLimits[model] || modelPromptLimits['default'];
@@ -320,14 +321,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Handle model-specific parameters
-    if (model.includes('nano-banana/edit')) {
-      // Nano Banana Edit specific handling
+    if (model.includes('nano-banana')) {
+      // Nano Banana models specific handling
       if (body.image_urls && body.image_urls.length > 0) {
         input.image_urls = await Promise.all(
           body.image_urls.map((url: string) => processImageWithCompression(url))
         );
       }
-      // Nano Banana Edit might use different parameter names
+      // Nano Banana models might use different parameter names
       if (body.aspect_ratio) {
         input.aspect_ratio = body.aspect_ratio;
         // Some models might also accept 'ratio' or 'size'
@@ -1003,7 +1004,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const endTime = Date.now();
       const duration = endTime - startTime;
       
-      // Check if this is a content policy violation or prompt length issue with Nano Banana Edit that we can fallback from
+      // Check if this is a content policy violation or prompt length issue with Nano Banana models that we can fallback from
       const isContentPolicyViolation = falError.status === 422 ||
                                      (falError.body && falError.body.detail && 
                                       Array.isArray(falError.body.detail) &&
@@ -1037,20 +1038,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                                  d.msg?.toLowerCase().includes('too long')
                                )));
       
-      const isNanoBananaEdit = model === 'fal-ai/nano-banana/edit';
+      const isNanoBananaModel = model.includes('fal-ai/nano-banana');
       const hasImageInput = body.image_url || body.image_urls;
       
       console.log(`🔍 [Generate API] [${requestId}] Error analysis:`, {
         isContentPolicyViolation,
         isPromptTooLong,
-        isNanoBananaEdit,
+        isNanoBananaModel,
         hasImageInput,
         model,
         errorStatus: falError.status,
         errorBody: falError.body
       });
       
-      if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaEdit && hasImageInput) {
+      if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaModel && hasImageInput) {
         const issueType = isPromptTooLong ? 'prompt length issue' : 'content policy violation';
         console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying fallback models...`);
         

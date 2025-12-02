@@ -838,6 +838,12 @@ function ScriptMakerContent() {
         prompt = prompt.substring(0, MAX_PROMPT_LENGTH);
       }
 
+      const primaryModelId = 'fal-ai/nano-banana-pro/edit';
+      const legacyModelId = 'fal-ai/nano-banana/edit';
+      const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
+      const flux2ModelId = 'fal-ai/flux-pro/v1.1-ultra';
+      const hasCharacterReferences = matchedImageUrls.length > 0;
+
       console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Pro:', {
         minute: minuteIndex + 1,
         shot: shotIndex + 1,
@@ -847,12 +853,6 @@ function ScriptMakerContent() {
         characterImageCount: matchedImageUrls.length,
         matchedCharacters: matchedCharacterAnalysis.map(a => a.substring(0, 50))
       });
-
-      const primaryModelId = 'fal-ai/nano-banana-pro/edit';
-      const legacyModelId = 'fal-ai/nano-banana/edit';
-      const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
-      const flux2ModelId = 'fal-ai/flux-pro/v1.1-ultra';
-      const hasCharacterReferences = matchedImageUrls.length > 0;
 
       type ModelAttempt = {
         payload: Record<string, any>;

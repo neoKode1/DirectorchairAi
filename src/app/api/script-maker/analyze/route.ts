@@ -229,9 +229,8 @@ Focus on creating a detailed style guide that can be used to generate consistent
         userPrompt = `Movie Title: "${movieTitle}"
 Genre: ${genreIdea}
 Setting: ${eraSetting}
-Visual Style Reference: ${styleImageUrl}
 
-Please analyze this reference image and provide a detailed style analysis that can guide consistent visual generation for this ${genreIdea} movie project.`;
+Please analyze the reference image I've provided and give me a detailed style analysis that can guide consistent visual generation for this ${genreIdea} movie project.`;
         break;
 
       default:
@@ -252,7 +251,7 @@ Please analyze this reference image and provide a detailed style analysis that c
         systemPrompt
       );
     } else {
-      // For character-generation and storyboard-breakdown, call Claude API directly with higher token limit
+      // For character-generation, storyboard-breakdown, and style-analysis, call Claude API directly with higher token limit
       if (!claudeAPI.isAPIAvailable()) {
         return NextResponse.json({
           success: false,
@@ -266,6 +265,70 @@ Please analyze this reference image and provide a detailed style analysis that c
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
 
+      // For style-analysis, we need to fetch the image and include it in the message
+      let messageContent: any = userPrompt;
+      
+      if (analysisType === 'style-analysis' && styleImageUrl) {
+        try {
+          console.log('🖼️ [Script Maker API] Processing image for style analysis:', styleImageUrl.substring(0, 100));
+          
+          let base64Image: string;
+          let contentType: string;
+          
+          // Check if it's already a data URL (base64)
+          if (styleImageUrl.startsWith('data:')) {
+            // Extract base64 and content type from data URL
+            const matches = styleImageUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (matches) {
+              contentType = matches[1];
+              base64Image = matches[2];
+              console.log('✅ [Script Maker API] Using existing base64 data URL');
+            } else {
+              throw new Error('Invalid data URL format');
+            }
+          } else {
+            // Fetch the image from URL
+            console.log('🖼️ [Script Maker API] Fetching image from URL');
+            const imageResponse = await fetch(styleImageUrl);
+            if (!imageResponse.ok) {
+              throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+            }
+            
+            // Convert to buffer and then to base64
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            base64Image = buffer.toString('base64');
+            
+            // Get content type from response or default to jpeg
+            contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+            
+            console.log('✅ [Script Maker API] Image converted to base64, size:', buffer.length, 'bytes');
+          }
+          
+          // Create message content with both image and text
+          messageContent = [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: contentType,
+                data: base64Image
+              }
+            },
+            {
+              type: 'text',
+              text: userPrompt
+            }
+          ];
+          
+          console.log('✅ [Script Maker API] Image included in Claude message');
+        } catch (imageError) {
+          console.error('❌ [Script Maker API] Error processing image for style analysis:', imageError);
+          // Fall back to text-only if image processing fails
+          messageContent = userPrompt;
+        }
+      }
+
       const claudeResponse = await client.messages.create({
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 8192, // Claude's actual maximum for this model
@@ -273,7 +336,7 @@ Please analyze this reference image and provide a detailed style analysis that c
         messages: [
           {
             role: 'user',
-            content: userPrompt
+            content: messageContent
           }
         ]
       });

@@ -117,7 +117,7 @@ function ScriptMakerContent() {
     try {
       // Upload image
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('image', file); // API expects 'image' field name
       
       const uploadResponse = await fetch('/api/upload-image', {
         method: 'POST',

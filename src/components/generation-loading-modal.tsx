@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { X, Clock, Play } from 'lucide-react';
@@ -87,22 +87,13 @@ export const GenerationLoadingModal: React.FC<GenerationLoadingModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Generating Content</DialogTitle>
+          <DialogDescription>
+            {activeRequests.length} {activeRequests.length === 1 ? 'request' : 'requests'} in progress
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Generating Content
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
           {/* Active Requests */}
           <div className="space-y-4">
             {activeRequests.map((request) => (

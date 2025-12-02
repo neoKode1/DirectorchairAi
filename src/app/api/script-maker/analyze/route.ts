@@ -267,14 +267,14 @@ Please analyze the reference image I've provided and give me a detailed style an
 
       // For style-analysis, we need to fetch the image and include it in the message
       let messageContent: any = userPrompt;
-      
+
       if (analysisType === 'style-analysis' && styleImageUrl) {
         try {
           console.log('🖼️ [Script Maker API] Processing image for style analysis:', styleImageUrl.substring(0, 100));
-          
+
           let base64Image: string;
           let contentType: string;
-          
+
           // Check if it's already a data URL (base64)
           if (styleImageUrl.startsWith('data:')) {
             // Extract base64 and content type from data URL
@@ -282,8 +282,9 @@ Please analyze the reference image I've provided and give me a detailed style an
             if (matches) {
               contentType = matches[1];
               base64Image = matches[2];
-              console.log('✅ [Script Maker API] Using existing base64 data URL');
+              console.log('✅ [Script Maker API] Using existing base64 data URL, type:', contentType);
             } else {
+              console.error('❌ [Script Maker API] Invalid data URL format');
               throw new Error('Invalid data URL format');
             }
           } else {
@@ -291,20 +292,28 @@ Please analyze the reference image I've provided and give me a detailed style an
             console.log('🖼️ [Script Maker API] Fetching image from URL');
             const imageResponse = await fetch(styleImageUrl);
             if (!imageResponse.ok) {
+              console.error('❌ [Script Maker API] Failed to fetch image:', imageResponse.status);
               throw new Error(`Failed to fetch image: ${imageResponse.status}`);
             }
-            
+
             // Convert to buffer and then to base64
             const arrayBuffer = await imageResponse.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             base64Image = buffer.toString('base64');
-            
+
             // Get content type from response or default to jpeg
             contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
-            
-            console.log('✅ [Script Maker API] Image converted to base64, size:', buffer.length, 'bytes');
+
+            console.log('✅ [Script Maker API] Image converted to base64, size:', buffer.length, 'bytes, type:', contentType);
           }
-          
+
+          // Validate content type
+          const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+          if (!validTypes.includes(contentType)) {
+            console.warn('⚠️ [Script Maker API] Unsupported content type:', contentType, '- defaulting to image/jpeg');
+            contentType = 'image/jpeg';
+          }
+
           // Create message content with both image and text
           messageContent = [
             {
@@ -320,12 +329,14 @@ Please analyze the reference image I've provided and give me a detailed style an
               text: userPrompt
             }
           ];
-          
+
           console.log('✅ [Script Maker API] Image included in Claude message');
         } catch (imageError) {
           console.error('❌ [Script Maker API] Error processing image for style analysis:', imageError);
+          console.error('❌ [Script Maker API] Error stack:', imageError instanceof Error ? imageError.stack : 'No stack');
           // Fall back to text-only if image processing fails
           messageContent = userPrompt;
+          console.log('⚠️ [Script Maker API] Falling back to text-only analysis');
         }
       }
 

@@ -1339,25 +1339,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <div className="flex items-center gap-2">
               <Monitor className="w-4 h-4 text-gray-500" />
               <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
-                <SelectTrigger className="w-48 h-8 text-xs font-medium text-gray-900">
-                  <div className="flex items-center gap-2 w-full">
-                    <img
-                      src={getModelIcon(preferredVideoModel)}
-                      alt=""
-                      className="w-4 h-4 flex-shrink-0"
-                    />
-                    <span className="truncate text-gray-900">
+                <SelectTrigger className="w-[200px] h-8 text-xs bg-white border-gray-300">
+                  <SelectValue className="text-gray-900">
+                    <span className="text-gray-900 font-medium">
                       {AVAILABLE_ENDPOINTS.find(m => m.endpointId === preferredVideoModel)?.label || 'Select Model'}
                     </span>
-                  </div>
+                  </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   {AVAILABLE_ENDPOINTS.map((model) => (
-                    <SelectItem key={model.endpointId} value={model.endpointId}>
-                      <div className="flex items-center gap-2">
-                        <img src={getModelIcon(model.endpointId)} alt={model.label} className="w-4 h-4" />
-                        <span>{model.label}</span>
-                      </div>
+                    <SelectItem
+                      key={model.endpointId}
+                      value={model.endpointId}
+                      className="text-gray-900"
+                    >
+                      {model.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1720,25 +1716,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <div className="space-y-2">
                     <Label htmlFor="video-model">Preferred Model</Label>
                     <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
-                      <SelectTrigger className="text-gray-900">
-                        <div className="flex items-center gap-2 w-full">
-                          <img
-                            src={getModelIcon(preferredVideoModel)}
-                            alt=""
-                            className="w-4 h-4 flex-shrink-0"
-                          />
-                          <span className="truncate text-gray-900">
+                      <SelectTrigger className="bg-white border-gray-300">
+                        <SelectValue className="text-gray-900">
+                          <span className="text-gray-900">
                             {AVAILABLE_ENDPOINTS.find(m => m.endpointId === preferredVideoModel)?.label || 'Select model'}
                           </span>
-                        </div>
+                        </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         {AVAILABLE_ENDPOINTS.map((model) => (
-                          <SelectItem key={model.endpointId} value={model.endpointId}>
-                            <div className="flex items-center gap-2">
-                              <img src={getModelIcon(model.endpointId)} alt={model.label} className="w-4 h-4" />
-                              <span>{model.label}</span>
-                            </div>
+                          <SelectItem
+                            key={model.endpointId}
+                            value={model.endpointId}
+                            className="text-gray-900"
+                          >
+                            {model.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -816,17 +816,26 @@ function ScriptMakerContent() {
         `set in ${eraSetting}`
       ];
 
-      // Add style reference analysis to prompt if available
+      // Add style reference analysis to prompt if available (truncated)
       if (styleReferenceImage && styleReferenceImage.analysis) {
-        promptParts.push(`Style: ${styleReferenceImage.analysis}`);
+        const styleAnalysis = styleReferenceImage.analysis.substring(0, 200);
+        promptParts.push(`Style: ${styleAnalysis}`);
       }
 
-      // Add matched character analysis to prompt
+      // Add matched character analysis to prompt (truncated)
       if (matchedCharacterAnalysis.length > 0) {
-        promptParts.push(...matchedCharacterAnalysis);
+        const truncatedAnalysis = matchedCharacterAnalysis.map(a => a.substring(0, 150));
+        promptParts.push(...truncatedAnalysis);
       }
 
-      const prompt = promptParts.filter(Boolean).join(', ');
+      let prompt = promptParts.filter(Boolean).join(', ');
+
+      // Truncate prompt to 2000 characters max for Nano Banana models
+      const MAX_PROMPT_LENGTH = 2000;
+      if (prompt.length > MAX_PROMPT_LENGTH) {
+        console.warn(`⚠️ [ScriptMaker] Prompt too long (${prompt.length} chars), truncating to ${MAX_PROMPT_LENGTH}`);
+        prompt = prompt.substring(0, MAX_PROMPT_LENGTH);
+      }
 
       console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Pro:', {
         minute: minuteIndex + 1,

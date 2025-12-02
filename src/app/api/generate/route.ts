@@ -811,7 +811,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else if (!body.aspect_ratio) {
         input.aspect_ratio = 'auto'; // Default to auto (matching playground example)
       }
-      
+
+      // Sora 2 delete_video parameter (privacy setting)
+      if (body.delete_video !== undefined) {
+        input.delete_video = body.delete_video;
+      } else {
+        input.delete_video = true; // Default to true for privacy
+      }
+
       console.log(`🔧 [Generate API] [${requestId}] Sora 2 model parameters:`, {
         model: model,
         isSora2Pro: isSora2Pro,

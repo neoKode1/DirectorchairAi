@@ -341,8 +341,8 @@ Please analyze the reference image I've provided and give me a detailed style an
       }
 
       const claudeResponse = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192, // Claude's actual maximum for this model
+        model: 'claude-3-5-sonnet-20240620',
+        max_tokens: 8192,
         system: systemPrompt,
         messages: [
           {

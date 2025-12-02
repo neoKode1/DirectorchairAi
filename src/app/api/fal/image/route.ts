@@ -315,6 +315,50 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('🎨 [FAL Image Proxy] FLUX LoRA strength:', input.strength);
     }
 
+    if (model.includes('flux-2-flex')) {
+      console.log('🎨 [FAL Image Proxy] Processing FLUX 2 Flex Edit model parameters');
+      
+      // FLUX 2 Flex Edit uses image_urls (plural) for multi-reference editing
+      // Ensure image_urls is properly formatted
+      if (input.image_urls && Array.isArray(input.image_urls) && input.image_urls.length > 0) {
+        // Keep image_urls as is - it's already an array
+        console.log('🎨 [FAL Image Proxy] FLUX 2 Flex Edit using image_urls:', input.image_urls.length, 'images');
+      } else if (input.image_url) {
+        // Convert single image_url to image_urls array for compatibility
+        input.image_urls = [input.image_url];
+        delete input.image_url;
+        console.log('🎨 [FAL Image Proxy] FLUX 2 Flex Edit converted image_url to image_urls array');
+      }
+      
+      // Ensure required parameters have defaults
+      if (!input.image_size) {
+        input.image_size = 'auto';
+      }
+      if (input.enable_prompt_expansion === undefined) {
+        input.enable_prompt_expansion = true;
+      }
+      if (!input.safety_tolerance) {
+        input.safety_tolerance = '2';
+      }
+      if (input.enable_safety_checker === undefined) {
+        input.enable_safety_checker = true;
+      }
+      if (!input.output_format) {
+        input.output_format = 'jpeg';
+      }
+      if (!input.guidance_scale) {
+        input.guidance_scale = 3.5;
+      }
+      if (!input.num_inference_steps) {
+        input.num_inference_steps = 28;
+      }
+      
+      console.log('🎨 [FAL Image Proxy] FLUX 2 Flex Edit final input parameters:', {
+        ...input,
+        image_urls: input.image_urls ? `[${input.image_urls.length} images]` : undefined
+      });
+    }
+
     if (model.includes('stable-diffusion')) {
       if (body.num_inference_steps !== undefined) {
         input.num_inference_steps = body.num_inference_steps;

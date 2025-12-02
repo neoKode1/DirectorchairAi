@@ -1,0 +1,114 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    VERCEL ENVIRONMENT VARIABLES - QUICK SETUP                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📋 COPY AND PASTE THESE INTO VERCEL DASHBOARD
+   (Settings → Environment Variables)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔴 CRITICAL - REQUIRED FOR BASIC FUNCTIONALITY:
+
+FAL_KEY=
+Get from: https://fal.ai/dashboard/keys
+
+ANTHROPIC_API_KEY=
+Get from: https://console.anthropic.com/
+
+MINIMAX_API_KEY=
+Get from: https://platform.minimaxi.com/
+⚠️  IMPORTANT: Generate a NEW key (old one was exposed and removed)
+
+NEXTAUTH_URL=https://your-app-name.vercel.app
+⚠️  Replace with your actual Vercel domain
+
+NEXTAUTH_SECRET=
+Generate with: openssl rand -base64 32
+Or use: https://generate-secret.vercel.app/32
+
+NEXT_PUBLIC_SUPABASE_URL=
+Get from: Supabase Dashboard → Project Settings → API
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+Get from: Supabase Dashboard → Project Settings → API
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🟡 OPTIONAL - FOR ADDITIONAL FEATURES:
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+Get from: https://console.cloud.google.com/
+(Only if you want Google OAuth login)
+
+PLAYHT_USER_ID=
+PLAYHT_SECRET_KEY=
+Get from: https://play.ht/
+(Only for PlayHT voice features)
+
+UPLOADTHING_TOKEN=
+Get from: https://uploadthing.com/
+(Only for UploadThing file uploads)
+
+KV_URL=
+KV_REST_API_TOKEN=
+KV_REST_API_URL=
+KV_REST_API_READ_ONLY_TOKEN=
+Get from: https://upstash.com/
+(Only for share button functionality)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 STEPS TO ADD TO VERCEL:
+
+1. Go to: https://vercel.com/dashboard
+2. Select your project
+3. Click "Settings" tab
+4. Click "Environment Variables" in sidebar
+5. For each variable above:
+   - Click "Add New"
+   - Enter Name (e.g., FAL_KEY)
+   - Enter Value (your actual API key)
+   - Select: Production, Preview, Development (all three)
+   - Click "Save"
+6. After adding all variables, click "Redeploy" on your latest deployment
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ VERIFICATION CHECKLIST:
+
+After deployment, test these features:
+□ Image generation works
+□ Chat interface responds
+□ Video generation works (may take 5-10 minutes)
+□ Login/authentication works
+□ No console errors about missing API keys
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️  SECURITY REMINDERS:
+
+✓ The exposed MINIMAX_API_KEY has been removed from the code
+✓ Generate a NEW Minimax API key (don't reuse the old one)
+✓ Never commit .env or .env.local files to Git
+✓ Rotate API keys regularly
+✓ Monitor API usage to avoid unexpected charges
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DETAILED DOCUMENTATION:
+
+See VERCEL_ENV_SETUP.md for complete documentation
+See AUDIT_FIXES_SUMMARY.md for all changes made
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 TROUBLESHOOTING:
+
+504 Timeout → Normal for video generation (5-10 min), already configured
+422 Error → Content policy violation, system auto-retries with fallback models
+Missing API Key → Check variable name matches exactly (case-sensitive)
+Auth Issues → Verify NEXTAUTH_URL matches your domain exactly
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

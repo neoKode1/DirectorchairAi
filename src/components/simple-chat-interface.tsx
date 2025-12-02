@@ -1339,8 +1339,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <div className="flex items-center gap-2">
               <Monitor className="w-4 h-4 text-gray-500" />
               <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
-                <SelectTrigger className="w-40 h-8 text-xs">
-                  <SelectValue placeholder="Model" />
+                <SelectTrigger className="w-48 h-8 text-xs font-medium">
+                  <SelectValue placeholder="Select Model">
+                    {preferredVideoModel && (
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={getModelIcon(preferredVideoModel)}
+                          alt=""
+                          className="w-4 h-4"
+                        />
+                        <span className="truncate">
+                          {AVAILABLE_ENDPOINTS.find(m => m.endpointId === preferredVideoModel)?.label || 'Model'}
+                        </span>
+                      </div>
+                    )}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_ENDPOINTS.map((model) => (
@@ -1712,7 +1725,20 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     <Label htmlFor="video-model">Preferred Model</Label>
                     <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select model" />
+                        <SelectValue placeholder="Select model">
+                          {preferredVideoModel && (
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={getModelIcon(preferredVideoModel)}
+                                alt=""
+                                className="w-4 h-4"
+                              />
+                              <span className="truncate">
+                                {AVAILABLE_ENDPOINTS.find(m => m.endpointId === preferredVideoModel)?.label || 'Select model'}
+                              </span>
+                            </div>
+                          )}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {AVAILABLE_ENDPOINTS.map((model) => (

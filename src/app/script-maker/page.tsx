@@ -57,9 +57,10 @@ function ScriptMakerContent() {
 
   const getModelFriendlyName = (modelId?: string) => {
     if (!modelId) return 'Unknown Model';
-    if (modelId === 'fal-ai/nano-banana-pro/edit') return 'Nano Banana Pro';
-    if (modelId === 'fal-ai/nano-banana/edit') return 'Nano Banana (Legacy)';
-    if (modelId === 'fal-ai/bytedance/seedream/v4/edit') return 'Seedream 4.0 Edit';
+    if (modelId === 'fal-ai/nano-banana-pro/edit') return 'Nano Banana Pro Edit';
+    if (modelId === 'fal-ai/nano-banana/edit') return 'Nano Banana Edit (Legacy)';
+    if (modelId === 'fal-ai/bytedance/seedream/v4/edit') return 'SeeDream 4.0 Edit';
+    if (modelId === 'fal-ai/flux-pro/v1.1-ultra') return 'Flux Pro 1.1 Ultra';
     if (modelId === 'fal-ai/stable-diffusion-v35-large') return 'Stable Diffusion 3.5';
     return modelId;
   };
@@ -847,7 +848,7 @@ function ScriptMakerContent() {
       const primaryModelId = 'fal-ai/nano-banana-pro/edit';
       const legacyModelId = 'fal-ai/nano-banana/edit';
       const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
-      const stableDiffModelId = 'fal-ai/stable-diffusion-v35-large';
+      const flux2ModelId = 'fal-ai/flux-pro/v1.1-ultra';
       const hasCharacterReferences = matchedImageUrls.length > 0;
 
       type ModelAttempt = {
@@ -870,14 +871,15 @@ function ScriptMakerContent() {
           payload: buildNanoBananaPayload(primaryModelId),
           fallbackToast: hasCharacterReferences
             ? 'Nano Banana Pro failed, switching to Nano Banana (Legacy)...'
-            : 'Nano Banana Pro failed, switching to Stable Diffusion 3.5...'
+            : 'Nano Banana Pro failed, switching to SeeDream 4.0 Edit...'
         }
       ];
 
       if (hasCharacterReferences) {
+        // With character references: Nano Banana Pro → Nano Banana Legacy → SeeDream 4.0 Edit
         modelAttempts.push({
           payload: buildNanoBananaPayload(legacyModelId),
-          fallbackToast: 'Nano Banana (Legacy) failed, trying Seedream 4.0 Edit...'
+          fallbackToast: 'Nano Banana (Legacy) failed, trying SeeDream 4.0 Edit...'
         });
 
         if (matchedImageUrls.length > 0) {
@@ -889,23 +891,35 @@ function ScriptMakerContent() {
               image_size: 'landscape_16_9',
               num_images: 1,
               output_format: 'jpeg'
-            }
+            },
+            fallbackToast: 'SeeDream 4.0 Edit failed, trying Flux Pro 1.1 Ultra...'
           });
         }
       } else {
+        // Without character references: Nano Banana Pro → SeeDream 4.0 Edit → Flux Pro 1.1 Ultra
         modelAttempts.push({
           payload: {
-            model: stableDiffModelId,
+            model: seedreamModelId,
             prompt,
-            aspect_ratio: '16:9',
+            image_size: 'landscape_16_9',
             num_images: 1,
-            output_format: 'jpeg',
-            num_inference_steps: 28,
-            guidance_scale: 3.5,
-            enable_safety_checker: true
-          }
+            output_format: 'jpeg'
+          },
+          fallbackToast: 'SeeDream 4.0 Edit failed, trying Flux Pro 1.1 Ultra...'
         });
       }
+
+      // Final fallback for both paths: Flux Pro 1.1 Ultra (text-to-image)
+      modelAttempts.push({
+        payload: {
+          model: flux2ModelId,
+          prompt,
+          aspect_ratio: '16:9',
+          num_images: 1,
+          output_format: 'jpeg',
+          safety_tolerance: '2'
+        }
+      });
 
       const runModelAttempt = async (payload: Record<string, any>) => {
         console.log('🎬 [ScriptMaker] Model request attempt:', {

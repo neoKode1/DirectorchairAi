@@ -1329,19 +1329,19 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-shrink min-w-0">
             <h2 className="text-lg font-semibold text-gray-900">DirectorChair AI</h2>
             <p className="text-sm text-gray-500">Describe your idea to generate content</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Model Preferences Dropdown */}
-            <div className="flex items-center gap-2">
-              <Monitor className="w-4 h-4 text-gray-500" />
+            <div className="flex items-center gap-1.5">
+              <Monitor className="w-4 h-4 text-gray-500 flex-shrink-0" />
               <Select value={preferredVideoModel} onValueChange={handleModelSelectionChange}>
-                <SelectTrigger className="w-[200px] h-8 text-xs bg-white border-gray-300">
+                <SelectTrigger className="w-[160px] h-8 text-xs bg-white border-gray-300">
                   <SelectValue className="text-gray-900">
-                    <span className="text-gray-900 font-medium">
+                    <span className="text-gray-900 font-medium truncate">
                       {AVAILABLE_ENDPOINTS.find(m => m.endpointId === preferredVideoModel)?.label || 'Select Model'}
                     </span>
                   </SelectValue>
@@ -1360,7 +1360,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               </Select>
               {/* Duration indicator for video models */}
               {isVideoModel(preferredVideoModel) && (
-                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded flex-shrink-0">
                   {duration}s
                 </div>
               )}
@@ -1368,7 +1368,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             {messages.length > 0 && (
               <button
                 onClick={clearChatHistory}
-                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors flex-shrink-0"
                 title="Clear chat history"
               >
                 Clear

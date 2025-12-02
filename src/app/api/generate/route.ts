@@ -1065,18 +1065,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                                )));
       
       const isNanoBananaModel = model.includes('fal-ai/nano-banana');
+      const isLumaRay2Model = model.includes('fal-ai/luma-dream-machine/ray-2');
+      const isVideoModel = model.includes('video') || model.includes('luma') || model.includes('kling') || model.includes('minimax');
       const hasImageInput = body.image_url || body.image_urls;
-      
+
       console.log(`🔍 [Generate API] [${requestId}] Error analysis:`, {
         isContentPolicyViolation,
         isPromptTooLong,
         isNanoBananaModel,
+        isLumaRay2Model,
+        isVideoModel,
         hasImageInput,
         model,
         errorStatus: falError.status,
         errorBody: falError.body
       });
-      
+
+      // Fallback for Nano Banana image editing models
       if ((isContentPolicyViolation || isPromptTooLong) && isNanoBananaModel && hasImageInput) {
         const issueType = isPromptTooLong ? 'prompt length issue' : 'content policy violation';
         console.log(`🔄 [Generate API] [${requestId}] ${issueType} detected, trying fallback models...`);
@@ -1238,6 +1243,154 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               duration: Date.now() - startTime,
               timestamp: new Date().toISOString()
             }, { status: isPromptTooLong ? 400 : 422 });
+          }
+        }
+      }
+
+      // Fallback for Luma Ray 2 and other video models with content policy violations
+      if (isContentPolicyViolation && (isLumaRay2Model || isVideoModel) && hasImageInput) {
+        console.log(`🔄 [Generate API] [${requestId}] Content policy violation on video model, trying fallback models...`);
+
+        try {
+          // Try Kling v2.1 Master as fallback for video generation
+          const fallbackInput: Record<string, any> = {
+            prompt: input.prompt || body.prompt,
+            duration: body.duration || "5",
+            negative_prompt: body.negative_prompt || "blur, distort, and low quality",
+            cfg_scale: body.cfg_scale || 0.5,
+          };
+
+          if (body.image_url) {
+            fallbackInput.image_url = await processImageWithCompression(body.image_url);
+          }
+
+          console.log(`🔄 [Generate API] [${requestId}] Trying Kling v2.1 Master as fallback...`);
+
+          const fallbackTimeout = 300000; // 5 minutes timeout
+          const fallbackPromise = fal.subscribe('fal-ai/kling-video/v2.1/master/image-to-video', {
+            input: fallbackInput,
+            logs: true,
+            onQueueUpdate: (update: any) => {
+              console.log(`📊 [Generate API] [${requestId}] Kling fallback queue update:`, update.status);
+            },
+          });
+
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Fallback timeout after 5 minutes')), fallbackTimeout);
+          });
+
+          const fallbackResult = await Promise.race([fallbackPromise, timeoutPromise]);
+
+          const fallbackEndTime = Date.now();
+          const fallbackDuration = fallbackEndTime - startTime;
+
+          console.log(`✅ [Generate API] [${requestId}] Fallback generation successful with Kling v2.1 Master`);
+
+          // Save fallback generation to database
+          const fallbackOutputUrl = fallbackResult.data?.video?.url || null;
+          await saveGenerationToDatabase(
+            `${requestId}-fallback`,
+            prompt,
+            'fal-ai/kling-video/v2.1/master/image-to-video',
+            fallbackOutputUrl,
+            'completed',
+            userId,
+            sessionId
+          );
+
+          return NextResponse.json({
+            success: true,
+            data: fallbackResult.data,
+            requestId: fallbackResult.requestId,
+            status: 'completed',
+            model: 'fal-ai/kling-video/v2.1/master/image-to-video',
+            prompt: prompt,
+            originalPrompt: optimizationResult.wasOptimized ? originalPrompt : undefined,
+            promptOptimized: optimizationResult.wasOptimized,
+            optimizationChanges: optimizationResult.wasOptimized ? optimizationResult.changes : undefined,
+            duration: fallbackDuration,
+            fallbackUsed: 'fal-ai/kling-video/v2.1/master/image-to-video',
+            originalModel: model,
+            timestamp: new Date().toISOString()
+          });
+
+        } catch (klingError: any) {
+          console.error(`❌ [Generate API] [${requestId}] Kling fallback failed, trying Minimax...`, klingError);
+
+          try {
+            // Try Minimax Hailuo 02 as second fallback
+            const minimaxInput: Record<string, any> = {
+              prompt: input.prompt || body.prompt,
+              duration: body.duration || "6",
+              prompt_optimizer: true,
+              resolution: body.resolution || "768P",
+            };
+
+            if (body.image_url) {
+              minimaxInput.first_frame_image_url = await processImageWithCompression(body.image_url);
+            }
+
+            console.log(`🔄 [Generate API] [${requestId}] Trying Minimax Hailuo 02 as second fallback...`);
+
+            const minimaxTimeout = 300000; // 5 minutes timeout
+            const minimaxPromise = fal.subscribe('fal-ai/minimax/hailuo-02/standard/image-to-video', {
+              input: minimaxInput,
+              logs: true,
+              onQueueUpdate: (update: any) => {
+                console.log(`📊 [Generate API] [${requestId}] Minimax fallback queue update:`, update.status);
+              },
+            });
+
+            const minimaxTimeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Minimax fallback timeout after 5 minutes')), minimaxTimeout);
+            });
+
+            const minimaxResult = await Promise.race([minimaxPromise, minimaxTimeoutPromise]);
+
+            console.log(`✅ [Generate API] [${requestId}] Fallback generation successful with Minimax Hailuo 02`);
+
+            // Save fallback generation to database
+            const minimaxOutputUrl = minimaxResult.data?.video?.url || null;
+            await saveGenerationToDatabase(
+              `${requestId}-fallback2`,
+              prompt,
+              'fal-ai/minimax/hailuo-02/standard/image-to-video',
+              minimaxOutputUrl,
+              'completed',
+              userId,
+              sessionId
+            );
+
+            return NextResponse.json({
+              success: true,
+              data: minimaxResult.data,
+              requestId: minimaxResult.requestId,
+              status: 'completed',
+              model: 'fal-ai/minimax/hailuo-02/standard/image-to-video',
+              prompt: prompt,
+              originalPrompt: optimizationResult.wasOptimized ? originalPrompt : undefined,
+              promptOptimized: optimizationResult.wasOptimized,
+              optimizationChanges: optimizationResult.wasOptimized ? optimizationResult.changes : undefined,
+              duration: Date.now() - startTime,
+              fallbackUsed: 'fal-ai/minimax/hailuo-02/standard/image-to-video',
+              originalModel: model,
+              timestamp: new Date().toISOString()
+            });
+
+          } catch (minimaxError: any) {
+            console.error(`❌ [Generate API] [${requestId}] All video fallbacks failed:`, minimaxError);
+
+            return NextResponse.json({
+              success: false,
+              error: 'Content policy violation',
+              message: 'The image or prompt contains material that cannot be processed by any available video model. Please try with different content.',
+              details: 'All video generation models rejected the content. Please modify your image or prompt and try again.',
+              status: 422,
+              model: model,
+              prompt: prompt,
+              duration: Date.now() - startTime,
+              timestamp: new Date().toISOString()
+            }, { status: 422 });
           }
         }
       }

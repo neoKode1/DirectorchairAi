@@ -841,8 +841,11 @@ function ScriptMakerContent() {
       console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Pro:', {
         minute: minuteIndex + 1,
         shot: shotIndex + 1,
-        prompt,
-        matchedCharacters: matchedCharacterAnalysis
+        promptLength: prompt.length,
+        promptPreview: prompt.substring(0, 200),
+        hasCharacterReferences: hasCharacterReferences,
+        characterImageCount: matchedImageUrls.length,
+        matchedCharacters: matchedCharacterAnalysis.map(a => a.substring(0, 50))
       });
 
       const primaryModelId = 'fal-ai/nano-banana-pro/edit';
@@ -863,7 +866,7 @@ function ScriptMakerContent() {
         num_images: 1,
         output_format: 'png',
         resolution: '1K',
-        ...(hasCharacterReferences ? { image_urls: matchedImageUrls } : {})
+        image_urls: matchedImageUrls // Always include image_urls, even if empty array
       });
 
       const modelAttempts: ModelAttempt[] = [
@@ -929,7 +932,13 @@ function ScriptMakerContent() {
             : payload.image_url
               ? 1
               : 0,
-          promptPreview: prompt.substring(0, 100)
+          promptLength: prompt.length,
+          promptPreview: prompt.substring(0, 100),
+          fullPayload: {
+            ...payload,
+            image_urls: payload.image_urls ? `[${payload.image_urls.length} images]` : undefined,
+            image_url: payload.image_url ? '[image data]' : undefined
+          }
         });
 
         const response = await fetch('/api/generate', {
@@ -940,16 +949,35 @@ function ScriptMakerContent() {
 
         const result = await response.json();
 
+        console.log('🎬 [ScriptMaker] Model response:', {
+          model: payload.model,
+          ok: response.ok,
+          status: response.status,
+          hasError: !!result.error,
+          error: result.error,
+          hasData: !!result.data,
+          hasImages: !!(result.data?.images || result.images)
+        });
+
         if (!response.ok) {
-          throw new Error(result.error || `${payload.model} failed`);
+          const errorMsg = result.error || result.details || `${payload.model} failed`;
+          console.error('❌ [ScriptMaker] Model failed:', {
+            model: payload.model,
+            status: response.status,
+            error: errorMsg,
+            fullResult: result
+          });
+          throw new Error(errorMsg);
         }
 
         const generatedUrl = result.data?.images?.[0]?.url || result.images?.[0]?.url;
 
         if (!generatedUrl) {
+          console.error('❌ [ScriptMaker] No image URL in response:', result);
           throw new Error(`No image URL from ${payload.model}`);
         }
 
+        console.log('✅ [ScriptMaker] Successfully generated with:', payload.model);
         return generatedUrl;
       };
 

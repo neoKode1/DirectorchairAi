@@ -162,6 +162,21 @@ Each shot object needs:
 - lighting: Mood description
 - characters: Array of character names present
 
+**CRITICAL CHARACTER NAMING RULES:**
+When describing characters in the "action" field, NEVER use character names. Instead use:
+- "the character" for any single character
+- "the woman" or "the man" based on gender
+- "the person" when gender is unclear
+- "the protagonist" for the main character
+- "the antagonist" for the villain
+- "the two characters" or "the group" for multiple people
+
+WRONG: "Sarah walks into the room and looks around nervously"
+CORRECT: "The woman walks into the room and looks around nervously"
+
+WRONG: "John confronts the detective about the missing evidence"
+CORRECT: "The man confronts the detective about the missing evidence"
+
 Example format:
 {
   "minutes": [
@@ -176,6 +191,14 @@ Example format:
           "action": "Establishing shot of city skyline at sunset",
           "lighting": "Golden hour, warm tones",
           "characters": []
+        },
+        {
+          "shotNumber": 2,
+          "shotType": "MEDIUM SHOT",
+          "camera": "STATIC",
+          "action": "The woman enters the apartment and looks around nervously",
+          "lighting": "Dim interior lighting, shadows",
+          "characters": ["SARAH"]
         }
       ]
     }
@@ -187,7 +210,8 @@ Example format:
 - Keep descriptions concise
 - Match lighting to ${photoStyle} style
 - Create exactly 12 shots per minute
-- Base shots on the screenplay scenes and action`;
+- Base shots on the screenplay scenes and action
+- ALWAYS use generic character descriptors (the woman, the man, the character) in action descriptions, NEVER use character names`;
 
         userPrompt = `Movie: "${movieTitle}"
 Duration: ${minutesToExtract} minutes

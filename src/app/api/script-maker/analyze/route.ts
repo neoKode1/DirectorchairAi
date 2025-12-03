@@ -1,6 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claudeAPI } from '@/lib/claude-api';
 
+// Helper function to detect actual image type from base64 data by checking magic bytes
+function detectImageType(base64Data: string): string | null {
+  try {
+    // Decode first few bytes to check magic numbers
+    const binaryString = Buffer.from(base64Data.substring(0, 20), 'base64');
+    const bytes = new Uint8Array(binaryString);
+
+    // PNG: 89 50 4E 47
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+      return 'image/png';
+    }
+
+    // JPEG: FF D8 FF
+    if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+      return 'image/jpeg';
+    }
+
+    // WebP: 52 49 46 46 ... 57 45 42 50
+    if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+      if (bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+        return 'image/webp';
+      }
+    }
+
+    // GIF: 47 49 46 38
+    if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+      return 'image/gif';
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error detecting image type:', error);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -306,7 +342,15 @@ Please analyze the reference image I've provided and give me a detailed style an
             if (matches) {
               contentType = matches[1];
               base64Image = matches[2];
-              console.log('✅ [Script Maker API] Using existing base64 data URL, type:', contentType);
+              console.log('✅ [Script Maker API] Using existing base64 data URL, declared type:', contentType);
+
+              // Verify the actual image format by checking magic bytes
+              const actualType = detectImageType(base64Image);
+              if (actualType && actualType !== contentType) {
+                console.warn(`⚠️ [Script Maker API] Content type mismatch! Declared: ${contentType}, Actual: ${actualType}`);
+                contentType = actualType; // Use the actual detected type
+                console.log(`✅ [Script Maker API] Corrected content type to: ${contentType}`);
+              }
             } else {
               console.error('❌ [Script Maker API] Invalid data URL format');
               throw new Error('Invalid data URL format');
@@ -325,8 +369,15 @@ Please analyze the reference image I've provided and give me a detailed style an
             const buffer = Buffer.from(arrayBuffer);
             base64Image = buffer.toString('base64');
 
-            // Get content type from response or default to jpeg
+            // Get content type from response
             contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+
+            // Verify the actual image format
+            const actualType = detectImageType(base64Image);
+            if (actualType && actualType !== contentType) {
+              console.warn(`⚠️ [Script Maker API] Content type mismatch! Header: ${contentType}, Actual: ${actualType}`);
+              contentType = actualType;
+            }
 
             console.log('✅ [Script Maker API] Image converted to base64, size:', buffer.length, 'bytes, type:', contentType);
           }
@@ -334,8 +385,8 @@ Please analyze the reference image I've provided and give me a detailed style an
           // Validate content type
           const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
           if (!validTypes.includes(contentType)) {
-            console.warn('⚠️ [Script Maker API] Unsupported content type:', contentType, '- defaulting to image/jpeg');
-            contentType = 'image/jpeg';
+            console.warn('⚠️ [Script Maker API] Unsupported content type:', contentType, '- defaulting to image/png');
+            contentType = 'image/png'; // Default to PNG as it's more common
           }
 
           // Create message content with both image and text

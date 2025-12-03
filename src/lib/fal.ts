@@ -211,6 +211,22 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
+    endpointId: "fal-ai/bytedance/seedream/v4.5/edit",
+    label: "SeeDream 4.5 Edit",
+    description: "Latest generation image editing model by ByteDance with enhanced multi-image editing capabilities (up to 10 images) and improved quality",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 10,
+    initialInput: {
+      prompt: "Replace the product in Figure 1 with that in Figure 2. For the title copy the text in Figure 3 to the top of the screen, the title should have a clear contrast with the background but not be overly eye-catching.",
+      image_urls: [],
+      image_size: "auto_4K",
+      num_images: 1,
+      max_images: 1,
+    },
+  },
+  {
     endpointId: "fal-ai/flux-pro/v1.1-ultra",
     label: "Flux Pro 1.1 Ultra",
     description: "Professional-grade image generation with ultra quality and advanced features",

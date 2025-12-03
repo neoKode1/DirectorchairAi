@@ -362,10 +362,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.image_urls;
     }
 
-    // Handle Seedream 4.0 Edit model specific parameters
-    if (model.includes('bytedance/seedream/v4/edit')) {
-      console.log(`🔧 [Generate API] [${requestId}] Detected Seedream 4.0 Edit model: ${model}`);
-      
+    // Handle Seedream 4.0 and 4.5 Edit model specific parameters
+    if (model.includes('bytedance/seedream/v4/edit') || model.includes('bytedance/seedream/v4.5/edit')) {
+      const isV45 = model.includes('v4.5');
+      console.log(`🔧 [Generate API] [${requestId}] Detected Seedream ${isV45 ? '4.5' : '4.0'} Edit model: ${model}`);
+
       // Seedream uses image_size, not aspect_ratio
       // Convert aspect_ratio to image_size enum
       if (body.aspect_ratio) {
@@ -375,31 +376,52 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           '4:3': 'landscape_4_3',
           '3:4': 'portrait_4_3',
           '1:1': 'square_hd',
-          'auto': 'auto'
+          'auto': isV45 ? 'auto_4K' : 'auto' // v4.5 defaults to auto_4K for better quality
         };
-        
-        input.image_size = aspectRatioToImageSize[body.aspect_ratio] || 'auto';
+
+        input.image_size = aspectRatioToImageSize[body.aspect_ratio] || (isV45 ? 'auto_4K' : 'auto');
         console.log(`🔧 [Generate API] [${requestId}] Converted aspect_ratio to image_size:`, {
           aspect_ratio: body.aspect_ratio,
           image_size: input.image_size
         });
-        
+
         // Remove aspect_ratio as Seedream doesn't use it
         delete input.aspect_ratio;
+      } else if (body.image_size) {
+        // Use provided image_size directly
+        input.image_size = body.image_size;
       } else {
-        input.image_size = 'auto'; // Default to auto to maintain input aspect ratio
+        input.image_size = isV45 ? 'auto_4K' : 'auto'; // Default based on version
       }
-      
+
       // Set default parameters
-      input.num_images = input.num_images || 1;
-      input.max_images = input.max_images || 1;
-      input.enable_safety_checker = input.enable_safety_checker !== undefined ? input.enable_safety_checker : true;
-      
-      console.log(`🔧 [Generate API] [${requestId}] Seedream 4.0 Edit parameters:`, {
+      input.num_images = body.num_images !== undefined ? body.num_images : 1;
+      input.max_images = body.max_images !== undefined ? body.max_images : 1;
+
+      // v4.5 supports up to 10 images, v4.0 supports up to 4
+      const maxImageLimit = isV45 ? 10 : 4;
+      if (input.image_urls && input.image_urls.length > maxImageLimit) {
+        console.warn(`⚠️ [Generate API] [${requestId}] Too many images (${input.image_urls.length}), limiting to ${maxImageLimit}`);
+        input.image_urls = input.image_urls.slice(0, maxImageLimit);
+      }
+
+      // Seed parameter (optional)
+      if (body.seed !== undefined) {
+        input.seed = body.seed;
+      }
+
+      // sync_mode parameter (optional)
+      if (body.sync_mode !== undefined) {
+        input.sync_mode = body.sync_mode;
+      }
+
+      console.log(`🔧 [Generate API] [${requestId}] Seedream ${isV45 ? '4.5' : '4.0'} Edit parameters:`, {
         image_size: input.image_size,
         num_images: input.num_images,
         max_images: input.max_images,
-        note: 'Seedream uses image_size (auto/square_hd/landscape_16_9/portrait_16_9/etc), not aspect_ratio'
+        image_urls_count: input.image_urls?.length || 0,
+        max_supported_images: maxImageLimit,
+        note: `Seedream ${isV45 ? '4.5' : '4.0'} uses image_size (auto${isV45 ? '_4K' : ''}/square_hd/landscape_16_9/portrait_16_9/etc), not aspect_ratio`
       });
     }
     

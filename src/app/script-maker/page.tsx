@@ -305,6 +305,101 @@ function ScriptMakerContent() {
     });
   };
 
+  const handleScriptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+
+    // Validate file type
+    const validTypes = ['.txt', '.pdf', '.doc', '.docx'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!validTypes.includes(fileExtension)) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload a .txt, .pdf, .doc, or .docx file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Uploading Script",
+        description: "Reading your screenplay...",
+      });
+
+      let scriptText = '';
+
+      if (fileExtension === '.txt') {
+        // Read text file directly
+        scriptText = await file.text();
+      } else if (fileExtension === '.pdf') {
+        // For PDF, we'll need to extract text (simplified version)
+        toast({
+          title: "PDF Upload",
+          description: "PDF support coming soon. Please use .txt format for now.",
+          variant: "destructive"
+        });
+        return;
+      } else {
+        // For .doc/.docx, we'll need special handling
+        toast({
+          title: "Word Document Upload",
+          description: "Word document support coming soon. Please use .txt format for now.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate script has content
+      if (!scriptText || scriptText.trim().length < 100) {
+        toast({
+          title: "Script Too Short",
+          description: "Please upload a screenplay with at least 100 characters",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Set the script
+      setFinalScript(scriptText);
+
+      // Extract character names from the uploaded script
+      const characterPattern = /^([A-Z][A-Z\s.-]+)(?=\s*$|\s*\(.*\)\s*$)/gm;
+      const matches = scriptText.match(characterPattern);
+
+      if (matches) {
+        const trimmedNames = matches.map((name: string) => name.trim());
+        const uniqueSet = new Set<string>(trimmedNames);
+        const uniqueCharacters = Array.from(uniqueSet)
+          .filter((char: string) =>
+            char.length > 1 &&
+            !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.'].some(keyword => char.startsWith(keyword))
+          );
+
+        setExtractedCharacters(uniqueCharacters);
+        console.log('🎭 [ScriptMaker] Extracted characters from uploaded script:', uniqueCharacters);
+      }
+
+      toast({
+        title: "Script Uploaded!",
+        description: `Found ${matches?.length || 0} characters. You can now skip to shot list generation.`,
+      });
+
+      // Jump to step 5 (shot list) - skip character upload and style reference for now
+      setCurrentStep(5);
+
+    } catch (error) {
+      console.error('❌ Script upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to read the script file. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Fullscreen image handlers (from timeline page)
   const handleEditImage = (imageUrl: string) => {
     // Call the injectImage function that's exposed on the window object
@@ -1213,12 +1308,41 @@ function ScriptMakerContent() {
             </div>
 
             {canProceedToCharacters && currentStep === 1 && (
-              <button
-                onClick={() => setCurrentStep(2)}
-                className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-              >
-                Next: Generate Screenplay →
-              </button>
+              <div className="space-y-2 mt-2">
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                >
+                  Next: Generate Screenplay →
+                </button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="px-2 bg-white text-gray-500">OR</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block">
+                    <input
+                      type="file"
+                      accept=".txt,.pdf,.doc,.docx"
+                      onChange={handleScriptUpload}
+                      className="hidden"
+                      id="script-upload"
+                    />
+                    <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 bg-white border-2 border-purple-600 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer text-center">
+                      📄 Upload Your Own Script
+                    </div>
+                  </label>
+                  <p className="text-xs text-gray-500 text-center">
+                    Skip screenplay generation and jump to shot list
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>

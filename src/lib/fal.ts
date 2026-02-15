@@ -135,6 +135,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: false,
     maxStyleStrength: 0,
   },
+  "xai/grok-imagine-video/image-to-video": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
+  },
   "fal-ai/ffmpeg-api/extract-frame": {
     supportsStyleReference: false,
     supportsStylePresets: false,
@@ -389,13 +394,29 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
   {
     endpointId: "xai/grok-imagine-video/text-to-video",
-    label: "Grok Imagine Video",
+    label: "Grok Imagine Video (T2V)",
     description: "Generate videos with audio from text using xAI's Grok Imagine Video. Supports 1-15s duration, multiple aspect ratios, and 480p/720p resolution",
     category: "video",
     initialInput: {
       prompt: "Anime schoolgirl bursting out of house door, cherry blossoms blowing, morning light, speed lines indicating rush, chibi-ready expressions, classic shojo aesthetic, vibrant colors",
       duration: 6,
       aspect_ratio: "16:9",
+      resolution: "720p",
+    },
+  },
+  {
+    endpointId: "xai/grok-imagine-video/image-to-video",
+    label: "Grok Imagine Video (I2V)",
+    description: "Generate videos with audio from images using xAI's Grok Imagine Video. Supports 1-15s duration, auto/multiple aspect ratios, and 480p/720p resolution",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: false,
+    maxImages: 1,
+    initialInput: {
+      prompt: "Medieval knight in ornate armor walking through a mystical forest, bioluminescent plants pulsing with light, ancient stone ruins overgrown with glowing vines, over-the-shoulder camera, dark fantasy aesthetic, volumetric fog and Lumen lighting",
+      image_url: "https://v3b.fal.media/files/b/0a8b90e0/BFLE9VDlZqsryU-UA3BoD_image_004.png",
+      duration: 6,
+      aspect_ratio: "auto",
       resolution: "720p",
     },
   },

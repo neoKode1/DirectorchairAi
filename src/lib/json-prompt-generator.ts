@@ -181,7 +181,6 @@ export class JSONPromptGenerator {
   }
 
   private extractCoreElements(prompt: string): any {
-    const lowerPrompt = prompt.toLowerCase();
     
     return {
       location: this.extractLocation(prompt),
@@ -296,7 +295,7 @@ export class JSONPromptGenerator {
     };
   }
 
-  private generateCharacters(coreElements: any, context: any, directorStyle: any): any[] {
+  private generateCharacters(coreElements: any, context: any, _directorStyle: any): any[] {
     const characters = [];
     
     // Main character/protagonist
@@ -329,7 +328,7 @@ export class JSONPromptGenerator {
     return characters;
   }
 
-  private generateEvents(coreElements: any, context: any, directorStyle: any): any[] {
+  private generateEvents(_coreElements: any, _context: any, _directorStyle: any): any[] {
     const events = [];
     
     // Generate 2-3 contextual events
@@ -358,7 +357,7 @@ export class JSONPromptGenerator {
     return events;
   }
 
-  private generateTone(coreElements: any, context: any, directorStyle: any, directorAnalysis: any): any {
+  private generateTone(_coreElements: any, _context: any, directorStyle: any, _directorAnalysis: any): any {
     return {
       mood: this.getRandomElement(['tense', 'atmospheric', 'dramatic', 'contemplative']),
       pacing: directorStyle.pacing || 'moderate',
@@ -372,7 +371,7 @@ export class JSONPromptGenerator {
     };
   }
 
-  private generateThemes(coreElements: any, context: any, directorAnalysis: any): string[] {
+  private generateThemes(_coreElements: any, context: any, _directorAnalysis: any): string[] {
     const baseThemes = context.themes || ['human experience', 'personal journey'];
     return this.getRandomElements(baseThemes, 3);
   }
@@ -388,7 +387,7 @@ export class JSONPromptGenerator {
     };
   }
 
-  private generateEnvironmentalDetails(context: any): string[] {
+  private generateEnvironmentalDetails(_context: any): string[] {
     const detailTemplates = [
       'subtle atmospheric elements',
       'environmental storytelling details',
@@ -399,7 +398,7 @@ export class JSONPromptGenerator {
     return this.getRandomElements(detailTemplates, 3);
   }
 
-  private generateSmells(context: any): string[] {
+  private generateSmells(_context: any): string[] {
     const smellTemplates = [
       'atmospheric scents',
       'environmental odors',
@@ -409,7 +408,7 @@ export class JSONPromptGenerator {
     return this.getRandomElements(smellTemplates, 2);
   }
 
-  private generateSounds(context: any): string[] {
+  private generateSounds(_context: any): string[] {
     const soundTemplates = [
       'ambient environmental sounds',
       'atmospheric audio elements',
@@ -419,7 +418,7 @@ export class JSONPromptGenerator {
     return this.getRandomElements(soundTemplates, 2);
   }
 
-  private generateEntityFeatures(context: any): string[] {
+  private generateEntityFeatures(_context: any): string[] {
     const featureTemplates = [
       'distinctive physical characteristics',
       'unique behavioral traits',

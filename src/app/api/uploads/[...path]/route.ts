@@ -6,7 +6,7 @@ import { existsSync } from 'fs';
 const uploadsDir = join(process.cwd(), 'public', 'uploads');
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {

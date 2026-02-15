@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@/lib/fal.server';
 
 export async function PUT(request: NextRequest) {
   try {

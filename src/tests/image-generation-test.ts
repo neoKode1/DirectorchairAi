@@ -1,6 +1,5 @@
 import { fal } from "@fal-ai/client";
-import type { QueueStatus, RequestLog } from "@fal-ai/client";
-import { ImageGenerationInput, ImageGenerationOutput, handleQueueUpdate } from "./types";
+import { ImageGenerationInput, handleQueueUpdate } from "./types";
 
 interface ImageData {
   url: string;

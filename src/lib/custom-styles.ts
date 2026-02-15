@@ -330,7 +330,7 @@ import { ContentFilteringLogger, FilteredTerm } from './content-filtering-logger
 // Enhanced content filtering for FAL.com compliance
 export function filterProblematicContent(prompt: string): { filteredPrompt: string; filteredTerms: FilteredTerm[] } {
   const lowerPrompt = prompt.toLowerCase();
-  const logger = ContentFilteringLogger.getInstance();
+  ContentFilteringLogger.getInstance();
   const filteredTerms: FilteredTerm[] = [];
   
   // Comprehensive FAL.com content policy filtering

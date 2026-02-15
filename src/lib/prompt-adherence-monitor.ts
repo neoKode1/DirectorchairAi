@@ -245,7 +245,7 @@ export class PromptAdherenceMonitor {
   // Generate adherence report
   public generateAdherenceReport(): string {
     const metrics = this.getAdherenceMetrics();
-    const recentLogs = this.getRecentLogs(5);
+    this.getRecentLogs(5);
     const lowAdherenceLogs = this.getLowAdherenceLogs();
 
     let report = `# Prompt Adherence Report\n\n`;

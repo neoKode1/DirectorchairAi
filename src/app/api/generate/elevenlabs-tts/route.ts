@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { createGenerationHandler, commonValidations } from "@/lib/api-handlers";
 import { getVoiceId, createVoiceSettings } from "@/lib/voice-mappings";
 

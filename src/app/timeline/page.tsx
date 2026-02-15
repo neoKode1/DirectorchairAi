@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Download, Edit, Trash2, Video } from "lucide-react";
+import { Download, Edit, Video } from "lucide-react";
 import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { ImageSelector, type ImageSelection } from "@/components/image-selector";

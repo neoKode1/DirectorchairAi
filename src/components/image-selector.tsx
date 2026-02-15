@@ -32,7 +32,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
     endX: number;
     endY: number;
   } | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Find the image element within children
@@ -47,7 +47,6 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
     const imageElement = findImageElement();
     if (!containerRef.current || !imageElement) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
     const imageRect = imageElement.getBoundingClientRect();
     
     // Calculate relative position within the image
@@ -66,29 +65,6 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
       });
     }
   }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    const imageElement = findImageElement();
-    if (!imageElement) return;
-
-    const imageRect = imageElement.getBoundingClientRect();
-    const x = e.clientX - imageRect.left;
-    const y = e.clientY - imageRect.top;
-
-    // Constrain to image bounds
-    const constrainedX = Math.max(0, Math.min(x, imageRect.width));
-    const constrainedY = Math.max(0, Math.min(y, imageRect.height));
-
-    // Only update if we're currently selecting
-    setSelection(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        endX: constrainedX,
-        endY: constrainedY
-      };
-    });
-  }, [findImageElement]);
 
   const handleMouseUp = useCallback(async (e?: React.MouseEvent) => {
     const imageElement = findImageElement();
@@ -187,7 +163,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
       }
     };
 
-    const handleGlobalMouseUp = (e: MouseEvent) => {
+    const handleGlobalMouseUp = (_e: MouseEvent) => {
       if (isSelecting) {
         handleMouseUp();
       }

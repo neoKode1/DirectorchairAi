@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 // import { AvailableModelsShowcase } from "@/components/model-icons"; // Removed - component deleted
 import Link from "next/link";
 import { ArrowRight, Sparkles, Video, Image, Music, Mic, Play, Pause } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 // Content filtering removed - user has full control over prompts
 
 export default function HomePage() {

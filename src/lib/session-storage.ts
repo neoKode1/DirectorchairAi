@@ -50,8 +50,6 @@ export class SessionStorageManager {
   private storageKey = 'directorchair-session-storage';
   private sessionsKey = 'directorchair-sessions';
   private version = '1.0.0';
-  private maxStorageSize = 100 * 1024 * 1024; // 100MB limit
-  private maxSessions = 50; // Maximum number of sessions
   private maxContentPerSession = 500; // Maximum content per session
 
   private constructor() {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fal, subscribeToModel } from "@/lib/fal.server";
+import { subscribeToModel } from "@/lib/fal.server";
 import { getAspectRatioDimensions, isAspectRatioSupported } from "@/lib/utils";
 import { STYLE_PRESETS, getModelStyleSupport } from "@/lib/fal";
 

@@ -2,8 +2,6 @@
 
 // AspectRatioSelector.tsx
 import { cn } from "@/lib/utils";
-import type { MouseEventHandler } from "react";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 

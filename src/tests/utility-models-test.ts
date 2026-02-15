@@ -1,4 +1,4 @@
-import { fal, QueueStatus, RequestLog, Result } from "@fal-ai/client";
+import { fal, QueueStatus, RequestLog } from "@fal-ai/client";
 
 interface Ray2Input {
   prompt: string;

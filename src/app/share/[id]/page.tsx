@@ -1,7 +1,7 @@
 // import Header from "@/components/header"; // Removed - component deleted
 import { button as Button } from "@/components/ui/button";
 // Placeholder function for fetching shared videos
-async function fetchSharedVideo(id: string) {
+async function fetchSharedVideo(_id: string) {
   return {
     title: "Placeholder Video",
     description: "This is a placeholder video",

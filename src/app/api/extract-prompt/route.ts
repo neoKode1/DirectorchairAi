@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Extract prompt using Replicate's BLIP model
-async function extractWithBLIP(imageUrl: string): Promise<string> {
+async function extractWithBLIP(_imageUrl: string): Promise<string> {
   try {
     // This would integrate with Replicate's BLIP model
     // For now, return a placeholder analysis
@@ -59,13 +59,13 @@ async function extractWithBLIP(imageUrl: string): Promise<string> {
 }
 
 // Extract prompt using specialized prompt extraction model
-async function extractWithPromptModel(imageUrl: string): Promise<string> {
+async function extractWithPromptModel(_imageUrl: string): Promise<string> {
   try {
     // This would integrate with models like:
     // - Replicate's prompt-extraction models
     // - Hugging Face's image-to-prompt models
     // - Custom trained models for cinematic style extraction
-    
+
     // For now, return a placeholder
     return 'professional cinematography, high production value, cinematic quality';
   } catch (error) {
@@ -75,7 +75,7 @@ async function extractWithPromptModel(imageUrl: string): Promise<string> {
 }
 
 // Analyze cinematic elements in the image
-async function analyzeCinematicElements(imageUrl: string): Promise<string> {
+async function analyzeCinematicElements(_imageUrl: string): Promise<string> {
   try {
     // This would analyze:
     // - Lighting patterns and shadows

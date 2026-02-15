@@ -4,29 +4,8 @@ import React, { useState } from 'react';
 // import FrameContainer from '@/components/frame-container'; // Removed - component deleted
 
 export default function TestFramesPage() {
-  const [primaryImage, setPrimaryImage] = useState<FileList | null>(null);
-  const [styleImage, setStyleImage] = useState<FileList | null>(null);
-
-  const handlePrimaryImageUpload = (files: FileList | null) => {
-    console.log('Primary image uploaded:', files?.length || 0, 'files');
-    setPrimaryImage(files);
-  };
-
-  const handleStyleImageUpload = (files: FileList | null) => {
-    console.log('Style image uploaded:', files?.length || 0, 'files');
-    setStyleImage(files);
-  };
-
-  const handlePrimaryImageRemove = () => {
-    console.log('Primary image removed');
-    setPrimaryImage(null);
-    setStyleImage(null); // Also remove style image when primary is removed
-  };
-
-  const handleStyleImageRemove = () => {
-    console.log('Style image removed');
-    setStyleImage(null);
-  };
+  const [primaryImage] = useState<FileList | null>(null);
+  const [styleImage] = useState<FileList | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-900 p-8">

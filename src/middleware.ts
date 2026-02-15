@@ -9,7 +9,7 @@ export default function middleware(req: any) {
   
   return withAuth(req, {
     callbacks: {
-      authorized({ req, token }) {
+      authorized({ token }) {
         return !!token;
       },
     },

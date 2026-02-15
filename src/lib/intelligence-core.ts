@@ -1,19 +1,12 @@
 import { AVAILABLE_ENDPOINTS } from './fal';
 import { claudeAPI } from './claude-api';
-import { 
-  filmDirectorData, 
-  analyzePromptForDirectorStyle, 
-  generateDirectorEnhancedSuggestions, 
-  integrateStyleIntoPrompt, 
+import {
+  analyzePromptForDirectorStyle,
+  integrateStyleIntoPrompt,
   generateStructuredCinematicPrompt,
-  StyleReference 
+  StyleReference
 } from './film-director-data';
 import { imageStyleExtractor, StyleAnalysis } from './image-style-extractor';
-import { jsonPromptGenerator, JSONPromptStructure } from './json-prompt-generator';
-import { auteurEngine } from './auteur-engine';
-import { promptAdherenceMonitor } from './prompt-adherence-monitor';
-import { customStyleManager, enhancePromptWithCustomStyle, supportsCustomLoRA, filterProblematicContent } from './custom-styles';
-import { ContentFilteringLogger } from './content-filtering-logger';
 import { seedManager } from './seed-manager';
 import { getNegativePrompt } from './negative-prompts';
 
@@ -165,61 +158,7 @@ export class IntelligenceCore {
     console.log('🧠 [IntelligenceCore] ===== CONSTRUCTOR END =====');
   }
 
-  // Determine if JSON-structured prompts should be used
-  private shouldUseJSONStructure(prompt: string, contentType: string): boolean {
-    // Use JSON structure for complex narrative prompts that would benefit from detailed breakdown
-    const lowerPrompt = prompt.toLowerCase();
-    
-    console.log('🔍 [IntelligenceCore] JSON structure analysis for prompt:', prompt);
-    console.log('🔍 [IntelligenceCore] Prompt length:', prompt.length);
-    
-    // Check for narrative complexity indicators
-    const narrativeIndicators = [
-      'story', 'narrative', 'scene', 'character', 'protagonist', 'antagonist',
-      'plot', 'sequence', 'moment', 'situation', 'encounter', 'confrontation',
-      'journey', 'quest', 'mission', 'adventure', 'exploration', 'discovery'
-    ];
-    
-    // Check for environmental detail indicators
-    const environmentalIndicators = [
-      'atmosphere', 'mood', 'setting', 'environment', 'surroundings', 'location',
-      'weather', 'lighting', 'shadows', 'architecture', 'interior', 'exterior',
-      'landscape', 'cityscape', 'building', 'room', 'space', 'area'
-    ];
-    
-    // Check for character interaction indicators
-    const characterIndicators = [
-      'interaction', 'dialogue', 'conversation', 'meeting', 'encounter',
-      'conflict', 'tension', 'relationship', 'connection', 'bond'
-    ];
-    
-    // Count how many indicators are present
-    let indicatorCount = 0;
-    const foundIndicators: string[] = [];
-    
-    for (const indicator of [...narrativeIndicators, ...environmentalIndicators, ...characterIndicators]) {
-      if (lowerPrompt.includes(indicator)) {
-        indicatorCount++;
-        foundIndicators.push(indicator);
-      }
-    }
-    
-    // Use JSON structure if we have multiple indicators suggesting complex narrative content
-    const shouldUse = indicatorCount >= 2 || prompt.length > 100;
-    
-    console.log(`🎬 [IntelligenceCore] JSON structure decision: ${indicatorCount} indicators, ${prompt.length} chars, use JSON: ${shouldUse}`);
-    console.log(`🎬 [IntelligenceCore] Found indicators:`, foundIndicators);
-    
-    return shouldUse;
-  }
 
-  private generateJSONStructuredPrompt(prompt: string, contentType: string): JSONPromptStructure {
-    return jsonPromptGenerator.generateJSONPrompt(prompt, contentType);
-  }
-
-  private convertJSONToNaturalLanguage(jsonStructure: JSONPromptStructure): string {
-    return jsonPromptGenerator.convertToNaturalLanguage(jsonStructure);
-  }
 
   // Initialize the mapping between UI suggestions and agent actions
   private initializeSuggestionMappings(): void {
@@ -1981,7 +1920,7 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     }
   }
 
-  private async getDefaultParameters(model: ModelCapability, intent: UserIntent, styleAnalysis?: any): Promise<Record<string, any>> {
+  private async getDefaultParameters(model: ModelCapability, intent: UserIntent, _styleAnalysis?: any): Promise<Record<string, any>> {
     console.log('📋 [IntelligenceCore] Getting FAL-compatible parameters for model:', model.endpointId);
     console.log('📋 [IntelligenceCore] Intent type:', intent.type);
     console.log('📋 [IntelligenceCore] User prompt:', intent.context);
@@ -1998,8 +1937,7 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
     console.log('📋 [IntelligenceCore] Has last generated image:', hasLastGeneratedImage);
     console.log('📋 [IntelligenceCore] Image file name:', imageFileName);
     
-    // Store the original prompt for comparison
-    const originalPrompt = userPrompt;
+
     
     // MINIMAL PROMPT ENHANCEMENT - Focus on adherence, not over-enhancement
     try {
@@ -2258,22 +2196,7 @@ When you're ready, simply click the "Generate Now" button below and I'll start c
 Is there anything specific you'd like me to adjust before we start?`;
   }
 
-  private generateDelegationResponse(delegation: TaskDelegation, intent: UserIntent): string {
-    return `✅ **Authorization confirmed!** I'm now delegating your ${intent.type} generation request.
 
-**Selected Model**: ${delegation.modelId}
-**Reason**: ${delegation.reason}
-**Estimated Time**: ${delegation.estimatedTime}
-**Confidence**: ${Math.round(delegation.confidence * 100)}%
-
-**Parameters**:
-${Object.entries(delegation.parameters)
-  .map(([key, value]) => `- ${key}: ${value}`)
-  .join('\n')}
-
-**Status**: Delegating to specialized model...
-**Next Step**: The model will begin generation and provide status updates.`;
-  }
 
   private async generateAnalysisResponse(intent: UserIntent, originalInput: string): Promise<{
     response: string;
@@ -2933,123 +2856,7 @@ How would you like to proceed?`,
     return 'Character, professional design, high quality';
   }
 
-  // Add prompt validation and sanitization
-  private validateAndSanitizePrompt(prompt: string, contentType: string): {
-    isValid: boolean;
-    sanitizedPrompt: string;
-    warnings: string[];
-  } {
-    const warnings: string[] = [];
-    let sanitizedPrompt = prompt.trim();
 
-    // Check for prompt length limits
-    const maxLength = contentType === 'image' ? 1000 : 500;
-    if (sanitizedPrompt.length > maxLength) {
-      warnings.push(`Prompt exceeds ${maxLength} character limit`);
-      sanitizedPrompt = sanitizedPrompt.substring(0, maxLength);
-    }
-
-    // Remove conflicting style instructions
-    const conflictingPairs = [
-      ['warm', 'cool'],
-      ['bright', 'dark'],
-      ['colorful', 'monochrome'],
-      ['sharp', 'blurry'],
-      ['realistic', 'artistic']
-    ];
-
-    conflictingPairs.forEach(([style1, style2]) => {
-      if (sanitizedPrompt.includes(style1) && sanitizedPrompt.includes(style2)) {
-        warnings.push(`Conflicting styles detected: ${style1} and ${style2}`);
-        // Keep the first occurrence, remove the second
-        const firstIndex = sanitizedPrompt.indexOf(style1);
-        const secondIndex = sanitizedPrompt.indexOf(style2);
-        if (secondIndex > firstIndex) {
-          sanitizedPrompt = sanitizedPrompt.replace(new RegExp(`\\b${style2}\\b`, 'g'), '');
-        }
-      }
-    });
-
-    // Validate weighting syntax
-    const weightRegex = /\([^:]+:\d+\.?\d*\)/g;
-    const weightMatches = sanitizedPrompt.match(weightRegex);
-    if (weightMatches) {
-      weightMatches.forEach(match => {
-        const weight = parseFloat(match.match(/:\d+\.?\d*/)?.[0]?.substring(1) || '1');
-        if (weight < 0.1 || weight > 2.0) {
-          warnings.push(`Invalid weight value in ${match}: must be between 0.1 and 2.0`);
-          sanitizedPrompt = sanitizedPrompt.replace(match, match.replace(/:\d+\.?\d*/, ':1.0'));
-        }
-      });
-    }
-
-    return {
-      isValid: warnings.length === 0,
-      sanitizedPrompt,
-      warnings
-    };
-  }
-
-  // Enhanced prompt fusion with validation
-  private performValidatedPromptFusion(userPrompt: string, directorProfile: any): string {
-    console.log('🎬 [IntelligenceCore] Starting validated prompt fusion');
-    
-    // Validate and sanitize the original prompt
-    const validation = this.validateAndSanitizePrompt(userPrompt, 'image');
-    if (!validation.isValid) {
-      console.warn('⚠️ [IntelligenceCore] Prompt validation warnings:', validation.warnings);
-    }
-    
-    let workingPrompt = validation.sanitizedPrompt;
-    
-    // Apply director style with consistent weighting
-    const { style_profile } = directorProfile;
-    
-    // Select elements with consistent weighting approach
-    const visualKeywords = this.selectRandomElementsFromArray(style_profile.visual_keywords, 1);
-    const compositionElements = this.selectRandomElementsFromArray(style_profile.composition_style, 1);
-    const lightingElements = this.selectRandomElementsFromArray(style_profile.lighting, 1);
-    const colorElements = this.selectRandomElementsFromArray(style_profile.color_palette, 1);
-    
-    // Apply consistent weighting (1.2 for all style elements)
-    const styleEnhancements: string[] = [];
-    
-    if (visualKeywords.length > 0) {
-      styleEnhancements.push(`(${visualKeywords[0]}:1.2)`);
-    }
-    
-    if (compositionElements.length > 0) {
-      styleEnhancements.push(`(${compositionElements[0]}:1.2)`);
-    }
-    
-    if (lightingElements.length > 0) {
-      styleEnhancements.push(`(${lightingElements[0]}:1.2)`);
-    }
-    
-    if (colorElements.length > 0) {
-      styleEnhancements.push(`(${colorElements[0]}:1.2)`);
-    }
-    
-    // Combine with original prompt
-    if (styleEnhancements.length > 0) {
-      workingPrompt += `, ${styleEnhancements.join(', ')}`;
-    }
-    
-    // Final validation
-    const finalValidation = this.validateAndSanitizePrompt(workingPrompt, 'image');
-    if (!finalValidation.isValid) {
-      console.warn('⚠️ [IntelligenceCore] Final prompt validation warnings:', finalValidation.warnings);
-    }
-    
-    console.log('🎬 [IntelligenceCore] Validated prompt fusion complete:', finalValidation.sanitizedPrompt);
-    return finalValidation.sanitizedPrompt;
-  }
-
-  // Helper method for selecting random elements from array
-  private selectRandomElementsFromArray<T>(array: T[], count: number): T[] {
-    const shuffled = [...array].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, Math.min(count, array.length));
-  }
 
   /**
    * Set the last generated image URL for animation requests

@@ -1035,8 +1035,7 @@ export function generateStructuredCinematicPrompt(
 // Helper function to analyze user prompt context
 function analyzeUserPromptContext(userPrompt: string) {
   const prompt = userPrompt.toLowerCase();
-  const words = prompt.split(' ');
-  
+
   return {
     hasPerson: /person|man|woman|child|character|figure|portrait|face|head|body/.test(prompt),
     hasAnimal: /animal|dog|cat|bird|horse|pet/.test(prompt),
@@ -1061,7 +1060,6 @@ function generateContextualCinematicElements(analysis: any, director: any) {
   const isLandscape = analysis.hasLandscape;
   const isIndoor = analysis.hasIndoor;
   const isOutdoor = analysis.hasOutdoor;
-  const hasAction = analysis.hasAction;
   const hasEmotion = analysis.hasEmotion;
   const isCloseUp = analysis.isCloseUp;
   const isWideShot = analysis.isWideShot;

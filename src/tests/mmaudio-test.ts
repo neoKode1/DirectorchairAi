@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-// Mock the model info
-const mockModelInfo = {
-  id: "fal-ai/mmaudio",
-  name: "MMAudio V2",
-  description: "Audio processing and analysis",
-  category: "audio",
-};
-
 // Interface from the component
 interface MMAudioInput {
   audio_url: string;

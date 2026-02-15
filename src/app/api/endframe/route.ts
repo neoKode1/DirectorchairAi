@@ -7,7 +7,7 @@ function createDataUri(base64Data: string): string {
 }
 
 // Helper function to validate image aspect ratio for Minimax API
-function validateImageAspectRatio(base64Data: string): { isValid: boolean; message?: string } {
+function validateImageAspectRatio(_base64Data: string): { isValid: boolean; message?: string } {
   try {
     console.log('🔍 Validating image aspect ratio for Minimax API...');
     // Minimax typically requires images with reasonable aspect ratios

@@ -66,7 +66,7 @@ export class ImageStyleExtractor {
   }
 
   // Analyze image using BLIP model
-  private async analyzeWithBLIP(imageUrl: string): Promise<Partial<ExtractedStyle>> {
+  private async analyzeWithBLIP(_imageUrl: string): Promise<Partial<ExtractedStyle>> {
     try {
       // This would integrate with Replicate's BLIP model
       // For now, return a placeholder analysis
@@ -111,7 +111,7 @@ export class ImageStyleExtractor {
   }
 
   // Analyze visual elements for cinematic characteristics
-  private async analyzeVisualElements(imageUrl: string): Promise<Partial<ExtractedStyle>> {
+  private async analyzeVisualElements(_imageUrl: string): Promise<Partial<ExtractedStyle>> {
     try {
       // This would analyze:
       // - Color distribution and palette

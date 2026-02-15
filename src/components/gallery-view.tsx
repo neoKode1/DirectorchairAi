@@ -9,7 +9,6 @@ import {
   Share2,
   Play,
   Image as ImageIcon,
-  Video,
   Music,
   Zap,
   X,
@@ -255,11 +254,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     };
   }, [isFullscreen, currentIndex, items]);
 
-  const handleAnimate = (e: React.MouseEvent, item: GalleryItem) => {
-    e.stopPropagation();
-    onAnimate?.(item);
-  };
-
   // Handle delete item
   const handleDelete = async (e: React.MouseEvent, item: GalleryItem) => {
     e.stopPropagation();
@@ -358,31 +352,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'image':
-        return <ImageIcon className="w-4 h-4" />;
-      case 'video':
-        return <Video className="w-4 h-4" />;
-      case 'audio':
-        return <Music className="w-4 h-4" />;
-      default:
-        return <ImageIcon className="w-4 h-4" />;
-    }
-  };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'image':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'video':
-        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
-      case 'audio':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();

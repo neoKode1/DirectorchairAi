@@ -177,18 +177,9 @@ export const useQueue = () => {
 
   // Poll for status updates
   const pollStatus = useCallback(async () => {
-    const activeRequests = requests.filter(req => 
+    const activeRequests = requests.filter(req =>
       req.status === 'IN_QUEUE' || req.status === 'IN_PROGRESS'
     );
-
-    // Also filter out requests that have been completed for too long (5 minutes)
-    const recentRequests = requests.filter(req => {
-      if (req.status === 'COMPLETED' && req.completedAt) {
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        return req.completedAt > fiveMinutesAgo;
-      }
-      return true;
-    });
 
     console.log('🔄 [Queue] All requests:', requests.map(req => ({ id: req.requestId, status: req.status })));
     console.log('🔄 [Queue] Active requests:', activeRequests.length);

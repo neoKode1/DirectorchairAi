@@ -1,13 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-// Mock the model info
-const mockModelInfo = {
-  id: "fal-ai/minimax-live",
-  name: "Minimax/Hailuo Video 01 Live",
-  description: "High quality video generation with realistic motion",
-  category: "video",
-};
-
 // Interface from the component
 interface MinimaxLiveInput {
   prompt: string;

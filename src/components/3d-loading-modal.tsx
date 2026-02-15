@@ -252,7 +252,7 @@ export const ThreeJSLoadingModal: React.FC<ThreeJSLoadingModalProps> = ({
       const time = Date.now() * 0.001;
 
       // Animate model icon meshes
-      meshes.forEach((mesh, index) => {
+      meshes.forEach((mesh) => {
         if (!mesh.userData) return;
 
         const data = mesh.userData;

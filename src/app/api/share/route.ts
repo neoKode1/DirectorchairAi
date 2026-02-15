@@ -3,7 +3,7 @@ const IS_SHARE_ENABLED = false;
 
 type ShareVideoParams = any;
 
-async function shareVideo(params: ShareVideoParams) {
+async function shareVideo(_params: ShareVideoParams) {
   return "placeholder-id";
 }
 import { NextRequest, NextResponse } from "next/server";

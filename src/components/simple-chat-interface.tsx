@@ -2,21 +2,14 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { 
-  Send, 
-  Plus,
-  Upload,
+import {
+  Send,
   X,
-  Image as ImageIcon,
-  Video,
-  Music,
   Download,
-  RefreshCw,
   Shuffle,
   FileImage,
   CloudUpload,
@@ -54,9 +47,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showSuggestions] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isDragActive, setIsDragActive] = useState(false);
+  const [, setIsDragActive] = useState(false);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [floatingSuggestions, setFloatingSuggestions] = useState<string[]>([]);
@@ -95,7 +88,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
   // Load data from localStorage on component mount
   useEffect(() => {
-    const savedMessages = localStorage.getItem('directorchair-chat-messages');
+    localStorage.getItem('directorchair-chat-messages');
     const savedLastImage = localStorage.getItem('directorchair-last-generated-image');
     const savedSettings = localStorage.getItem('directorchair-settings');
     
@@ -137,7 +130,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     const messagesWithImages = messages.filter(msg => msg.media && msg.media.url);
     if (messagesWithImages.length > 10) {
       // If we have more than 10 messages with images, remove the oldest ones
-      const messagesWithoutOldImages = messages.filter((msg, index) => {
+      const messagesWithoutOldImages = messages.filter((msg) => {
         if (msg.media && msg.media.url) {
           // Keep only the last 10 messages with images
           const imageMessageIndex = messagesWithImages.findIndex(imgMsg => imgMsg.id === msg.id);
@@ -265,23 +258,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   };
 
-  // Utility function to handle localStorage quota exceeded
-  const handleStorageQuotaExceeded = () => {
-    console.warn('⚠️ [Chat] localStorage quota exceeded, clearing old data...');
-    try {
-      // Clear all DirectorChair localStorage items
-      localStorage.removeItem('directorchair-chat-messages');
-      localStorage.removeItem('directorchair-last-generated-image');
-      localStorage.removeItem('directorchair-content-gallery');
-      // Keep settings as they're small
-      console.log('✅ [Chat] localStorage cleared due to quota exceeded');
-      
-      // Also clear the current messages state to prevent immediate re-saving
-      setMessages([]);
-    } catch (error) {
-      console.error('Error clearing localStorage after quota exceeded:', error);
-    }
-  };
+
 
   const injectImage = (imageUrl: string) => {
     console.log('🖼️ [Chat] Injecting image:', imageUrl);
@@ -682,14 +659,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     document.body.removeChild(link);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setUserInput(suggestion);
-    // Auto-submit the suggestion
-    setTimeout(() => {
-      const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-      handleSubmit(fakeEvent);
-    }, 100);
-  };
+
 
   const showFloatingSuggestions = (suggestions: string[]) => {
     setFloatingSuggestions(suggestions);

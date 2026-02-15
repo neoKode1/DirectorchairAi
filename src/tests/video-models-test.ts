@@ -1,5 +1,4 @@
 import { fal } from "@fal-ai/client";
-import type { Result } from "@fal-ai/client";
 
 // Base interfaces
 interface BaseVideoInput {

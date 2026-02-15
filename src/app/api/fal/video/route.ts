@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 
-// Helper function to get dimensions from aspect ratio
-function getAspectRatioDimensions(aspectRatio: string): { width: number; height: number } | null {
-  const ratios: Record<string, { width: number; height: number }> = {
-    '1:1': { width: 1024, height: 1024 },
-    '16:9': { width: 1920, height: 1080 },
-    '9:16': { width: 1080, height: 1920 },
-    '4:3': { width: 1440, height: 1080 },
-    '3:4': { width: 1080, height: 1440 },
-    '21:9': { width: 2560, height: 1080 },
-    '9:21': { width: 1080, height: 2560 },
-  };
-  
-  return ratios[aspectRatio] || null;
-}
-
 // Video-specific FAL proxy that handles all video generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();

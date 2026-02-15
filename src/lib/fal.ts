@@ -130,6 +130,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: false,
     maxStyleStrength: 0,
   },
+  "fal-ai/nano-banana-pro/edit": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
+  },
   "xai/grok-imagine-video/text-to-video": {
     supportsStyleReference: false,
     supportsStylePresets: false,
@@ -314,19 +319,21 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   },
   {
     endpointId: "fal-ai/nano-banana-pro/edit",
-    label: "Nano Banana Pro Image",
-    description: "Gemini 3 Pro Image model offering high fidelity text-to-image and multi-image reference editing with enhanced prompt grounding",
+    label: "Nano Banana Pro",
+    description: "Google's state-of-the-art image generation and editing model (Nano Banana 2) with multi-image support, web search, and 1K-4K resolution options",
     category: "image",
     inputAsset: ["image"],
     supportsMultipleImages: true,
-    maxImages: 5,
+    maxImages: 4,
     initialInput: {
       prompt: "make a photo of the man driving the car down the california coastline",
-      image_urls: [],
+      image_urls: ["https://storage.googleapis.com/falserverless/example_inputs/nano-banana-edit-input.png", "https://storage.googleapis.com/falserverless/example_inputs/nano-banana-edit-input-2.png"],
       num_images: 1,
-      aspect_ratio: "16:9",
+      aspect_ratio: "auto",
       output_format: "png",
       resolution: "1K",
+      safety_tolerance: "4",
+      sync_mode: false,
     },
   },
   {

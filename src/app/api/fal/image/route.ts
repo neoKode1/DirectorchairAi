@@ -613,7 +613,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     success: true,
     message: "FAL Image Proxy - Use POST for image generation",

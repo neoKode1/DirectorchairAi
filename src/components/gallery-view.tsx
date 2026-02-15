@@ -2,20 +2,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Card } from '@/components/ui/card';
 import { button as Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Download, 
-  Share2, 
-  Play, 
-  Image as ImageIcon, 
-  Video, 
+import {
+  Download,
+  Share2,
+  Play,
+  Image as ImageIcon,
+  Video,
   Music,
-  Eye,
   Zap,
-  Calendar,
-  Clock,
   X,
   ChevronLeft,
   ChevronRight,
@@ -23,8 +19,8 @@ import {
   Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { contentStorage, type StoredContent } from '@/lib/content-storage';
-import { getVideoThumbnailWithCache, downloadVideoWithFrame, downloadVideo } from '@/lib/video-thumbnail';
+import { contentStorage } from '@/lib/content-storage';
+import { getVideoThumbnailWithCache, downloadVideoWithFrame } from '@/lib/video-thumbnail';
 import { useToast } from '@/hooks/use-toast';
 
 interface GalleryItem {

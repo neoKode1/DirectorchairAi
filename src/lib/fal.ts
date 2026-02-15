@@ -110,7 +110,7 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
   },
-  "fal-ai/flux-pro/kontext": {
+  "fal-ai/flux-pro/kontext/max": {
     supportsStyleReference: true,
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
@@ -125,11 +125,26 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: false,
     maxStyleStrength: 0,
   },
+  "xai/grok-imagine-image/edit": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
+  },
   "fal-ai/ffmpeg-api/extract-frame": {
     supportsStyleReference: false,
     supportsStylePresets: false,
     maxStyleStrength: 0,
-  }
+  },
+      "fal-ai/sora-2/image-to-video": {
+        supportsStyleReference: false,
+        supportsStylePresets: true,
+        maxStyleStrength: 0,
+      },
+      "fal-ai/sora-2/image-to-video/pro": {
+        supportsStyleReference: false,
+        supportsStylePresets: true,
+        maxStyleStrength: 0,
+      }
 } as const;
 
 // Helper function to check if a model supports style features
@@ -197,6 +212,23 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
       max_images: 1,
       enable_safety_checker: true,
+      image_size: "auto", // Seedream uses image_size, not aspect_ratio. "auto" maintains input aspect ratio
+    },
+  },
+  {
+    endpointId: "fal-ai/bytedance/seedream/v4.5/edit",
+    label: "SeeDream 4.5 Edit",
+    description: "Latest generation image editing model by ByteDance with enhanced multi-image editing capabilities (up to 10 images) and improved quality",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 10,
+    initialInput: {
+      prompt: "Replace the product in Figure 1 with that in Figure 2. For the title copy the text in Figure 3 to the top of the screen, the title should have a clear contrast with the background but not be overly eye-catching.",
+      image_urls: [],
+      image_size: "auto_4K",
+      num_images: 1,
+      max_images: 1,
     },
   },
   {
@@ -216,9 +248,9 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/flux-pro/kontext",
-    label: "Flux Pro Kontext",
-    description: "Advanced image generation with context-aware editing and manipulation capabilities",
+    endpointId: "fal-ai/flux-pro/kontext/max",
+    label: "Flux Pro Kontext Max",
+    description: "FLUX.1 Kontext [max] with greatly improved prompt adherence and typography generation for premium consistency in editing",
     category: "image",
     inputAsset: ["image"],
     initialInput: {
@@ -226,10 +258,11 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       image_url: "",
       guidance_scale: 3.5,
       num_images: 1,
-      output_format: "jpeg",
-      safety_tolerance: "2",
-      enhance_prompt: true,
-      num_inference_steps: 28,
+      output_format: "jpeg", // jpeg or png
+      safety_tolerance: "2", // 1-6, default 2
+      enhance_prompt: false,
+      // aspect_ratio: "16:9", // Optional: 21:9, 16:9, 4:3, 3:2, 1:1, 2:3, 3:4, 9:16, 9:21
+      // seed: undefined // Optional for reproducibility
     },
   },
   {
@@ -250,18 +283,56 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/nano-banana/edit",
-    label: "Nano Banana Edit (Advanced Controls)",
-    description: "Advanced image editing with fine-grained controls (strength, guidance scale) for precise modifications. Perfect for users who want detailed control over editing parameters and artistic style adjustments.",
+    endpointId: "fal-ai/flux-2-flex/edit",
+    label: "FLUX 2 Flex Edit",
+    description: "Image editing with FLUX.2 [flex] from Black Forest Labs. Supports multi-reference editing with customizable inference steps and enhanced text rendering",
     category: "image",
     inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 4,
+    initialInput: {
+      prompt: "Change colors of the vase. In a cozy living room setting, visualize a gradient vase placed on a table, flowing from rich #6a0dad to soft #ff69b4. Add an artistic carving text with a big font on vase says \"FLEX\" in the middle.",
+      image_urls: [],
+      image_size: "auto",
+      enable_prompt_expansion: true,
+      safety_tolerance: "2",
+      enable_safety_checker: true,
+      output_format: "jpeg",
+      guidance_scale: 3.5,
+      num_inference_steps: 28,
+    },
+  },
+  {
+    endpointId: "fal-ai/nano-banana-pro/edit",
+    label: "Nano Banana Pro Image",
+    description: "Gemini 3 Pro Image model offering high fidelity text-to-image and multi-image reference editing with enhanced prompt grounding",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 5,
+    initialInput: {
+      prompt: "make a photo of the man driving the car down the california coastline",
+      image_urls: [],
+      num_images: 1,
+      aspect_ratio: "16:9",
+      output_format: "png",
+      resolution: "1K",
+    },
+  },
+  {
+    endpointId: "fal-ai/nano-banana/edit",
+    label: "Nano Banana Edit",
+    description: "Google's state-of-the-art image generation and editing model with multi-image support for precise modifications",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
     initialInput: {
       prompt: "Edit this image with creative modifications",
       image_urls: [],
       num_images: 1,
-      output_format: "jpeg",
-      strength: 0.9,
-      guidance_scale: 7.5,
+      output_format: "jpeg", // jpeg, png, webp
+      // aspect_ratio: "16:9", // Optional: 21:9, 1:1, 4:3, 3:2, 2:3, 5:4, 4:5, 3:4, 16:9, 9:16
+      // sync_mode: false, // Optional: If True, media returned as data URI
     },
   },
   {
@@ -297,23 +368,128 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       sync_mode: false,
     },
   },
-
-  // Video Generation Models
   {
-    endpointId: "fal-ai/veo3/image-to-video",
-    label: "Veo 3",
-    description: "Google DeepMind's latest state-of-the-art video generation model for animating images",
+    endpointId: "xai/grok-imagine-image/edit",
+    label: "Grok Imagine Image Edit",
+    description: "xAI's Grok Imagine model for precise image editing with enhanced realism and style preservation. Supports 1-4 images per request",
+    category: "image",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "Make this scene more realistic but still keep the game vibes",
+      image_url: "",
+      num_images: 1,
+      output_format: "jpeg",
+      sync_mode: false,
+    },
+  },
+  {
+    endpointId: "fal-ai/wan-25-preview/image-to-image",
+    label: "Wan 2.5 (Image-to-Image)",
+    description: "Wan 2.5 image-to-image model for editing images using text prompts with subject-consistent editing, multi-image fusion, and resolution support from 384-5000 pixels",
+    category: "image",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    initialInput: {
+      prompt: "Reimagine the scene under a raging thunderstorm at night",
+      image_urls: [],
+      image_size: "square", // Can be: square_hd, square, portrait_4_3, portrait_16_9, landscape_4_3, landscape_16_9 or custom {width, height}
+      num_images: 1, // 1-4 images
+      negative_prompt: "low resolution, error, worst quality, low quality, defects",
+      enable_safety_checker: true,
+      // seed: undefined // Optional: for reproducibility
+    },
+  },
+  {
+    endpointId: "fal-ai/bytedance/omnihuman",
+    label: "DreamOmni",
+    description: "DreamOmni is a cutting-edge AI model that generates high-quality human images with exceptional detail and realism",
+    category: "image",
+    initialInput: {
+      prompt: "A professional portrait of a person in a business setting",
+      num_images: 1,
+      output_format: "jpeg",
+      enable_safety_checker: true,
+    },
+  },
+
+      // Video Generation Models
+      {
+        endpointId: "fal-ai/sora-2/image-to-video",
+        label: "Sora 2 (Image-to-Video)",
+        description: "OpenAI's state-of-the-art video model capable of creating richly detailed, dynamic clips with audio from images and natural language prompts",
+        category: "video",
+        inputAsset: ["image"], // Image-to-video only
+        supportsMultipleImages: false,
+        maxImages: 1,
+        initialInput: {
+          prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
+          image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
+          resolution: "auto",
+          aspect_ratio: "auto",
+          duration: 4,
+        },
+      },
+      {
+        endpointId: "fal-ai/sora-2/image-to-video/pro",
+        label: "Sora 2 Pro (Image-to-Video)",
+        description: "OpenAI's premium state-of-the-art video model with enhanced quality, higher resolution support (up to 1080p), and superior detail generation",
+        category: "video",
+        inputAsset: ["image"], // Image-to-video only
+        supportsMultipleImages: false,
+        maxImages: 1,
+        initialInput: {
+          prompt: "Front-facing 'invisible' action-cam on a skydiver in freefall above bright clouds; camera locked on his face. He speaks over the wind with clear lipsync: 'This is insanely fun! You've got to try it—book a tandem and go!' Natural wind roar, voice close-mic'd and slightly compressed so it's intelligible. Midday sun, goggles and jumpsuit flutter, altimeter visible, parachute rig on shoulders. Energetic but stable framing with subtle shake; brief horizon roll. End on first tug of canopy and wind noise dropping.",
+          image_url: "https://storage.googleapis.com/falserverless/example_inputs/sora-2-i2v-input.png",
+          resolution: "auto",
+          aspect_ratio: "auto",
+          duration: 4,
+          delete_video: true, // Privacy setting - deletes video after generation
+        },
+      },
+      {
+        endpointId: "fal-ai/sora-2/video-to-video/remix",
+        label: "Sora 2 (Video-to-Video Remix)",
+        description: "Video-to-video remix endpoint for Sora 2, OpenAI's advanced model that transforms existing videos based on new text or image prompts allowing rich edits, style changes, and creative reinterpretations while preserving motion and structure",
+        category: "video",
+        inputAsset: ["video"],
+        initialInput: {
+          video_id: "video_123",
+          prompt: "Change the cat's fur color to purple.",
+        },
+      },
+  {
+    endpointId: "fal-ai/veo3.1/fast/image-to-video",
+    label: "Veo 3.1 Fast (I2V)",
+    description: "Google's Veo 3.1 Fast model for generating videos from images with 720p/1080p support and optional audio generation",
     category: "video",
-    inputAsset: ["image"], // Image-to-video only
+    inputAsset: ["image"],
     supportsMultipleImages: false,
     maxImages: 1,
     initialInput: {
       prompt: "A woman looks into the camera, breathes in, then exclaims energetically",
       image_url: "https://storage.googleapis.com/falserverless/example_inputs/veo3-i2v-input.png",
-      aspect_ratio: "16:9",
-      duration: "8s",
+      aspect_ratio: "16:9", // 9:16 or 16:9
+      duration: "8s", // Only 8s supported
       generate_audio: true,
-      resolution: "720p",
+      resolution: "720p", // 720p or 1080p
+    },
+  },
+  {
+    endpointId: "fal-ai/veo3.1/fast/first-last-frame-to-video",
+    label: "Veo 3.1 Fast First/Last Frame",
+    description: "Animate between a starting and ending frame using Google Veo 3.1 Fast for natural motion and cinematic continuity",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      first_frame_url: "https://storage.googleapis.com/falserverless/example_inputs/veo31-flf2v-input-1.jpeg",
+      last_frame_url: "https://storage.googleapis.com/falserverless/example_inputs/veo31-flf2v-input-2.jpeg",
+      prompt: "Describe how the first frame transforms into the last frame with motion, style, camera notes, and ambiance",
+      duration: "8s",
+      aspect_ratio: "16:9",
+      resolution: "1080p",
+      generate_audio: true
     },
   },
   {
@@ -325,6 +501,55 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       prompt: "Animate this image with realistic motion",
       duration: "5",
+      negative_prompt: "blur, distort, and low quality",
+      cfg_scale: 0.5,
+    },
+  },
+  {
+    endpointId: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+    label: "Kling V2.5 Turbo Pro (I2V)",
+    description: "Top-tier image-to-video generation with unparalleled motion fluidity, cinematic visuals, and exceptional prompt precision",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "A stark starting line divides two powerful cars, engines revving for the challenge ahead. They surge forward in the heat of competition, a blur of speed and chrome. The finish line looms as they vie for victory.",
+      image_url: "https://v3.fal.media/files/panda/HnY2yf-BbzlrVQxR-qP6m_9912d0932988453aadf3912fc1901f52.jpg",
+      duration: "5",
+      negative_prompt: "blur, distort, and low quality",
+      cfg_scale: 0.5,
+    },
+  },
+  {
+    endpointId: "fal-ai/kling-video/o3/standard/image-to-video",
+    label: "Kling O3 (I2V) [Pro]",
+    description: "Generate video by animating between start and end frames with text-driven style and scene guidance. Supports 3-15s duration with optional native audio generation",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      prompt: "The character walks forward slowly, with the camera following from behind.",
+      image_url: "https://v3b.fal.media/files/b/0a8cfd5a/8ABMp4n9rh3kfD2Rq8fHd_start_frame.png",
+      end_image_url: "",
+      duration: "5",
+      generate_audio: false,
+    },
+  },
+  {
+    endpointId: "fal-ai/kling-video/v3/pro/image-to-video",
+    label: "Kling v3 Pro (I2V)",
+    description: "Top-tier image-to-video with cinematic visuals, fluid motion, and native audio generation. Supports custom elements (characters/objects), voice control, multi-shot generation, and 3-15s duration",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      prompt: "The craftsman slowly examines the bowl, turning it gently in his weathered hands. His eyes reflect years of wisdom. Subtle smile forms on his face. Dust particles drift in warm light. Breathing motion, blinking eyes.",
+      start_image_url: "https://storage.googleapis.com/falserverless/example_inputs/kling-v3/pro-i2v/start_image.png",
+      end_image_url: "",
+      duration: "5",
+      generate_audio: true,
+      aspect_ratio: "16:9",
       negative_prompt: "blur, distort, and low quality",
       cfg_scale: 0.5,
     },
@@ -341,6 +566,117 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       duration: "6",
       prompt_optimizer: true,
       resolution: "768P",
+    },
+  },
+  {
+    endpointId: "fal-ai/hunyuan-video",
+    label: "Hunyuan Video",
+    description: "Tencent's advanced video generation model with high-quality motion and detail",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "Animate this image with smooth, realistic motion",
+      duration: 4,
+      aspect_ratio: "16:9",
+      resolution: "720p",
+    },
+  },
+  {
+    endpointId: "fal-ai/wan-pro/image-to-video",
+    label: "Wan Pro (Image-to-Video)",
+    description: "Wan-2.1 Pro is a premium image-to-video model that generates high-quality 1080p videos at 30fps with up to 6 seconds duration, delivering exceptional visual quality and motion diversity from images",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "A stylish woman walks down a Tokyo street filled with warm glowing neon and animated city signage.",
+      image_url: "https://fal.media/files/elephant/8kkhB12hEZI2kkbU8pZPA_test.jpeg",
+      enable_safety_checker: true,
+    },
+  },
+  {
+    endpointId: "fal-ai/wan/v2.2-a14b/image-to-video",
+    label: "Wan v2.2-A14B (Image-to-Video)",
+    description: "Wan v2.2-A14B generates high-quality videos from images with extensive customization options including resolution (480p/580p/720p), aspect ratio, frame interpolation, and video quality settings",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      image_url: "https://storage.googleapis.com/falserverless/model_tests/wan/dragon-warrior.jpg",
+      prompt: "The white dragon warrior stands still, eyes full of determination and strength. The camera slowly moves closer or circles around the warrior, highlighting the powerful presence and heroic spirit of the character.",
+      num_frames: 81,
+      frames_per_second: 16,
+      resolution: "720p",
+      aspect_ratio: "auto",
+      num_inference_steps: 27,
+      enable_safety_checker: true,
+      enable_output_safety_checker: false,
+      enable_prompt_expansion: false,
+      acceleration: "regular",
+      guidance_scale: 3.5,
+      guidance_scale_2: 3.5,
+      shift: 5,
+      interpolator_model: "film",
+      num_interpolated_frames: 1,
+      adjust_fps_for_interpolation: true,
+      video_quality: "high",
+      video_write_mode: "balanced",
+      negative_prompt: "",
+    },
+  },
+  {
+    endpointId: "fal-ai/ovi/image-to-video",
+    label: "Ovi (Image-to-Video with Audio)",
+    description: "Ovi can generate videos with audio from image and text inputs. Creates immersive video content with synchronized audio generation",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "An intimate close-up of a European woman with long dark hair as she gently brushes her hair in a softly lit bedroom, her delicate hand moving in the foreground. She looks directly into the camera with calm, focused eyes, a faint serene smile glowing in the warm lamp light. She says, <S>[soft whisper] I am an artificial intelligence.<E>.<AUDCAP>Soft whispering female voice, ASMR tone with gentle breaths, cozy room acoustics, subtle emphasis on \"I am an artificial intelligence\".<ENDAUDCAP>",
+      image_url: "https://storage.googleapis.com/falserverless/example_inputs/ovi_i2v_input.png",
+      negative_prompt: "jitter, bad hands, blur, distortion",
+      num_inference_steps: 30,
+      audio_negative_prompt: "robotic, muffled, echo, distorted",
+      resolution: "992x512", // Ovi requires specific resolution format
+    },
+  },
+  {
+    endpointId: "fal-ai/luma-dream-machine/ray-2/image-to-video",
+    label: "Luma Ray 2 (Image-to-Video)",
+    description: "Ray2 is Luma's state-of-the-art large-scale video generative model capable of creating realistic visuals with natural, coherent motion. Supports multiple resolutions (540p/720p/1080p) and durations (5s/9s)",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "A stylish woman walks down a Tokyo street filled with warm glowing neon and animated city signage.",
+      image_url: "https://fal.media/files/elephant/8kkhB12hEZI2kkbU8pZPA_test.jpeg",
+      aspect_ratio: "16:9",
+      resolution: "540p",
+      duration: "5s",
+      loop: false,
+    },
+  },
+  {
+    endpointId: "fal-ai/wan-25-preview/image-to-video",
+    label: "Wan 2.5 Preview (Image-to-Video)",
+    description: "Wan 2.5 is an advanced image-to-video model featuring motion generation based on text prompts, 480p/720p/1080p resolutions, 5 or 10-second video generation, and optional audio integration. Processing time: 1-3 minutes",
+    category: "video",
+    inputAsset: ["image"],
+    initialInput: {
+      prompt: "The white dragon warrior stands still, eyes full of determination and strength. The camera slowly moves closer or circles around the warrior, highlighting the powerful presence and heroic spirit of the character.",
+      image_url: "https://storage.googleapis.com/falserverless/model_tests/wan/dragon-warrior.jpg",
+      resolution: "1080p",
+      duration: "5",
+      negative_prompt: "low resolution, error, worst quality, low quality, defects",
+      enable_prompt_expansion: true,
+    },
+  },
+  {
+    endpointId: "fal-ai/kling-video/v1/pro/ai-avatar",
+    label: "Kling AI Avatar Pro",
+    description: "Create avatar videos with realistic humans, animals, cartoons, or stylized characters. Requires both an image and audio file for lip-sync generation",
+    category: "video",
+    inputAsset: ["image", "audio"],
+    initialInput: {
+      image_url: "https://storage.googleapis.com/falserverless/example_inputs/kling_ai_avatar_input.jpg",
+      audio_url: "https://v3.fal.media/files/rabbit/9_0ZG_geiWjZOmn9yscO6_output.mp3",
+      prompt: "",
     },
   },
   {
@@ -414,16 +750,16 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     },
   },
   {
-    endpointId: "fal-ai/sync-lipsync",
-    label: "Sync LipSync",
-    description: "Advanced lip sync with multiple sync modes and model versions",
+    endpointId: "fal-ai/sync-lipsync/v2",
+    label: "Sync LipSync 2.0",
+    description: "Generate realistic lipsync animations from audio using advanced algorithms. Supports lipsync-2 and lipsync-2-pro models with multiple sync modes",
     category: "lipsync",
     inputAsset: ["video", "audio"],
     initialInput: {
-      model: "lipsync-1.9.0-beta",
+      model: "lipsync-2", // lipsync-2 or lipsync-2-pro (pro costs 1.67x more)
       video_url: "",
       audio_url: "",
-      sync_mode: "cut_off"
+      sync_mode: "cut_off" // cut_off, loop, bounce, silence, remap
     },
   },
   {
@@ -435,6 +771,43 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
     initialInput: {
       video_url: "",
       frame_type: "first", // "first", "middle", or "last"
+    },
+  },
+  {
+    endpointId: "endframe/minimax-hailuo-02",
+    label: "EndFrame (Minimax)",
+    description: "Create smooth video transitions between two images using Minimax's EndFrame technology. Upload a start frame and end frame, then describe the transition",
+    category: "video",
+    inputAsset: ["image"],
+    supportsMultipleImages: true,
+    maxImages: 2,
+    initialInput: {
+      firstImage: "",
+      secondImage: "",
+      prompt: "Describe the transition between your start and end frames",
+      model: "MiniMax-Hailuo-02"
+    },
+  },
+  {
+    endpointId: "fal-ai/metadata",
+    label: "Metadata Extraction",
+    description: "Extract metadata from media files including images, videos, and audio files",
+    category: "image",
+    inputAsset: ["image", "video", "audio"],
+    initialInput: {
+      file_url: "",
+    },
+  },
+  {
+    endpointId: "fal-ai/veed/lipsync",
+    label: "VEED LipSync",
+    description: "Advanced lip sync technology for creating realistic mouth movements synchronized with audio",
+    category: "lipsync",
+    inputAsset: ["video", "audio"],
+    initialInput: {
+      video_url: "",
+      audio_url: "",
+      sync_mode: "cut_off"
     },
   },
 ];

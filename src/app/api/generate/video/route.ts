@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 // Placeholder function for Luma video generation
 const luma = {
-  generate: async (params: any) => {
+  generate: async (_params: any) => {
     throw new Error("Luma video generation not implemented");
   },
-  generateVideo: async (params: any) => {
+  generateVideo: async (_params: any) => {
     return {
       id: "placeholder",
       state: "completed",

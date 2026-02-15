@@ -358,42 +358,42 @@ function TimelineContent() {
   }
 
   return (
-    <div className="h-screen flex bg-white">
+    <div className="h-screen flex bg-background">
       {/* Left Column - Chat Interface (Yellow section from screenshot) */}
-      <div className="w-80 border-r border-gray-200 flex flex-col">
-        <SimpleChatInterface 
+      <div className="w-80 border-r border-border flex flex-col">
+        <SimpleChatInterface
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}
             onGenerationComplete={() => console.log('Generation complete')}
           onImageInjected={() => console.log('Image injection ready')}
           />
         </div>
-        
+
       {/* Center Column - Dynamic Content Display (Green section from screenshot) */}
       <div className="flex-1 flex flex-col">
         <div ref={contentAreaRef} className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-6">
-            
+
             {generatedContent.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-lg flex items-center justify-center">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No content yet</h3>
-                  <p className="text-gray-500">Start a conversation to generate content</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">No content yet</h3>
+                  <p className="text-muted-foreground">Start a conversation to generate content</p>
                 </div>
               </div>
             ) : (
               generatedContent.map((content, index) => (
-                <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <div key={index} className="bg-card border border-border rounded-lg p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                    <h3 className="text-sm font-medium text-card-foreground truncate">
                       {content.prompt}
                     </h3>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(content.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
@@ -413,11 +413,11 @@ function TimelineContent() {
                               className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-lg"
                             />
                           </ImageSelector>
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                          <div className="absolute inset-0 bg-background/0 group-hover:bg-background/20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                             <div className="flex space-x-2 pointer-events-auto">
                               <button
                                 onClick={() => handleEditImage(image.url)}
-                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                className="h-8 px-3 bg-primary/20 text-primary-foreground border-primary/30 hover:bg-primary/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Edit className="w-4 h-4" />
@@ -425,7 +425,7 @@ function TimelineContent() {
                               </button>
             <button
                                 onClick={() => handleAnimateImage(image.url)}
-                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                className="h-8 px-3 bg-primary/20 text-primary-foreground border-primary/30 hover:bg-primary/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Video className="w-4 h-4" />
@@ -433,7 +433,7 @@ function TimelineContent() {
             </button>
             <button
                                 onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
-                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                className="h-8 px-3 bg-primary/20 text-primary-foreground border-primary/30 hover:bg-primary/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Download className="w-4 h-4" />
@@ -464,14 +464,14 @@ function TimelineContent() {
                             preload="metadata"
                             playsInline
                           />
-                          <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                          <div className="absolute top-3 right-3 bg-background/70 text-foreground px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
                             Video
                           </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                          <div className="absolute inset-0 bg-background/0 group-hover:bg-background/20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                             <div className="flex space-x-2 pointer-events-auto">
             <button
                                 onClick={() => handleEditImage(video.url)}
-                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                className="h-8 px-3 bg-primary/20 text-primary-foreground border-primary/30 hover:bg-primary/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Edit className="w-4 h-4" />
@@ -479,7 +479,7 @@ function TimelineContent() {
             </button>
             <button
                                 onClick={() => handleDownload(video.url, `video-${Date.now()}`, 'video')}
-                                className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                className="h-8 px-3 bg-primary/20 text-primary-foreground border-primary/30 hover:bg-primary/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
                                 disabled={isDownloading}
                               >
                                 <Download className="w-4 h-4" />
@@ -494,16 +494,16 @@ function TimelineContent() {
                       })}
                     </div>
                   ) : (
-                    <div className="text-gray-500 text-sm">No media content generated</div>
+                    <div className="text-muted-foreground text-sm">No media content generated</div>
                   )}
-                  
+
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Model: {content.model}</span>
+                    <span className="text-xs text-muted-foreground">Model: {content.model}</span>
                     <div className="flex space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600 text-sm">
+                      <button className="text-muted-foreground hover:text-foreground text-sm">
                         Share
                       </button>
-                      <button className="text-gray-400 hover:text-gray-600 text-sm">
+                      <button className="text-muted-foreground hover:text-foreground text-sm">
                         Delete
             </button>
                     </div>
@@ -516,31 +516,31 @@ function TimelineContent() {
       </div>
 
       {/* Right Column - Gallery (Reference section from screenshot) */}
-      <div className={`relative border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
+      <div className={`relative border-l border-border flex flex-col transition-all duration-300 ease-in-out ${
         isGalleryCollapsed ? 'w-12' : 'w-64'
       }`}>
         {/* Collapse/Expand Button */}
         <button
           onClick={() => setIsGalleryCollapsed(!isGalleryCollapsed)}
-          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-l-lg px-2 py-4 shadow-sm hover:shadow-md transition-shadow"
+          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-background border border-border rounded-l-lg px-2 py-4 shadow-sm hover:shadow-md transition-shadow"
           title={isGalleryCollapsed ? 'Expand Gallery' : 'Collapse Gallery'}
         >
-          <svg 
-            className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+          <svg
+            className={`w-4 h-4 text-foreground transition-transform duration-200 ${
               isGalleryCollapsed ? 'rotate-180' : ''
-            }`} 
-            fill="none" 
-            stroke="currentColor" 
+            }`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        
+
         {!isGalleryCollapsed && (
           <>
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-sm font-medium text-gray-900">Gallery</h2>
+            <div className="p-4 border-b border-border">
+              <h2 className="text-sm font-medium text-foreground">Gallery</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
               <GalleryView 
@@ -562,11 +562,11 @@ function TimelineContent() {
           </div>
           </>
         )}
-        
+
         {/* Gallery Tab when collapsed */}
         {isGalleryCollapsed && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="transform -rotate-90 text-xs font-medium text-gray-500 whitespace-nowrap">
+            <div className="transform -rotate-90 text-xs font-medium text-muted-foreground whitespace-nowrap">
               Gallery
             </div>
           </div>

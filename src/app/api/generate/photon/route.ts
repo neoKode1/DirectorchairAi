@@ -15,12 +15,6 @@ interface PhotonRequestBody {
 export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
-type Context = {
-  params: Promise<{
-    id: string;
-  }>;
-};
-
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as PhotonRequestBody;
@@ -96,9 +90,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest, { params }: Context) {
+export async function GET(request: NextRequest) {
   try {
-    const { id } = await params;
+    // Get id from query params instead
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
     if (!id) {
       return NextResponse.json(
         { error: "Generation ID is required" },

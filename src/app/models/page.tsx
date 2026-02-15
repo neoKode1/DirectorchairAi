@@ -1,18 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { button as Button } from "@/components/ui/button";
 import { AVAILABLE_ENDPOINTS } from "@/lib/fal";
-import { 
-  Image as ImageIcon, 
-  Video as VideoIcon, 
-  Music as MusicIcon, 
+import {
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Music as MusicIcon,
   Mic as MicIcon,
-  Sparkles,
   MessageSquare
 } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
 

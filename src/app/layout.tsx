@@ -4,6 +4,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Link from "next/link";
 import { Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+import { ThemeToggle } from "@/components/theme-toggle";
 // import { AuthProvider } from "@/components/providers/session-provider"; // Removed - component deleted
 
 import { cn } from "@/lib/utils";
@@ -25,13 +27,18 @@ export default function RootLayout({
       <body
         className={cn(
           inter.className,
-          "antialiased",
-          "dark:bg-background"
+          "antialiased"
         )}
         suppressHydrationWarning
       >
-        {/* <AuthProvider> Removed - component deleted */}
-          <div className="flex flex-col min-h-screen">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* <AuthProvider> Removed - component deleted */}
+          <div className="flex flex-col min-h-screen bg-background text-foreground">
             <header className="mobile-header border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="mobile-container flex h-16 sm:h-18 lg:h-20 max-w-screen-2xl items-center">
                 <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -42,6 +49,7 @@ export default function RootLayout({
                     <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorChair AI</h1>
                   </Link>
                   <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
+                    <ThemeToggle />
                     <Link
                       href="https://deeptech.ai"
                       target="_blank"
@@ -58,7 +66,8 @@ export default function RootLayout({
           </div>
           <Analytics />
           <SpeedInsights />
-        {/* </AuthProvider> */}
+          {/* </AuthProvider> */}
+        </ThemeProvider>
       </body>
     </html>
   );

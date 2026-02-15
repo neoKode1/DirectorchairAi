@@ -63,7 +63,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [showFloatingDialog, setShowFloatingDialog] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
-  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('none');
+  const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/sora-2/image-to-video');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -820,34 +820,42 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">DirectorChair AI</h2>
-            <p className="text-sm text-gray-500">Describe your idea to generate content</p>
+            <h2 className="text-lg font-semibold text-foreground">DirectorChair AI</h2>
+            <p className="text-sm text-muted-foreground">Describe your idea to generate content</p>
           </div>
           <div className="flex items-center gap-2">
             {/* Model Preferences Dropdown */}
             <div className="flex items-center gap-2">
-              <Monitor className="w-4 h-4 text-gray-500" />
+              <Monitor className="w-4 h-4 text-muted-foreground" />
               <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
                 <SelectTrigger className="w-40 h-8 text-xs">
                   <SelectValue placeholder="Video Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Default</SelectItem>
-                  <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
-                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default)</SelectItem>
+                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro</SelectItem>
+                  <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast</SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro</SelectItem>
+                  <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro</SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro</SelectItem>
+                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
+                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
+                  <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro</SelectItem>
+                  <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2</SelectItem>
+                  <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video</SelectItem>
+                  <SelectItem value="none">None (Ask me)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             {messages.length > 0 && (
               <button
                 onClick={clearChatHistory}
-                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-muted transition-colors"
                 title="Clear chat history"
               >
                 Clear
@@ -860,13 +868,13 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500">
+          <div className="text-center text-muted-foreground">
             <p className="text-sm">Start a conversation to generate content</p>
           </div>
         ) : (
           messages.map((message) => (
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] ${message.type === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg p-3`}>
+              <div className={`max-w-[80%] ${message.type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'} rounded-lg p-3`}>
                 <p className="text-sm">{message.content}</p>
                 
                 
@@ -879,18 +887,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                           alt={message.content}
                           className="w-full h-auto rounded"
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100">
                           <div className="flex space-x-2">
-                            <button 
+                            <button
                               onClick={() => handleDownload(message.media!.url, message.media!.filename || 'download')}
-                              className="bg-white text-gray-900 px-2 py-1 rounded text-xs font-medium hover:bg-gray-100"
+                              className="bg-card text-card-foreground px-2 py-1 rounded text-xs font-medium hover:bg-muted"
                             >
                               <Download className="w-3 h-3 inline mr-1" />
                               Download
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleVary(message.media!.url, message.content)}
-                              className="bg-white text-gray-900 px-2 py-1 rounded text-xs font-medium hover:bg-gray-100"
+                              className="bg-card text-card-foreground px-2 py-1 rounded text-xs font-medium hover:bg-muted"
                             >
                               <Shuffle className="w-3 h-3 inline mr-1" />
                               Vary
@@ -919,7 +927,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         )}
         {isGenerating && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
+            <div className="bg-muted text-foreground rounded-lg p-3">
               <div className="flex items-center space-x-2">
                 <img 
                   src={getModelIcon(currentModel)} 
@@ -936,8 +944,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       {/* Suggestions */}
       {showSuggestions && messages.length === 0 && (
-        <div className="p-4 border-t border-gray-200">
-          <p className="text-sm font-medium text-gray-700 mb-2">Suggestions:</p>
+        <div className="p-4 border-t border-border">
+          <p className="text-sm font-medium text-foreground mb-2">Suggestions:</p>
           <div className="space-y-2">
             {[
               "Create a cinematic shot with dramatic lighting",
@@ -949,7 +957,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               <button
                 key={index}
                 onClick={() => setUserInput(suggestion)}
-                className="block w-full text-left text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 p-2 rounded transition-colors"
+                className="block w-full text-left text-sm text-muted-foreground hover:text-foreground hover:bg-muted p-2 rounded transition-colors"
               >
                 {suggestion}
               </button>
@@ -959,18 +967,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-border">
         {/* Uploaded Images Preview */}
         {uploadedImages.length > 0 && (
           <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</p>
+            <p className="text-sm font-medium text-foreground mb-2">Uploaded Images:</p>
             <div className="flex flex-wrap gap-2">
               {uploadedImages.map((image, index) => (
                 <div key={index} className="relative group">
                   <img 
                     src={image} 
                     alt={`Uploaded ${index + 1}`}
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors"
+                    className="w-20 h-20 object-cover rounded-lg border-2 border-border hover:border-primary transition-colors"
                   />
                   <button
                     onClick={() => handleRemoveImage(index)}
@@ -991,7 +999,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 p-3 text-gray-500 hover:text-blue-600 border border-gray-200 hover:border-blue-300 rounded-lg hover:bg-blue-50 transition-all duration-200 group"
+              className="flex-shrink-0 p-3 text-muted-foreground hover:text-primary border border-border hover:border-primary rounded-lg hover:bg-muted transition-all duration-200 group"
               title="Upload images"
             >
               <div className="flex flex-col items-center">
@@ -1025,8 +1033,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Describe your idea... or drag and drop images here (Press Enter to send)"
-                  className={`min-h-[80px] resize-none border-gray-300 focus:border-blue-400 focus:ring-blue-400 pr-12 transition-all duration-200 ${
-                    isDragOver ? 'border-blue-400 bg-blue-50' : ''
+                  className={`min-h-[80px] resize-none border-border focus:border-primary focus:ring-primary pr-12 transition-all duration-200 ${
+                    isDragOver ? 'border-primary bg-muted' : ''
                   }`}
                   disabled={isGenerating}
                 />
@@ -1049,7 +1057,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           </div>
 
           {/* Help Text */}
-          <div className="flex justify-between items-center text-xs text-gray-500">
+          <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span>I'll automatically optimize your prompt for best results</span>
             <span>Supports: JPG, PNG, WebP</span>
           </div>
@@ -1110,17 +1118,25 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     <Label htmlFor="video-model">Preferred Video Model</Label>
                     <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select video model (optional)" />
+                        <SelectValue placeholder="Select video model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">None (prompt to select)</SelectItem>
-                        <SelectItem value="fal-ai/veo3/image-to-video">Veo 3 (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (Image-to-Video)</SelectItem>
-                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02 (Image-to-Video)</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default) - OpenAI's latest</SelectItem>
+                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro - Premium quality, 1080p</SelectItem>
+                        <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast - Google's latest</SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro - Cinematic visuals, custom elements, voice</SelectItem>
+                        <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro - Start/End frame animation, 3-15s</SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro - Top-tier motion</SelectItem>
+                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
+                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
+                        <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro - 1080p at 30fps</SelectItem>
+                        <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2 - Realistic motion</SelectItem>
+                        <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video - Tencent</SelectItem>
+                        <SelectItem value="none">None (Ask me each time)</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-gray-500">
-                      Image-to-video models only. You'll be prompted to choose one when animating images.
+                    <p className="text-xs text-muted-foreground">
+                      Default video model for image-to-video generation. Set to "None" to be prompted each time.
                     </p>
                   </div>
                 </div>
@@ -1140,7 +1156,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           className="hidden"
         />
         
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           Chat Mode can make mistakes. Double check responses.
         </p>
       </div>
@@ -1150,12 +1166,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
           showFloatingDialog ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
-          <div className="bg-white border border-gray-200 rounded-xl shadow-2xl p-4 max-w-md mx-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-4 max-w-md mx-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-800">💡 Quick Actions</h3>
+              <h3 className="text-sm font-semibold text-card-foreground">💡 Quick Actions</h3>
               <button
                 onClick={() => setShowFloatingDialog(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1171,7 +1187,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
+            <p className="text-xs text-muted-foreground mt-2 text-center">
               Click any suggestion to animate your image with video
             </p>
           </div>

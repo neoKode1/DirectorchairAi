@@ -5,19 +5,17 @@ import { Card } from "@/components/ui/card";
 import { button as Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Download, 
-  Play, 
+import {
+  Search,
+  Grid3X3,
+  List,
+  Download,
+  Play,
   Image as ImageIcon,
   Video as VideoIcon,
   Music as MusicIcon,
   FileText as FileTextIcon,
   Calendar,
-  Clock,
   ArrowLeft,
   Fullscreen,
   Share2

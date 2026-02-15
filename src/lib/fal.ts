@@ -120,6 +120,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: true,
     maxStyleStrength: 1.0,
   },
+  "fal-ai/flux-2-flex": {
+    supportsStyleReference: true,
+    supportsStylePresets: true,
+    maxStyleStrength: 1.0,
+  },
   "fal-ai/qwen-image-edit": {
     supportsStyleReference: false,
     supportsStylePresets: false,
@@ -197,6 +202,23 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       enable_safety_checker: true,
       output_format: "jpeg",
       seed: undefined, // Optional seed for reproducibility
+    },
+  },
+  {
+    endpointId: "fal-ai/flux-2-flex",
+    label: "FLUX 2 Flex",
+    description: "Text-to-image generation with FLUX.2 [flex] from Black Forest Labs. Features adjustable inference steps and guidance scale for fine-tuned control. Enhanced typography and text rendering capabilities",
+    category: "image",
+    initialInput: {
+      prompt: "A high-quality 3D render of a cute fluffy monster eating a giant donut; the fur simulation is incredibly detailed, the donut glaze is sticky and reflective, bright daylight lighting, shallow depth of field.",
+      image_size: "landscape_4_3",
+      enable_prompt_expansion: true,
+      safety_tolerance: "2",
+      enable_safety_checker: true,
+      output_format: "jpeg",
+      guidance_scale: 3.5,
+      num_inference_steps: 28,
+      sync_mode: false,
     },
   },
   {

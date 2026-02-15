@@ -130,6 +130,11 @@ export const MODEL_STYLE_CONFIG = {
     supportsStylePresets: false,
     maxStyleStrength: 0,
   },
+  "xai/grok-imagine-video/text-to-video": {
+    supportsStyleReference: false,
+    supportsStylePresets: false,
+    maxStyleStrength: 0,
+  },
   "fal-ai/ffmpeg-api/extract-frame": {
     supportsStyleReference: false,
     supportsStylePresets: false,
@@ -380,6 +385,18 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       num_images: 1,
       output_format: "jpeg",
       sync_mode: false,
+    },
+  },
+  {
+    endpointId: "xai/grok-imagine-video/text-to-video",
+    label: "Grok Imagine Video",
+    description: "Generate videos with audio from text using xAI's Grok Imagine Video. Supports 1-15s duration, multiple aspect ratios, and 480p/720p resolution",
+    category: "video",
+    initialInput: {
+      prompt: "Anime schoolgirl bursting out of house door, cherry blossoms blowing, morning light, speed lines indicating rush, chibi-ready expressions, classic shojo aesthetic, vibrant colors",
+      duration: 6,
+      aspect_ratio: "16:9",
+      resolution: "720p",
     },
   },
   {

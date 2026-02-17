@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/theme-toggle";
-// import { AuthProvider } from "@/components/providers/session-provider"; // Removed - component deleted
 
 import { cn } from "@/lib/utils";
 
@@ -37,54 +36,68 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* <AuthProvider> Removed - component deleted */}
           <div className="flex flex-col min-h-screen bg-background text-foreground">
             <header className="mobile-header border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="mobile-container flex h-16 sm:h-18 lg:h-20 max-w-screen-2xl items-center">
-                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+              <div className="flex h-14 sm:h-16 lg:h-[60px] max-w-screen-2xl mx-auto items-center px-4 sm:px-6 lg:px-8">
+                {/* Left: Brand */}
+                <Link
+                  href="/"
+                  className="flex items-center hover:opacity-80 transition-opacity shrink-0"
+                >
+                  <span className="text-sm sm:text-base lg:text-lg font-extralight tracking-[0.25em] text-foreground uppercase">
+                    DIRECTORCHAIR AI
+                  </span>
+                </Link>
+
+                {/* Center: Nav Links */}
+                <nav className="flex-1 flex items-center justify-center gap-6 sm:gap-8 lg:gap-12 text-[11px] sm:text-xs lg:text-sm font-light tracking-[0.15em] uppercase">
                   <Link
-                    href="/"
-                    className="mr-4 sm:mr-6 flex items-center space-x-2 hover:opacity-80 mobile-touch-target"
+                    href="/timeline"
+                    className="transition-colors hover:text-foreground text-foreground/50 whitespace-nowrap"
                   >
-                    <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorChair AI</h1>
+                    Studio
                   </Link>
-                  <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
-                    <Link
-                      href="/timeline"
-                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
-                    >
-                      Studio
-                    </Link>
-                    <Link
-                      href="/expo"
-                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
-                    >
-                      EXPO
-                    </Link>
-                    <Link
-                      href="/script-maker"
-                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
-                    >
-                      Script Maker
-                    </Link>
-                    <ThemeToggle />
-                    <Link
-                      href="https://deeptech.ai"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
-                    >
-                      Deeptech AI
-                    </Link>
-                  </nav>
-                </div>
+                  <Link
+                    href="/expo"
+                    className="transition-colors hover:text-foreground text-foreground/50 whitespace-nowrap"
+                  >
+                    Expo
+                  </Link>
+                  <Link
+                    href="/script-maker"
+                    className="transition-colors hover:text-foreground text-foreground/50 whitespace-nowrap"
+                  >
+                    Script Maker
+                  </Link>
+                  <Link
+                    href="/personas"
+                    className="transition-colors hover:text-foreground text-foreground/50 whitespace-nowrap"
+                  >
+                    Personas
+                  </Link>
+                  <ThemeToggle />
+                </nav>
+
+                {/* Right: Deep Tech AI */}
+                <Link
+                  href="https://deeptech.ai"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:opacity-80 transition-opacity shrink-0"
+                >
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center">
+                    <span className="text-white font-bold text-[8px] sm:text-[10px]">DT</span>
+                  </div>
+                  <span className="hidden sm:inline text-[10px] lg:text-xs font-light tracking-[0.1em] text-foreground/40 uppercase">
+                    Deep Tech AI
+                  </span>
+                </Link>
               </div>
             </header>
             <main className="flex-1 mobile-main">{children}</main>
           </div>
           <Analytics />
           <SpeedInsights />
-          {/* </AuthProvider> */}
         </ThemeProvider>
       </body>
     </html>

@@ -1168,39 +1168,39 @@ function ScriptMakerContent() {
   }
 
   return (
-    <div className="h-screen flex bg-white">
+    <div className="h-screen flex bg-background">
       {/* Left Column - Project Setup */}
-      <div className="w-80 border-r border-gray-200 flex flex-col overflow-y-auto">
-        <div className="p-4 border-b border-gray-200">
+      <div className="w-80 border-r border-border flex flex-col overflow-y-auto">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2 mb-2">
             <Film className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">ScriptMaker</h2>
+            <h2 className="text-lg font-semibold text-foreground">ScriptMaker</h2>
           </div>
-          <p className="text-xs text-gray-500">AI-powered movie script generator</p>
+          <p className="text-xs text-muted-foreground">AI-powered movie script generator</p>
         </div>
 
         {/* Step 1: Movie Idea */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 1 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 1: Movie Idea</h3>
+        <div className={`p-4 border-b border-border ${currentStep >= 1 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 1: Movie Idea</h3>
           
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Movie Title</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Movie Title</label>
               <input
                 type="text"
                 value={movieTitle}
                 onChange={(e) => setMovieTitle(e.target.value)}
                 placeholder="Enter movie title"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Genre</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Genre</label>
               <select
                 value={genreIdea}
                 onChange={(e) => setGenreIdea(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
               >
                 <option value="">Select Genre</option>
                 <option value="Action">Action</option>
@@ -1215,15 +1215,15 @@ function ScriptMakerContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Your Plot Ideas</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Your Plot Ideas</label>
               <textarea
                 value={userPlotInput}
                 onChange={(e) => setUserPlotInput(e.target.value)}
                 placeholder="Type your movie plot ideas here... (stream of consciousness is fine!)"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-background text-foreground"
                 rows={4}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 💡 Just start typing - Claude will enhance and structure your ideas below
               </p>
             </div>
@@ -1231,7 +1231,7 @@ function ScriptMakerContent() {
             {/* Claude Enhanced Plot Output */}
             {(isAnalyzingPlot || claudeEnhancedPlot) && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center justify-between">
+                <label className="block text-xs font-medium text-foreground/80 mb-1 flex items-center justify-between">
                   <span>Claude Enhanced Plot</span>
                   {isAnalyzingPlot && (
                     <span className="text-xs text-purple-600 flex items-center gap-1">
@@ -1248,39 +1248,39 @@ function ScriptMakerContent() {
                     </span>
                   )}
                 </label>
-                <div className="w-full px-3 py-2 text-sm border border-purple-200 bg-purple-50 rounded-lg min-h-[100px] max-h-[200px] overflow-y-auto">
+                <div className="w-full px-3 py-2 text-sm border border-purple-500/30 bg-purple-500/10 rounded-lg min-h-[100px] max-h-[200px] overflow-y-auto">
                   {isAnalyzingPlot ? (
-                    <div className="flex items-center justify-center h-24 text-gray-400">
+                    <div className="flex items-center justify-center h-24 text-muted-foreground/60">
                       <RefreshCw className="w-5 h-5 animate-spin mr-2" />
                       <span>Claude is enhancing your plot...</span>
                     </div>
                   ) : claudeEnhancedPlot ? (
-                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{claudeEnhancedPlot}</p>
+                    <p className="text-foreground/80 whitespace-pre-wrap leading-relaxed">{claudeEnhancedPlot}</p>
                   ) : null}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   ✨ This is the enhanced version that will be used for character and screenplay generation
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Era/Setting</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Era/Setting</label>
               <input
                 type="text"
                 value={eraSetting}
                 onChange={(e) => setEraSetting(e.target.value)}
                 placeholder="e.g., Present Day, 1920s, Medieval"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Photo Style</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Photo Style</label>
               <select
                 value={photoStyle}
                 onChange={(e) => setPhotoStyle(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
               >
                 <option value="cinematic">Cinematic</option>
                 <option value="vhs-aesthetic">VHS Aesthetic</option>
@@ -1293,7 +1293,7 @@ function ScriptMakerContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Duration (minutes)</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Duration (minutes)</label>
               <input
                 type="number"
                 value={minutesToExtract || ''}
@@ -1303,7 +1303,7 @@ function ScriptMakerContent() {
                 }}
                 min="1"
                 max="30"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
               />
             </div>
 
@@ -1318,10 +1318,10 @@ function ScriptMakerContent() {
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
+                    <div className="w-full border-t border-border"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-white text-gray-500">OR</span>
+                    <span className="px-2 bg-background text-muted-foreground">OR</span>
                   </div>
                 </div>
 
@@ -1334,11 +1334,11 @@ function ScriptMakerContent() {
                       className="hidden"
                       id="script-upload"
                     />
-                    <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 bg-white border-2 border-purple-600 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer text-center">
+                    <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-background border-2 border-purple-600 dark:border-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer text-center">
                       📄 Upload Your Own Script
                     </div>
                   </label>
-                  <p className="text-xs text-gray-500 text-center">
+                  <p className="text-xs text-muted-foreground text-center">
                     Skip screenplay generation and jump to shot list
                   </p>
                 </div>
@@ -1348,9 +1348,9 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 2: Screenplay */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 2 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 2: Screenplay</h3>
-          <p className="text-xs text-gray-500 mb-3">
+        <div className={`p-4 border-b border-border ${currentStep >= 2 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 2: Screenplay</h3>
+          <p className="text-xs text-muted-foreground mb-3">
             {currentStep < 2 ? 'Complete Step 1 to unlock' : 'Generate full screenplay'}
           </p>
           
@@ -1366,10 +1366,10 @@ function ScriptMakerContent() {
           
           {currentStep >= 2 && finalScript && extractedCharacters.length > 0 && (
             <div className="space-y-2">
-              <div className="p-2 bg-green-50 border border-green-200 rounded text-xs text-green-700">
+              <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-600 dark:text-green-400">
                 ✅ Screenplay complete
               </div>
-              <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+              <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-600 dark:text-blue-400">
                 Found {extractedCharacters.length} character{extractedCharacters.length > 1 ? 's' : ''}
               </div>
               <button
@@ -1383,27 +1383,27 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 3: Character Image Upload */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 3 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 3: Character Images</h3>
-          <p className="text-xs text-gray-500 mb-3">
+        <div className={`p-4 border-b border-border ${currentStep >= 3 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 3: Character Images</h3>
+          <p className="text-xs text-muted-foreground mb-3">
             {currentStep < 3 ? 'Complete Step 2 to unlock' : 'Upload images for each character'}
           </p>
           
           {currentStep >= 3 && extractedCharacters.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-600 mb-2">
+              <p className="text-xs text-muted-foreground mb-2">
                 Upload reference images for consistency:
               </p>
               {extractedCharacters.map((charName, index) => {
                 const hasImage = characterReferenceImages.some(img => img.characterName === charName);
                 return (
-                  <div key={index} className={`p-2 rounded border ${hasImage ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div key={index} className={`p-2 rounded border ${hasImage ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-700">{charName}</span>
+                      <span className="text-xs font-medium text-foreground/80">{charName}</span>
                       {hasImage && <span className="text-xs text-green-600">✓</span>}
                     </div>
                     <label className="block">
-                      <div className="text-xs px-2 py-1 bg-white border border-gray-300 rounded cursor-pointer hover:bg-gray-50 text-center">
+                      <div className="text-xs px-2 py-1 bg-card border border-input rounded cursor-pointer hover:bg-muted text-center text-foreground">
                         {hasImage ? 'Update Image' : 'Upload Image'}
                       </div>
                       <input
@@ -1430,15 +1430,15 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 4: Style Reference */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 4 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 4: Style Reference</h3>
-          <p className="text-xs text-gray-500 mb-3">
+        <div className={`p-4 border-b border-border ${currentStep >= 4 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 4: Style Reference</h3>
+          <p className="text-xs text-muted-foreground mb-3">
             {currentStep < 4 ? 'Complete Step 3 to unlock' : 'Upload a style reference image to guide all scene generations'}
           </p>
           
           {currentStep >= 4 && !styleReferenceImage && (
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-input rounded-lg p-6 text-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -1451,13 +1451,13 @@ function ScriptMakerContent() {
                   htmlFor="style-upload"
                   className="cursor-pointer flex flex-col items-center gap-2"
                 >
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    <Video className="w-6 h-6 text-gray-400" />
+                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                    <Video className="w-6 h-6 text-muted-foreground/60" />
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     {isAnalyzingStyle ? 'Analyzing style...' : 'Upload Style Reference Image'}
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-muted-foreground/60">
                     Upload an image that represents the visual style you want for all scenes
                   </div>
                 </label>
@@ -1467,19 +1467,19 @@ function ScriptMakerContent() {
           
           {currentStep >= 4 && styleReferenceImage && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <Video className="w-4 h-4 text-green-600" />
+              <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-green-800">Style Reference Added</div>
-                  <div className="text-xs text-green-600">{styleReferenceImage.fileName}</div>
+                  <div className="text-sm font-medium text-green-700 dark:text-green-300">Style Reference Added</div>
+                  <div className="text-xs text-green-600 dark:text-green-400">{styleReferenceImage.fileName}</div>
                 </div>
               </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-xs text-gray-600 mb-2">Style Analysis:</div>
-                <div className="text-sm text-gray-800">{styleReferenceImage.analysis}</div>
+
+              <div className="bg-muted rounded-lg p-4">
+                <div className="text-xs text-muted-foreground mb-2">Style Analysis:</div>
+                <div className="text-sm text-foreground">{styleReferenceImage.analysis}</div>
               </div>
               
               <button
@@ -1493,9 +1493,9 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 5: Shot List Breakdown */}
-        <div className={`p-4 border-b border-gray-200 ${currentStep >= 5 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 5: Shot List</h3>
-          <p className="text-xs text-gray-500 mb-3">
+        <div className={`p-4 border-b border-border ${currentStep >= 5 ? '' : 'opacity-50'}`}>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 5: Shot List</h3>
+          <p className="text-xs text-muted-foreground mb-3">
             {currentStep < 5 ? 'Complete Step 4 to unlock' : 'Extract shots from screenplay'}
           </p>
           
@@ -1512,8 +1512,8 @@ function ScriptMakerContent() {
 
         {/* Step 6: Generate Visual Scenes */}
         <div className={`p-4 ${currentStep >= 6 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Step 6: Visual Scenes</h3>
-          <p className="text-xs text-gray-500 mb-3">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Step 6: Visual Scenes</h3>
+          <p className="text-xs text-muted-foreground mb-3">
             {currentStep < 6 ? 'Complete Step 5 to unlock' : 'Generate scene images (12 per minute)'}
           </p>
           
@@ -1536,38 +1536,38 @@ function ScriptMakerContent() {
 
       {/* Center Column - Dynamic Content Display */}
       <div className="flex-1 flex flex-col">
-        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto bg-gray-50">
+        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto bg-muted">
           {currentStep === 1 && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
-                <div className="w-20 h-20 mx-auto mb-6 bg-purple-100 rounded-full flex items-center justify-center">
+                <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/10 rounded-full flex items-center justify-center">
                   <Film className="w-10 h-10 text-purple-600" />
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-900 mb-3">Welcome to ScriptMaker</h3>
-                <p className="text-gray-600 mb-6">
-                  Transform your movie ideas into complete screenplays with visual storyboards. 
+                <h3 className="text-2xl font-semibold text-foreground mb-3">Welcome to ScriptMaker</h3>
+                <p className="text-muted-foreground mb-6">
+                  Transform your movie ideas into complete screenplays with visual storyboards.
                   Upload character images for consistency across all scenes.
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
                     <div className="text-xl font-bold text-purple-600 mb-1">1</div>
-                    <div className="text-xs font-medium text-gray-700">Movie Idea</div>
+                    <div className="text-xs font-medium text-foreground/80">Movie Idea</div>
                   </div>
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
                     <div className="text-xl font-bold text-purple-600 mb-1">2</div>
-                    <div className="text-xs font-medium text-gray-700">Screenplay</div>
+                    <div className="text-xs font-medium text-foreground/80">Screenplay</div>
                   </div>
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
                     <div className="text-xl font-bold text-purple-600 mb-1">3</div>
-                    <div className="text-xs font-medium text-gray-700">Character Upload</div>
+                    <div className="text-xs font-medium text-foreground/80">Character Upload</div>
                   </div>
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
                     <div className="text-xl font-bold text-purple-600 mb-1">4</div>
-                    <div className="text-xs font-medium text-gray-700">Shot List</div>
+                    <div className="text-xs font-medium text-foreground/80">Shot List</div>
                   </div>
-                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 col-span-2">
+                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border col-span-2">
                     <div className="text-xl font-bold text-purple-600 mb-1">5</div>
-                    <div className="text-xs font-medium text-gray-700">Visual Generation</div>
+                    <div className="text-xs font-medium text-foreground/80">Visual Generation</div>
                   </div>
                 </div>
               </div>
@@ -1577,11 +1577,11 @@ function ScriptMakerContent() {
           {finalScript && (
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">Screenplay</h2>
-                <span className="text-sm text-gray-500">{minutesToExtract} minute screenplay</span>
+                <h2 className="text-2xl font-bold text-foreground">Screenplay</h2>
+                <span className="text-sm text-muted-foreground">{minutesToExtract} minute screenplay</span>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-h-[70vh] overflow-y-auto">
-                <pre className="text-gray-800 font-mono text-sm whitespace-pre-wrap leading-relaxed">
+              <div className="bg-card rounded-lg shadow-sm border border-border p-8 max-h-[70vh] overflow-y-auto">
+                <pre className="text-foreground font-mono text-sm whitespace-pre-wrap leading-relaxed">
                   {finalScript}
                 </pre>
               </div>
@@ -1590,8 +1590,8 @@ function ScriptMakerContent() {
 
           {currentStep === 3 && extractedCharacters.length > 0 && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Upload Character Images</h2>
-              <p className="text-gray-600 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Upload Character Images</h2>
+              <p className="text-muted-foreground mb-6">
                 Upload reference images for each character found in your screenplay. These will ensure visual consistency across all generated scenes.
               </p>
               
@@ -1600,7 +1600,7 @@ function ScriptMakerContent() {
                   const charImage = characterReferenceImages.find(img => img.characterName === charName);
                   
                   return (
-                    <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div key={index} className="bg-card rounded-lg shadow-sm border border-border p-6">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-bold text-purple-600">{charName}</h3>
                         {charImage && (
@@ -1620,11 +1620,11 @@ function ScriptMakerContent() {
                             alt={charName}
                             className="w-full h-48 object-cover rounded-lg"
                           />
-                          <div className="p-3 bg-gray-50 rounded text-xs text-gray-600">
+                          <div className="p-3 bg-muted rounded text-xs text-muted-foreground">
                             <strong>Analysis:</strong> {charImage.analysis.substring(0, 150)}...
                           </div>
                           <label className="block">
-                            <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 bg-white border border-purple-600 rounded-lg cursor-pointer hover:bg-purple-50 text-center transition-colors">
+                            <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-card border border-purple-600 dark:border-purple-400 rounded-lg cursor-pointer hover:bg-purple-500/10 text-center transition-colors">
                               Update Image
                             </div>
                             <input
@@ -1638,11 +1638,11 @@ function ScriptMakerContent() {
                         </div>
                       ) : (
                         <label className="block">
-                          <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-colors flex flex-col items-center justify-center gap-2">
-                            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-48 border-2 border-dashed border-input rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-500/10 transition-colors flex flex-col items-center justify-center gap-2">
+                            <svg className="w-12 h-12 text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                               {isAnalyzingImage ? 'Analyzing...' : 'Click to upload'}
                             </span>
                           </div>
@@ -1660,8 +1660,8 @@ function ScriptMakerContent() {
                 })}
               </div>
               
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
+              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
                   <strong>💡 Tip:</strong> Uploaded {characterReferenceImages.filter(img => img.characterName).length}/{extractedCharacters.length} characters. 
                   {characterReferenceImages.filter(img => img.characterName).length === 0 && ' Upload at least one character to proceed.'}
                 </p>
@@ -1671,8 +1671,8 @@ function ScriptMakerContent() {
 
           {currentStep >= 4 && minutes.length > 0 && (
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Visual Storyboard</h2>
-              <p className="text-sm text-gray-600 mb-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Visual Storyboard</h2>
+              <p className="text-sm text-muted-foreground mb-6">
                 Shot-by-shot breakdown ready for visual generation with Nano Banana Pro
               </p>
               
@@ -1683,22 +1683,22 @@ function ScriptMakerContent() {
                     <button
                       onClick={() => handleGenerateAllShots(minuteIndex)}
                       disabled={isGenerating}
-                      className="text-xs px-3 py-1 bg-white text-purple-600 rounded hover:bg-purple-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-xs px-3 py-1 bg-white/90 dark:bg-white/20 text-purple-600 dark:text-purple-300 rounded hover:bg-white dark:hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Generate All 12 Shots
                     </button>
                   </div>
-                  <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-card rounded-b-lg shadow-sm border border-border p-6">
                     {minute.script && (
-                      <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Scene Overview</h4>
-                        <p className="text-sm text-gray-600">{minute.script}</p>
+                      <div className="mb-4 p-4 bg-muted rounded-lg">
+                        <h4 className="text-sm font-semibold text-foreground/80 mb-2">Scene Overview</h4>
+                        <p className="text-sm text-muted-foreground">{minute.script}</p>
                       </div>
                     )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {minute.shots && minute.shots.map((shot: any, shotIndex: number) => (
-                        <div key={shotIndex} className="border border-gray-200 rounded-lg p-4 hover:border-purple-400 transition-colors">
+                        <div key={shotIndex} className="border border-border rounded-lg p-4 hover:border-purple-400 transition-colors">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-purple-600">Shot {shot.shotNumber || shotIndex + 1}/12</span>
                             <button
@@ -1758,15 +1758,15 @@ function ScriptMakerContent() {
                               </div>
                             </div>
                           ) : (
-                            <div className="w-full aspect-video bg-gray-100 rounded mb-2 flex items-center justify-center">
-                              <Film className="w-8 h-8 text-gray-400" />
+                            <div className="w-full aspect-video bg-muted rounded mb-2 flex items-center justify-center">
+                              <Film className="w-8 h-8 text-muted-foreground/60" />
                             </div>
                           )}
                           
-                          {shot.shotType && <p className="text-xs text-gray-700 mb-1"><strong>Type:</strong> {shot.shotType}</p>}
-                          {shot.camera && <p className="text-xs text-gray-700 mb-1"><strong>Camera:</strong> {shot.camera}</p>}
-                          {shot.action && <p className="text-xs text-gray-600 mb-1">{shot.action}</p>}
-                          {shot.lighting && <p className="text-xs text-gray-500 mb-1"><strong>Lighting:</strong> {shot.lighting}</p>}
+                          {shot.shotType && <p className="text-xs text-foreground/80 mb-1"><strong>Type:</strong> {shot.shotType}</p>}
+                          {shot.camera && <p className="text-xs text-foreground/80 mb-1"><strong>Camera:</strong> {shot.camera}</p>}
+                          {shot.action && <p className="text-xs text-muted-foreground mb-1">{shot.action}</p>}
+                          {shot.lighting && <p className="text-xs text-muted-foreground mb-1"><strong>Lighting:</strong> {shot.lighting}</p>}
                           {shot.generatedBy && (
                             <p className="text-xs text-blue-600 font-medium">
                               ✓ {getModelFriendlyName(shot.generatedBy)}
@@ -1784,83 +1784,83 @@ function ScriptMakerContent() {
       </div>
 
       {/* Right Column - Progress & Export */}
-      <div className="w-64 border-l border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-sm font-medium text-gray-900">Progress</h2>
+      <div className="w-64 border-l border-border flex flex-col">
+        <div className="p-4 border-b border-border">
+          <h2 className="text-sm font-medium text-foreground">Progress</h2>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-3">
-            <div className={`p-3 rounded-lg border ${currentStep >= 1 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 1 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 1 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 1 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   1
                 </div>
-                <span className="text-sm font-medium text-gray-900">Movie Idea</span>
+                <span className="text-sm font-medium text-foreground">Movie Idea</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 2 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 2 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   2
                 </div>
-                <span className="text-sm font-medium text-gray-900">Screenplay</span>
+                <span className="text-sm font-medium text-foreground">Screenplay</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 3 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 3 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 3 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 3 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   3
                 </div>
-                <span className="text-sm font-medium text-gray-900">Character Upload</span>
+                <span className="text-sm font-medium text-foreground">Character Upload</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 4 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 4 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 4 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 4 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   4
                 </div>
-                <span className="text-sm font-medium text-gray-900">Style Reference</span>
+                <span className="text-sm font-medium text-foreground">Style Reference</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 5 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 5 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 5 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 5 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   5
                 </div>
-                <span className="text-sm font-medium text-gray-900">Shot List</span>
+                <span className="text-sm font-medium text-foreground">Shot List</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 6 ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`p-3 rounded-lg border ${currentStep >= 6 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 6 ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+                  currentStep >= 6 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
                 }`}>
                   6
                 </div>
-                <span className="text-sm font-medium text-gray-900">Visual Scenes</span>
+                <span className="text-sm font-medium text-foreground">Visual Scenes</span>
               </div>
             </div>
           </div>
 
           {currentStep >= 4 && minutes.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Generation Stats</h3>
+            <div className="mt-6 pt-6 border-t border-border">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Generation Stats</h3>
               {minutes.map((minute: any, index: number) => {
                 const totalShots = minute.shots?.length || 0;
                 const generatedShots = minute.shots?.filter((s: any) => s.imageUrl).length || 0;
@@ -1868,11 +1868,11 @@ function ScriptMakerContent() {
                 
                 return (
                   <div key={index} className="mb-3">
-                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                       <span>Minute {index + 1}</span>
                       <span>{generatedShots}/{totalShots}</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
                         className="bg-green-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${progress}%` }}

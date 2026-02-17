@@ -478,6 +478,20 @@ export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
       enable_safety_checker: true,
     },
   },
+  {
+    endpointId: "fal-ai/bytedance/dreamactor/v2",
+    label: "DreamActor v2",
+    description: "Transfer motion from a video to characters in an image using DreamActor v2. Great performance for non-human and multiple characters. Supports full face and body driving with up to 30s video input",
+    category: "video",
+    inputAsset: ["image", "video"],
+    supportsMultipleImages: false,
+    maxImages: 1,
+    initialInput: {
+      image_url: "https://v3b.fal.media/files/b/0a8d6292/E9WNRJh8K8DF9lSV0bkXs_image.png",
+      video_url: "https://v3b.fal.media/files/b/0a8d633f/u5Ye7jXL0Cfo0ijz5M6YY_input_example_dreamactor.mp4",
+      trim_first_second: true,
+    },
+  },
 
       // Video Generation Models
       {

@@ -78,20 +78,10 @@ export default function RootLayout({
                   <ThemeToggle />
                 </nav>
 
-                {/* Right: Deep Tech AI */}
-                <Link
-                  href="https://deeptech.ai"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1.5 hover:opacity-80 transition-opacity shrink-0"
-                >
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-[8px] sm:text-[10px]">DT</span>
-                  </div>
-                  <span className="hidden sm:inline text-[10px] lg:text-xs font-light tracking-[0.1em] text-foreground/40 uppercase">
-                    Deep Tech AI
-                  </span>
-                </Link>
+                {/* Right: DeepTech */}
+                <span className="text-[10px] lg:text-xs font-light tracking-[0.15em] text-foreground/40 uppercase shrink-0">
+                  DEEPTECH
+                </span>
               </div>
             </header>
             <main className="flex-1 mobile-main">{children}</main>

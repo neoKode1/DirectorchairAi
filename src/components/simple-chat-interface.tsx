@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import {
   Send,
@@ -16,6 +16,36 @@ import {
   Settings,
   Monitor
 } from 'lucide-react';
+
+const ICON_CDN = "https://unpkg.com/@lobehub/icons-static-svg@latest/icons";
+
+// Icon slug mapping for each company in model dropdowns
+const COMPANY_ICONS: Record<string, { slug: string; color?: boolean }> = {
+  "OpenAI": { slug: "openai" },
+  "Google": { slug: "google", color: true },
+  "xAI (Grok)": { slug: "xai" },
+  "Kling": { slug: "kling", color: true },
+  "ByteDance": { slug: "bytedance", color: true },
+  "Black Forest Labs": { slug: "bfl" },
+  "Minimax": { slug: "minimax", color: true },
+  "Luma AI": { slug: "luma", color: true },
+  "Tencent": { slug: "tencent", color: true },
+  "Stability AI": { slug: "stability", color: true },
+  "Alibaba": { slug: "alibaba", color: true },
+};
+
+function CompanyIcon({ name }: { name: string }) {
+  const icon = COMPANY_ICONS[name];
+  if (!icon) return null;
+  const file = icon.color ? `${icon.slug}-color.svg` : `${icon.slug}.svg`;
+  return (
+    <img
+      src={`${ICON_CDN}/${file}`}
+      alt=""
+      className={`h-4 w-4 inline-block${!icon.color ? " dark:invert" : ""}`}
+    />
+  );
+}
 
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
@@ -807,44 +837,81 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <SelectValue placeholder="Video Model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Video Models */}
-                  <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default)</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro</SelectItem>
-                  <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V)</SelectItem>
-                  <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast</SelectItem>
-                  <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame</SelectItem>
-                  <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Imagine Video (T2V)</SelectItem>
-                  <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Imagine Video (I2V)</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
-                  <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling AI Avatar Pro</SelectItem>
-                  <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
-                  <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video</SelectItem>
-                  <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro</SelectItem>
-                  <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B</SelectItem>
-                  <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview</SelectItem>
-                  <SelectItem value="fal-ai/ovi/image-to-video">Ovi (with Audio)</SelectItem>
-                  <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2</SelectItem>
-                  <SelectItem value="endframe/minimax-hailuo-02">EndFrame (Minimax)</SelectItem>
-                  {/* Image Models - Text-to-Image */}
-                  <SelectItem value="fal-ai/imagen4/preview">Google Imagen 4</SelectItem>
-                  <SelectItem value="fal-ai/stable-diffusion-v35-large">Stable Diffusion 3.5 Large</SelectItem>
-                  <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex</SelectItem>
-                  <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1</SelectItem>
-                  <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra</SelectItem>
-                  {/* Image Models - Image Editing */}
-                  <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro</SelectItem>
-                  <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex Edit</SelectItem>
-                  <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 Edit</SelectItem>
-                  <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">SeeDream 4.5 Edit</SelectItem>
-                  <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Pro Kontext Max</SelectItem>
-                  <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA Image-to-Image</SelectItem>
-                  <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit</SelectItem>
-                  <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash</SelectItem>
-                  <SelectItem value="fal-ai/qwen-image-edit">Qwen Image Edit</SelectItem>
-                  <SelectItem value="xai/grok-imagine-image/edit">Grok Imagine Image Edit</SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="OpenAI" />OpenAI</SelectLabel>
+                    <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default)</SelectItem>
+                    <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro</SelectItem>
+                    <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Google" />Google</SelectLabel>
+                    <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast</SelectItem>
+                    <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame</SelectItem>
+                    <SelectItem value="fal-ai/imagen4/preview">Google Imagen 4</SelectItem>
+                    <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro</SelectItem>
+                    <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit</SelectItem>
+                    <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="xAI (Grok)" />xAI (Grok)</SelectLabel>
+                    <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Video (T2V)</SelectItem>
+                    <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Video (I2V)</SelectItem>
+                    <SelectItem value="xai/grok-imagine-image/edit">Grok Image Edit</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Kling" />Kling</SelectLabel>
+                    <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro</SelectItem>
+                    <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro</SelectItem>
+                    <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro</SelectItem>
+                    <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
+                    <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling AI Avatar Pro</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="ByteDance" />ByteDance</SelectLabel>
+                    <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1</SelectItem>
+                    <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 Edit</SelectItem>
+                    <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">SeeDream 4.5 Edit</SelectItem>
+                    <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Black Forest Labs" />Black Forest Labs</SelectLabel>
+                    <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex</SelectItem>
+                    <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex Edit</SelectItem>
+                    <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra</SelectItem>
+                    <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Pro Kontext Max</SelectItem>
+                    <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA I2I</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Minimax" />Minimax</SelectLabel>
+                    <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
+                    <SelectItem value="endframe/minimax-hailuo-02">EndFrame (Minimax)</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Wan AI</SelectLabel>
+                    <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro</SelectItem>
+                    <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B</SelectItem>
+                    <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Luma AI" />Luma AI</SelectLabel>
+                    <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Tencent" />Tencent</SelectLabel>
+                    <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Stability AI" />Stability AI</SelectLabel>
+                    <SelectItem value="fal-ai/stable-diffusion-v35-large">Stable Diffusion 3.5 Large</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Alibaba" />Alibaba</SelectLabel>
+                    <SelectItem value="fal-ai/qwen-image-edit">Qwen Image Edit</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Ovi</SelectLabel>
+                    <SelectItem value="fal-ai/ovi/image-to-video">Ovi (with Audio)</SelectItem>
+                  </SelectGroup>
                   <SelectItem value="none">None (Ask me)</SelectItem>
                 </SelectContent>
               </Select>
@@ -1118,44 +1185,81 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectValue placeholder="Select video model" />
                       </SelectTrigger>
                       <SelectContent>
-                        {/* Video Models */}
-                        <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default) - OpenAI's latest</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro - Premium quality, 1080p</SelectItem>
-                        <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V) - Video-to-video with style changes</SelectItem>
-                        <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast - Google's latest</SelectItem>
-                        <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame - Animate between frames</SelectItem>
-                        <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Imagine Video (T2V) - Text-to-video with audio, 1-15s</SelectItem>
-                        <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Imagine Video (I2V) - Image-to-video with audio, 1-15s</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro - Cinematic visuals, custom elements, voice</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro - Start/End frame animation, 3-15s</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro - Top-tier motion</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
-                        <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling AI Avatar Pro - Realistic lip-sync (image + audio)</SelectItem>
-                        <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
-                        <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video - Tencent</SelectItem>
-                        <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro - 1080p at 30fps</SelectItem>
-                        <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B - 480p/580p/720p, extensive customization</SelectItem>
-                        <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview - Advanced I2V, 480p/720p/1080p, 5-10s</SelectItem>
-                        <SelectItem value="fal-ai/ovi/image-to-video">Ovi (with Audio) - Video with synchronized audio</SelectItem>
-                        <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2 - Realistic motion</SelectItem>
-                        <SelectItem value="endframe/minimax-hailuo-02">EndFrame (Minimax) - Smooth transitions between images</SelectItem>
-                        {/* Image Models - Text-to-Image */}
-                        <SelectItem value="fal-ai/imagen4/preview">Google Imagen 4 - Google's highest quality</SelectItem>
-                        <SelectItem value="fal-ai/stable-diffusion-v35-large">Stable Diffusion 3.5 Large - Enhanced typography</SelectItem>
-                        <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex - Adjustable controls, enhanced typography</SelectItem>
-                        <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1 - Superior aesthetics</SelectItem>
-                        <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra - Professional-grade</SelectItem>
-                        {/* Image Models - Image Editing */}
-                        <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro - Google's latest, multi-image, 1K-4K</SelectItem>
-                        <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex Edit - Multi-reference editing</SelectItem>
-                        <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 Edit - Unified generation & editing</SelectItem>
-                        <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">SeeDream 4.5 Edit - Up to 10 images</SelectItem>
-                        <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Pro Kontext Max - Premium consistency</SelectItem>
-                        <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA I2I - Rapid style transfer</SelectItem>
-                        <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit - Multi-image support</SelectItem>
-                        <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash - Multi-image blending</SelectItem>
-                        <SelectItem value="fal-ai/qwen-image-edit">Qwen Image Edit - Superior text editing</SelectItem>
-                        <SelectItem value="xai/grok-imagine-image/edit">Grok Imagine Image Edit - Enhanced realism</SelectItem>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="OpenAI" />OpenAI</SelectLabel>
+                          <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (Default) - OpenAI&apos;s latest</SelectItem>
+                          <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro - Premium quality, 1080p</SelectItem>
+                          <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V) - Style changes</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Google" />Google</SelectLabel>
+                          <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast - Latest video</SelectItem>
+                          <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame</SelectItem>
+                          <SelectItem value="fal-ai/imagen4/preview">Imagen 4 - Highest quality images</SelectItem>
+                          <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro - Multi-image, 1K-4K</SelectItem>
+                          <SelectItem value="fal-ai/nano-banana/edit">Nano Banana Edit - Multi-image</SelectItem>
+                          <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash - Multi-image blending</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="xAI (Grok)" />xAI (Grok)</SelectLabel>
+                          <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Video (T2V) - With audio, 1-15s</SelectItem>
+                          <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Video (I2V) - With audio, 1-15s</SelectItem>
+                          <SelectItem value="xai/grok-imagine-image/edit">Grok Image Edit - Enhanced realism</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Kling" />Kling</SelectLabel>
+                          <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro - Cinematic, voice, audio</SelectItem>
+                          <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 Pro - Start/End frame, 3-15s</SelectItem>
+                          <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo Pro - Top-tier motion</SelectItem>
+                          <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master</SelectItem>
+                          <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling AI Avatar Pro - Lip-sync</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="ByteDance" />ByteDance</SelectLabel>
+                          <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1 - Superior aesthetics</SelectItem>
+                          <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 Edit - Unified gen & edit</SelectItem>
+                          <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">SeeDream 4.5 Edit - Up to 10 images</SelectItem>
+                          <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2 - Motion transfer</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Black Forest Labs" />Black Forest Labs</SelectLabel>
+                          <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex - Enhanced typography</SelectItem>
+                          <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex Edit - Multi-reference</SelectItem>
+                          <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra - Professional-grade</SelectItem>
+                          <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Pro Kontext Max - Premium consistency</SelectItem>
+                          <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA I2I - Rapid style transfer</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Minimax" />Minimax</SelectLabel>
+                          <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Minimax Hailuo 02</SelectItem>
+                          <SelectItem value="endframe/minimax-hailuo-02">EndFrame (Minimax) - Smooth transitions</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Wan AI</SelectLabel>
+                          <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro - 1080p at 30fps</SelectItem>
+                          <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B - Extensive customization</SelectItem>
+                          <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview - 480p/720p/1080p</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Luma AI" />Luma AI</SelectLabel>
+                          <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2 - Realistic motion</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Tencent" />Tencent</SelectLabel>
+                          <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Stability AI" />Stability AI</SelectLabel>
+                          <SelectItem value="fal-ai/stable-diffusion-v35-large">Stable Diffusion 3.5 Large</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Alibaba" />Alibaba</SelectLabel>
+                          <SelectItem value="fal-ai/qwen-image-edit">Qwen Image Edit - Superior text editing</SelectItem>
+                        </SelectGroup>
+                        <SelectGroup>
+                          <SelectLabel>Ovi</SelectLabel>
+                          <SelectItem value="fal-ai/ovi/image-to-video">Ovi (with Audio) - Synchronized audio</SelectItem>
+                        </SelectGroup>
                         <SelectItem value="none">None (Ask me each time)</SelectItem>
                       </SelectContent>
                     </Select>

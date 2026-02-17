@@ -49,6 +49,24 @@ export default function RootLayout({
                     <h1 className="mobile-text-lg sm:text-2xl lg:text-3xl font-black text-foreground">DirectorChair AI</h1>
                   </Link>
                   <nav className="flex items-center gap-4 sm:gap-6 mobile-text-xs sm:text-sm">
+                    <Link
+                      href="/timeline"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
+                    >
+                      Studio
+                    </Link>
+                    <Link
+                      href="/expo"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
+                    >
+                      EXPO
+                    </Link>
+                    <Link
+                      href="/script-maker"
+                      className="transition-colors hover:text-foreground/80 text-foreground/60 mobile-touch-target"
+                    >
+                      Script Maker
+                    </Link>
                     <ThemeToggle />
                     <Link
                       href="https://deeptech.ai"

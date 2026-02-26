@@ -1,433 +1,294 @@
-<html lang="fr"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="[NOM] — Réalisateur, Directeur Photo &amp; Monteur basé à [VILLE]. Portfolio de films, clips et contenus créatifs.">
-<meta property="og:title" content="[NOM] — Director • DP • Editor">
-<meta property="og:description" content="Portfolio vidéo — Réalisation, cadre, montage et étalonnage.">
-<meta property="og:type" content="website">
-<title>[NOM] — Director • DP • Editor</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Playfair+Display:wght@400;500&amp;display=swap" rel="stylesheet">
-<style>
-* { font-family: 'Inter', sans-serif; }
-.font-display { font-family: 'Playfair Display', serif; }
-html { scroll-behavior: smooth; }
-.video-bg { object-fit: cover; }
-.grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); opacity: 0.03; }
-.fade-in { animation: fadeIn 0.8s ease-out forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.project-card:hover .project-overlay { opacity: 1; }
-.project-card:hover .project-image { transform: scale(1.05); }
-.modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
-.modal.active { opacity: 1; visibility: visible; }
-.modal:not(.active) { opacity: 0; visibility: hidden; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
-</style></head>
-<body class="bg-neutral-950 text-neutral-100 antialiased">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DirectorChair AI - AI-Powered Media Studio with Film Director Intelligence">
+    <title>DirectorChair AI — Cinematic Media Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .font-display { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        html { scroll-behavior: smooth; background-color: #0a0a0a; }
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .bento-card { transition: border-color 0.3s ease; }
+        .bento-card:hover { border-color: #404040; /* neutral-700 */ }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+    </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 antialiased overflow-x-hidden selection:bg-neutral-800 selection:text-white">
 
-    <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-5 lg:px-12">
-        <div class="flex items-center justify-between max-w-screen-2xl mx-auto">
-            <a href="#home" class="text-sm font-medium tracking-tighter text-white hover:text-neutral-300 transition-colors">VICTOR</a>
+    <!-- Film Grain Overlay -->
+    <div class="fixed inset-0 z-[60] pointer-events-none opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E');"></div>
+
+    <!-- Global Shell Header -->
+    <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-5 border-b border-neutral-800/50 bg-neutral-950/80 backdrop-blur-md">
+        <div class="flex items-center justify-between w-full">
+            <div class="flex items-center gap-2 text-white">
+                <span class="text-sm font-medium tracking-tighter uppercase">DirectorChair AI</span>
+            </div>
             
-            <!-- Desktop Menu -->
             <div class="hidden md:flex items-center gap-8">
-                <a href="#work" class="text-xs font-light text-neutral-400 hover:text-white transition-colors">Work</a>
-                <a href="#about" class="text-xs font-light text-neutral-400 hover:text-white transition-colors">About</a>
-                <a href="#services" class="text-xs font-light text-neutral-400 hover:text-white transition-colors">Services</a>
-                <a href="#contact" class="text-xs font-light text-neutral-400 hover:text-white transition-colors">Contact</a>
+                <a href="#features" class="text-xs font-light text-neutral-400 hover:text-white transition-colors uppercase tracking-wider">Features</a>
+                <a href="#models" class="text-xs font-light text-neutral-400 hover:text-white transition-colors uppercase tracking-wider">AI Models</a>
+                <a href="#workflow" class="text-xs font-light text-neutral-400 hover:text-white transition-colors uppercase tracking-wider">Workflow</a>
             </div>
 
-            <!-- Mobile Menu Button -->
-            <button id="menuBtn" class="md:hidden text-white">
-                <iconify-icon icon="solar:hamburger-menu-linear" width="24" height="24" style="stroke-width: 1.5;"></iconify-icon>
-            </button>
+            <div class="flex items-center">
+                <span class="text-xs font-light tracking-wider text-neutral-500 uppercase">DeepTech</span>
+            </div>
         </div>
     </nav>
 
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="fixed inset-0 z-40 bg-neutral-950/98 flex flex-col items-center justify-center gap-8 modal">
-        <a href="#work" class="text-2xl font-light text-neutral-100 hover:text-white transition-colors" onclick="closeMobileMenu()">Work</a>
-        <a href="#about" class="text-2xl font-light text-neutral-100 hover:text-white transition-colors" onclick="closeMobileMenu()">About</a>
-        <a href="#services" class="text-2xl font-light text-neutral-100 hover:text-white transition-colors" onclick="closeMobileMenu()">Services</a>
-        <a href="#contact" class="text-2xl font-light text-neutral-100 hover:text-white transition-colors" onclick="closeMobileMenu()">Contact</a>
-        <button onclick="closeMobileMenu()" class="absolute top-6 right-6 text-white">
-            <iconify-icon icon="solar:close-circle-linear" width="28" height="28" style="stroke-width: 1.5;"></iconify-icon>
-        </button>
-    </div>
-
     <!-- Hero Section -->
-    <section id="home" class="relative h-screen w-full overflow-hidden">
-        <!-- Video Background -->
-        <video class="absolute inset-0 w-full h-full video-bg" autoplay="" loop="" muted="" playsinline="" poster="https://images.unsplash.com/photo-1536240478700-b869070f9279?w=1920&amp;q=80">
-            <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" type="video/mp4">
-        </video>
+    <section class="relative pt-40 pb-20 lg:pt-56 lg:pb-32 px-6 overflow-hidden">
         
-        <!-- Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-neutral-950/40"></div>
-        <div class="absolute inset-0 grain pointer-events-none"></div>
-
-        <!-- Scroll Indicator -->
-        <div class="absolute left-6 lg:left-12 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-3">
-            <span class="text-xs font-light text-neutral-500 tracking-widest" style="writing-mode: vertical-rl; transform: rotate(180deg);">SCROLL</span>
-            <div class="w-px h-16 bg-gradient-to-b from-neutral-500 to-transparent"></div>
-        </div>
-
-        <!-- Clients List -->
-        <div class="absolute left-6 lg:left-12 bottom-32 hidden lg:block">
-            <p class="text-xs text-neutral-600 mb-3 tracking-wider">CLIENTS</p>
-            <div class="flex flex-col gap-2 text-xs text-neutral-500 font-light">
-                <span class="hover:text-neutral-300 transition-colors cursor-pointer">Nike</span>
-                <span class="hover:text-neutral-300 transition-colors cursor-pointer">Apple</span>
-                <span class="hover:text-neutral-300 transition-colors cursor-pointer">Netflix</span>
-                <span class="hover:text-neutral-300 transition-colors cursor-pointer">Canal+</span>
-            </div>
-        </div>
-
-        <!-- Hero Content -->
-        <div class="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
-            <h1 class="font-display text-5xl md:text-7xl lg:text-8xl font-normal text-white tracking-tight mb-4 fade-in">VICTOR</h1>
-            <p class="text-sm md:text-base font-light text-neutral-400 tracking-widest mb-10 fade-in" style="animation-delay: 0.2s;">DIRECTOR • DP • EDITOR</p>
+        <!-- Interactive Space-Time Grid Canvas -->
+        <canvas id="warp-canvas" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
+        
+        <div class="relative z-10 max-w-screen-xl mx-auto text-center flex flex-col items-center">
             
-            <button id="playShowreelBtn" class="group flex items-center gap-3 px-6 py-3 border border-neutral-700 hover:border-neutral-500 hover:bg-white/5 transition-all duration-300 fade-in" style="animation-delay: 0.4s;">
-                <iconify-icon icon="solar:play-linear" width="18" height="18" class="text-white" style="stroke-width: 1.5;"></iconify-icon>
-                <span class="text-xs font-medium tracking-wider text-white">PLAY SHOWREEL</span>
-            </button>
-        </div>
+            <a href="https://github.com/neoKode1/DirectorchairAi" target="_blank" class="inline-flex items-center gap-2 px-3 py-1 rounded-none border border-neutral-800 bg-neutral-900 text-xs font-medium text-neutral-400 mb-8 hover:border-neutral-700 transition-colors uppercase tracking-wider fade-in">
+                <span class="flex h-1.5 w-1.5 rounded-none bg-neutral-100"></span>
+                v3.0.0 is now live
+                <iconify-icon icon="solar:arrow-right-linear" width="14" height="14" style="stroke-width: 1.5;"></iconify-icon>
+            </a>
 
-        <!-- Bottom Info -->
-        <div class="absolute bottom-6 left-6 right-6 lg:left-12 lg:right-12 flex justify-between items-end z-10">
-            <div class="flex gap-6 text-xs text-neutral-500 font-light">
-                <span>Based in [VILLE]</span>
-                <span class="hidden md:inline">Available worldwide</span>
+            <h1 class="font-display text-4xl md:text-6xl lg:text-7xl font-normal tracking-tight text-neutral-100 mb-6 max-w-4xl fade-in" style="animation-delay: 0.1s;">
+                AI-Powered Media Studio with Film Director Intelligence.
+            </h1>
+            
+            <p class="text-base md:text-lg font-light text-neutral-400 max-w-2xl mb-10 fade-in" style="animation-delay: 0.2s;">
+                Create professional media with AI that thinks like a film director. Generate images, videos, audio, and voiceovers using natural language and get intelligent cinematographic guidance.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-4 fade-in" style="animation-delay: 0.3s;">
+                <!-- Primary CTA Button -->
+                <a href="https://youtu.be/tssJN3-TwvI?si=16X4QB_AZXq0NgAq" target="_blank" class="flex items-center gap-2 bg-white text-neutral-950 px-6 py-3 rounded-none text-xs font-medium tracking-wider uppercase hover:bg-neutral-200 transition-colors w-full sm:w-auto justify-center">
+                    <iconify-icon icon="solar:play-linear" width="16" height="16" style="stroke-width: 1.5;"></iconify-icon>
+                    Watch Demo Video
+                </a>
+                <!-- Ghost Button -->
+                <a href="https://github.com/neoKode1/DirectorchairAi" class="flex items-center gap-2 px-6 py-3 rounded-none border border-white/20 bg-white/10 backdrop-blur-sm text-white text-xs font-medium tracking-wider uppercase hover:bg-white/20 transition-colors w-full sm:w-auto justify-center">
+                    View Documentation
+                </a>
             </div>
-            <span class="text-xs text-neutral-600">© 2024</span>
-        </div>
-    </section>
 
-    <!-- Video Modal -->
-    <div id="videoModal" class="fixed inset-0 z-50 bg-neutral-950/95 flex items-center justify-center p-6 modal">
-        <button onclick="closeVideoModal()" class="absolute top-6 right-6 text-white hover:text-neutral-300 transition-colors">
-            <iconify-icon icon="solar:close-circle-linear" width="32" height="32" style="stroke-width: 1.5;"></iconify-icon>
-        </button>
-        <div class="w-full max-w-5xl aspect-video bg-neutral-900">
-            <iframe id="videoIframe" class="w-full h-full" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen=""></iframe>
-        </div>
-    </div>
-
-    <!-- Work Section -->
-    <section id="work" class="min-h-screen bg-neutral-950 py-24 lg:py-32 px-6 lg:px-12">
-        <div class="max-w-screen-2xl mx-auto">
-            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-12 lg:mb-16">
-                <div>
-                    <p class="text-xs text-neutral-600 tracking-widest mb-3">PORTFOLIO</p>
-                    <h2 class="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight">Selected Work</h2>
-                </div>
+            <!-- Studio Mockup Interface -->
+            <div class="mt-20 w-full max-w-6xl rounded-none border border-neutral-800 bg-neutral-950 shadow-2xl fade-in flex flex-col text-left" style="animation-delay: 0.4s; aspect-ratio: 16/9;">
                 
-                <!-- Filters -->
-                <div class="flex flex-wrap gap-3 mt-6 lg:mt-0">
-                    <button class="filter-btn px-4 py-2 text-xs font-light bg-white text-neutral-950 transition-all" data-filter="all">All</button>
-                    <button class="filter-btn px-4 py-2 text-xs font-light text-neutral-500 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all" data-filter="commercial">Commercial</button>
-                    <button class="filter-btn px-4 py-2 text-xs font-light text-neutral-500 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all" data-filter="music">Music Video</button>
-                    <button class="filter-btn px-4 py-2 text-xs font-light text-neutral-500 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all" data-filter="documentary">Documentary</button>
-                </div>
-            </div>
-
-            <!-- Projects Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                
-                <!-- Project 1 -->
-                <article class="project-card group cursor-pointer" data-category="commercial" onclick="openProjectModal(1)">
-                    <div class="relative aspect-video overflow-hidden bg-neutral-900">
-                        <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&amp;q=80" alt="Project 1" class="project-image w-full h-full object-cover transition-transform duration-700" loading="lazy">
-                        <div class="project-overlay absolute inset-0 bg-neutral-950/60 opacity-0 transition-opacity duration-300 flex items-center justify-center">
-                            <iconify-icon icon="solar:play-circle-linear" width="48" height="48" class="text-white" style="stroke-width: 1.5;"></iconify-icon>
+                <!-- 3-Column Studio Layout -->
+                <div class="flex-1 flex overflow-hidden">
+                    <!-- Column 1: Chat Sidebar -->
+                    <div class="w-64 border-r border-neutral-800 p-4 flex flex-col justify-between bg-neutral-950 hidden md:flex">
+                        <div class="space-y-4">
+                            <div class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-6">Director Chat</div>
+                            <div class="h-8 w-3/4 rounded-none bg-neutral-900 border border-neutral-800"></div>
+                            <div class="h-16 w-full rounded-none bg-neutral-900 border border-neutral-800"></div>
+                            <div class="h-8 w-1/2 rounded-none bg-neutral-900 border border-neutral-800"></div>
+                        </div>
+                        <div class="h-12 w-full rounded-none border border-neutral-800 bg-neutral-900 flex items-center px-3 gap-2">
+                            <iconify-icon icon="solar:paperclip-linear" width="16" height="16" class="text-neutral-500"></iconify-icon>
+                            <div class="h-2 w-1/2 bg-neutral-800 rounded-none"></div>
                         </div>
                     </div>
-                    <div class="mt-4 flex items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-white tracking-tight group-hover:text-neutral-300 transition-colors">Brand Campaign — [CLIENT]</h3>
-                            <p class="text-xs text-neutral-500 mt-1">Commercial • 2024</p>
-                        </div>
-                        <span class="text-xs text-neutral-600 font-light">01</span>
-                    </div>
-                </article>
-
-                <!-- Project 2 -->
-                <article class="project-card group cursor-pointer" data-category="music" onclick="openProjectModal(2)">
-                    <div class="relative aspect-video overflow-hidden bg-neutral-900">
-                        <img src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&amp;q=80" alt="Project 2" class="project-image w-full h-full object-cover transition-transform duration-700" loading="lazy">
-                        <div class="project-overlay absolute inset-0 bg-neutral-950/60 opacity-0 transition-opacity duration-300 flex items-center justify-center">
-                            <iconify-icon icon="solar:play-circle-linear" width="48" height="48" class="text-white" style="stroke-width: 1.5;"></iconify-icon>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-white tracking-tight group-hover:text-neutral-300 transition-colors">[ARTISTE] — "Titre du morceau"</h3>
-                            <p class="text-xs text-neutral-500 mt-1">Music Video • 2024</p>
-                        </div>
-                        <span class="text-xs text-neutral-600 font-light">02</span>
-                    </div>
-                </article>
-
-                <!-- Project 3 -->
-                <article class="project-card group cursor-pointer" data-category="documentary" onclick="openProjectModal(3)">
-                    <div class="relative aspect-video overflow-hidden bg-neutral-900">
-                        <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&amp;q=80" alt="Project 3" class="project-image w-full h-full object-cover transition-transform duration-700" loading="lazy">
-                        <div class="project-overlay absolute inset-0 bg-neutral-950/60 opacity-0 transition-opacity duration-300 flex items-center justify-center">
-                            <iconify-icon icon="solar:play-circle-linear" width="48" height="48" class="text-white" style="stroke-width: 1.5;"></iconify-icon>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-white tracking-tight group-hover:text-neutral-300 transition-colors">Behind the Scenes — [PROJET]</h3>
-                            <p class="text-xs text-neutral-500 mt-1">Documentary • 2023</p>
-                        </div>
-                        <span class="text-xs text-neutral-600 font-light">03</span>
-                    </div>
-                </article>
-
-                <!-- Project 4 -->
-                <article class="project-card group cursor-pointer" data-category="commercial" onclick="openProjectModal(4)">
-                    <div class="relative aspect-video overflow-hidden bg-neutral-900">
-                        <img src="https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&amp;q=80" alt="Project 4" class="project-image w-full h-full object-cover transition-transform duration-700" loading="lazy">
-                        <div class="project-overlay absolute inset-0 bg-neutral-950/60 opacity-0 transition-opacity duration-300 flex items-center justify-center">
-                            <iconify-icon icon="solar:play-circle-linear" width="48" height="48" class="text-white" style="stroke-width: 1.5;"></iconify-icon>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-medium text-white tracking-tight group-hover:text-neutral-300 transition-colors">Product Launch — [MARQUE]</h3>
-                            <p class="text-xs text-neutral-500 mt-1">Commercial • 2023</p>
-                        </div>
-                        <span class="text-xs text-neutral-600 font-light">04</span>
-                    </div>
-                </article>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- Project Modal -->
-    <div id="projectModal" class="fixed inset-0 z-50 bg-neutral-950/98 overflow-y-auto modal">
-        <button onclick="closeProjectModal()" class="fixed top-6 right-6 text-white hover:text-neutral-300 transition-colors z-10">
-            <iconify-icon icon="solar:close-circle-linear" width="32" height="32" style="stroke-width: 1.5;"></iconify-icon>
-        </button>
-        <div class="min-h-screen py-20 px-6 lg:px-12">
-            <div class="max-w-5xl mx-auto">
-                <div class="aspect-video bg-neutral-900 mb-8">
-                    <iframe class="w-full h-full" src="https://player.vimeo.com/video/824804225" frameborder="0" allow="autoplay; fullscreen" allowfullscreen=""></iframe>
-                </div>
-                <div class="grid lg:grid-cols-3 gap-8 lg:gap-12">
-                    <div class="lg:col-span-2">
-                        <h3 class="font-display text-3xl lg:text-4xl text-white tracking-tight mb-4">Brand Campaign — [CLIENT]</h3>
-                        <p class="text-neutral-400 font-light leading-relaxed">Film publicitaire réalisé pour [CLIENT]. Une approche cinématographique pour mettre en valeur le produit à travers une narration visuelle forte et un travail de lumière soigné.</p>
-                    </div>
-                    <div class="space-y-6">
-                        <div>
-                            <p class="text-xs text-neutral-600 tracking-wider mb-2">RÔLE</p>
-                            <p class="text-sm text-neutral-300">Réalisation, Cadre, Étalonnage</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-neutral-600 tracking-wider mb-2">ANNÉE</p>
-                            <p class="text-sm text-neutral-300">2024</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-neutral-600 tracking-wider mb-2">CRÉDITS</p>
-                            <p class="text-sm text-neutral-400 font-light">Production: [PROD]<br>DA: [NOM]<br>Musique: [COMPOSITEUR]</p>
-                        </div>
-                        <a href="#" class="inline-flex items-center gap-2 text-xs text-white hover:text-neutral-300 transition-colors">
-                            <iconify-icon icon="solar:link-round-linear" width="16" height="16" style="stroke-width: 1.5;"></iconify-icon>
-                            Voir sur Vimeo
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- About Section -->
-    <section id="about" class="min-h-screen bg-neutral-900 py-24 lg:py-32 px-6 lg:px-12">
-        <div class="max-w-screen-2xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
-                <!-- Portrait -->
-                <div class="relative">
-                    <div class="aspect-[4/5] bg-neutral-800 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&amp;q=80" alt="Portrait" class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" loading="lazy">
-                    </div>
-                    <div class="absolute -bottom-4 -right-4 w-24 h-24 border border-neutral-700"></div>
-                </div>
-
-                <!-- Bio -->
-                <div>
-                    <p class="text-xs text-neutral-600 tracking-widest mb-3">À PROPOS</p>
-                    <h2 class="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight mb-8">L'image au service de l'histoire.</h2>
                     
-                    <p class="text-neutral-400 font-light leading-relaxed mb-6">
-                        Vidéaste indépendant basé à [VILLE], je collabore avec des marques, artistes et agences pour créer des contenus visuels impactants. Mon approche : une image cinématique, une narration précise, une exécution soignée.
-                    </p>
-                    <p class="text-neutral-400 font-light leading-relaxed mb-10">
-                        Formé sur le terrain depuis [ANNÉE], j'ai développé une expertise complète de la chaîne de production : de l'écriture au color grading, en passant par la prise de vue et le montage.
-                    </p>
-
-                    <!-- Clients -->
-                    <div class="mb-10">
-                        <p class="text-xs text-neutral-600 tracking-wider mb-4">CLIENTS &amp; COLLABORATIONS</p>
-                        <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-neutral-500">
-                            <span>Nike</span>
-                            <span>Apple</span>
-                            <span>Netflix</span>
-                            <span>Canal+</span>
-                            <span>Universal</span>
-                            <span>Sony</span>
+                    <!-- Column 2: Main Preview Area -->
+                    <div class="flex-1 p-6 flex flex-col gap-4 bg-neutral-950">
+                        <div class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-2">Stage</div>
+                        <div class="w-full flex-1 rounded-none bg-neutral-900 border border-neutral-800 flex items-center justify-center relative overflow-hidden group">
+                            <!-- Film Grain inner overlay for mockup -->
+                            <div class="absolute inset-0 opacity-[0.05] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noise%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noise)%22/%3E%3C/svg%3E');"></div>
+                            
+                            <!-- Hover Action Overlay -->
+                            <div class="absolute inset-0 bg-neutral-950/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="bg-white/10 border border-white/20 text-white w-12 h-12 flex items-center justify-center rounded-none backdrop-blur-sm hover:bg-white/20 transition-colors">
+                                    <iconify-icon icon="solar:play-linear" width="24" height="24"></iconify-icon>
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- Gear -->
-                    <div>
-                        <p class="text-xs text-neutral-600 tracking-wider mb-4">SETUP</p>
-                        <p class="text-sm text-neutral-500 font-light">Sony FX6 • Zeiss CP.3 • DaVinci Resolve • Premiere Pro</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Services Section -->
-    <section id="services" class="min-h-screen bg-neutral-950 py-24 lg:py-32 px-6 lg:px-12">
-        <div class="max-w-screen-2xl mx-auto">
-            <div class="text-center mb-16 lg:mb-20">
-                <p class="text-xs text-neutral-600 tracking-widest mb-3">SERVICES</p>
-                <h2 class="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight">Ce que je propose</h2>
-            </div>
-
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                
-                <!-- Service 1 -->
-                <div class="group p-8 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/50 transition-all duration-300">
-                    <iconify-icon icon="solar:videocamera-record-linear" width="32" height="32" class="text-neutral-500 group-hover:text-white transition-colors mb-6" style="stroke-width: 1.5;"></iconify-icon>
-                    <h3 class="text-lg font-medium text-white tracking-tight mb-3">Réalisation</h3>
-                    <p class="text-sm text-neutral-500 font-light leading-relaxed mb-4">Direction créative et artistique complète de votre projet vidéo, du concept à la livraison finale.</p>
-                    <p class="text-xs text-neutral-600">Film 30–90s • Clip • Documentaire</p>
-                </div>
-
-                <!-- Service 2 -->
-                <div class="group p-8 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/50 transition-all duration-300">
-                    <iconify-icon icon="solar:camera-linear" width="32" height="32" class="text-neutral-500 group-hover:text-white transition-colors mb-6" style="stroke-width: 1.5;"></iconify-icon>
-                    <h3 class="text-lg font-medium text-white tracking-tight mb-3">Cadre &amp; Lumière</h3>
-                    <p class="text-sm text-neutral-500 font-light leading-relaxed mb-4">Direction photo soignée avec un matériel professionnel et une approche cinématographique.</p>
-                    <p class="text-xs text-neutral-600">DP • Opérateur caméra • Gaffer</p>
-                </div>
-
-                <!-- Service 3 -->
-                <div class="group p-8 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/50 transition-all duration-300">
-                    <iconify-icon icon="solar:clapperboard-edit-linear" width="32" height="32" class="text-neutral-500 group-hover:text-white transition-colors mb-6" style="stroke-width: 1.5;"></iconify-icon>
-                    <h3 class="text-lg font-medium text-white tracking-tight mb-3">Montage</h3>
-                    <p class="text-sm text-neutral-500 font-light leading-relaxed mb-4">Montage narratif et rythmique pour donner vie à votre histoire avec impact et fluidité.</p>
-                    <p class="text-xs text-neutral-600">Cut • Sound design • Pack social</p>
-                </div>
-
-                <!-- Service 4 -->
-                <div class="group p-8 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/50 transition-all duration-300">
-                    <iconify-icon icon="solar:pallete-2-linear" width="32" height="32" class="text-neutral-500 group-hover:text-white transition-colors mb-6" style="stroke-width: 1.5;"></iconify-icon>
-                    <h3 class="text-lg font-medium text-white tracking-tight mb-3">Étalonnage</h3>
-                    <p class="text-sm text-neutral-500 font-light leading-relaxed mb-4">Color grading professionnel pour définir l'atmosphère et l'identité visuelle de votre film.</p>
-                    <p class="text-xs text-neutral-600">DaVinci Resolve • LUT custom</p>
-                </div>
-
-                <!-- Service 5 -->
-                <div class="group p-8 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/50 transition-all duration-300">
-                    <iconify-icon icon="solar:magic-stick-3-linear" width="32" height="32" class="text-neutral-500 group-hover:text-white transition-colors mb-6" style="stroke-width: 1.5;"></iconify-icon>
-                    <h3 class="text-lg font-medium text-white tracking-tight mb-3">Motion Design</h3>
-                    <p class="text-sm text-neutral-500 font-light leading-relaxed mb-4">Animation graphique et typographique pour enrichir vos contenus avec élégance.</p>
-                    <p class="text-xs text-neutral-600">After Effects • Titrages • Logos animés</p>
-                </div>
-
-                <!-- Service 6 - CTA -->
-                <div class="group p-8 bg-white hover:bg-neutral-100 transition-all duration-300 flex flex-col justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium text-neutral-950 tracking-tight mb-3">Un projet en tête ?</h3>
-                        <p class="text-sm text-neutral-600 font-light leading-relaxed">Discutons de votre vision et créons quelque chose d'unique ensemble.</p>
-                    </div>
-                    <a href="#contact" class="inline-flex items-center gap-2 text-sm font-medium text-neutral-950 mt-6">
-                        Demander un devis
-                        <iconify-icon icon="solar:arrow-right-linear" width="18" height="18" style="stroke-width: 1.5;"></iconify-icon>
-                    </a>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="min-h-screen bg-neutral-900 py-24 lg:py-32 px-6 lg:px-12">
-        <div class="max-w-screen-2xl mx-auto">
-            <div class="grid lg:grid-cols-2 gap-16 lg:gap-24">
-                
-                <!-- Left -->
-                <div>
-                    <p class="text-xs text-neutral-600 tracking-widest mb-3">CONTACT</p>
-                    <h2 class="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight mb-8">Parlons de votre projet.</h2>
                     
-                    <p class="text-neutral-400 font-light leading-relaxed mb-10">
-                        Disponible pour des collaborations en France et à l'international. N'hésitez pas à me contacter pour discuter de vos besoins et obtenir un devis personnalisé.
-                    </p>
-
-                    <div class="space-y-6 mb-10">
-                        <div>
-                            <p class="text-xs text-neutral-600 tracking-wider mb-2">EMAIL</p>
-                            <a href="mailto:[EMAIL]" class="text-white hover:text-neutral-300 transition-colors">[EMAIL]</a>
-                        </div>
-                        <div>
-                            <p class="text-xs text-neutral-600 tracking-wider mb-2">BASÉ À</p>
-                            <p class="text-neutral-400">[VILLE], France</p>
+                    <!-- Column 3: Gallery Panel -->
+                    <div class="w-[260px] border-l border-neutral-800 p-4 bg-neutral-950 hidden lg:block overflow-hidden">
+                        <div class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-6">Takes</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
+                            <div class="aspect-square rounded-none border border-neutral-800 bg-neutral-900"></div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Social -->
-                    <div class="flex gap-4">
-                        <a href="[INSTAGRAM]" target="_blank" class="w-10 h-10 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 flex items-center justify-center transition-all">
-                            <iconify-icon icon="solar:camera-linear" width="18" height="18" class="text-neutral-400" style="stroke-width: 1.5;"></iconify-icon>
-                        </a>
-                        <a href="[VIMEO]" target="_blank" class="w-10 h-10 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 flex items-center justify-center transition-all">
-                            <iconify-icon icon="solar:play-circle-linear" width="18" height="18" class="text-neutral-400" style="stroke-width: 1.5;"></iconify-icon>
-                        </a>
-                        <a href="[YOUTUBE]" target="_blank" class="w-10 h-10 border border-neutral-700 hover:border-neutral-500 hover:bg-neutral-800 flex items-center justify-center transition-all">
-                            <iconify-icon icon="solar:video-library-linear" width="18" height="18" class="text-neutral-400" style="stroke-width: 1.5;"></iconify-icon>
-                        </a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 relative z-10 border-t border-neutral-800">
+        <div class="max-w-screen-xl mx-auto">
+            <div class="mb-16">
+                <p class="text-xs font-medium tracking-wider uppercase text-neutral-500 mb-4">Architecture</p>
+                <h2 class="font-display text-3xl md:text-4xl font-normal tracking-tight text-neutral-100 mb-4">Revolutionary Workflow</h2>
+                <p class="text-sm font-light text-neutral-400 max-w-2xl">A seamless creative process powered by a state-of-the-art three-column architecture, designed specifically for rapid media generation.</p>
+            </div>
+
+            <!-- Bento Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Feature 1: Large -->
+                <div class="md:col-span-2 bento-card rounded-none border border-neutral-800 bg-neutral-900 p-8 flex flex-col justify-between group">
+                    <div>
+                        <iconify-icon icon="solar:sidebar-minimalistic-linear" width="28" height="28" class="text-neutral-100 mb-6" style="stroke-width: 1.5;"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-4">Three-Column Interface</h3>
+                        <p class="text-sm font-light text-neutral-400 mb-6 max-w-md">Chat naturally on the left, view your high-res generated media in the dynamic center, and manage your entire project history in the collapsible smart gallery on the right.</p>
+                    </div>
+                    <div class="flex items-center gap-4 text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                        <span class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-linear" width="14"></iconify-icon> Drag & Drop</span>
+                        <span class="flex items-center gap-2"><iconify-icon icon="solar:check-circle-linear" width="14"></iconify-icon> Auto-scrolling</span>
                     </div>
                 </div>
 
-                <!-- Form -->
-                <div>
-                    <form class="space-y-6" onsubmit="event.preventDefault(); alert('Message envoyé !');">
-                        <div>
-                            <label for="name" class="block text-xs text-neutral-600 tracking-wider mb-2">NOM</label>
-                            <input type="text" id="name" name="name" required="" class="w-full bg-transparent border-b border-neutral-700 focus:border-white py-3 text-white outline-none transition-colors placeholder:text-neutral-600" placeholder="Votre nom">
-                        </div>
-                        <div>
-                            <label for="email" class="block text-xs text-neutral-600 tracking-wider mb-2">EMAIL</label>
-                            <input type="email" id="email" name="email" required="" class="w-full bg-transparent border-b border-neutral-700 focus:border-white py-3 text-white outline-none transition-colors placeholder:text-neutral-600" placeholder="votre@email.com">
-                        </div>
-                        <div>
-                            <label for="project" class="block text-xs text-neutral-600 tracking-wider mb-2">TYPE DE PROJET</label>
-                            <input type="text" id="project" name="project" class="w-full bg-transparent border-b border-neutral-700 focus:border-white py-3 text-white outline-none transition-colors placeholder:text-neutral-600" placeholder="Commercial, Clip, Documentaire...">
-                        </div>
-                        <div>
-                            <label for="message" class="block text-xs text-neutral-600 tracking-wider mb-2">MESSAGE</label>
-                            <textarea id="message" name="message" rows="4" required="" class="w-full bg-transparent border-b border-neutral-700 focus:border-white py-3 text-white outline-none transition-colors placeholder:text-neutral-600 resize-none" placeholder="Décrivez brièvement votre projet..."></textarea>
-                        </div>
-                        <button type="submit" class="w-full py-4 bg-white text-neutral-950 text-sm font-medium tracking-wider hover:bg-neutral-200 transition-colors">
-                            ENVOYER
-                        </button>
-                    </form>
+                <!-- Feature 2 -->
+                <div class="bento-card rounded-none border border-neutral-800 bg-neutral-900 p-8 flex flex-col justify-between">
+                    <div>
+                        <iconify-icon icon="solar:videocamera-linear" width="28" height="28" class="text-neutral-100 mb-6" style="stroke-width: 1.5;"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-4">Advanced I2V</h3>
+                        <p class="text-sm font-light text-neutral-400 mb-6">Six integrated Image-to-Video models including Luma Ray 2, Kling v2.1, and Wan Pro for breathtaking cinematic motion.</p>
+                    </div>
+                    <div class="w-full h-px bg-neutral-800 rounded-none overflow-hidden relative">
+                        <div class="absolute left-0 top-0 w-3/4 h-full bg-neutral-500"></div>
+                    </div>
+                </div>
 
-                    <a href="#" class="inline-flex items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors mt-6">
-                        <iconify-icon icon="solar:file-download-linear" width="16" height="16" style="stroke-width: 1.5;"></iconify-icon>
-                        Télécharger le portfolio PDF
-                    </a>
+                <!-- Feature 3 -->
+                <div class="bento-card rounded-none border border-neutral-800 bg-neutral-900 p-8 flex flex-col justify-between">
+                    <div>
+                        <iconify-icon icon="solar:gallery-minimalistic-linear" width="28" height="28" class="text-neutral-100 mb-6" style="stroke-width: 1.5;"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-4">Intelligent Gallery</h3>
+                        <p class="text-sm font-light text-neutral-400">Fullscreen viewing, one-click actions to download, edit, or animate any generated piece of content.</p>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="md:col-span-2 bento-card rounded-none border border-neutral-800 bg-neutral-900 p-8 flex flex-col justify-between">
+                    <div>
+                        <iconify-icon icon="solar:cpu-linear" width="28" height="28" class="text-neutral-100 mb-6" style="stroke-width: 1.5;"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400 mb-4">Smart Content Management</h3>
+                        <p class="text-sm font-light text-neutral-400 mb-6 max-w-lg">Local storage integration ensures your workflow survives page reloads. Automated model fallbacks protect against content policy blocks.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-3 py-1.5 rounded-none border border-neutral-800 bg-neutral-950 text-xs text-neutral-500 uppercase tracking-wider">Auto-Save</span>
+                        <span class="px-3 py-1.5 rounded-none border border-neutral-800 bg-neutral-950 text-xs text-neutral-500 uppercase tracking-wider">Policy Fallback</span>
+                        <span class="px-3 py-1.5 rounded-none border border-neutral-800 bg-neutral-950 text-xs text-neutral-500 uppercase tracking-wider">Unified API</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Models Section -->
+    <section id="models" class="py-24 px-6 relative z-10 border-t border-neutral-800 bg-neutral-950">
+        <div class="max-w-screen-xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                <div>
+                    <p class="text-xs font-medium tracking-wider uppercase text-neutral-500 mb-4">Integration</p>
+                    <h2 class="font-display text-3xl md:text-4xl font-normal tracking-tight text-neutral-100 mb-4">Supported AI Models</h2>
+                    <p class="text-sm font-light text-neutral-400 max-w-xl">Harness the power of industry-leading AI models, seamlessly integrated through a unified generation endpoint.</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-medium text-neutral-400 uppercase tracking-wider px-4 py-2 rounded-none border border-neutral-800 bg-neutral-900">
+                    Powered by FAL.ai & Anthropic
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                
+                <!-- Image Models -->
+                <div>
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-800">
+                        <iconify-icon icon="solar:gallery-edit-linear" width="20" height="20" class="text-neutral-500"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400">Image Generation</h3>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Google Imagen 4:</strong> Highest quality generation</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Flux Pro 1.1 Ultra:</strong> Professional-grade images</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Stable Diffusion 3.5:</strong> Improved typography</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Dreamina v3.1:</strong> Superior picture effects</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Video Models -->
+                <div>
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-800">
+                        <iconify-icon icon="solar:video-frame-linear" width="20" height="20" class="text-neutral-500"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400">Image-to-Video (I2V)</h3>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Luma Ray 2 Flash:</strong> Fast smooth motion</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Kling v2.1 Master:</strong> Enhanced motion realism</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Wan Pro:</strong> 6-second 1080p generation (30 FPS)</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Seedance 1.0 Pro:</strong> Advanced motion control</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Audio Models -->
+                <div>
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-800">
+                        <iconify-icon icon="solar:microphone-3-linear" width="20" height="20" class="text-neutral-500"></iconify-icon>
+                        <h3 class="text-xs font-medium tracking-wider uppercase text-neutral-400">Audio & Voice</h3>
+                    </div>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">ElevenLabs TTS:</strong> Turbo v2.5 text-to-speech</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">MiniMax Speech:</strong> 2.5 HD advanced TTS</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Voice Clone:</strong> Custom voices from audio</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-sm font-light text-neutral-400">
+                            <span class="w-1.5 h-1.5 rounded-none bg-neutral-700 mt-2"></span>
+                            <span><strong class="font-normal text-neutral-100">Sync LipSync:</strong> Advanced lip sync modes</span>
+                        </li>
+                    </ul>
                 </div>
 
             </div>
@@ -435,109 +296,142 @@ html { scroll-behavior: smooth; }
     </section>
 
     <!-- Footer -->
-    <footer class="bg-neutral-950 border-t border-neutral-900 py-8 px-6 lg:px-12">
-        <div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-6">
-                <span class="text-sm font-medium tracking-tighter text-white">[NOM]</span>
-                <span class="text-xs text-neutral-600">© 2024 — Tous droits réservés</span>
+    <footer class="border-t border-neutral-800 py-12 px-6">
+        <div class="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 text-white">
+                <span class="text-sm font-medium tracking-tighter uppercase">DirectorChair AI</span>
             </div>
-            <div class="flex items-center gap-6 text-xs text-neutral-600">
-                <a href="#" class="hover:text-white transition-colors">Mentions légales</a>
-                <span>Site by [NOM]</span>
+            
+            <div class="flex gap-6 text-xs font-light text-neutral-500 uppercase tracking-wider">
+                <span>Built with Next.js, React & Tailwind</span>
+                <a href="https://github.com/neoKode1/DirectorchairAi/blob/main/LICENSE" class="hover:text-white transition-colors">MIT License</a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <a href="https://github.com/neoKode1/DirectorchairAi" target="_blank" class="w-8 h-8 rounded-none bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:border-neutral-700 transition-colors">
+                    <iconify-icon icon="solar:github-linear" width="16" height="16"></iconify-icon>
+                </a>
+                <a href="https://github.com/neoKode1/DirectorchairAi/discussions" target="_blank" class="w-8 h-8 rounded-none bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-white hover:border-neutral-700 transition-colors">
+                    <iconify-icon icon="solar:chat-round-linear" width="16" height="16"></iconify-icon>
+                </a>
             </div>
         </div>
     </footer>
 
+    <!-- Space-Time Grid Canvas Logic -->
     <script>
-        // Mobile Menu
-        const menuBtn = document.getElementById('menuBtn');
-        const mobileMenu = document.getElementById('mobileMenu');
+        const canvas = document.getElementById('warp-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 };
+        let time = 0;
+
+        function resize() {
+            width = canvas.parentElement.offsetWidth;
+            height = canvas.parentElement.offsetHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
         
-        menuBtn.addEventListener('click', () => {
-            mobileMenu.classList.add('active');
-            document.body.style.overflow = 'hidden';
+        window.addEventListener('resize', resize);
+        setTimeout(resize, 0);
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.targetX = e.clientX - rect.left;
+            mouse.targetY = e.clientY - rect.top;
         });
-        
-        function closeMobileMenu() {
-            mobileMenu.classList.remove('active');
-            document.body.style.overflow = '';
-        }
 
-        // Showreel Modal
-        const playShowreelBtn = document.getElementById('playShowreelBtn');
-        const videoModal = document.getElementById('videoModal');
-        const videoIframe = document.getElementById('videoIframe');
-        
-        playShowreelBtn.addEventListener('click', () => {
-            videoIframe.src = 'https://player.vimeo.com/video/824804225?autoplay=1';
-            videoModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
+        window.addEventListener('mouseleave', () => {
+            mouse.targetX = -1000;
+            mouse.targetY = -1000;
         });
-        
-        function closeVideoModal() {
-            videoModal.classList.remove('active');
-            videoIframe.src = '';
-            document.body.style.overflow = '';
-        }
 
-        // Project Modal
-        const projectModal = document.getElementById('projectModal');
-        
-        function openProjectModal(id) {
-            projectModal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-        
-        function closeProjectModal() {
-            projectModal.classList.remove('active');
-            document.body.style.overflow = '';
-        }
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            time += 1;
+            
+            // Smooth mouse follow interpolation
+            mouse.x += (mouse.targetX - mouse.x) * 0.1;
+            mouse.y += (mouse.targetY - mouse.y) * 0.1;
 
-        // Filter Projects
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        const projectCards = document.querySelectorAll('.project-card');
-        
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const filter = btn.dataset.filter;
-                
-                filterBtns.forEach(b => {
-                    b.classList.remove('bg-white', 'text-neutral-950');
-                    b.classList.add('text-neutral-500', 'border', 'border-neutral-800');
-                });
-                btn.classList.add('bg-white', 'text-neutral-950');
-                btn.classList.remove('text-neutral-500', 'border', 'border-neutral-800');
-                
-                projectCards.forEach(card => {
-                    if (filter === 'all' || card.dataset.category === filter) {
-                        card.style.display = 'block';
-                    } else {
-                        card.style.display = 'none';
+            ctx.beginPath();
+            // Using a subtle neutral color for the grid lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            ctx.lineWidth = 1;
+
+            const gridSize = 48;
+            const segmentSize = 12;
+            const radius = 600;
+
+            // Vertical lines
+            for (let x = -gridSize; x <= width + gridSize; x += gridSize) {
+                let started = false;
+                for (let y = -gridSize; y <= height + gridSize; y += segmentSize) {
+                    let dx = x - mouse.x;
+                    let dy = y - mouse.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    let warpX = x;
+                    let warpY = y;
+
+                    if (dist < radius) {
+                        let force = Math.max(0, (radius - dist) / radius);
+                        let easeForce = force * force * force; 
+                        let ripple = Math.sin(dist * 0.03 - time * 0.1) * 12 * force;
+                        
+                        let dxRatio = dist === 0 ? 0 : dx / dist;
+                        let dyRatio = dist === 0 ? 0 : dy / dist;
+
+                        warpX -= dxRatio * (easeForce * 180 - ripple);
+                        warpY -= dyRatio * (easeForce * 180 - ripple);
                     }
-                });
-            });
-        });
 
-        // Close modals on escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeVideoModal();
-                closeProjectModal();
-                closeMobileMenu();
-            }
-        });
-
-        // Smooth scroll for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth' });
+                    if (!started) {
+                        ctx.moveTo(warpX, warpY);
+                        started = true;
+                    } else {
+                        ctx.lineTo(warpX, warpY);
+                    }
                 }
-            });
-        });
+            }
+
+            // Horizontal lines
+            for (let y = -gridSize; y <= height + gridSize; y += gridSize) {
+                let started = false;
+                for (let x = -gridSize; x <= width + gridSize; x += segmentSize) {
+                    let dx = x - mouse.x;
+                    let dy = y - mouse.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    let warpX = x;
+                    let warpY = y;
+
+                    if (dist < radius) {
+                        let force = Math.max(0, (radius - dist) / radius);
+                        let easeForce = force * force * force;
+                        let ripple = Math.sin(dist * 0.03 - time * 0.1) * 12 * force;
+                        
+                        let dxRatio = dist === 0 ? 0 : dx / dist;
+                        let dyRatio = dist === 0 ? 0 : dy / dist;
+
+                        warpX -= dxRatio * (easeForce * 180 - ripple);
+                        warpY -= dyRatio * (easeForce * 180 - ripple);
+                    }
+
+                    if (!started) {
+                        ctx.moveTo(warpX, warpY);
+                        started = true;
+                    } else {
+                        ctx.lineTo(warpX, warpY);
+                    }
+                }
+            }
+
+            ctx.stroke();
+            requestAnimationFrame(draw);
+        }
+        
+        resize();
+        draw();
     </script>
-
-
-</body></html>
+</body>
+</html>

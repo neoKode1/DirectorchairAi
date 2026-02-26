@@ -52,6 +52,7 @@ function ScriptMakerContent() {
   const [styleReferenceImage, setStyleReferenceImage] = useState<{ url: string; analysis: string; fileName?: string } | null>(null);
   const [isAnalyzingStyle, setIsAnalyzingStyle] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>('fal-ai/nano-banana-pro/edit');
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -67,6 +68,18 @@ function ScriptMakerContent() {
 
   useEffect(() => {
     setMounted(true);
+    // Load user's preferred model from shared settings
+    try {
+      const savedSettings = localStorage.getItem('directorchair-settings');
+      if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        if (settings.preferredVideoModel && settings.preferredVideoModel !== 'none') {
+          setSelectedModel(settings.preferredVideoModel);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved model preference:', error);
+    }
   }, []);
 
   // Auto-analyze plot when user stops typing (debounced)
@@ -926,20 +939,21 @@ function ScriptMakerContent() {
 
       let prompt = promptParts.filter(Boolean).join(', ');
 
-      // Truncate prompt to 2000 characters max for Nano Banana models
+      // Truncate prompt to 2000 characters max for safety
       const MAX_PROMPT_LENGTH = 2000;
       if (prompt.length > MAX_PROMPT_LENGTH) {
         console.warn(`⚠️ [ScriptMaker] Prompt too long (${prompt.length} chars), truncating to ${MAX_PROMPT_LENGTH}`);
         prompt = prompt.substring(0, MAX_PROMPT_LENGTH);
       }
 
-      const primaryModelId = 'fal-ai/nano-banana-pro/edit';
+      // Use the user's selected model as primary, with fallback chain
+      const primaryModelId = selectedModel;
       const legacyModelId = 'fal-ai/nano-banana/edit';
       const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
       const flux2ModelId = 'fal-ai/flux-pro/v1.1-ultra';
       const hasCharacterReferences = matchedImageUrls.length > 0;
 
-      console.log('🎬 [ScriptMaker] Generating shot with Nano Banana Pro:', {
+      console.log('🎬 [ScriptMaker] Generating shot with user-selected model:', {
         minute: minuteIndex + 1,
         shot: shotIndex + 1,
         promptLength: prompt.length,
@@ -964,17 +978,18 @@ function ScriptMakerContent() {
         image_urls: matchedImageUrls // Always include image_urls, even if empty array
       });
 
+      const primaryModelName = getModelFriendlyName(primaryModelId);
       const modelAttempts: ModelAttempt[] = [
         {
           payload: buildNanoBananaPayload(primaryModelId),
           fallbackToast: hasCharacterReferences
-            ? 'Nano Banana Pro failed, switching to Nano Banana (Legacy)...'
-            : 'Nano Banana Pro failed, switching to SeeDream 4.0 Edit...'
+            ? `${primaryModelName} failed, switching to Nano Banana (Legacy)...`
+            : `${primaryModelName} failed, switching to SeeDream 4.0 Edit...`
         }
       ];
 
       if (hasCharacterReferences) {
-        // With character references: Nano Banana Pro → Nano Banana Legacy → SeeDream 4.0 Edit
+        // With character references: Primary → Nano Banana Legacy → SeeDream 4.0 Edit
         modelAttempts.push({
           payload: buildNanoBananaPayload(legacyModelId),
           fallbackToast: 'Nano Banana (Legacy) failed, trying SeeDream 4.0 Edit...'
@@ -1673,7 +1688,7 @@ function ScriptMakerContent() {
             <div className="max-w-6xl mx-auto">
               <h2 className="font-display text-2xl font-normal text-white tracking-tight mb-4">Visual Storyboard</h2>
               <p className="text-sm text-neutral-500 font-light mb-6">
-                Shot-by-shot breakdown ready for visual generation with Nano Banana Pro
+                Shot-by-shot breakdown ready for visual generation with {getModelFriendlyName(selectedModel)}
               </p>
 
               {minutes.map((minute: any, minuteIndex: number) => (

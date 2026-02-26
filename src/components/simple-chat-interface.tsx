@@ -444,54 +444,33 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         console.log('🖼️ [Chat] Using last generated image:', imageToUse);
       }
 
-      if (imageToUse) {
-        // Image editing/generation with image (uploaded or referenced)
-        if (wantsVideo) {
-          console.log('🎬 [Chat] Video generation requested, checking model selection:', {
-            preferredVideoModel,
-            hasPreferredModel: preferredVideoModel && preferredVideoModel !== 'none'
-          });
-          // Check if user has a preferred video model selected
-          if (preferredVideoModel && preferredVideoModel !== 'none') {
-            model = preferredVideoModel;
-            console.log('🎬 [Chat] Using preferred video model:', model);
-          } else {
-            // Prompt user to select a video model
-            const errorMessage = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant' as const,
-              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            setIsGenerating(false);
-            onGenerationComplete?.();
-            return;
-          }
-        } else {
-          model = 'fal-ai/nano-banana/edit'; // Nano Banana Edit for image editing
-        }
+      // MODEL SELECTION: Always respect the user's dropdown choice first
+      if (preferredVideoModel && preferredVideoModel !== 'none') {
+        // User has explicitly selected a model — use it for ALL generation types
+        model = preferredVideoModel;
+        console.log('🎯 [Chat] Using user-selected model:', model);
       } else {
-        // Text-to-content generation
+        // No model selected — use smart defaults based on context
         if (wantsVideo) {
-          // Check if user has a preferred video model selected
-          if (preferredVideoModel && preferredVideoModel !== 'none') {
-            model = preferredVideoModel;
-          } else {
-            // Prompt user to select a video model
-            const errorMessage = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant' as const,
-              content: `⚠️ Please select an image-to-video model in Settings before animating images. Click the Settings button below to choose your preferred video model.`,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMessage]);
-            setIsGenerating(false);
-            onGenerationComplete?.();
-            return;
-          }
+          // Video requested but no model selected — prompt user
+          const errorMessage = {
+            id: (Date.now() + 1).toString(),
+            type: 'assistant' as const,
+            content: `⚠️ Please select a model from the dropdown above before generating. Choose a video model like Sora 2, Kling, or Wan Pro for video generation.`,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setIsGenerating(false);
+          onGenerationComplete?.();
+          return;
+        } else if (imageToUse) {
+          // Image editing with no model selected — default to nano-banana/edit
+          model = 'fal-ai/nano-banana/edit';
+          console.log('🎯 [Chat] No model selected, defaulting to Nano Banana Edit for image editing');
         } else {
-          model = 'fal-ai/flux-pro/v1.1-ultra'; // Flux Pro for text-to-image
+          // Text-to-image with no model selected — default to flux-pro
+          model = 'fal-ai/flux-pro/v1.1-ultra';
+          console.log('🎯 [Chat] No model selected, defaulting to Flux Pro for text-to-image');
         }
       }
 
@@ -730,8 +709,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         // Prioritize user's prompt first, then add the specific shot variation
         const enhancedPrompt = `${prompt}. ${variationPrompt}`;
         
+        // Use user's selected model for variations, fallback to nano-banana/edit
+        const variationModel = (preferredVideoModel && preferredVideoModel !== 'none')
+          ? preferredVideoModel
+          : 'fal-ai/nano-banana/edit';
         const generationData = {
-          model: 'fal-ai/nano-banana/edit', // Nano Banana Edit for image variations
+          model: variationModel,
           prompt: enhancedPrompt,
           image_urls: [imageUrl],
           aspect_ratio: '16:9'
@@ -842,7 +825,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <Monitor className="w-4 h-4 text-neutral-500 shrink-0" />
           <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
             <SelectTrigger className="w-full h-8 text-xs border-neutral-800 bg-neutral-900 text-neutral-300">
-              <SelectValue placeholder="Video Model" />
+              <SelectValue placeholder="Select Model" />
             </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -1173,10 +1156,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="video-model">Preferred Video Model</Label>
+                    <Label htmlFor="video-model">Preferred Model</Label>
                     <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select video model" />
+                        <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>

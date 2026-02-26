@@ -10,9 +10,15 @@ export function WarpCanvas({ className = "" }: { className?: string }) {
 
   const resize = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !canvas.parentElement) return;
-    canvas.width = canvas.parentElement.offsetWidth;
-    canvas.height = canvas.parentElement.offsetHeight;
+    if (!canvas) return;
+    // If fixed/global, size to viewport; otherwise size to parent
+    if (canvas.style.position === 'fixed') {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    } else if (canvas.parentElement) {
+      canvas.width = canvas.parentElement.offsetWidth;
+      canvas.height = canvas.parentElement.offsetHeight;
+    }
   }, []);
 
   useEffect(() => {
@@ -125,7 +131,8 @@ export function WarpCanvas({ className = "" }: { className?: string }) {
   return (
     <canvas
       ref={canvasRef}
-      className={`absolute top-0 left-0 w-full h-full pointer-events-none z-0 ${className}`}
+      className={`pointer-events-none ${className}`}
+      style={className.includes('fixed') ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' } : { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
     />
   );
 }

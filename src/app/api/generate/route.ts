@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fal } from '@fal-ai/client';
 
+// Allow large request bodies (base64 images can be several MB)
+export const maxDuration = 120; // seconds
+
 // Helper function to convert localhost URLs to base64 data URIs
 async function convertLocalhostToBase64(url: string): Promise<string> {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {

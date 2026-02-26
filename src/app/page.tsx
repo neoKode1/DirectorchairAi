@@ -15,7 +15,7 @@ import {
   Github,
   MessageCircle,
 } from "lucide-react";
-import { WarpCanvas } from "@/components/warp-canvas";
+
 
 export default function HomePage() {
   return (
@@ -23,8 +23,6 @@ export default function HomePage() {
 
       {/* ── Hero Section ── */}
       <section className="relative pt-40 pb-20 lg:pt-56 lg:pb-32 px-6 overflow-hidden">
-        {/* Interactive Space-Time Grid */}
-        <WarpCanvas />
 
         <div className="relative z-10 max-w-screen-xl mx-auto text-center flex flex-col items-center">
           {/* Version badge */}

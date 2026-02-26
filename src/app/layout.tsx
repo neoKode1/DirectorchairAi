@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 import { cn } from "@/lib/utils";
+import { WarpCanvas } from "@/components/warp-canvas";
 
 const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600"] });
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-display" });
@@ -38,7 +39,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen bg-background text-foreground">
+          <div className="flex flex-col min-h-screen bg-neutral-950 text-foreground">
+            {/* Global interactive warp grid background */}
+            <WarpCanvas className="fixed z-0" />
             {/* Film grain overlay */}
             <div className="fixed inset-0 grain pointer-events-none z-[60]" />
 

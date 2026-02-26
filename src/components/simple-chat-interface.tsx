@@ -213,20 +213,59 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   }, [aspectRatio, resolution, preferredVideoModel]);
 
 
-  const processFiles = useCallback((files: FileList) => {
-    Array.from(files).forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          if (result) {
-            setUploadedImages(prev => [...prev, result]);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+  // Compress/resize an image to stay under ~2MB base64
+  const compressImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX_DIMENSION = 1920; // Cap at 1920px on longest side
+        let { width, height } = img;
+
+        // Scale down if needed
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          const scale = MAX_DIMENSION / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Canvas context failed')); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Use JPEG at 0.85 quality for good size/quality balance
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        console.log(`📸 [Chat] Compressed image: ${file.name} (${(file.size / 1024).toFixed(0)}KB → ${(dataUrl.length * 0.75 / 1024).toFixed(0)}KB, ${width}x${height})`);
+        resolve(dataUrl);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+      img.src = url;
     });
   }, []);
+
+  const processFiles = useCallback((files: FileList) => {
+    Array.from(files).forEach(async file => {
+      if (file.type.startsWith('image/')) {
+        try {
+          const compressed = await compressImage(file);
+          setUploadedImages(prev => [...prev, compressed]);
+        } catch (err) {
+          console.error('Failed to compress image:', err);
+          // Fallback to raw base64 if compression fails
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            if (result) setUploadedImages(prev => [...prev, result]);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  }, [compressImage]);
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;

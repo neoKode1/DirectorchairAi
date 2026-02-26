@@ -20,10 +20,10 @@ const queryClient = new QueryClient({
 
 // Static loading component
 const LoadingSpinner = () => (
-  <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+  <div className="fixed inset-0 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
     <div className="flex flex-col items-center gap-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      <p className="text-muted-foreground">Loading...</p>
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neutral-500"></div>
+      <p className="text-neutral-500">Loading...</p>
     </div>
   </div>
 );
@@ -1168,39 +1168,39 @@ function ScriptMakerContent() {
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-screen flex bg-neutral-950">
       {/* Left Column - Project Setup */}
-      <div className="w-80 border-r border-border flex flex-col overflow-y-auto">
-        <div className="p-4 border-b border-border">
+      <div className="w-80 border-r border-neutral-800 flex flex-col overflow-y-auto">
+        <div className="p-4 border-b border-neutral-800">
           <div className="flex items-center gap-2 mb-2">
-            <Film className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-foreground">ScriptMaker</h2>
+            <Film className="w-5 h-5 text-neutral-500" />
+            <h2 className="text-lg font-medium text-white tracking-tight">ScriptMaker</h2>
           </div>
-          <p className="text-xs text-muted-foreground">AI-powered movie script generator</p>
+          <p className="text-xs text-neutral-600">AI-powered movie script generator</p>
         </div>
 
         {/* Step 1: Movie Idea */}
-        <div className={`p-4 border-b border-border ${currentStep >= 1 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 1: Movie Idea</h3>
-          
+        <div className={`p-4 border-b border-neutral-800 ${currentStep >= 1 ? '' : 'opacity-50'}`}>
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 1: Movie Idea</h3>
+
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Movie Title</label>
+              <label className="block text-xs text-neutral-500 mb-1">Movie Title</label>
               <input
                 type="text"
                 value={movieTitle}
                 onChange={(e) => setMovieTitle(e.target.value)}
                 placeholder="Enter movie title"
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none bg-neutral-900 text-white placeholder:text-neutral-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Genre</label>
+              <label className="block text-xs text-neutral-500 mb-1">Genre</label>
               <select
                 value={genreIdea}
                 onChange={(e) => setGenreIdea(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none bg-neutral-900 text-white"
               >
                 <option value="">Select Genre</option>
                 <option value="Action">Action</option>
@@ -1215,15 +1215,15 @@ function ScriptMakerContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Your Plot Ideas</label>
+              <label className="block text-xs text-neutral-500 mb-1">Your Plot Ideas</label>
               <textarea
                 value={userPlotInput}
                 onChange={(e) => setUserPlotInput(e.target.value)}
                 placeholder="Type your movie plot ideas here... (stream of consciousness is fine!)"
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none resize-none bg-neutral-900 text-white placeholder:text-neutral-600"
                 rows={4}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-neutral-600 mt-1">
                 💡 Just start typing - Claude will enhance and structure your ideas below
               </p>
             </div>
@@ -1231,16 +1231,16 @@ function ScriptMakerContent() {
             {/* Claude Enhanced Plot Output */}
             {(isAnalyzingPlot || claudeEnhancedPlot) && (
               <div>
-                <label className="block text-xs font-medium text-foreground/80 mb-1 flex items-center justify-between">
+                <label className="block text-xs text-neutral-500 mb-1 flex items-center justify-between">
                   <span>Claude Enhanced Plot</span>
                   {isAnalyzingPlot && (
-                    <span className="text-xs text-purple-600 flex items-center gap-1">
+                    <span className="text-xs text-neutral-400 flex items-center gap-1">
                       <RefreshCw className="w-3 h-3 animate-spin" />
                       Analyzing...
                     </span>
                   )}
                   {!isAnalyzingPlot && hasAnalyzedPlot && claudeEnhancedPlot && (
-                    <span className="text-xs text-green-600 flex items-center gap-1">
+                    <span className="text-xs text-neutral-400 flex items-center gap-1">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -1248,39 +1248,39 @@ function ScriptMakerContent() {
                     </span>
                   )}
                 </label>
-                <div className="w-full px-3 py-2 text-sm border border-purple-500/30 bg-purple-500/10 rounded-lg min-h-[100px] max-h-[200px] overflow-y-auto">
+                <div className="w-full px-3 py-2 text-sm border border-neutral-700 bg-neutral-900/50 min-h-[100px] max-h-[200px] overflow-y-auto">
                   {isAnalyzingPlot ? (
-                    <div className="flex items-center justify-center h-24 text-muted-foreground/60">
+                    <div className="flex items-center justify-center h-24 text-neutral-600">
                       <RefreshCw className="w-5 h-5 animate-spin mr-2" />
                       <span>Claude is enhancing your plot...</span>
                     </div>
                   ) : claudeEnhancedPlot ? (
-                    <p className="text-foreground/80 whitespace-pre-wrap leading-relaxed">{claudeEnhancedPlot}</p>
+                    <p className="text-neutral-300 whitespace-pre-wrap leading-relaxed">{claudeEnhancedPlot}</p>
                   ) : null}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-neutral-600 mt-1">
                   ✨ This is the enhanced version that will be used for character and screenplay generation
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Era/Setting</label>
+              <label className="block text-xs text-neutral-500 mb-1">Era/Setting</label>
               <input
                 type="text"
                 value={eraSetting}
                 onChange={(e) => setEraSetting(e.target.value)}
                 placeholder="e.g., Present Day, 1920s, Medieval"
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none bg-neutral-900 text-white placeholder:text-neutral-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Photo Style</label>
+              <label className="block text-xs text-neutral-500 mb-1">Photo Style</label>
               <select
                 value={photoStyle}
                 onChange={(e) => setPhotoStyle(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none bg-neutral-900 text-white"
               >
                 <option value="cinematic">Cinematic</option>
                 <option value="vhs-aesthetic">VHS Aesthetic</option>
@@ -1293,7 +1293,7 @@ function ScriptMakerContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-foreground/80 mb-1">Duration (minutes)</label>
+              <label className="block text-xs text-neutral-500 mb-1">Duration (minutes)</label>
               <input
                 type="number"
                 value={minutesToExtract || ''}
@@ -1303,7 +1303,7 @@ function ScriptMakerContent() {
                 }}
                 min="1"
                 max="30"
-                className="w-full px-3 py-2 text-sm border border-input rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground"
+                className="w-full px-3 py-2 text-sm border border-neutral-800 focus:border-neutral-600 focus:outline-none bg-neutral-900 text-white"
               />
             </div>
 
@@ -1311,17 +1311,17 @@ function ScriptMakerContent() {
               <div className="space-y-2 mt-2">
                 <button
                   onClick={() => setCurrentStep(2)}
-                  className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                  className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
                 >
                   Next: Generate Screenplay →
                 </button>
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border"></div>
+                    <div className="w-full border-t border-neutral-800"></div>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="px-2 bg-background text-muted-foreground">OR</span>
+                    <span className="px-2 bg-neutral-950 text-neutral-600">OR</span>
                   </div>
                 </div>
 
@@ -1334,11 +1334,11 @@ function ScriptMakerContent() {
                       className="hidden"
                       id="script-upload"
                     />
-                    <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-background border-2 border-purple-600 dark:border-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors cursor-pointer text-center">
+                    <div className="w-full px-4 py-2 text-sm font-medium text-neutral-400 border border-neutral-800 hover:border-neutral-600 hover:text-white transition-all cursor-pointer text-center tracking-wider">
                       📄 Upload Your Own Script
                     </div>
                   </label>
-                  <p className="text-xs text-muted-foreground text-center">
+                  <p className="text-xs text-neutral-600 text-center">
                     Skip screenplay generation and jump to shot list
                   </p>
                 </div>
@@ -1348,33 +1348,33 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 2: Screenplay */}
-        <div className={`p-4 border-b border-border ${currentStep >= 2 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 2: Screenplay</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+        <div className={`p-4 border-b border-neutral-800 ${currentStep >= 2 ? '' : 'opacity-50'}`}>
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 2: Screenplay</h3>
+          <p className="text-xs text-neutral-600 mb-3">
             {currentStep < 2 ? 'Complete Step 1 to unlock' : 'Generate full screenplay'}
           </p>
-          
+
           {currentStep >= 2 && !finalScript && (
             <button
               onClick={handleGenerateScript}
               disabled={isGenerating}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-wider"
             >
               {isGenerating ? 'Writing...' : 'Write Screenplay'}
             </button>
           )}
-          
+
           {currentStep >= 2 && finalScript && extractedCharacters.length > 0 && (
             <div className="space-y-2">
-              <div className="p-2 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-600 dark:text-green-400">
+              <div className="p-2 border border-neutral-700 text-xs text-neutral-400">
                 ✅ Screenplay complete
               </div>
-              <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-600 dark:text-blue-400">
+              <div className="p-2 border border-neutral-700 text-xs text-neutral-400">
                 Found {extractedCharacters.length} character{extractedCharacters.length > 1 ? 's' : ''}
               </div>
               <button
                 onClick={() => setCurrentStep(3)}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
               >
                 Next: Upload Characters →
               </button>
@@ -1383,27 +1383,27 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 3: Character Image Upload */}
-        <div className={`p-4 border-b border-border ${currentStep >= 3 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 3: Character Images</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+        <div className={`p-4 border-b border-neutral-800 ${currentStep >= 3 ? '' : 'opacity-50'}`}>
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 3: Character Images</h3>
+          <p className="text-xs text-neutral-600 mb-3">
             {currentStep < 3 ? 'Complete Step 2 to unlock' : 'Upload images for each character'}
           </p>
-          
+
           {currentStep >= 3 && extractedCharacters.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground mb-2">
+              <p className="text-xs text-neutral-600 mb-2">
                 Upload reference images for consistency:
               </p>
               {extractedCharacters.map((charName, index) => {
                 const hasImage = characterReferenceImages.some(img => img.characterName === charName);
                 return (
-                  <div key={index} className={`p-2 rounded border ${hasImage ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+                  <div key={index} className={`p-2 border ${hasImage ? 'border-neutral-600 bg-neutral-900/50' : 'border-neutral-800 bg-neutral-900'}`}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-foreground/80">{charName}</span>
-                      {hasImage && <span className="text-xs text-green-600">✓</span>}
+                      <span className="text-xs font-medium text-neutral-300">{charName}</span>
+                      {hasImage && <span className="text-xs text-neutral-400">✓</span>}
                     </div>
                     <label className="block">
-                      <div className="text-xs px-2 py-1 bg-card border border-input rounded cursor-pointer hover:bg-muted text-center text-foreground">
+                      <div className="text-xs px-2 py-1 border border-neutral-700 cursor-pointer hover:border-neutral-500 text-center text-neutral-400 hover:text-white transition-all">
                         {hasImage ? 'Update Image' : 'Upload Image'}
                       </div>
                       <input
@@ -1417,11 +1417,11 @@ function ScriptMakerContent() {
                   </div>
                 );
               })}
-              
+
               <button
                 onClick={() => setCurrentStep(4)}
                 disabled={characterReferenceImages.length === 0}
-                className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-2 px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-wider"
               >
                 Next: Style Reference →
               </button>
@@ -1430,15 +1430,15 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 4: Style Reference */}
-        <div className={`p-4 border-b border-border ${currentStep >= 4 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 4: Style Reference</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+        <div className={`p-4 border-b border-neutral-800 ${currentStep >= 4 ? '' : 'opacity-50'}`}>
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 4: Style Reference</h3>
+          <p className="text-xs text-neutral-600 mb-3">
             {currentStep < 4 ? 'Complete Step 3 to unlock' : 'Upload a style reference image to guide all scene generations'}
           </p>
-          
+
           {currentStep >= 4 && !styleReferenceImage && (
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-input rounded-lg p-6 text-center">
+              <div className="border border-dashed border-neutral-700 p-6 text-center">
                 <input
                   type="file"
                   accept="image/*"
@@ -1451,40 +1451,40 @@ function ScriptMakerContent() {
                   htmlFor="style-upload"
                   className="cursor-pointer flex flex-col items-center gap-2"
                 >
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                    <Video className="w-6 h-6 text-muted-foreground/60" />
+                  <div className="w-12 h-12 border border-neutral-700 flex items-center justify-center">
+                    <Video className="w-6 h-6 text-neutral-600" />
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-neutral-500">
                     {isAnalyzingStyle ? 'Analyzing style...' : 'Upload Style Reference Image'}
                   </div>
-                  <div className="text-xs text-muted-foreground/60">
+                  <div className="text-xs text-neutral-600">
                     Upload an image that represents the visual style you want for all scenes
                   </div>
                 </label>
               </div>
             </div>
           )}
-          
+
           {currentStep >= 4 && styleReferenceImage && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                  <Video className="w-4 h-4 text-green-600 dark:text-green-400" />
+              <div className="flex items-center gap-3 p-3 border border-neutral-700">
+                <div className="w-8 h-8 border border-neutral-600 flex items-center justify-center">
+                  <Video className="w-4 h-4 text-neutral-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-green-700 dark:text-green-300">Style Reference Added</div>
-                  <div className="text-xs text-green-600 dark:text-green-400">{styleReferenceImage.fileName}</div>
+                  <div className="text-sm font-medium text-white">Style Reference Added</div>
+                  <div className="text-xs text-neutral-500">{styleReferenceImage.fileName}</div>
                 </div>
               </div>
 
-              <div className="bg-muted rounded-lg p-4">
-                <div className="text-xs text-muted-foreground mb-2">Style Analysis:</div>
-                <div className="text-sm text-foreground">{styleReferenceImage.analysis}</div>
+              <div className="bg-neutral-900 p-4 border border-neutral-800">
+                <div className="text-xs text-neutral-500 mb-2">Style Analysis:</div>
+                <div className="text-sm text-neutral-300">{styleReferenceImage.analysis}</div>
               </div>
-              
+
               <button
                 onClick={() => setCurrentStep(5)}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
               >
                 Next: Shot List →
               </button>
@@ -1493,17 +1493,17 @@ function ScriptMakerContent() {
         </div>
 
         {/* Step 5: Shot List Breakdown */}
-        <div className={`p-4 border-b border-border ${currentStep >= 5 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 5: Shot List</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+        <div className={`p-4 border-b border-neutral-800 ${currentStep >= 5 ? '' : 'opacity-50'}`}>
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 5: Shot List</h3>
+          <p className="text-xs text-neutral-600 mb-3">
             {currentStep < 5 ? 'Complete Step 4 to unlock' : 'Extract shots from screenplay'}
           </p>
-          
+
           {currentStep >= 4 && (
             <button
               onClick={handleGenerateStoryboard}
               disabled={isGenerating}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-wider"
             >
               {isGenerating ? 'Analyzing...' : 'Generate Shot List'}
             </button>
@@ -1512,11 +1512,11 @@ function ScriptMakerContent() {
 
         {/* Step 6: Generate Visual Scenes */}
         <div className={`p-4 ${currentStep >= 6 ? '' : 'opacity-50'}`}>
-          <h3 className="text-sm font-semibold text-foreground mb-3">Step 6: Visual Scenes</h3>
-          <p className="text-xs text-muted-foreground mb-3">
+          <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Step 6: Visual Scenes</h3>
+          <p className="text-xs text-neutral-600 mb-3">
             {currentStep < 6 ? 'Complete Step 5 to unlock' : 'Generate scene images (12 per minute)'}
           </p>
-          
+
           {currentStep >= 6 && (
             <div className="space-y-2">
               {Array.from({ length: minutesToExtract }, (_, i) => i + 1).map(minute => (
@@ -1524,7 +1524,7 @@ function ScriptMakerContent() {
                   key={minute}
                   onClick={() => handleGenerateAllShots(minute - 1)}
                   disabled={isGenerating}
-                  className="w-full px-3 py-2 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 text-xs font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-wider"
                 >
                   {isGenerating ? 'Generating...' : `Minute ${minute}`}
                 </button>
@@ -1536,38 +1536,38 @@ function ScriptMakerContent() {
 
       {/* Center Column - Dynamic Content Display */}
       <div className="flex-1 flex flex-col">
-        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto bg-muted">
+        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto bg-neutral-900">
           {currentStep === 1 && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
-                <div className="w-20 h-20 mx-auto mb-6 bg-purple-500/10 rounded-full flex items-center justify-center">
-                  <Film className="w-10 h-10 text-purple-600" />
+                <div className="w-20 h-20 mx-auto mb-6 border border-neutral-700 flex items-center justify-center">
+                  <Film className="w-10 h-10 text-neutral-500" />
                 </div>
-                <h3 className="text-2xl font-semibold text-foreground mb-3">Welcome to ScriptMaker</h3>
-                <p className="text-muted-foreground mb-6">
+                <h3 className="font-display text-2xl font-normal text-white tracking-tight mb-3">Welcome to ScriptMaker</h3>
+                <p className="text-neutral-500 font-light mb-6">
                   Transform your movie ideas into complete screenplays with visual storyboards.
                   Upload character images for consistency across all scenes.
                 </p>
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
-                    <div className="text-xl font-bold text-purple-600 mb-1">1</div>
-                    <div className="text-xs font-medium text-foreground/80">Movie Idea</div>
+                  <div className="p-3 border border-neutral-800 hover:border-neutral-700 transition-colors">
+                    <div className="text-xl font-medium text-white mb-1">1</div>
+                    <div className="text-xs text-neutral-500">Movie Idea</div>
                   </div>
-                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
-                    <div className="text-xl font-bold text-purple-600 mb-1">2</div>
-                    <div className="text-xs font-medium text-foreground/80">Screenplay</div>
+                  <div className="p-3 border border-neutral-800 hover:border-neutral-700 transition-colors">
+                    <div className="text-xl font-medium text-white mb-1">2</div>
+                    <div className="text-xs text-neutral-500">Screenplay</div>
                   </div>
-                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
-                    <div className="text-xl font-bold text-purple-600 mb-1">3</div>
-                    <div className="text-xs font-medium text-foreground/80">Character Upload</div>
+                  <div className="p-3 border border-neutral-800 hover:border-neutral-700 transition-colors">
+                    <div className="text-xl font-medium text-white mb-1">3</div>
+                    <div className="text-xs text-neutral-500">Character Upload</div>
                   </div>
-                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border">
-                    <div className="text-xl font-bold text-purple-600 mb-1">4</div>
-                    <div className="text-xs font-medium text-foreground/80">Shot List</div>
+                  <div className="p-3 border border-neutral-800 hover:border-neutral-700 transition-colors">
+                    <div className="text-xl font-medium text-white mb-1">4</div>
+                    <div className="text-xs text-neutral-500">Shot List</div>
                   </div>
-                  <div className="bg-card p-3 rounded-lg shadow-sm border border-border col-span-2">
-                    <div className="text-xl font-bold text-purple-600 mb-1">5</div>
-                    <div className="text-xs font-medium text-foreground/80">Visual Generation</div>
+                  <div className="p-3 border border-neutral-800 hover:border-neutral-700 transition-colors col-span-2">
+                    <div className="text-xl font-medium text-white mb-1">5</div>
+                    <div className="text-xs text-neutral-500">Visual Generation</div>
                   </div>
                 </div>
               </div>
@@ -1577,11 +1577,11 @@ function ScriptMakerContent() {
           {finalScript && (
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-foreground">Screenplay</h2>
-                <span className="text-sm text-muted-foreground">{minutesToExtract} minute screenplay</span>
+                <h2 className="font-display text-2xl font-normal text-white tracking-tight">Screenplay</h2>
+                <span className="text-sm text-neutral-500">{minutesToExtract} minute screenplay</span>
               </div>
-              <div className="bg-card rounded-lg shadow-sm border border-border p-8 max-h-[70vh] overflow-y-auto">
-                <pre className="text-foreground font-mono text-sm whitespace-pre-wrap leading-relaxed">
+              <div className="border border-neutral-800 p-8 max-h-[70vh] overflow-y-auto bg-neutral-950">
+                <pre className="text-neutral-300 font-mono text-sm whitespace-pre-wrap leading-relaxed">
                   {finalScript}
                 </pre>
               </div>
@@ -1590,21 +1590,21 @@ function ScriptMakerContent() {
 
           {currentStep === 3 && extractedCharacters.length > 0 && (
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Upload Character Images</h2>
-              <p className="text-muted-foreground mb-6">
+              <h2 className="font-display text-2xl font-normal text-white tracking-tight mb-4">Upload Character Images</h2>
+              <p className="text-neutral-500 font-light mb-6">
                 Upload reference images for each character found in your screenplay. These will ensure visual consistency across all generated scenes.
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {extractedCharacters.map((charName, index) => {
                   const charImage = characterReferenceImages.find(img => img.characterName === charName);
-                  
+
                   return (
-                    <div key={index} className="bg-card rounded-lg shadow-sm border border-border p-6">
+                    <div key={index} className="border border-neutral-800 p-6">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-bold text-purple-600">{charName}</h3>
+                        <h3 className="text-lg font-medium text-white tracking-tight">{charName}</h3>
                         {charImage && (
-                          <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                          <span className="text-xs text-neutral-400 font-medium flex items-center gap-1">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
@@ -1612,19 +1612,19 @@ function ScriptMakerContent() {
                           </span>
                         )}
                       </div>
-                      
+
                       {charImage ? (
                         <div className="space-y-3">
-                          <img 
-                            src={charImage.url} 
+                          <img
+                            src={charImage.url}
                             alt={charName}
-                            className="w-full h-48 object-cover rounded-lg"
+                            className="w-full h-48 object-cover"
                           />
-                          <div className="p-3 bg-muted rounded text-xs text-muted-foreground">
+                          <div className="p-3 bg-neutral-950 border border-neutral-800 text-xs text-neutral-500">
                             <strong>Analysis:</strong> {charImage.analysis.substring(0, 150)}...
                           </div>
                           <label className="block">
-                            <div className="w-full px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-card border border-purple-600 dark:border-purple-400 rounded-lg cursor-pointer hover:bg-purple-500/10 text-center transition-colors">
+                            <div className="w-full px-4 py-2 text-sm font-medium text-neutral-400 border border-neutral-800 cursor-pointer hover:border-neutral-600 hover:text-white text-center transition-all tracking-wider">
                               Update Image
                             </div>
                             <input
@@ -1638,11 +1638,11 @@ function ScriptMakerContent() {
                         </div>
                       ) : (
                         <label className="block">
-                          <div className="w-full h-48 border-2 border-dashed border-input rounded-lg cursor-pointer hover:border-purple-500 hover:bg-purple-500/10 transition-colors flex flex-col items-center justify-center gap-2">
-                            <svg className="w-12 h-12 text-muted-foreground/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-48 border border-dashed border-neutral-700 cursor-pointer hover:border-neutral-500 hover:bg-neutral-800/50 transition-colors flex flex-col items-center justify-center gap-2">
+                            <svg className="w-12 h-12 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-neutral-500">
                               {isAnalyzingImage ? 'Analyzing...' : 'Click to upload'}
                             </span>
                           </div>
@@ -1659,10 +1659,10 @@ function ScriptMakerContent() {
                   );
                 })}
               </div>
-              
-              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>💡 Tip:</strong> Uploaded {characterReferenceImages.filter(img => img.characterName).length}/{extractedCharacters.length} characters. 
+
+              <div className="mt-6 p-4 border border-neutral-800">
+                <p className="text-sm text-neutral-400">
+                  <strong>💡 Tip:</strong> Uploaded {characterReferenceImages.filter(img => img.characterName).length}/{extractedCharacters.length} characters.
                   {characterReferenceImages.filter(img => img.characterName).length === 0 && ' Upload at least one character to proceed.'}
                 </p>
               </div>
@@ -1671,60 +1671,60 @@ function ScriptMakerContent() {
 
           {currentStep >= 4 && minutes.length > 0 && (
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Visual Storyboard</h2>
-              <p className="text-sm text-muted-foreground mb-6">
+              <h2 className="font-display text-2xl font-normal text-white tracking-tight mb-4">Visual Storyboard</h2>
+              <p className="text-sm text-neutral-500 font-light mb-6">
                 Shot-by-shot breakdown ready for visual generation with Nano Banana Pro
               </p>
-              
+
               {minutes.map((minute: any, minuteIndex: number) => (
                 <div key={minuteIndex} className="mb-8">
-                  <div className="bg-purple-600 text-white px-4 py-2 rounded-t-lg font-semibold flex items-center justify-between">
-                    <span>Minute {minuteIndex + 1}</span>
+                  <div className="bg-white text-neutral-950 px-4 py-2 font-medium flex items-center justify-between">
+                    <span className="text-sm tracking-wider">MINUTE {minuteIndex + 1}</span>
                     <button
                       onClick={() => handleGenerateAllShots(minuteIndex)}
                       disabled={isGenerating}
-                      className="text-xs px-3 py-1 bg-white/90 dark:bg-white/20 text-purple-600 dark:text-purple-300 rounded hover:bg-white dark:hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-xs px-3 py-1 border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Generate All 12 Shots
                     </button>
                   </div>
-                  <div className="bg-card rounded-b-lg shadow-sm border border-border p-6">
+                  <div className="border border-neutral-800 border-t-0 p-6 bg-neutral-950">
                     {minute.script && (
-                      <div className="mb-4 p-4 bg-muted rounded-lg">
-                        <h4 className="text-sm font-semibold text-foreground/80 mb-2">Scene Overview</h4>
-                        <p className="text-sm text-muted-foreground">{minute.script}</p>
+                      <div className="mb-4 p-4 bg-neutral-900 border border-neutral-800">
+                        <h4 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-2">Scene Overview</h4>
+                        <p className="text-sm text-neutral-500">{minute.script}</p>
                       </div>
                     )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {minute.shots && minute.shots.map((shot: any, shotIndex: number) => (
-                        <div key={shotIndex} className="border border-border rounded-lg p-4 hover:border-purple-400 transition-colors">
+                        <div key={shotIndex} className="border border-neutral-800 p-4 hover:border-neutral-600 transition-colors">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-purple-600">Shot {shot.shotNumber || shotIndex + 1}/12</span>
+                            <span className="text-xs font-medium text-neutral-400 tracking-wider">SHOT {shot.shotNumber || shotIndex + 1}/12</span>
                             <button
                               onClick={() => handleGenerateShot(minuteIndex, shotIndex, shot)}
-                              className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                              className="text-xs px-2 py-1 text-neutral-950 bg-white hover:bg-neutral-100 transition-colors"
                               disabled={isGenerating}
                             >
                               Generate
                             </button>
                           </div>
-                          
+
                           {shot.imageUrl ? (
                             <div className="relative group cursor-pointer" onClick={() => setFullscreenImage({url: shot.imageUrl, title: `Shot ${shot.shotNumber || shotIndex + 1}`})}>
-                              <img 
-                                src={shot.imageUrl} 
+                              <img
+                                src={shot.imageUrl}
                                 alt={`Shot ${shotIndex + 1}`}
-                                className="w-full aspect-video object-cover rounded mb-2"
+                                className="w-full aspect-video object-cover mb-2"
                               />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded mb-2 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-200 mb-2 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <div className="flex space-x-2 pointer-events-auto">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleEditImage(shot.imageUrl);
                                     }}
-                                    className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                    className="h-8 px-3 bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200"
                                     disabled={isDownloading}
                                   >
                                     <Edit className="w-4 h-4" />
@@ -1735,7 +1735,7 @@ function ScriptMakerContent() {
                                       e.stopPropagation();
                                       handleAnimateImage(shot.imageUrl);
                                     }}
-                                    className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                    className="h-8 px-3 bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200"
                                     disabled={isDownloading}
                                   >
                                     <Video className="w-4 h-4" />
@@ -1746,7 +1746,7 @@ function ScriptMakerContent() {
                                       e.stopPropagation();
                                       handleDownload(shot.imageUrl, `shot-${shot.shotNumber || shotIndex + 1}`, 'image');
                                     }}
-                                    className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-1 transition-all duration-200"
+                                    className="h-8 px-3 bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200"
                                     disabled={isDownloading}
                                   >
                                     <Download className="w-4 h-4" />
@@ -1758,17 +1758,17 @@ function ScriptMakerContent() {
                               </div>
                             </div>
                           ) : (
-                            <div className="w-full aspect-video bg-muted rounded mb-2 flex items-center justify-center">
-                              <Film className="w-8 h-8 text-muted-foreground/60" />
+                            <div className="w-full aspect-video bg-neutral-900 border border-neutral-800 mb-2 flex items-center justify-center">
+                              <Film className="w-8 h-8 text-neutral-700" />
                             </div>
                           )}
-                          
-                          {shot.shotType && <p className="text-xs text-foreground/80 mb-1"><strong>Type:</strong> {shot.shotType}</p>}
-                          {shot.camera && <p className="text-xs text-foreground/80 mb-1"><strong>Camera:</strong> {shot.camera}</p>}
-                          {shot.action && <p className="text-xs text-muted-foreground mb-1">{shot.action}</p>}
-                          {shot.lighting && <p className="text-xs text-muted-foreground mb-1"><strong>Lighting:</strong> {shot.lighting}</p>}
+
+                          {shot.shotType && <p className="text-xs text-neutral-400 mb-1"><strong>Type:</strong> {shot.shotType}</p>}
+                          {shot.camera && <p className="text-xs text-neutral-400 mb-1"><strong>Camera:</strong> {shot.camera}</p>}
+                          {shot.action && <p className="text-xs text-neutral-500 mb-1">{shot.action}</p>}
+                          {shot.lighting && <p className="text-xs text-neutral-500 mb-1"><strong>Lighting:</strong> {shot.lighting}</p>}
                           {shot.generatedBy && (
-                            <p className="text-xs text-blue-600 font-medium">
+                            <p className="text-xs text-neutral-400 font-medium">
                               ✓ {getModelFriendlyName(shot.generatedBy)}
                             </p>
                           )}
@@ -1784,106 +1784,106 @@ function ScriptMakerContent() {
       </div>
 
       {/* Right Column - Progress & Export */}
-      <div className="w-64 border-l border-border flex flex-col">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-sm font-medium text-foreground">Progress</h2>
+      <div className="w-64 border-l border-neutral-800 flex flex-col bg-neutral-950">
+        <div className="p-4 border-b border-neutral-800">
+          <h2 className="text-xs font-medium text-neutral-400 tracking-wider uppercase">Progress</h2>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-3">
-            <div className={`p-3 rounded-lg border ${currentStep >= 1 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 1 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 1 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 1 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   1
                 </div>
-                <span className="text-sm font-medium text-foreground">Movie Idea</span>
+                <span className="text-sm text-neutral-300">Movie Idea</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 2 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 2 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 2 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 2 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   2
                 </div>
-                <span className="text-sm font-medium text-foreground">Screenplay</span>
+                <span className="text-sm text-neutral-300">Screenplay</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 3 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 3 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 3 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 3 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   3
                 </div>
-                <span className="text-sm font-medium text-foreground">Character Upload</span>
+                <span className="text-sm text-neutral-300">Character Upload</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 4 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 4 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 4 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 4 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   4
                 </div>
-                <span className="text-sm font-medium text-foreground">Style Reference</span>
+                <span className="text-sm text-neutral-300">Style Reference</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 5 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 5 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 5 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 5 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   5
                 </div>
-                <span className="text-sm font-medium text-foreground">Shot List</span>
+                <span className="text-sm text-neutral-300">Shot List</span>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg border ${currentStep >= 6 ? 'bg-green-500/10 border-green-500/30' : 'bg-muted border-border'}`}>
+            <div className={`p-3 border ${currentStep >= 6 ? 'border-neutral-600' : 'border-neutral-800'}`}>
               <div className="flex items-center gap-2">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  currentStep >= 6 ? 'bg-green-600 text-white' : 'bg-muted-foreground/30 text-muted-foreground'
+                <div className={`w-6 h-6 flex items-center justify-center text-xs font-medium ${
+                  currentStep >= 6 ? 'bg-white text-neutral-950' : 'bg-neutral-800 text-neutral-500'
                 }`}>
                   6
                 </div>
-                <span className="text-sm font-medium text-foreground">Visual Scenes</span>
+                <span className="text-sm text-neutral-300">Visual Scenes</span>
               </div>
             </div>
           </div>
 
           {currentStep >= 4 && minutes.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-border">
-              <h3 className="text-sm font-semibold text-foreground mb-3">Generation Stats</h3>
+            <div className="mt-6 pt-6 border-t border-neutral-800">
+              <h3 className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-3">Generation Stats</h3>
               {minutes.map((minute: any, index: number) => {
                 const totalShots = minute.shots?.length || 0;
                 const generatedShots = minute.shots?.filter((s: any) => s.imageUrl).length || 0;
                 const progress = totalShots > 0 ? (generatedShots / totalShots) * 100 : 0;
-                
+
                 return (
                   <div key={index} className="mb-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                    <div className="flex items-center justify-between text-xs text-neutral-500 mb-1">
                       <span>Minute {index + 1}</span>
                       <span>{generatedShots}/{totalShots}</span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                    <div className="w-full bg-neutral-800 h-1">
+                      <div
+                        className="bg-white h-1 transition-all duration-300"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
                   </div>
                 );
               })}
-              
+
               <button
-                className="w-full mt-4 px-4 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                className="w-full mt-4 px-4 py-3 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors flex items-center justify-center gap-2 tracking-wider"
                 onClick={handleExportProject}
                 disabled={!movieTitle || !finalScript || minutes.length === 0}
               >
@@ -1897,25 +1897,25 @@ function ScriptMakerContent() {
 
       {/* Fullscreen Image Modal */}
       {fullscreenImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-neutral-950/95 z-50 flex items-center justify-center p-4">
           <div className="relative max-w-7xl max-h-full w-full h-full flex flex-col">
             {/* Close button */}
             <button
               onClick={() => setFullscreenImage(null)}
-              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+              className="absolute top-4 right-4 z-10 border border-neutral-700 hover:border-neutral-500 text-white p-2 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
-            
+
             {/* Image */}
             <div className="flex-1 flex items-center justify-center">
               <img
                 src={fullscreenImage.url}
                 alt={fullscreenImage.title}
-                className="max-w-full max-h-full object-contain rounded-lg"
+                className="max-w-full max-h-full object-contain"
               />
             </div>
-            
+
             {/* Action buttons */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4">
               <button
@@ -1923,40 +1923,40 @@ function ScriptMakerContent() {
                   handleEditImage(fullscreenImage.url);
                   setFullscreenImage(null);
                 }}
-                className="h-12 px-6 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-2 transition-all duration-200"
+                className="h-12 px-6 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-2 transition-all duration-200"
                 disabled={isDownloading}
               >
                 <Edit className="w-5 h-5" />
-                <span className="text-sm font-medium">Edit</span>
+                <span className="text-sm font-medium tracking-wider">Edit</span>
               </button>
               <button
                 onClick={() => {
                   handleAnimateImage(fullscreenImage.url);
                   setFullscreenImage(null);
                 }}
-                className="h-12 px-6 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-2 transition-all duration-200"
+                className="h-12 px-6 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-2 transition-all duration-200"
                 disabled={isDownloading}
               >
                 <Video className="w-5 h-5" />
-                <span className="text-sm font-medium">Generate Video</span>
+                <span className="text-sm font-medium tracking-wider">Generate Video</span>
               </button>
               <button
                 onClick={() => {
                   handleDownload(fullscreenImage.url, fullscreenImage.title, 'image');
                   setFullscreenImage(null);
                 }}
-                className="h-12 px-6 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm rounded-lg flex items-center space-x-2 transition-all duration-200"
+                className="h-12 px-6 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-2 transition-all duration-200"
                 disabled={isDownloading}
               >
                 <Download className="w-5 h-5" />
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium tracking-wider">
                   {isDownloading ? 'Downloading...' : 'Download'}
                 </span>
               </button>
             </div>
-            
+
             {/* Title */}
-            <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-lg text-sm font-medium">
+            <div className="absolute top-4 left-4 border border-neutral-700 text-white px-3 py-1 text-sm font-medium tracking-wider">
               {fullscreenImage.title}
             </div>
           </div>

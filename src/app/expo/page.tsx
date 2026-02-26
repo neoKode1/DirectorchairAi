@@ -122,57 +122,58 @@ export default function ExpoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 py-16 lg:py-24">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-12 lg:mb-16">
+          <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 bg-clip-text text-transparent mb-2">
-                EXPO - Seedance 2.0
+              <p className="text-xs text-neutral-600 tracking-widest mb-3">GENERATE</p>
+              <h1 className="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight mb-2">
+                Seedance 2.0
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-neutral-400 font-light">
                 Generate cinematic videos with BytePlus Seedance AI
               </p>
             </div>
-            <Button asChild variant="outline">
-              <Link href="/timeline">Back to Studio</Link>
-            </Button>
+            <Link href="/timeline" className="text-xs font-light text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 px-4 py-2 transition-all">
+              Back to Studio
+            </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Generation Controls */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-500" />
+          <div className="border border-neutral-800 p-8">
+            <div className="mb-6">
+              <h2 className="flex items-center gap-2 text-lg font-medium text-white tracking-tight">
+                <Sparkles className="w-5 h-5 text-neutral-500" />
                 Video Generation
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-sm text-neutral-500 font-light mt-1">
                 Describe your vision and let Seedance 2.0 bring it to life
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+              </p>
+            </div>
+            <div className="space-y-6">
               {/* Prompt Input */}
               <div className="space-y-2">
-                <Label htmlFor="prompt">Prompt</Label>
+                <Label htmlFor="prompt" className="text-xs text-neutral-400 tracking-wider uppercase">Prompt</Label>
                 <Textarea
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g., Tom Cruise fighting Brad Pitt on a rooftop, cinematic action scene with dramatic lighting..."
-                  className="min-h-[120px] resize-none"
+                  className="min-h-[120px] resize-none bg-neutral-900 border-neutral-800 text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-600"
                   disabled={loading}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-neutral-600">
                   Be specific and descriptive for best results
                 </p>
               </div>
 
               {/* Duration Slider */}
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration: {duration}s</Label>
+                <Label htmlFor="duration" className="text-xs text-neutral-400 tracking-wider uppercase">Duration: {duration}s</Label>
                 <Slider
                   id="duration"
                   min={5}
@@ -187,7 +188,7 @@ export default function ExpoPage() {
 
               {/* Resolution Select */}
               <div className="space-y-2">
-                <Label htmlFor="resolution">Resolution</Label>
+                <Label htmlFor="resolution" className="text-xs text-neutral-400 tracking-wider uppercase">Resolution</Label>
                 <Select value={resolution} onValueChange={setResolution} disabled={loading}>
                   <SelectTrigger id="resolution">
                     <SelectValue />
@@ -202,7 +203,7 @@ export default function ExpoPage() {
 
               {/* Aspect Ratio Select */}
               <div className="space-y-2">
-                <Label htmlFor="ratio">Aspect Ratio</Label>
+                <Label htmlFor="ratio" className="text-xs text-neutral-400 tracking-wider uppercase">Aspect Ratio</Label>
                 <Select value={ratio} onValueChange={setRatio} disabled={loading}>
                   <SelectTrigger id="ratio">
                     <SelectValue />
@@ -217,53 +218,52 @@ export default function ExpoPage() {
               </div>
 
               {/* Generate Button */}
-              <Button
+              <button
                 onClick={generate}
                 disabled={loading || !prompt.trim()}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                size="lg"
+                className="w-full py-3 bg-white text-neutral-950 hover:bg-neutral-100 transition-all duration-300 text-sm font-medium tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    GENERATING...
+                  </span>
                 ) : (
-                  <>
-                    <Video className="w-4 h-4 mr-2" />
-                    Generate Video
-                  </>
+                  <span className="flex items-center justify-center gap-2">
+                    <Video className="w-4 h-4" />
+                    GENERATE VIDEO
+                  </span>
                 )}
-              </Button>
+              </button>
 
               {/* Status and Progress */}
               {loading && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{status}</span>
-                    <span className="text-muted-foreground">{progress}%</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-500">{status}</span>
+                    <span className="text-neutral-500">{progress}%</span>
                   </div>
                   <Progress value={progress} className="w-full" />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Right Column - Video Preview */}
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="w-5 h-5 text-cyan-500" />
+          <div className="border border-neutral-800 p-8">
+            <div className="mb-6">
+              <h2 className="flex items-center gap-2 text-lg font-medium text-white tracking-tight">
+                <Play className="w-5 h-5 text-neutral-500" />
                 Preview
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-sm text-neutral-500 font-light mt-1">
                 Your generated video will appear here
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div>
               {videoUrl ? (
                 <div className="space-y-4">
-                  <div className="relative aspect-video bg-black rounded-lg overflow-hidden shadow-2xl">
+                  <div className="relative aspect-video bg-neutral-900 overflow-hidden">
                     <video
                       src={videoUrl}
                       controls
@@ -272,76 +272,55 @@ export default function ExpoPage() {
                       loop
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button
+                  <div className="flex gap-3">
+                    <button
                       onClick={downloadVideo}
-                      variant="outline"
-                      className="flex-1"
+                      className="flex-1 py-3 text-xs font-light tracking-wider text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all flex items-center justify-center gap-2"
                     >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
-                    <Button
+                      <Download className="w-4 h-4" />
+                      DOWNLOAD
+                    </button>
+                    <button
                       onClick={() => {
                         setVideoUrl(null);
                         setPrompt('');
                         setProgress(0);
                         setStatus('');
                       }}
-                      variant="outline"
-                      className="flex-1"
+                      className="flex-1 py-3 text-xs font-light tracking-wider text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all"
                     >
-                      Generate New
-                    </Button>
+                      GENERATE NEW
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div className="aspect-video bg-muted/50 rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                <div className="aspect-video bg-neutral-900 flex items-center justify-center border border-dashed border-neutral-800">
                   <div className="text-center p-8">
-                    <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-                    <p className="text-muted-foreground mb-2">No video generated yet</p>
-                    <p className="text-sm text-muted-foreground/70">
+                    <Video className="w-12 h-12 mx-auto mb-4 text-neutral-700" />
+                    <p className="text-neutral-500 text-sm mb-1">No video generated yet</p>
+                    <p className="text-xs text-neutral-600">
                       Enter a prompt and click Generate to create your video
                     </p>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-sm">⚡ Fast Generation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Seedance 2.0 generates high-quality videos in 1-5 minutes
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-sm">🎬 Cinematic Quality</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Professional-grade video output with advanced AI models
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="text-sm">🎨 Creative Control</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground">
-                Fine-tune duration, resolution, and aspect ratio
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          {[
+            { icon: "⚡", title: "Fast Generation", desc: "Seedance 2.0 generates high-quality videos in 1-5 minutes" },
+            { icon: "🎬", title: "Cinematic Quality", desc: "Professional-grade video output with advanced AI models" },
+            { icon: "🎨", title: "Creative Control", desc: "Fine-tune duration, resolution, and aspect ratio" },
+          ].map((card, i) => (
+            <div key={i} className="p-6 border border-neutral-800 hover:border-neutral-700 transition-all">
+              <p className="text-lg mb-3">{card.icon}</p>
+              <h3 className="text-sm font-medium text-white tracking-tight mb-2">{card.title}</h3>
+              <p className="text-xs text-neutral-500 font-light leading-relaxed">{card.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

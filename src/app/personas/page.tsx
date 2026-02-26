@@ -7,16 +7,14 @@ import { type Persona, getPersonas, toggleLike, seedDemoPersonas } from '@/lib/p
 
 function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) => void }) {
   return (
-    <article className="bg-card border border-border rounded-lg overflow-hidden max-w-[470px] w-full mx-auto">
+    <article className="border border-neutral-800 overflow-hidden max-w-[470px] w-full mx-auto group">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px]">
-            <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-              <span className="text-xs font-bold text-foreground">{persona.creatorUsername[0]}</span>
-            </div>
+          <div className="w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center">
+            <span className="text-xs font-medium text-neutral-400">{persona.creatorUsername[0]}</span>
           </div>
-          <Link href={`/personas/${persona.id}`} className="text-sm font-semibold text-foreground hover:text-foreground/80">
+          <Link href={`/personas/${persona.id}`} className="text-sm font-medium text-white hover:text-neutral-300 transition-colors">
             {persona.creatorUsername}
           </Link>
         </div>
@@ -24,50 +22,53 @@ function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) 
 
       {/* Image */}
       <Link href={`/personas/${persona.id}`}>
-        <img
-          src={persona.imageUrl}
-          alt={persona.name}
-          className="w-full aspect-square object-cover cursor-pointer"
-        />
+        <div className="relative overflow-hidden">
+          <img
+            src={persona.imageUrl}
+            alt={persona.name}
+            className="w-full aspect-square object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-neutral-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
       </Link>
 
       {/* Actions */}
       <div className="px-4 pt-3 pb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <button onClick={() => onLike(persona.id)} className="hover:text-foreground/60 transition-colors">
-              <Heart className={`w-6 h-6 ${persona.isLiked ? 'fill-red-500 text-red-500' : 'text-foreground'}`} />
+            <button onClick={() => onLike(persona.id)} className="hover:text-neutral-400 transition-colors">
+              <Heart className={`w-5 h-5 ${persona.isLiked ? 'fill-red-500 text-red-500' : 'text-neutral-300'}`} />
             </button>
-            <Link href={`/personas/${persona.id}`} className="hover:text-foreground/60 transition-colors">
-              <MessageCircle className="w-6 h-6 text-foreground" />
+            <Link href={`/personas/${persona.id}`} className="hover:text-neutral-400 transition-colors">
+              <MessageCircle className="w-5 h-5 text-neutral-300" />
             </Link>
-            <button className="hover:text-foreground/60 transition-colors">
-              <Share2 className="w-6 h-6 text-foreground" />
+            <button className="hover:text-neutral-400 transition-colors">
+              <Share2 className="w-5 h-5 text-neutral-300" />
             </button>
           </div>
-          <button className="hover:text-foreground/60 transition-colors">
-            <Bookmark className="w-6 h-6 text-foreground" />
+          <button className="hover:text-neutral-400 transition-colors">
+            <Bookmark className="w-5 h-5 text-neutral-300" />
           </button>
         </div>
 
-        <button className="text-sm font-semibold text-foreground">
+        <span className="text-xs font-medium text-white">
           {persona.likes.toLocaleString()} likes
-        </button>
+        </span>
 
         <div className="text-sm mt-1">
-          <Link href={`/personas/${persona.id}`} className="font-semibold text-foreground mr-2">
+          <Link href={`/personas/${persona.id}`} className="font-medium text-white mr-2 hover:text-neutral-300 transition-colors">
             {persona.name}
           </Link>
-          <span className="text-muted-foreground">{persona.description}</span>
+          <span className="text-neutral-500 font-light">{persona.description}</span>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mt-2">
           {persona.tags.map((tag) => (
-            <span key={tag} className="text-xs text-blue-500 dark:text-blue-400">#{tag}</span>
+            <span key={tag} className="text-xs text-neutral-500">#{tag}</span>
           ))}
         </div>
 
-        <p className="text-[10px] text-muted-foreground/60 uppercase mt-2 tracking-wide">
+        <p className="text-[10px] text-neutral-600 uppercase mt-2 tracking-widest">
           {new Date(persona.createdAt).toLocaleDateString()}
         </p>
       </div>
@@ -93,36 +94,39 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-[470px] mx-auto py-6 px-4">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      <div className="max-w-[470px] mx-auto py-16 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-light tracking-[0.15em] uppercase text-foreground">Personas</h1>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <p className="text-xs text-neutral-600 tracking-widest mb-2">GALLERY</p>
+            <h1 className="font-display text-3xl font-normal text-white tracking-tight">Personas</h1>
+          </div>
           <Link
             href="/personas/create"
-            className="flex items-center gap-2 px-4 py-2 bg-foreground text-background rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 px-4 py-2 bg-white text-neutral-950 text-xs font-medium tracking-wider hover:bg-neutral-100 transition-all"
           >
-            <Plus className="w-4 h-4" />
-            Create
+            <Plus className="w-3.5 h-3.5" />
+            CREATE
           </Link>
         </div>
 
         {/* Feed */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {personas.map((persona) => (
             <PostCard key={persona.id} persona={persona} onLike={handleLike} />
           ))}
         </div>
 
         {personas.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground mb-4">No personas yet</p>
+          <div className="text-center py-24">
+            <p className="text-neutral-500 mb-6 text-sm font-light">No personas yet</p>
             <Link
               href="/personas/create"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background rounded-lg font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-neutral-950 text-xs font-medium tracking-wider hover:bg-neutral-100 transition-all"
             >
-              <Plus className="w-4 h-4" />
-              Create your first persona
+              <Plus className="w-3.5 h-3.5" />
+              CREATE YOUR FIRST PERSONA
             </Link>
           </div>
         )}

@@ -75,6 +75,7 @@ const config = {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       fontSize: {

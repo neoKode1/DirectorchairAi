@@ -1198,9 +1198,9 @@ function ScriptMakerContent() {
   }
 
   return (
-    <div className="h-screen flex bg-neutral-950">
+    <div className="h-[calc(100vh-72px)] flex bg-neutral-950 overflow-hidden max-w-[100vw]">
       {/* Left Column - Project Setup */}
-      <div className="w-80 border-r border-neutral-800 flex flex-col overflow-y-auto">
+      <div className="hidden md:flex w-80 border-r border-neutral-800 flex-col overflow-y-auto shrink-0">
         <div className="p-4 border-b border-neutral-800">
           <div className="flex items-center gap-2 mb-2">
             <Film className="w-5 h-5 text-neutral-500" />
@@ -1602,8 +1602,8 @@ function ScriptMakerContent() {
       </div>
 
       {/* Center Column - Dynamic Content Display */}
-      <div className="flex-1 flex flex-col">
-        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto bg-neutral-900">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div ref={contentAreaRef} className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden bg-neutral-900">
           {currentStep === 1 && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center max-w-md">
@@ -1851,7 +1851,7 @@ function ScriptMakerContent() {
       </div>
 
       {/* Right Column - Progress & Export */}
-      <div className="w-64 border-l border-neutral-800 flex flex-col bg-neutral-950">
+      <div className="hidden lg:flex w-64 border-l border-neutral-800 flex-col bg-neutral-950 shrink-0">
         <div className="p-4 border-b border-neutral-800">
           <h2 className="text-xs font-medium text-neutral-400 tracking-wider uppercase">Progress</h2>
         </div>

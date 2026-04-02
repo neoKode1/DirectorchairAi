@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Download, Edit, Video } from "lucide-react";
+import { Download, Edit, Video, MessageSquare, X } from "lucide-react";
 import { downloadVideoWithFrame } from "@/lib/video-thumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { ImageSelector, type ImageSelection } from "@/components/image-selector";
@@ -37,6 +37,7 @@ function TimelineContent() {
   const [generatedContent, setGeneratedContent] = useState<any[]>([]);
   const [isGalleryCollapsed, setIsGalleryCollapsed] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -366,9 +367,9 @@ function TimelineContent() {
   }
 
   return (
-    <div className="h-screen flex bg-neutral-950">
+    <div className="h-[calc(100vh-72px)] flex bg-neutral-950 overflow-hidden max-w-[100vw]">
       {/* Left Column — Chat Interface */}
-      <div className="w-80 border-r border-neutral-800 flex flex-col bg-neutral-950 shrink-0">
+      <div className="hidden md:flex w-80 border-r border-neutral-800 flex-col bg-neutral-950 shrink-0 max-h-full overflow-hidden">
         <SimpleChatInterface
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}
@@ -378,8 +379,8 @@ function TimelineContent() {
         </div>
 
       {/* Center Column — Main Preview Area */}
-      <div className="flex-1 flex flex-col bg-neutral-950">
-        <div ref={contentAreaRef} className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 flex flex-col bg-neutral-950 min-w-0 overflow-hidden">
+        <div ref={contentAreaRef} className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden">
           <div className="space-y-6 h-full">
 
             {generatedContent.length === 0 ? (
@@ -506,7 +507,7 @@ function TimelineContent() {
       </div>
 
       {/* Right Column — Gallery */}
-      <div className={`relative border-l border-neutral-800 flex flex-col bg-neutral-950 transition-all duration-300 ease-in-out ${
+      <div className={`hidden md:flex relative border-l border-neutral-800 flex-col bg-neutral-950 transition-all duration-300 ease-in-out shrink-0 ${
         isGalleryCollapsed ? 'w-12' : 'w-[260px]'
       }`}>
         {/* Collapse/Expand Button */}
@@ -563,6 +564,35 @@ function TimelineContent() {
         )}
       </div>
 
+
+      {/* Mobile Chat Toggle Button */}
+      <button
+        onClick={() => setIsMobileChatOpen(!isMobileChatOpen)}
+        className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white text-neutral-950 rounded-full shadow-lg flex items-center justify-center hover:bg-neutral-200 transition-colors"
+        aria-label="Toggle chat"
+      >
+        {isMobileChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile Chat Overlay */}
+      {isMobileChatOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex flex-col bg-neutral-950">
+          <div className="flex items-center justify-between p-3 border-b border-neutral-800">
+            <span className="text-xs text-neutral-400 tracking-wider uppercase">Chat</span>
+            <button onClick={() => setIsMobileChatOpen(false)} className="text-neutral-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <SimpleChatInterface
+              onContentGenerated={async (content) => { await handleGenerate(content); setIsMobileChatOpen(false); }}
+              onGenerationStarted={() => console.log('Generation started')}
+              onGenerationComplete={() => console.log('Generation complete')}
+              onImageInjected={() => console.log('Image injection ready')}
+            />
+          </div>
+        </div>
+      )}
 
       <Toaster />
     </div>

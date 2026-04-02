@@ -90,7 +90,7 @@ export default function RootLayout({
                 </span>
               </div>
             </header>
-            <main className="flex-1 pt-[72px]">{children}</main>
+            <main className="flex-1 pt-[72px] overflow-x-hidden">{children}</main>
           </div>
           <Analytics />
           <SpeedInsights />

@@ -219,8 +219,10 @@ export default function HomePage() {
                 {[
                   { name: "Google Imagen 4:", desc: "Highest quality generation" },
                   { name: "Flux Pro 1.1 Ultra:", desc: "Professional-grade images" },
-                  { name: "Stable Diffusion 3.5:", desc: "Improved typography" },
+                  { name: "FLUX 2 Flex:", desc: "Enhanced typography & editing" },
                   { name: "Dreamina v3.1:", desc: "Superior picture effects" },
+                  { name: "Grok Image Edit:", desc: "xAI enhanced realism" },
+                  { name: "Gemini 2.5 Flash:", desc: "Multi-image blending" },
                 ].map((m) => (
                   <li key={m.name} className="flex items-start gap-3 text-sm font-light text-neutral-400">
                     <span className="w-1.5 h-1.5 bg-neutral-700 mt-2 shrink-0" />
@@ -238,10 +240,12 @@ export default function HomePage() {
               </div>
               <ul className="space-y-4">
                 {[
-                  { name: "Luma Ray 2 Flash:", desc: "Fast smooth motion" },
-                  { name: "Kling v2.1 Master:", desc: "Enhanced motion realism" },
-                  { name: "Wan Pro:", desc: "6-second 1080p generation (30 FPS)" },
-                  { name: "Seedance 1.0 Pro:", desc: "Advanced motion control" },
+                  { name: "Sora 2 Pro:", desc: "OpenAI's cinematic video engine" },
+                  { name: "Veo 3.1 Fast:", desc: "Google's latest video model" },
+                  { name: "Kling v3 Pro:", desc: "Cinematic motion with voice & audio" },
+                  { name: "Grok Video:", desc: "xAI text & image-to-video with audio" },
+                  { name: "Wan Pro:", desc: "1080p at 30 FPS, up to 6 seconds" },
+                  { name: "Minimax Hailuo 02:", desc: "Smooth high-quality motion" },
                 ].map((m) => (
                   <li key={m.name} className="flex items-start gap-3 text-sm font-light text-neutral-400">
                     <span className="w-1.5 h-1.5 bg-neutral-700 mt-2 shrink-0" />
@@ -255,14 +259,14 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-800">
                 <Mic className="w-5 h-5 text-neutral-500" />
-                <h3 className="text-xs font-medium tracking-wider uppercase text-neutral-400">Audio &amp; Voice</h3>
+                <h3 className="text-xs font-medium tracking-wider uppercase text-neutral-400">Motion &amp; Performance</h3>
               </div>
               <ul className="space-y-4">
                 {[
-                  { name: "ElevenLabs TTS:", desc: "Turbo v2.5 text-to-speech" },
-                  { name: "MiniMax Speech:", desc: "2.5 HD advanced TTS" },
-                  { name: "Voice Clone:", desc: "Custom voices from audio" },
-                  { name: "Sync LipSync:", desc: "Advanced lip sync modes" },
+                  { name: "Ovi (with Audio):", desc: "Synchronized audio generation" },
+                  { name: "DreamActor v2:", desc: "Motion transfer & performance" },
+                  { name: "Kling AI Avatar:", desc: "Professional lip-sync" },
+                  { name: "Hunyuan Video:", desc: "Tencent's high-quality video" },
                 ].map((m) => (
                   <li key={m.name} className="flex items-start gap-3 text-sm font-light text-neutral-400">
                     <span className="w-1.5 h-1.5 bg-neutral-700 mt-2 shrink-0" />

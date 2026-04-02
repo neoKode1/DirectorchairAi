@@ -300,18 +300,11 @@ Please analyze the reference image I've provided and give me a detailed style an
         }, { status: 400 });
     }
 
-    // Generate response using Claude with appropriate token limit
+    // Generate response using Claude with appropriate token limits
+    // All analysis types use direct Claude API call for full control over max_tokens
     let response: string;
-    
-    if (analysisType === 'plot-formalization' || analysisType === 'screenplay-generation') {
-      // Use enhancePromptWithClaude for text generation (supports up to 4000 tokens)
-      response = await claudeAPI.enhancePromptWithClaude(
-        userPrompt,
-        analysisType === 'storyboard-breakdown' ? 'storyboard' : 'screenplay',
-        systemPrompt
-      );
-    } else {
-      // For character-generation, storyboard-breakdown, and style-analysis, call Claude API directly with higher token limit
+
+    {
       if (!claudeAPI.isAPIAvailable()) {
         return NextResponse.json({
           success: false,
@@ -324,6 +317,16 @@ Please analyze the reference image I've provided and give me a detailed style an
       const client = new Anthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
       });
+
+      // Set appropriate token limits per analysis type
+      const maxTokensByType: Record<string, number> = {
+        'plot-formalization': 4096,
+        'screenplay-generation': 8192,
+        'character-generation': 8192,
+        'storyboard-breakdown': 8192,
+        'style-analysis': 4096,
+      };
+      const maxTokens = maxTokensByType[analysisType] || 8192;
 
       // For style-analysis, we need to fetch the image and include it in the message
       let messageContent: any = userPrompt;
@@ -415,9 +418,11 @@ Please analyze the reference image I've provided and give me a detailed style an
         }
       }
 
+      console.log(`🔧 [Script Maker API] Using max_tokens: ${maxTokens} for ${analysisType}`);
+
       const claudeResponse = await client.messages.create({
         model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 8192,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: [
           {

@@ -725,28 +725,43 @@ function ScriptMakerContent() {
         const screenplay = data.result;
         setFinalScript(screenplay);
         
-        // Extract character names from screenplay
+        // Extract character names from screenplay using multiple patterns
         const characterPattern = /^([A-Z][A-Z\s.-]+)(?=\s*$|\s*\(.*\)\s*$)/gm;
         const matches = screenplay.match(characterPattern);
-        
+
+        let uniqueCharacters: string[] = [];
+
         if (matches) {
           const trimmedNames = matches.map((name: string) => name.trim());
           const uniqueSet = new Set<string>(trimmedNames);
-          const uniqueCharacters = Array.from(uniqueSet)
-            .filter((char: string) => 
-              char.length > 1 && 
-              !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.'].some(keyword => char.startsWith(keyword))
+          uniqueCharacters = Array.from(uniqueSet)
+            .filter((char: string) =>
+              char.length > 1 &&
+              !['FADE IN', 'FADE OUT', 'CUT TO', 'INTERIOR', 'EXTERIOR', 'INT.', 'EXT.', 'INT', 'EXT', 'CONTINUED', 'V.O.', 'O.S.', 'SCENE', 'ACT', 'THE END', 'TITLE'].some(keyword => char.startsWith(keyword))
             );
-          
-          setExtractedCharacters(uniqueCharacters);
-          console.log('🎭 [ScriptMaker] Extracted characters from screenplay:', uniqueCharacters);
         }
-        
+
+        // Fallback: try a looser pattern (Name followed by colon or dialogue)
+        if (uniqueCharacters.length === 0) {
+          const loosePattern = /^([A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)*)(?:\s*[:]\s|\s*\()/gm;
+          const looseMatches = screenplay.match(loosePattern);
+          if (looseMatches) {
+            const names = looseMatches.map((m: string) => m.replace(/[\s:(\s]+$/, '').trim());
+            const uniqueSet = new Set<string>(names);
+            uniqueCharacters = Array.from(uniqueSet).filter((char: string) => char.length > 1);
+          }
+        }
+
+        setExtractedCharacters(uniqueCharacters);
+        console.log('🎭 [ScriptMaker] Extracted characters from screenplay:', uniqueCharacters);
+
         setCurrentStep(3); // Move to character upload step
-        
+
         toast({
           title: "Screenplay Complete",
-          description: matches ? `Found ${extractedCharacters.length} characters. Upload their images next!` : "Screenplay ready!",
+          description: uniqueCharacters.length > 0
+            ? `Found ${uniqueCharacters.length} character${uniqueCharacters.length > 1 ? 's' : ''}. Upload their images next!`
+            : "Screenplay ready! You can add characters manually or skip to shot list.",
         });
       } else {
         throw new Error(data.error || 'Screenplay generation failed');
@@ -1379,20 +1394,36 @@ function ScriptMakerContent() {
             </button>
           )}
 
-          {currentStep >= 2 && finalScript && extractedCharacters.length > 0 && (
+          {currentStep >= 2 && finalScript && (
             <div className="space-y-2">
               <div className="p-2 border border-neutral-700 text-xs text-neutral-400">
                 ✅ Screenplay complete
               </div>
-              <div className="p-2 border border-neutral-700 text-xs text-neutral-400">
-                Found {extractedCharacters.length} character{extractedCharacters.length > 1 ? 's' : ''}
-              </div>
-              <button
-                onClick={() => setCurrentStep(3)}
-                className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
-              >
-                Next: Upload Characters →
-              </button>
+              {extractedCharacters.length > 0 ? (
+                <>
+                  <div className="p-2 border border-neutral-700 text-xs text-neutral-400">
+                    Found {extractedCharacters.length} character{extractedCharacters.length > 1 ? 's' : ''}
+                  </div>
+                  <button
+                    onClick={() => setCurrentStep(3)}
+                    className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
+                  >
+                    Next: Upload Characters →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="p-2 border border-neutral-700 text-xs text-neutral-500">
+                    No characters auto-detected
+                  </div>
+                  <button
+                    onClick={() => setCurrentStep(3)}
+                    className="w-full px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
+                  >
+                    Next: Add Characters →
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -1404,41 +1435,62 @@ function ScriptMakerContent() {
             {currentStep < 3 ? 'Complete Step 2 to unlock' : 'Upload images for each character'}
           </p>
 
-          {currentStep >= 3 && extractedCharacters.length > 0 && (
+          {currentStep >= 3 && (
             <div className="space-y-2">
-              <p className="text-xs text-neutral-600 mb-2">
-                Upload reference images for consistency:
-              </p>
-              {extractedCharacters.map((charName, index) => {
-                const hasImage = characterReferenceImages.some(img => img.characterName === charName);
-                return (
-                  <div key={index} className={`p-2 border ${hasImage ? 'border-neutral-600 bg-neutral-900/50' : 'border-neutral-800 bg-neutral-900'}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-neutral-300">{charName}</span>
-                      {hasImage && <span className="text-xs text-neutral-400">✓</span>}
-                    </div>
-                    <label className="block">
-                      <div className="text-xs px-2 py-1 border border-neutral-700 cursor-pointer hover:border-neutral-500 text-center text-neutral-400 hover:text-white transition-all">
-                        {hasImage ? 'Update Image' : 'Upload Image'}
+              {extractedCharacters.length > 0 ? (
+                <>
+                  <p className="text-xs text-neutral-600 mb-2">
+                    Upload reference images for consistency:
+                  </p>
+                  {extractedCharacters.map((charName, index) => {
+                    const hasImage = characterReferenceImages.some(img => img.characterName === charName);
+                    return (
+                      <div key={index} className={`p-2 border ${hasImage ? 'border-neutral-600 bg-neutral-900/50' : 'border-neutral-800 bg-neutral-900'}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-neutral-300">{charName}</span>
+                          {hasImage && <span className="text-xs text-neutral-400">✓</span>}
+                        </div>
+                        <label className="block">
+                          <div className="text-xs px-2 py-1 border border-neutral-700 cursor-pointer hover:border-neutral-500 text-center text-neutral-400 hover:text-white transition-all">
+                            {hasImage ? 'Update Image' : 'Upload Image'}
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleCharacterImageUpload(e, charName)}
+                            disabled={isAnalyzingImage}
+                            className="hidden"
+                          />
+                        </label>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleCharacterImageUpload(e, charName)}
-                        disabled={isAnalyzingImage}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </>
+              ) : (
+                <p className="text-xs text-neutral-500 mb-2">
+                  No characters were auto-detected. You can skip this step or add a character image below.
+                </p>
+              )}
+
+              {/* Generic character upload for manual additions */}
+              <label className="block">
+                <div className="text-xs px-2 py-1 border border-dashed border-neutral-700 cursor-pointer hover:border-neutral-500 text-center text-neutral-500 hover:text-white transition-all">
+                  + Upload Character Image
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleCharacterImageUpload(e)}
+                  disabled={isAnalyzingImage}
+                  className="hidden"
+                />
+              </label>
 
               <button
                 onClick={() => setCurrentStep(4)}
-                disabled={characterReferenceImages.length === 0}
-                className="w-full mt-2 px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed tracking-wider"
+                className="w-full mt-2 px-4 py-2 text-sm font-medium text-neutral-950 bg-white hover:bg-neutral-100 transition-colors tracking-wider"
               >
-                Next: Style Reference →
+                {characterReferenceImages.length > 0 || extractedCharacters.length > 0 ? 'Next: Style Reference →' : 'Skip to Style Reference →'}
               </button>
             </div>
           )}

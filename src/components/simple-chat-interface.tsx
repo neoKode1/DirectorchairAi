@@ -88,6 +88,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/sora-2/image-to-video');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
+  const [useDirectorAI, setUseDirectorAI] = useState<boolean>(false);
+  const [agentHistory, setAgentHistory] = useState<Array<{ role: string; content: string }>>([]);
+  const [waitingForImage, setWaitingForImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -351,6 +354,117 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       (window as any).setForceVideoGeneration = setForceVideoGeneration;
     }
   }, [onImageInjected, userInput]);
+
+  // Agent mode submit handler
+  const handleAgentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userInput.trim() && uploadedImages.length === 0) return;
+
+    const currentInput = userInput.trim();
+    const currentImages = [...uploadedImages];
+
+    const userMessage = {
+      id: Date.now().toString(),
+      type: 'user' as const,
+      content: currentInput,
+      timestamp: new Date(),
+      media: currentImages.length > 0 ? {
+        type: 'image' as const,
+        url: currentImages[0],
+        filename: 'uploaded-image'
+      } : undefined
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
+    setUploadedImages([]);
+    setIsGenerating(true);
+    setWaitingForImage(null);
+    onGenerationStarted?.();
+
+    try {
+      const res = await fetch('/api/chat/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userInput: currentInput,
+          conversationHistory: agentHistory,
+          imageUrls: currentImages.length > 0 ? currentImages : undefined
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: 'Agent request failed' }));
+        throw new Error(errData.error || `Agent error ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Update agent conversation history
+      setAgentHistory(prev => [
+        ...prev,
+        { role: 'user', content: currentInput },
+        { role: 'assistant', content: data.response || '' }
+      ]);
+
+      // Process actions from the agent
+      if (data.actions && Array.isArray(data.actions)) {
+        for (const action of data.actions) {
+          if (action.type === 'generate') {
+            // Execute generation through the existing pipeline
+            const generationData = {
+              model: action.model,
+              prompt: action.prompt,
+              image_url: action.image_url,
+              image_urls: action.image_urls,
+              aspect_ratio: action.aspect_ratio || aspectRatio,
+              ...(action.generationType === 'video' && {
+                duration: '5s',
+                resolution: resolution
+              })
+            };
+
+            setCurrentModel(action.model);
+
+            try {
+              const result = await onContentGenerated(generationData);
+              if (result?.data?.images?.[0]) {
+                setLastGeneratedImage(result.data.images[0].url);
+              }
+            } catch (genError) {
+              console.error('🤖 [Agent] Generation failed:', genError);
+            }
+          } else if (action.type === 'request_image') {
+            setWaitingForImage(action.reason);
+          }
+        }
+      }
+
+      // Add agent response to chat
+      if (data.response) {
+        const assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant' as const,
+          content: data.response,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+
+      onGenerationComplete?.();
+    } catch (error) {
+      console.error('🤖 [Agent] Error:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant' as const,
+        content: `Sorry, the Director AI encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -849,18 +963,31 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <div>
             <h2 className="text-sm font-medium tracking-tighter uppercase text-neutral-100">DirectorChair AI</h2>
           </div>
-          {messages.length > 0 && (
-            <button
-              onClick={clearChatHistory}
-              className="text-xs text-neutral-500 hover:text-white px-2 py-1 border border-neutral-800 hover:border-neutral-700 transition-colors tracking-wider uppercase"
-              title="Clear chat history"
-            >
-              Clear
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <button
+                onClick={() => { clearChatHistory(); setAgentHistory([]); setWaitingForImage(null); }}
+                className="text-xs text-neutral-500 hover:text-white px-2 py-1 border border-neutral-800 hover:border-neutral-700 transition-colors tracking-wider uppercase"
+                title="Clear chat history"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
-        {/* Model Dropdown — full width */}
-        <div className="flex items-center gap-2">
+        {/* Director AI Toggle */}
+        <button
+          onClick={() => setUseDirectorAI(!useDirectorAI)}
+          className={`w-full mb-3 px-3 py-1.5 text-xs tracking-wider uppercase border transition-all duration-200 ${
+            useDirectorAI
+              ? 'bg-white text-neutral-950 border-white font-medium'
+              : 'bg-neutral-900 text-neutral-500 border-neutral-800 hover:text-neutral-300 hover:border-neutral-700'
+          }`}
+        >
+          {useDirectorAI ? '⚡ Director AI — Active' : '○ Director AI — Off (Manual)'}
+        </button>
+        {/* Model Dropdown — full width, hidden in agent mode */}
+        <div className={`flex items-center gap-2 ${useDirectorAI ? 'opacity-40 pointer-events-none' : ''}`}>
           <Monitor className="w-4 h-4 text-neutral-500 shrink-0" />
           <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
             <SelectTrigger className="w-full h-8 text-xs border-neutral-800 bg-neutral-900 text-neutral-300">
@@ -1049,6 +1176,15 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         </div>
       )}
 
+      {/* Waiting for Image Banner */}
+      {waitingForImage && useDirectorAI && (
+        <div className="mx-3 mt-2 p-3 bg-neutral-900 border border-neutral-700 text-xs text-neutral-300">
+          <p className="font-medium text-white mb-1">📸 Director needs an image</p>
+          <p>{waitingForImage}</p>
+          <p className="text-neutral-500 mt-1">Drag & drop or click the upload button below.</p>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="p-3 border-t border-neutral-800">
         {/* Uploaded Images Preview */}
@@ -1075,7 +1211,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={useDirectorAI ? handleAgentSubmit : handleSubmit} className="space-y-3">
           {/* Input Row */}
           <div className="flex space-x-2">
             {/* Upload Button */}
@@ -1112,7 +1248,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Describe your idea... (Enter to send)"
+                  placeholder={useDirectorAI ? "Tell the Director what to create..." : "Describe your idea... (Enter to send)"}
                   className={`min-h-[60px] resize-none border-neutral-800 bg-neutral-900 text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-600 focus:ring-0 pr-10 text-sm transition-all duration-200 ${
                     isDragOver ? 'border-neutral-600' : ''
                   }`}
@@ -1138,7 +1274,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
           {/* Help Text */}
           <div className="flex justify-between items-center text-xs text-neutral-600">
-            <span>Auto-optimized prompts</span>
+            <span>{useDirectorAI ? 'AI picks the best model' : 'Auto-optimized prompts'}</span>
             <span>JPG, PNG, WebP</span>
           </div>
 

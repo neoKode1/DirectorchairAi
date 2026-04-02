@@ -41,3 +41,8 @@ next-env.d.ts
 
 # content filtering logs
 /logs
+
+
+# MCP server configs (contain API keys)
+.cursor/mcp.json
+.claude.json

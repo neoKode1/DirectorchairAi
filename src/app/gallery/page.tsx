@@ -216,7 +216,7 @@ export default function GalleryPage() {
                   </Link>
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-cyan-500 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold text-white">
                     Gallery
                   </h1>
                   <p className="text-sm text-muted-foreground">
@@ -302,7 +302,7 @@ export default function GalleryPage() {
         <div className="container mx-auto px-4 py-8">
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-20">
@@ -326,7 +326,7 @@ export default function GalleryPage() {
                 <Card key={item.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-background/95 backdrop-blur border-border/50">
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-muted overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-neutral-700/20 to-neutral-500/20 flex items-center justify-center">
                       {getTypeIcon(item.type)}
                     </div>
                     

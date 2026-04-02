@@ -154,7 +154,7 @@ export default function SignInPage() {
 
       {/* Footer */}
       <div className="absolute bottom-4 left-0 right-0 text-center text-sm text-cyan-200/70 z-10 drop-shadow-sm">
-        <p>© 2024 DirectorchairAI. All rights reserved.</p>
+        <p>© 2025 DirectorChair AI. All rights reserved.</p>
       </div>
     </div>
   );

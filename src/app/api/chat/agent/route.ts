@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userInput, conversationHistory, imageUrls } = body;
+    const { userInput, conversationHistory, imageUrls, userSettings } = body;
 
     if (!userInput || typeof userInput !== 'string') {
       return NextResponse.json({ success: false, error: 'userInput is required' }, { status: 400 });
@@ -104,6 +104,11 @@ export async function POST(request: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ success: false, error: 'AI service not configured' }, { status: 500 });
     }
+
+    // Extract user's UI settings for defaults
+    const userAspectRatio = userSettings?.aspectRatio || '16:9';
+    const userResolution = userSettings?.resolution || '1080p';
+    const userPreferredModel = userSettings?.preferredVideoModel || 'none';
 
     const client = new Anthropic({ apiKey });
 
@@ -172,11 +177,20 @@ export async function POST(request: NextRequest) {
 
     console.log('🤖 [Agent] Starting agentic chat, messages:', messages.length);
 
+    // Inject user's current UI settings into the system prompt
+    const settingsContext = `\n\n**USER'S CURRENT SETTINGS (use these as defaults — do NOT override unless the user explicitly asks for a different ratio/resolution):**
+- Aspect ratio: ${userAspectRatio}
+- Resolution: ${userResolution}
+- Preferred video model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
+- Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
+
+IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unless they explicitly request a different one.`;
+
     // Call Claude with tools - execute tool loop
     let response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
-      system: AGENT_SYSTEM_PROMPT,
+      system: AGENT_SYSTEM_PROMPT + settingsContext,
       tools: AGENT_TOOLS,
       messages
     });
@@ -220,7 +234,7 @@ export async function POST(request: NextRequest) {
                   tool: toolUse.name,
                   prompt: input.prompt,
                   model: input.model,
-                  aspect_ratio: input.aspect_ratio || '16:9'
+                  aspect_ratio: input.aspect_ratio || userAspectRatio
                 }
               });
               toolResults.push({
@@ -239,9 +253,9 @@ export async function POST(request: NextRequest) {
                 generationType: toolUse.name === 'generate_video' ? 'video' : 'image',
                 model: input.model,
                 prompt: input.prompt,
-                aspect_ratio: input.aspect_ratio || '16:9',
+                aspect_ratio: input.aspect_ratio || userAspectRatio,
                 duration: input.duration || undefined,
-                resolution: input.resolution || undefined,
+                resolution: input.resolution || userResolution,
                 generate_audio: input.generate_audio !== undefined ? input.generate_audio : undefined,
                 image_url: actionImageUrl,
                 image_urls: imageUrls || undefined,

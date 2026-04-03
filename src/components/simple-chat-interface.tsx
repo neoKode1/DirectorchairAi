@@ -401,7 +401,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         body: JSON.stringify({
           userInput: currentInput,
           conversationHistory: agentHistory,
-          imageUrls: agentImageUrls
+          imageUrls: agentImageUrls,
+          userSettings: {
+            aspectRatio,
+            resolution,
+            preferredVideoModel
+          }
         })
       });
 
@@ -1325,9 +1330,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectValue placeholder="Select aspect ratio" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1:1">1:1 (Square)</SelectItem>
                         <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
                         <SelectItem value="9:16">9:16 (Portrait)</SelectItem>
+                        <SelectItem value="1:1">1:1 (Square)</SelectItem>
                         <SelectItem value="4:3">4:3 (Standard)</SelectItem>
                         <SelectItem value="3:4">3:4 (Portrait Standard)</SelectItem>
                       </SelectContent>

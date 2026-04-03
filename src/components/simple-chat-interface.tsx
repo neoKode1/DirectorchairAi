@@ -430,15 +430,16 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           if (action.type === 'generate') {
             // Execute generation through the existing pipeline
             // Pass ALL model-specific params the agent may have set
+            // IMPORTANT: User's dropdown settings ALWAYS take priority over agent choices
             const generationData: Record<string, any> = {
               model: action.model,
               prompt: action.prompt,
               image_url: action.image_url,
               image_urls: action.image_urls,
-              aspect_ratio: action.aspect_ratio || aspectRatio,
+              aspect_ratio: aspectRatio, // Always use user's dropdown setting
               ...(action.generationType === 'video' && {
                 duration: action.duration || '5',
-                resolution: action.resolution || resolution,
+                resolution: resolution, // Always use user's dropdown setting
                 generate_audio: action.generate_audio
               }),
               // Special params for specific models (Veo First/Last Frame, Kling end frame, DreamActor)

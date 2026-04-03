@@ -88,6 +88,30 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
           description: 'Aspect ratio for the video',
           enum: ['16:9', '9:16', '1:1']
         },
+        duration: {
+          type: 'string',
+          description: 'Video duration. Veo 3.1: "4s","6s","8s". Kling v3/O3: "3"-"15". Sora 2: number 1-20. Others: "5" or "6".'
+        },
+        resolution: {
+          type: 'string',
+          description: 'Video resolution. Veo 3.1: "720p","1080p","4k". Minimax: "512P","768P". Others: "720p" or "1080p".'
+        },
+        generate_audio: {
+          type: 'boolean',
+          description: 'Enable native audio generation. Supported by Veo 3.1, Kling v3/O3. Defaults to true.'
+        },
+        end_image_url: {
+          type: 'string',
+          description: 'URL for the end frame image. Used by Kling v3/O3 for start→end frame video transitions. The start frame comes from the uploaded/generated image in context.'
+        },
+        first_frame_url: {
+          type: 'string',
+          description: 'URL for the first frame. Used ONLY by Veo 3.1 First/Last Frame model. If not set, the system uses the first image in context.'
+        },
+        last_frame_url: {
+          type: 'string',
+          description: 'URL for the last frame. Used ONLY by Veo 3.1 First/Last Frame model. If not set, the system uses the second image in context.'
+        },
         requires_reference_image: {
           type: 'boolean',
           description: 'Set to true if the model requires a reference/source image and none was provided.'

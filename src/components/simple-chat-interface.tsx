@@ -383,13 +383,25 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     onGenerationStarted?.();
 
     try {
+      // Build image context for the agent:
+      // 1. User-uploaded images take priority
+      // 2. Fall back to last generated image if user is referencing previous content
+      let agentImageUrls: string[] | undefined;
+      if (currentImages.length > 0) {
+        agentImageUrls = currentImages;
+      } else if (lastGeneratedImage) {
+        // Always include last generated image so the agent can chain workflows
+        // (e.g., "generate image" → "animate this" → "make a video")
+        agentImageUrls = [lastGeneratedImage];
+      }
+
       const res = await fetch('/api/chat/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userInput: currentInput,
           conversationHistory: agentHistory,
-          imageUrls: currentImages.length > 0 ? currentImages : undefined
+          imageUrls: agentImageUrls
         })
       });
 
@@ -412,16 +424,23 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         for (const action of data.actions) {
           if (action.type === 'generate') {
             // Execute generation through the existing pipeline
-            const generationData = {
+            // Pass ALL model-specific params the agent may have set
+            const generationData: Record<string, any> = {
               model: action.model,
               prompt: action.prompt,
               image_url: action.image_url,
               image_urls: action.image_urls,
               aspect_ratio: action.aspect_ratio || aspectRatio,
               ...(action.generationType === 'video' && {
-                duration: '5s',
-                resolution: resolution
-              })
+                duration: action.duration || '5',
+                resolution: action.resolution || resolution,
+                generate_audio: action.generate_audio
+              }),
+              // Special params for specific models (Veo First/Last Frame, Kling end frame, DreamActor)
+              ...(action.end_image_url && { end_image_url: action.end_image_url }),
+              ...(action.first_frame_url && { first_frame_url: action.first_frame_url }),
+              ...(action.last_frame_url && { last_frame_url: action.last_frame_url }),
+              ...(action.driving_video && { driving_video: action.driving_video })
             };
 
             setCurrentModel(action.model);

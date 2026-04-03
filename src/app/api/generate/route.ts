@@ -167,47 +167,65 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
 
-    // Handle Veo 3 model specific parameters
+    // Handle Veo 3.1 model specific parameters
     if (model.includes('veo3')) {
-      // Veo 3 uses duration: '8s' (string with 's') and supports 720p/1080p resolution
-      input.duration = '8s'; // Veo 3 only supports 8 seconds
-      
-      // Veo 3 supports resolution: '720p' or '1080p'
-      if (body.resolution && !['720p', '1080p'].includes(body.resolution)) {
-        // Convert common resolutions to Veo 3 format
-        if (body.resolution === '1080p') {
-          input.resolution = '1080p';
-        } else {
-          input.resolution = '720p'; // Default to 720p
+      // Veo 3.1 supports duration: '4s', '6s', '8s' (string with 's')
+      const validVeoDurations = ['4s', '6s', '8s'];
+      if (body.duration) {
+        const dStr = body.duration.toString().replace(/s$/, '');
+        const mapped = `${dStr}s`;
+        input.duration = validVeoDurations.includes(mapped) ? mapped : '8s';
+      } else {
+        input.duration = '8s';
+      }
+
+      // Veo 3.1 supports resolution: '720p', '1080p', '4k' (text-to-video & fast i2v)
+      const validVeoResolutions = ['720p', '1080p', '4k'];
+      if (body.resolution && validVeoResolutions.includes(body.resolution)) {
+        input.resolution = body.resolution;
+      } else {
+        input.resolution = '720p';
+      }
+
+      // Veo 3.1 supports aspect_ratio: 'auto', '16:9', '9:16'
+      if (!['auto', '16:9', '9:16'].includes(input.aspect_ratio)) {
+        input.aspect_ratio = '16:9';
+      }
+
+      // Veo 3.1 supports native audio generation
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+
+      // Handle First/Last Frame model — needs first_frame_url & last_frame_url instead of image_url
+      if (model.includes('first-last-frame-to-video')) {
+        if (body.first_frame_url) {
+          input.first_frame_url = await convertLocalhostToBase64(body.first_frame_url);
+        } else if (body.image_url) {
+          // Use image_url as first_frame_url if not explicitly provided
+          input.first_frame_url = input.image_url;
         }
-      }
-
-      // Veo 3 supports aspect_ratio: 'auto', '16:9', '9:16'
-      if (body.aspect_ratio && !['auto', '16:9', '9:16'].includes(body.aspect_ratio)) {
-        // Convert to supported aspect ratios
-        if (body.aspect_ratio === '16:9') {
-          input.aspect_ratio = '16:9';
-        } else if (body.aspect_ratio === '9:16') {
-          input.aspect_ratio = '9:16';
-        } else {
-          input.aspect_ratio = 'auto'; // Default to auto
+        if (body.last_frame_url) {
+          input.last_frame_url = await convertLocalhostToBase64(body.last_frame_url);
+        } else if (body.image_urls && body.image_urls.length >= 2) {
+          // Use second image_url as last_frame_url
+          input.last_frame_url = await convertLocalhostToBase64(body.image_urls[1]);
         }
+        // Remove generic image_url — this model doesn't accept it
+        delete input.image_url;
+        delete input.image_urls;
       }
 
-      // Set default generate_audio to true for Veo 3
-      if (input.generate_audio === undefined) {
-        input.generate_audio = true;
-      }
+      // Handle Image-to-Video — uses image_url (standard for Veo)
+      // No remapping needed — image_url is correct for veo3.1 i2v
 
-      console.log(`🔧 [Generate API] [${requestId}] Veo 3 model parameters:`, {
+      console.log(`🔧 [Generate API] [${requestId}] Veo 3.1 model parameters:`, {
         originalDuration: body.duration,
         originalResolution: body.resolution,
-        originalAspectRatio: body.aspect_ratio,
         finalDuration: input.duration,
         finalResolution: input.resolution,
         finalAspectRatio: input.aspect_ratio,
         generateAudio: input.generate_audio,
-        note: 'Veo 3 uses duration: 8s (string with s), resolution: 720p or 1080p, aspect_ratio: auto/16:9/9:16'
+        isFirstLastFrame: model.includes('first-last-frame'),
+        note: 'Veo 3.1: duration 4s/6s/8s, resolution 720p/1080p/4k, aspect_ratio auto/16:9/9:16'
       });
     }
 
@@ -257,27 +275,145 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Handle Kling model specific parameters
     if (model.includes('kling-video')) {
-      // Kling models only accept duration: '5' or '10' (strings without 's')
+      // Kling v3 and O3 accept duration '3' through '15' (strings without 's')
+      // Older Kling versions accept '5' or '10'
+      const isKlingV3OrO3 = model.includes('/v3/') || model.includes('/o3/');
+      const validKlingV3Durations = ['3','4','5','6','7','8','9','10','11','12','13','14','15'];
+
       if (body.duration) {
-        const durationStr = body.duration.toString();
-        if (durationStr.includes('5') || durationStr.includes('5s')) {
-          input.duration = '5'; // Kling uses '5' not '5s'
-        } else if (durationStr.includes('10') || durationStr.includes('10s')) {
-          input.duration = '10';
+        const dStr = body.duration.toString().replace(/s$/, '');
+        if (isKlingV3OrO3 && validKlingV3Durations.includes(dStr)) {
+          input.duration = dStr;
+        } else if (!isKlingV3OrO3 && (dStr === '5' || dStr === '10')) {
+          input.duration = dStr;
         } else {
-          input.duration = '5'; // Default to 5 seconds
+          input.duration = '5';
         }
       } else {
-        input.duration = '5'; // Default to 5 seconds
+        input.duration = '5';
       }
-      
+
+      // Kling I2V models use start_image_url (NOT image_url)
+      if (model.includes('image-to-video')) {
+        if (input.image_url) {
+          input.start_image_url = input.image_url;
+          delete input.image_url;
+        }
+        // Kling O3 also supports end_image_url for start/end frame control
+        if (body.end_image_url) {
+          input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
+        } else if (body.image_urls && body.image_urls.length >= 2) {
+          input.end_image_url = await convertLocalhostToBase64(body.image_urls[1]);
+        }
+        // Remove image_urls — Kling I2V doesn't use this
+        delete input.image_urls;
+      }
+
+      // Kling v3/O3 support native audio generation
+      if (isKlingV3OrO3) {
+        input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+        // Kling v3 supports aspect_ratio: '16:9', '9:16', '1:1' for T2V
+        if (!['16:9', '9:16', '1:1'].includes(input.aspect_ratio)) {
+          input.aspect_ratio = '16:9';
+        }
+      }
+
+      // Kling v3 supports negative_prompt and cfg_scale
+      if (isKlingV3OrO3) {
+        if (!input.negative_prompt) {
+          input.negative_prompt = 'blur, distort, and low quality';
+        }
+        if (body.cfg_scale !== undefined) {
+          input.cfg_scale = body.cfg_scale;
+        }
+      }
+
       console.log(`🔧 [Generate API] [${requestId}] Kling model parameters:`, {
         originalDuration: body.duration,
         finalDuration: input.duration,
-        note: 'Kling uses duration: 5 or 10 (strings without s)'
+        isV3OrO3: isKlingV3OrO3,
+        hasStartImage: !!input.start_image_url,
+        hasEndImage: !!input.end_image_url,
+        generateAudio: input.generate_audio,
+        note: isKlingV3OrO3 ? 'Kling v3/O3: duration 3-15, start_image_url, generate_audio' : 'Kling legacy: duration 5 or 10'
       });
     }
 
+    // Handle Sora 2 model specific parameters
+    if (model.includes('sora-2')) {
+      // Sora 2 I2V uses image_url (correct as-is)
+      // Sora 2 supports aspect_ratio: '16:9', '9:16', '1:1'
+      if (!['16:9', '9:16', '1:1'].includes(input.aspect_ratio)) {
+        input.aspect_ratio = '16:9';
+      }
+      // Sora 2 duration is in seconds (number), default 5
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        input.duration = isNaN(dNum) ? 5 : Math.min(Math.max(dNum, 1), 20);
+      } else {
+        input.duration = 5;
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Sora 2 parameters:`, {
+        duration: input.duration, aspectRatio: input.aspect_ratio
+      });
+    }
+
+    // Handle Wan model specific parameters
+    if (model.includes('wan-pro') || model.includes('wan/v2') || model.includes('wan-25')) {
+      // Wan models use image_url for I2V (correct as-is)
+      // Wan supports resolution parameter for output quality
+      if (body.resolution) {
+        input.resolution = body.resolution;
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Wan model parameters:`, {
+        duration: input.duration, resolution: input.resolution
+      });
+    }
+
+    // Handle DreamActor v2 model specific parameters
+    if (model.includes('dreamactor')) {
+      // DreamActor v2 expects source_image (not image_url) and driving_video
+      if (input.image_url) {
+        input.source_image = input.image_url;
+        delete input.image_url;
+      }
+      if (body.driving_video) {
+        input.driving_video = body.driving_video;
+      }
+      delete input.image_urls;
+      delete input.aspect_ratio;
+      delete input.duration;
+      console.log(`🔧 [Generate API] [${requestId}] DreamActor v2 parameters:`, {
+        hasSourceImage: !!input.source_image, hasDrivingVideo: !!input.driving_video
+      });
+    }
+
+    // Handle Luma Ray 2 model specific parameters
+    if (model.includes('luma-dream-machine')) {
+      // Luma Ray 2 uses image_url for I2V (correct as-is)
+      // Ensure aspect_ratio is valid for Luma
+      if (!['16:9', '9:16', '1:1', '4:3', '3:4'].includes(input.aspect_ratio)) {
+        input.aspect_ratio = '16:9';
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 parameters:`, {
+        duration: input.duration, aspectRatio: input.aspect_ratio
+      });
+    }
+
+    // Handle Grok video models
+    if (model.includes('grok-imagine-video')) {
+      // Grok uses standard image_url for I2V, text prompt for T2V
+      // Duration should be a number
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        input.duration = isNaN(dNum) ? 6 : dNum;
+      } else {
+        input.duration = 6;
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Grok Video parameters:`, {
+        duration: input.duration, aspectRatio: input.aspect_ratio
+      });
+    }
 
     console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
     console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);

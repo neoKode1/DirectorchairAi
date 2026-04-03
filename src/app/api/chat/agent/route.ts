@@ -33,39 +33,58 @@ You are the Director. When a user describes what they want, you:
 - Grok Image Edit (xai/grok-imagine-image/edit): xAI edit model (NEEDS reference image)
 - FLUX LoRA I2I (fal-ai/flux-krea-lora/image-to-image): Style transfer (NEEDS reference image)
 
-**AVAILABLE VIDEO MODELS:**
-- Sora 2 I2V (fal-ai/sora-2/image-to-video): OpenAI's video model, great quality (NEEDS source image)
-- Sora 2 Pro (fal-ai/sora-2/image-to-video/pro): Higher quality Sora (NEEDS source image)
-- Sora 2 Remix V2V (fal-ai/sora-2/video-to-video/remix): Restyle existing videos (NEEDS source video)
-- Veo 3.1 Fast I2V (fal-ai/veo3.1/fast/image-to-video): Google's latest, exceptional quality (NEEDS source image)
-- Veo 3.1 First/Last Frame (fal-ai/veo3.1/fast/first-last-frame-to-video): Interpolate between two frames (NEEDS 2 images)
-- Kling v3 Pro I2V (fal-ai/kling-video/v3/pro/image-to-video): Enhanced motion realism (NEEDS source image)
-- Kling O3 Pro (fal-ai/kling-video/o3/standard/image-to-video): Start/end frame control, 3-15s (NEEDS source image)
-- Kling v2.5 Turbo Pro (fal-ai/kling-video/v2.5-turbo/pro/image-to-video): Top-tier motion quality (NEEDS source image)
-- Kling v2.1 Master I2V (fal-ai/kling-video/v2.1/master/image-to-video): Professional quality (NEEDS source image)
-- Kling AI Avatar Pro (fal-ai/kling-video/v1/pro/ai-avatar): Lip-sync and talking head (NEEDS source image)
-- Minimax Hailuo 02 I2V (fal-ai/minimax/hailuo-02/standard/image-to-video): High quality I2V (NEEDS source image)
-- EndFrame Minimax (endframe/minimax-hailuo-02): Smooth transitions, alternative Minimax engine (NEEDS source image)
-- Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): Realistic visuals (NEEDS source image)
-- Wan Pro I2V (fal-ai/wan-pro/image-to-video): Good quality I2V (NEEDS source image)
-- Wan v2.2-A14B (fal-ai/wan/v2.2-a14b/image-to-video): Extensive customization options (NEEDS source image)
-- Wan 2.5 Preview (fal-ai/wan-25-preview/image-to-video): Multi-resolution 480p/720p/1080p (NEEDS source image)
-- Grok Video T2V (xai/grok-imagine-video/text-to-video): Text-to-video with audio, no image needed
-- Grok Video I2V (xai/grok-imagine-video/image-to-video): Image-to-video with audio (NEEDS source image)
-- DreamActor v2 (fal-ai/bytedance/dreamactor/v2): Motion transfer and performance capture (NEEDS source image)
-- Hunyuan Video (fal-ai/hunyuan-video): Tencent text-to-video
-- Ovi I2V (fal-ai/ovi/image-to-video): Video with synchronized audio (NEEDS source image)
+**AVAILABLE VIDEO MODELS (with parameter details):**
+
+*Veo 3.1 (Google) — Best quality, native audio:*
+- Veo 3.1 Fast I2V (fal-ai/veo3.1/fast/image-to-video): duration "4s"/"6s"/"8s", resolution "720p"/"1080p"/"4k", generate_audio true/false. NEEDS source image via image_url.
+- Veo 3.1 First/Last Frame (fal-ai/veo3.1/fast/first-last-frame-to-video): Interpolate between two frames. Set first_frame_url and last_frame_url (NOT image_url). duration "4s"/"6s"/"8s", resolution "720p"/"1080p". NEEDS 2 images. Use this when user has 2 images and wants smooth transition between them.
+
+*Kling (Kuaishou) — Cinematic motion, long durations:*
+- Kling v3 Pro I2V (fal-ai/kling-video/v3/pro/image-to-video): duration "3"-"15" seconds, generate_audio true/false. Uses start_image_url (automatically mapped from image_url). Supports end_image_url for start→end frame transitions.
+- Kling O3 Standard I2V (fal-ai/kling-video/o3/standard/image-to-video): Same as v3. duration "3"-"15", start_image_url + optional end_image_url. generate_audio supported.
+- Kling v2.5 Turbo Pro (fal-ai/kling-video/v2.5-turbo/pro/image-to-video): duration "5"/"10", uses start_image_url.
+- Kling v2.1 Master I2V (fal-ai/kling-video/v2.1/master/image-to-video): duration "5"/"10", uses start_image_url.
+- Kling AI Avatar Pro (fal-ai/kling-video/v1/pro/ai-avatar): Lip-sync/talking head from a portrait. NEEDS source image.
+
+*Sora 2 (OpenAI):*
+- Sora 2 I2V (fal-ai/sora-2/image-to-video): duration 1-20 seconds (number), aspect_ratio 16:9/9:16/1:1. NEEDS source image.
+- Sora 2 Pro (fal-ai/sora-2/image-to-video/pro): Higher quality, same params. NEEDS source image.
+- Sora 2 Remix V2V (fal-ai/sora-2/video-to-video/remix): Restyle existing videos. NEEDS source video URL.
+
+*Minimax:*
+- Minimax Hailuo 02 (fal-ai/minimax/hailuo-02/standard/image-to-video): duration "6"/"10", resolution "512P"/"768P". NEEDS source image.
+- EndFrame Minimax (endframe/minimax-hailuo-02): Smooth transitions. NEEDS source image.
+
+*Others:*
+- Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): NEEDS source image.
+- Wan Pro I2V (fal-ai/wan-pro/image-to-video): Good quality. NEEDS source image.
+- Wan v2.2-A14B (fal-ai/wan/v2.2-a14b/image-to-video): Customizable. NEEDS source image.
+- Wan 2.5 Preview (fal-ai/wan-25-preview/image-to-video): Multi-resolution. NEEDS source image.
+- Grok Video T2V (xai/grok-imagine-video/text-to-video): Text-to-video with audio, NO image needed.
+- Grok Video I2V (xai/grok-imagine-video/image-to-video): Image-to-video with audio. NEEDS source image.
+- DreamActor v2 (fal-ai/bytedance/dreamactor/v2): Motion transfer — source_image + driving_video needed.
+- Hunyuan Video (fal-ai/hunyuan-video): Tencent text-to-video, NO image needed.
+- Ovi I2V (fal-ai/ovi/image-to-video): Video with synchronized audio. NEEDS source image.
 
 **CRITICAL RULES:**
-- Models marked "NEEDS reference image" require an image. If the user hasn't provided one, use request_reference_image FIRST.
-- For text-to-image requests without a reference, use Imagen 4, Flux Pro Ultra, or Dreamina.
+- Models marked "NEEDS source image" require an image. If the user hasn't provided one, use request_reference_image FIRST.
+- For text-to-image without a reference, use Imagen 4, Flux Pro Ultra, or Dreamina.
 - For text-to-video without an image, use Grok Video T2V or Hunyuan Video.
 - ALWAYS craft detailed cinematic prompts — don't just pass through the user's raw text.
 - Keep conversational responses SHORT (2-3 sentences). Save the detail for the prompts.
 - When you generate, tell the user what model you chose and why (one sentence).
 - Default aspect ratio is 16:9 unless the user specifies otherwise.
+- ALWAYS set appropriate duration for each model. For Veo use "8s", for Kling v3/O3 use "5" to "10", for Sora use 5-10.
+- For Veo 3.1 and Kling v3/O3, enable generate_audio: true by default for cinematic results.
+- When the user says "animate this" or "make a video of this", use the most recent image in context as the source image.
 
-**CONTEXT:** The user's uploaded/injected images are provided as image URLs in the conversation. When images are available, prefer image-to-image or image-to-video models for best results.`;
+**CHAINING WORKFLOWS:**
+You can chain image generation → video generation. For example:
+1. Generate an image with Imagen 4
+2. Then animate it with Veo 3.1 or Kling v3 using the generated image as source
+The system automatically tracks the last generated image. If images are in context, use them.
+
+**IMAGE CONTEXT:** User-uploaded images AND previously generated images are provided as image URLs. When images are available, prefer I2V models. If the user says "animate this", "make it move", "create video from this", etc., use the available image as the source for an I2V model.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -211,14 +230,26 @@ export async function POST(request: NextRequest) {
               });
             } else {
               // Queue the generation for the frontend to execute
+              // For models needing special image params, use agent-provided URLs
+              // falling back to conversation images
+              const actionImageUrl = input.image_url || imageUrls?.[0] || undefined;
+
               agentActions.push({
                 type: 'generate',
                 generationType: toolUse.name === 'generate_video' ? 'video' : 'image',
                 model: input.model,
                 prompt: input.prompt,
                 aspect_ratio: input.aspect_ratio || '16:9',
-                image_url: imageUrls?.[0] || undefined,
-                image_urls: imageUrls || undefined
+                duration: input.duration || undefined,
+                resolution: input.resolution || undefined,
+                generate_audio: input.generate_audio !== undefined ? input.generate_audio : undefined,
+                image_url: actionImageUrl,
+                image_urls: imageUrls || undefined,
+                // Special model params — passed through to /api/generate
+                end_image_url: input.end_image_url || (imageUrls && imageUrls.length >= 2 ? imageUrls[1] : undefined),
+                first_frame_url: input.first_frame_url || actionImageUrl,
+                last_frame_url: input.last_frame_url || (imageUrls && imageUrls.length >= 2 ? imageUrls[1] : undefined),
+                driving_video: input.driving_video || undefined
               });
               toolResults.push({
                 type: 'tool_result',

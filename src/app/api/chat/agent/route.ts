@@ -36,16 +36,25 @@ You are the Director. When a user describes what they want, you:
 **AVAILABLE VIDEO MODELS:**
 - Sora 2 I2V (fal-ai/sora-2/image-to-video): OpenAI's video model, great quality (NEEDS source image)
 - Sora 2 Pro (fal-ai/sora-2/image-to-video/pro): Higher quality Sora (NEEDS source image)
+- Sora 2 Remix V2V (fal-ai/sora-2/video-to-video/remix): Restyle existing videos (NEEDS source video)
 - Veo 3.1 Fast I2V (fal-ai/veo3.1/fast/image-to-video): Google's latest, exceptional quality (NEEDS source image)
+- Veo 3.1 First/Last Frame (fal-ai/veo3.1/fast/first-last-frame-to-video): Interpolate between two frames (NEEDS 2 images)
 - Kling v3 Pro I2V (fal-ai/kling-video/v3/pro/image-to-video): Enhanced motion realism (NEEDS source image)
+- Kling O3 Pro (fal-ai/kling-video/o3/standard/image-to-video): Start/end frame control, 3-15s (NEEDS source image)
+- Kling v2.5 Turbo Pro (fal-ai/kling-video/v2.5-turbo/pro/image-to-video): Top-tier motion quality (NEEDS source image)
 - Kling v2.1 Master I2V (fal-ai/kling-video/v2.1/master/image-to-video): Professional quality (NEEDS source image)
+- Kling AI Avatar Pro (fal-ai/kling-video/v1/pro/ai-avatar): Lip-sync and talking head (NEEDS source image)
 - Minimax Hailuo 02 I2V (fal-ai/minimax/hailuo-02/standard/image-to-video): High quality I2V (NEEDS source image)
+- EndFrame Minimax (endframe/minimax-hailuo-02): Smooth transitions, alternative Minimax engine (NEEDS source image)
 - Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): Realistic visuals (NEEDS source image)
 - Wan Pro I2V (fal-ai/wan-pro/image-to-video): Good quality I2V (NEEDS source image)
-- Grok Video T2V (xai/grok-imagine-video/text-to-video): Text-to-video, no image needed
-- Grok Video I2V (xai/grok-imagine-video/image-to-video): Image-to-video (NEEDS source image)
+- Wan v2.2-A14B (fal-ai/wan/v2.2-a14b/image-to-video): Extensive customization options (NEEDS source image)
+- Wan 2.5 Preview (fal-ai/wan-25-preview/image-to-video): Multi-resolution 480p/720p/1080p (NEEDS source image)
+- Grok Video T2V (xai/grok-imagine-video/text-to-video): Text-to-video with audio, no image needed
+- Grok Video I2V (xai/grok-imagine-video/image-to-video): Image-to-video with audio (NEEDS source image)
+- DreamActor v2 (fal-ai/bytedance/dreamactor/v2): Motion transfer and performance capture (NEEDS source image)
 - Hunyuan Video (fal-ai/hunyuan-video): Tencent text-to-video
-- Ovi I2V (fal-ai/ovi/image-to-video): Video with audio (NEEDS source image)
+- Ovi I2V (fal-ai/ovi/image-to-video): Video with synchronized audio (NEEDS source image)
 
 **CRITICAL RULES:**
 - Models marked "NEEDS reference image" require an image. If the user hasn't provided one, use request_reference_image FIRST.
@@ -93,18 +102,28 @@ export async function POST(request: NextRequest) {
     // Build current user message content
     const userContent: Anthropic.ContentBlockParam[] = [];
 
+    // Detect actual image format from base64 magic bytes (don't trust headers or data URL labels)
+    function detectMediaType(base64Data: string): 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' {
+      if (base64Data.startsWith('/9j/')) return 'image/jpeg';
+      if (base64Data.startsWith('iVBOR')) return 'image/png';
+      if (base64Data.startsWith('R0lGOD')) return 'image/gif';
+      if (base64Data.startsWith('UklGR')) return 'image/webp';
+      return 'image/jpeg'; // safe default
+    }
+
     // Add images if provided
     if (imageUrls && Array.isArray(imageUrls)) {
       for (const url of imageUrls) {
         if (url.startsWith('data:')) {
           const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
           if (match) {
+            const data = match[2];
             userContent.push({
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: match[1] as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-                data: match[2]
+                media_type: detectMediaType(data),
+                data
               }
             });
           }
@@ -114,12 +133,11 @@ export async function POST(request: NextRequest) {
             const imgRes = await fetch(url);
             const buffer = await imgRes.arrayBuffer();
             const base64 = Buffer.from(buffer).toString('base64');
-            const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
             userContent.push({
               type: 'image',
               source: {
                 type: 'base64',
-                media_type: contentType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
+                media_type: detectMediaType(base64),
                 data: base64
               }
             });

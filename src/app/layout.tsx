@@ -63,12 +63,12 @@ export default function RootLayout({
                   >
                     Studio
                   </Link>
-                  <Link
-                    href="/expo"
-                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors"
+                  <span
+                    className="text-xs font-light text-neutral-600 cursor-not-allowed select-none"
+                    title="Coming soon"
                   >
                     Expo
-                  </Link>
+                  </span>
                   <Link
                     href="/script-maker"
                     className="text-xs font-light text-neutral-400 hover:text-white transition-colors"
@@ -77,9 +77,10 @@ export default function RootLayout({
                   </Link>
                   <Link
                     href="/personas"
-                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors"
+                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
                   >
                     Personas
+                    <span className="text-[9px] font-medium tracking-wider uppercase px-1 py-0.5 border border-neutral-700 text-neutral-500">Preview</span>
                   </Link>
                   <ThemeToggle />
                 </nav>

@@ -71,9 +71,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('endframe') ||
                         model.includes('ovi/');
 
-    const isImageModel = model.includes('flux') || 
-                        model.includes('imagen') || 
-                        model.includes('stable-diffusion') || 
+    const isImageModel = model.includes('flux') ||
+                        model.includes('imagen') ||
+                        model.includes('stable-diffusion') ||
                         model.includes('dreamina') ||
                         model.includes('ideogram') ||
                         model.includes('photon') ||
@@ -81,14 +81,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('nano-banana') ||
                         model.includes('gemini') ||
                         model.includes('seedream') ||
+                        model.includes('qwen') ||
+                        model.includes('grok-imagine-image') ||
                         (model.includes('wan') && !model.includes('video'));
 
     console.log(`🔍 [Generate API] [${requestId}] Model classification:`, {
       model: model,
       isVideoModel: isVideoModel,
       isImageModel: isImageModel,
-      videoKeywords: ['video', 'veo', 'kling', 'minimax'].filter(keyword => model.includes(keyword)),
-      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream', 'wan'].filter(keyword => model.includes(keyword))
+      videoKeywords: ['video', 'veo', 'kling', 'minimax', 'dreamactor', 'endframe', 'ovi/'].filter(keyword => model.includes(keyword)),
+      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream', 'qwen', 'grok-imagine-image', 'wan'].filter(keyword => model.includes(keyword))
     });
 
     // Prepare FAL API input parameters
@@ -146,19 +148,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Handle model-specific parameters
-    if (model.includes('nano-banana/edit')) {
-      // Nano Banana Edit specific handling
+    // Nano Banana Edit / Nano Banana Pro Edit
+    if (model.includes('nano-banana')) {
       if (body.image_urls && body.image_urls.length > 0) {
         input.image_urls = await Promise.all(
           body.image_urls.map((url: string) => convertLocalhostToBase64(url))
         );
       }
-      // Nano Banana Edit might use different parameter names
       if (body.aspect_ratio) {
         input.aspect_ratio = body.aspect_ratio;
-        // Some models might also accept 'ratio' or 'size'
         input.ratio = body.aspect_ratio;
       }
+      console.log(`🔧 [Generate API] [${requestId}] Nano Banana: image_urls=${input.image_urls?.length || 0}`);
     }
     
     // Handle Wan 2.7 models — use image_urls array and image_size preset string
@@ -177,8 +178,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`🔧 [Generate API] [${requestId}] Wan 2.7: image_urls=${input.image_urls?.length || 0}, image_size=${input.image_size}`);
     }
 
-    // Handle Seedream 5.0 Lite Edit — uses image_urls array and image_size string
-    if (model.includes('seedream/v5')) {
+    // Handle ALL Seedream models (v4, v4.5, v5) — uses image_urls array and image_size
+    if (model.includes('seedream')) {
       if (body.image_urls && body.image_urls.length > 0) {
         input.image_urls = await Promise.all(
           body.image_urls.map((url: string) => convertLocalhostToBase64(url))
@@ -186,22 +187,86 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else if (body.image_url) {
         input.image_urls = [await convertLocalhostToBase64(body.image_url)];
       }
-      // Seedream v5 uses image_size as a string preset, not aspect_ratio
-      input.image_size = 'auto_2K';
+      // All Seedream models use image_size presets, not aspect_ratio
+      if (model.includes('seedream/v5')) {
+        input.image_size = 'auto_2K';
+      } else {
+        // v4 and v4.5 use width/height dimensions
+        const arToDims: Record<string, { width: number; height: number }> = {
+          '16:9': { width: 1920, height: 1080 },
+          '9:16': { width: 1080, height: 1920 },
+          '4:3': { width: 1024, height: 768 },
+          '3:4': { width: 768, height: 1024 },
+          '1:1': { width: 1024, height: 1024 },
+        };
+        input.image_size = arToDims[body.aspect_ratio || '16:9'] || arToDims['16:9'];
+      }
       delete input.aspect_ratio;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Seedream v5: image_urls=${input.image_urls?.length || 0}, image_size=${input.image_size}`);
+      console.log(`🔧 [Generate API] [${requestId}] Seedream: model=${model}, image_urls=${input.image_urls?.length || 0}, image_size=`, input.image_size);
     }
 
     // Handle other image models that might need special aspect ratio handling
     if (model.includes('flux') || model.includes('stable-diffusion') || model.includes('imagen')) {
       if (body.aspect_ratio) {
         input.aspect_ratio = body.aspect_ratio;
-        // Some models might use 'size' instead of 'aspect_ratio'
         input.size = body.aspect_ratio;
       }
     }
 
+    // Handle Gemini 2.5 Flash Image Edit
+    if (model.includes('gemini') && model.includes('edit')) {
+      // Gemini edit needs image_url (already set), prompt, and aspect_ratio
+      // Ensure image_urls is converted to image_url if needed
+      if (!input.image_url && body.image_urls && body.image_urls.length > 0) {
+        input.image_url = await convertLocalhostToBase64(body.image_urls[0]);
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Gemini Edit: hasImage=${!!input.image_url}`);
+    }
+
+    // Handle Grok Image Edit (xai/grok-imagine-image/edit)
+    if (model.includes('grok-imagine-image')) {
+      // Grok image edit uses image_url for source + prompt for edit instructions
+      if (!input.image_url && body.image_urls && body.image_urls.length > 0) {
+        input.image_url = await convertLocalhostToBase64(body.image_urls[0]);
+      }
+      // Clean up params Grok image doesn't use
+      delete input.size;
+      delete input.ratio;
+      delete input.resolution;
+      delete input.duration;
+      console.log(`🔧 [Generate API] [${requestId}] Grok Image Edit: hasImage=${!!input.image_url}`);
+    }
+
+    // Handle Qwen Image Edit
+    if (model.includes('qwen')) {
+      // Qwen edit needs image_url for source
+      if (!input.image_url && body.image_urls && body.image_urls.length > 0) {
+        input.image_url = await convertLocalhostToBase64(body.image_urls[0]);
+      }
+      // Clean up params Qwen doesn't use
+      delete input.size;
+      delete input.ratio;
+      delete input.resolution;
+      delete input.duration;
+      console.log(`🔧 [Generate API] [${requestId}] Qwen Edit: hasImage=${!!input.image_url}`);
+    }
+
+    // Handle Dreamina v3.1 T2I
+    if (model.includes('dreamina')) {
+      // Dreamina uses image_size dimensions, not aspect_ratio string
+      const arToDims: Record<string, { width: number; height: number }> = {
+        '16:9': { width: 1920, height: 1080 },
+        '9:16': { width: 1080, height: 1920 },
+        '4:3': { width: 1024, height: 768 },
+        '3:4': { width: 768, height: 1024 },
+        '1:1': { width: 1024, height: 1024 },
+      };
+      input.image_size = arToDims[body.aspect_ratio || '16:9'] || arToDims['16:9'];
+      delete input.aspect_ratio;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Dreamina: image_size=`, input.image_size);
+    }
 
     // Handle Veo 3.1 model specific parameters
     if (model.includes('veo3')) {

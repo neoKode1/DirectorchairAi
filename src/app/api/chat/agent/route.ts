@@ -152,6 +152,106 @@ export async function POST(request: NextRequest) {
     const userPreferredModel = userSettings?.preferredVideoModel || 'none';
     const userCreativeDirection = userSettings?.creativeDirection || 'cinematic';
 
+    // ─── MODEL PARAMETER RESOLVER ───
+    // Resolve what the selected model ACTUALLY accepts so the agent sends correct params.
+    // The backend route.ts also clamps, but the agent should be smart from the start.
+    type ModelParams = {
+      validResolutions: string[];
+      defaultResolution: string;
+      validDurations: string[];
+      defaultDuration: string;
+      durationFormat: 'string' | 'number' | 'string_with_s';
+      validAspectRatios: string[];
+      supportsAudio: boolean;
+      needsImage: boolean;
+      needsVideo: boolean;
+      notes: string;
+    };
+
+    const MODEL_PARAM_MAP: Record<string, ModelParams> = {
+      // ── Veo 3.1 ──
+      'veo3.1': { validResolutions: ['720p','1080p','4k'], defaultResolution: '720p', validDurations: ['4s','6s','8s'], defaultDuration: '8s', durationFormat: 'string_with_s', validAspectRatios: ['16:9','9:16','auto'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Duration MUST end with "s". First/last frame variant needs 2 images.' },
+      'first-last-frame': { validResolutions: ['720p','1080p'], defaultResolution: '720p', validDurations: ['4s','6s','8s'], defaultDuration: '8s', durationFormat: 'string_with_s', validAspectRatios: ['16:9','9:16','auto'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Use first_frame_url and last_frame_url, NOT image_url.' },
+      // ── Kling v3/O3 I2V ──
+      'kling-video/v3': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['3','4','5','6','7','8','9','10','11','12','13','14','15'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Uses start_image_url (auto-mapped). Supports end_image_url.' },
+      'kling-video/o3/standard/image': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['3','4','5','6','7','8','9','10','11','12','13','14','15'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Same as Kling v3.' },
+      // ── Kling v2.6 I2V ──
+      'kling-video/v2.6/pro/image': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5','10'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Great for dialogue — put speech in prompt with quotes.' },
+      // ── Kling v2.5/v2.1 I2V ──
+      'kling-video/v2.5': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5','10'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Uses start_image_url.' },
+      'kling-video/v2.1': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5','10'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Uses start_image_url.' },
+      // ── Kling V2V Edit ──
+      'video-to-video/edit': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: [], supportsAudio: false, needsImage: false, needsVideo: true, notes: 'Do NOT send duration, resolution, or aspect_ratio. Use @Element1/@Image1 refs in prompt. keep_audio defaults to true.' },
+      // ── Kling Motion Control ──
+      'motion-control': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: [], supportsAudio: false, needsImage: true, needsVideo: true, notes: 'Needs image_url + video_url + character_orientation. Do NOT send duration.' },
+      // ── Kling Avatar ──
+      'ai-avatar': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5','10'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Lip-sync/talking head. Uses image_url directly (NOT start_image_url).' },
+      // ── Sora 2 I2V ──
+      'sora-2/image': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Duration is a number 1-20.' },
+      // ── Sora 2 Remix ──
+      'sora-2/video-to-video': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: false, needsVideo: true, notes: 'V2V remix — needs video_url. No image_url.' },
+      // ── Hailuo 02/2.3 ──
+      'hailuo': { validResolutions: ['512P','768P'], defaultResolution: '768P', validDurations: ['6','10'], defaultDuration: '6', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Resolution is UPPERCASE "P" (512P/768P). Duration "6" or "10" only — NEVER "5".' },
+      'endframe': { validResolutions: ['512P','768P'], defaultResolution: '768P', validDurations: ['6','10'], defaultDuration: '6', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Same params as Hailuo.' },
+      // ── Pixverse V6 ──
+      'pixverse': { validResolutions: ['360p','540p','720p','1080p'], defaultResolution: '720p', validDurations: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: [], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Duration is integer 1-15. No aspect_ratio — remove it. Uses generate_audio_switch.' },
+      // ── Seedance 1.5 ──
+      'seedance': { validResolutions: ['480p','720p','1080p'], defaultResolution: '720p', validDurations: ['4','5','6','7','8','9','10','11','12'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Supports end_image_url for start→end frame transitions.' },
+      // ── Grok Video ──
+      'grok-imagine-video': { validResolutions: ['480p','720p'], defaultResolution: '720p', validDurations: ['3','4','5','6','7','8','9','10'], defaultDuration: '6', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: false, needsVideo: false, notes: 'Max resolution 720p — NEVER 1080p. T2V needs no image. I2V needs image_url.' },
+      // ── Luma Ray 2 ──
+      'luma-dream-machine': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5','10'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16','4:3','3:4'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Also supports 4:3 and 3:4 aspect ratios.' },
+      // ── Wan I2V ──
+      'wan-pro': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: '' },
+      'wan/v2.2': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: '' },
+      'wan-25': { validResolutions: ['720p','1080p'], defaultResolution: '1080p', validDurations: ['5'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: '' },
+      // ── DreamActor ──
+      'dreamactor': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: [], supportsAudio: false, needsImage: true, needsVideo: true, notes: 'Uses source_image + driving_video. No duration/resolution/aspect_ratio.' },
+      // ── Hunyuan ──
+      'hunyuan-video': { validResolutions: ['720p','1080p'], defaultResolution: '720p', validDurations: ['5'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: false, needsVideo: false, notes: 'Pure T2V — no image needed.' },
+      // ── Ovi ──
+      'ovi/': { validResolutions: ['720p','1080p'], defaultResolution: '720p', validDurations: ['3','4','5','6','7','8','9','10'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'I2V with synchronized audio.' },
+    };
+
+    // Find the matching model params for the selected model
+    function resolveModelParams(model: string): ModelParams | null {
+      // Check most specific first, then general
+      const keys = Object.keys(MODEL_PARAM_MAP).sort((a, b) => b.length - a.length);
+      for (const key of keys) {
+        if (model.includes(key)) return MODEL_PARAM_MAP[key];
+      }
+      return null;
+    }
+
+    // Resolve the best resolution for this model given user preference
+    function resolveResolution(model: string, userRes: string): string {
+      const params = resolveModelParams(model);
+      if (!params || params.validResolutions.length === 0) return userRes;
+      if (params.validResolutions.includes(userRes)) return userRes;
+      return params.defaultResolution;
+    }
+
+    // Resolve the best duration for this model
+    function resolveDuration(model: string): string {
+      const params = resolveModelParams(model);
+      if (!params) return '5';
+      return params.defaultDuration;
+    }
+
+    // Resolve aspect ratio for this model
+    function resolveAspectRatio(model: string, userAR: string): string {
+      const params = resolveModelParams(model);
+      if (!params || params.validAspectRatios.length === 0) return userAR;
+      if (params.validAspectRatios.includes(userAR)) return userAR;
+      return params.validAspectRatios[0];
+    }
+
+    // Build resolved params for the selected model
+    const resolvedRes = userPreferredModel !== 'none' ? resolveResolution(userPreferredModel, userResolution) : userResolution;
+    const resolvedDuration = userPreferredModel !== 'none' ? resolveDuration(userPreferredModel) : '5';
+    const resolvedAR = userPreferredModel !== 'none' ? resolveAspectRatio(userPreferredModel, userAspectRatio) : userAspectRatio;
+    const resolvedParams = userPreferredModel !== 'none' ? resolveModelParams(userPreferredModel) : null;
+
     const client = new Anthropic({ apiKey });
 
     // Build messages from conversation history
@@ -247,13 +347,28 @@ export async function POST(request: NextRequest) {
     const isImageModelSelected = userPreferredModel !== 'none' && !isVideoModelSelected;
 
     // Inject user's current UI settings into the system prompt
-    const settingsContext = `\n\n**USER'S CURRENT SETTINGS — YOU MUST RESPECT THESE:**
-- Aspect ratio: ${userAspectRatio}
-- Resolution: ${userResolution}
+    // Include RESOLVED params that the agent should ACTUALLY use — not raw user settings
+    const modelParamGuidance = resolvedParams ? `
+📋 **RESOLVED PARAMETERS FOR ${userPreferredModel}** (use these EXACT values):
+- Resolution to send: ${resolvedRes || 'DO NOT SEND — model ignores it'}
+- Duration to send: ${resolvedDuration || 'DO NOT SEND — model ignores it'} (format: ${resolvedParams.durationFormat})
+- Aspect ratio to send: ${resolvedAR || 'DO NOT SEND — model ignores it'}
+- Valid resolutions: ${resolvedParams.validResolutions.length > 0 ? resolvedParams.validResolutions.join(', ') : 'N/A — do not send resolution'}
+- Valid durations: ${resolvedParams.validDurations.length > 0 ? resolvedParams.validDurations.join(', ') : 'N/A — do not send duration'}
+- Audio support: ${resolvedParams.supportsAudio ? 'YES — set generate_audio: true' : 'NO'}
+- Needs source image: ${resolvedParams.needsImage ? 'YES' : 'NO'}
+- Needs source video: ${resolvedParams.needsVideo ? 'YES' : 'NO'}
+${resolvedParams.notes ? `- ⚠️ ${resolvedParams.notes}` : ''}
+${userResolution !== resolvedRes && resolvedRes ? `\n⚠️ User's resolution is ${userResolution} but this model only accepts: ${resolvedParams.validResolutions.join(', ')}. USE ${resolvedRes} instead.` : ''}` : '';
+
+    const settingsContext = `\n\n**USER'S CURRENT SETTINGS:**
+- User's preferred aspect ratio: ${userAspectRatio}
+- User's preferred resolution: ${userResolution}
 - Creative direction: ${userCreativeDirection}
 - Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
 - Video in context: ${videoUrl ? 'YES — user has uploaded a reference video' : 'none'}
 - Selected model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
+${modelParamGuidance}
 ${isVideoModelSelected ? `\n⚠️ THE USER HAS A VIDEO MODEL SELECTED (${userPreferredModel}). This means they want VIDEO output. Use generate_video with this exact model unless they explicitly ask for an image. If this is an I2V (image-to-video) model and no source image is available, first generate an image with generate_image, then explain you need them to say "animate this" to create the video, OR use a text-to-video model instead.` : ''}
 ${isImageModelSelected ? `\n⚠️ THE USER HAS AN IMAGE MODEL SELECTED (${userPreferredModel}). This means they want IMAGE output. Use generate_image with this exact model.` : ''}
 ${userPreferredModel === 'none' ? `\nNo model preference set — you choose the best model. Use context clues: action words like "chase", "run", "walk", "fly", camera movements like "dolly", "pan", "tracking shot" suggest VIDEO. Static descriptions like "a portrait of", "a photo of", "design a" suggest IMAGE.` : ''}
@@ -266,12 +381,13 @@ ${userPreferredModel === 'none' ? `\nNo model preference set — you choose the 
 5. Action verbs (chasing, running, dancing, flying, walking) = likely VIDEO.
 6. Camera movements (dolly, pan, tracking, crane, tilt) = definitely VIDEO.
 7. Static descriptions (portrait, photo, design, concept art) = likely IMAGE.
+8. ALWAYS use the RESOLVED parameters from above — NOT the user's raw settings. The resolved params are already clamped to what the model accepts.
 
 **CREATIVE DIRECTION — APPLY THIS STYLE TO EVERY PROMPT YOU CRAFT:**
 ${styleGuide}
 Weave this visual style into your descriptions naturally.
 
-IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unless they explicitly request a different one.`;
+IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model. Only change if the user explicitly requests a different one AND the model supports it.`;
 
     // Call Claude with tools - execute tool loop
     let response = await client.messages.create({
@@ -341,9 +457,9 @@ IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unles
                 generationType: toolUse.name === 'generate_video' ? 'video' : 'image',
                 model: input.model,
                 prompt: input.prompt,
-                aspect_ratio: input.aspect_ratio || userAspectRatio,
-                duration: input.duration || undefined,
-                resolution: input.resolution || userResolution,
+                aspect_ratio: input.aspect_ratio || resolvedAR,
+                duration: input.duration || resolvedDuration || undefined,
+                resolution: input.resolution || resolvedRes || undefined,
                 generate_audio: input.generate_audio !== undefined ? input.generate_audio : undefined,
                 image_url: actionImageUrl,
                 image_urls: imageUrls || undefined,

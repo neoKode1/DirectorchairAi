@@ -98,8 +98,20 @@ You are the Director. When a user describes what they want, you:
 - ALWAYS craft detailed cinematic prompts — don't just pass through the user's raw text.
 - Keep text responses to 1-2 sentences MAX. Your job is to generate, not to talk.
 - Default aspect ratio is 16:9 unless the user specifies otherwise.
-- ALWAYS set appropriate duration for each model. For Veo use "8s", for Kling v3/O3 use "5" to "10", for Sora use 5-10.
-- For Veo 3.1 and Kling v3/O3, enable generate_audio: true by default.
+- ALWAYS set appropriate duration for each model:
+  • Veo 3.1: "8s" (valid: "4s"/"6s"/"8s")
+  • Kling v3/O3 I2V: "5" to "10" (valid: "3"-"15")
+  • Kling v2.6/v2.5/v2.1: "5" or "10"
+  • Sora 2: 5-10 (number, max 20)
+  • Hailuo 02/2.3: "6" or "10" (strings, NO "5")
+  • Pixverse V6: 5 (integer 1-15)
+  • Seedance 1.5: "5" (valid: "4"-"12")
+  • Grok Video: 6 (number, max ~10)
+  • Ovi I2V: 5 (number, max 10)
+  • Hunyuan: 5 (number)
+- For Veo 3.1, Kling v3/O3, Seedance, and Ovi, enable generate_audio: true by default.
+- Grok Video resolution is LIMITED to "480p" or "720p" — NEVER send "1080p".
+- Hailuo resolution is LIMITED to "512P" or "768P" (uppercase P) — NEVER send "1080p" or "720p".
 - When the user says "animate this" or "make a video of this", use the most recent image in context as the source.
 
 **CHAINING WORKFLOWS:**
@@ -339,7 +351,12 @@ IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unles
                 end_image_url: input.end_image_url || (imageUrls && imageUrls.length >= 2 ? imageUrls[1] : undefined),
                 first_frame_url: input.first_frame_url || actionImageUrl,
                 last_frame_url: input.last_frame_url || (imageUrls && imageUrls.length >= 2 ? imageUrls[1] : undefined),
-                driving_video: input.driving_video || undefined
+                driving_video: input.driving_video || undefined,
+                // V2V params — video_url falls back to user-uploaded video
+                video_url: input.video_url || videoUrl || undefined,
+                character_orientation: input.character_orientation || undefined,
+                keep_audio: input.keep_audio !== undefined ? input.keep_audio : undefined,
+                elements: input.elements || undefined
               });
               toolResults.push({
                 type: 'tool_result',

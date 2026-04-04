@@ -63,10 +63,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Determine if this is a video or image generation request
-    const isVideoModel = model.includes('video') || 
-                        model.includes('veo') || 
-                        model.includes('kling') || 
-                        model.includes('minimax');
+    const isVideoModel = model.includes('video') ||
+                        model.includes('veo') ||
+                        model.includes('kling') ||
+                        model.includes('minimax') ||
+                        model.includes('dreamactor') ||
+                        model.includes('endframe') ||
+                        model.includes('ovi/');
 
     const isImageModel = model.includes('flux') || 
                         model.includes('imagen') || 
@@ -262,9 +265,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Handle Minimax Hailuo-02 model specific parameters
-    if (model.includes('minimax/hailuo-02') || model.includes('minimax/hailuo-02/standard')) {
-      console.log(`🔧 [Generate API] [${requestId}] Detected Minimax Hailuo-02 model: ${model}`);
+    // Handle ALL Minimax Hailuo models (Hailuo 02, Hailuo 2.3, EndFrame)
+    if (model.includes('minimax/hailuo') || model.includes('minimax-hailuo') || model.includes('endframe')) {
+      console.log(`🔧 [Generate API] [${requestId}] Detected Minimax Hailuo model: ${model}`);
       // Hailuo AI 02 Standard ONLY accepts duration: '6' or '10' (strings)
       // NEVER send '5' or '5s' - it will be rejected!
       if (body.duration) {
@@ -296,13 +299,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.resolution = '768P'; // Default to 768P (valid option)
       }
       
-      console.log(`🔧 [Generate API] [${requestId}] Hailuo AI 02 Standard parameters:`, {
+      // Hailuo 2.3 has prompt_optimizer enabled by default
+      if (model.includes('hailuo-2.3')) {
+        input.prompt_optimizer = body.prompt_optimizer !== undefined ? body.prompt_optimizer : true;
+      }
+
+      console.log(`🔧 [Generate API] [${requestId}] Minimax Hailuo parameters:`, {
         model: model,
         originalDuration: body.duration,
         originalResolution: body.resolution,
         finalDuration: input.duration,
         finalResolution: input.resolution,
-        note: 'Hailuo AI 02 only accepts duration: 6 or 10 (strings), resolution: 512P or 768P (strings)'
+        promptOptimizer: input.prompt_optimizer,
+        note: 'Hailuo models: duration 6/10, resolution 512P/768P'
       });
     }
 
@@ -468,7 +477,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Handle Sora 2 model specific parameters
     if (model.includes('sora-2')) {
-      // Sora 2 I2V uses image_url (correct as-is)
       // Sora 2 supports aspect_ratio: '16:9', '9:16'
       if (!['16:9', '9:16'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
@@ -480,8 +488,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else {
         input.duration = 5;
       }
+      // Sora 2 Remix (V2V) — needs video_url as source, no image_url
+      if (model.includes('video-to-video/remix')) {
+        if (body.video_url) {
+          input.video_url = body.video_url;
+        }
+        // Remix doesn't use image_url
+        delete input.image_url;
+        delete input.image_urls;
+      }
       console.log(`🔧 [Generate API] [${requestId}] Sora 2 parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio
+        duration: input.duration, aspectRatio: input.aspect_ratio,
+        isRemix: model.includes('remix'), hasVideoUrl: !!input.video_url
       });
     }
 
@@ -544,6 +562,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       console.log(`🔧 [Generate API] [${requestId}] Grok Video parameters:`, {
         duration: input.duration, aspectRatio: input.aspect_ratio, resolution: input.resolution
+      });
+    }
+
+    // Handle Ovi I2V — image-to-video with synchronized audio
+    if (model.includes('ovi/')) {
+      // Ovi uses image_url for source image (standard, already set)
+      // Clean params — only send what Ovi accepts
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        input.duration = isNaN(dNum) ? 5 : Math.min(Math.max(dNum, 1), 10);
+      } else {
+        input.duration = 5;
+      }
+      // Ovi supports generate_audio
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      console.log(`🔧 [Generate API] [${requestId}] Ovi I2V parameters:`, {
+        duration: input.duration, generateAudio: input.generate_audio
+      });
+    }
+
+    // Handle Hunyuan Video — T2V, no image needed
+    if (model.includes('hunyuan-video')) {
+      // Hunyuan is pure T2V — remove any image params that might have leaked through
+      delete input.image_url;
+      delete input.image_urls;
+      // Duration defaults
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        input.duration = isNaN(dNum) ? 5 : Math.min(Math.max(dNum, 1), 10);
+      } else {
+        input.duration = 5;
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Hunyuan Video parameters:`, {
+        duration: input.duration, aspectRatio: input.aspect_ratio
       });
     }
 

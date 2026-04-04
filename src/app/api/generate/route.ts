@@ -527,7 +527,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // Handle Grok video models
+    // Handle Grok video models — resolution MUST be '480p' or '720p' only
     if (model.includes('grok-imagine-video')) {
       // Grok uses standard image_url for I2V, text prompt for T2V
       // Duration should be a number
@@ -537,8 +537,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else {
         input.duration = 6;
       }
+      // Grok only supports 480p or 720p — clamp anything higher
+      const validGrokRes = ['480p', '720p'];
+      if (!validGrokRes.includes(input.resolution)) {
+        input.resolution = '720p';
+      }
       console.log(`🔧 [Generate API] [${requestId}] Grok Video parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio
+        duration: input.duration, aspectRatio: input.aspect_ratio, resolution: input.resolution
       });
     }
 

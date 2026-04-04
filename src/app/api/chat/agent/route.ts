@@ -201,17 +201,34 @@ export async function POST(request: NextRequest) {
 
     const styleGuide = styleGuides[userCreativeDirection] || styleGuides['cinematic'];
 
+    // Classify the user's preferred model to help the agent decide image vs video
+    const videoModelPrefixes = ['kling', 'veo', 'sora', 'minimax', 'hailuo', 'wan', 'luma', 'hunyuan', 'dreamactor', 'grok-imagine-video', 'ovi', 'endframe'];
+    const isVideoModelSelected = userPreferredModel !== 'none' && videoModelPrefixes.some(p => userPreferredModel.includes(p));
+    const isImageModelSelected = userPreferredModel !== 'none' && !isVideoModelSelected;
+
     // Inject user's current UI settings into the system prompt
-    const settingsContext = `\n\n**USER'S CURRENT SETTINGS (use these as defaults — do NOT override unless the user explicitly asks for a different ratio/resolution):**
+    const settingsContext = `\n\n**USER'S CURRENT SETTINGS — YOU MUST RESPECT THESE:**
 - Aspect ratio: ${userAspectRatio}
 - Resolution: ${userResolution}
-- Preferred video model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
 - Creative direction: ${userCreativeDirection}
 - Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
+- Selected model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
+${isVideoModelSelected ? `\n⚠️ THE USER HAS A VIDEO MODEL SELECTED (${userPreferredModel}). This means they want VIDEO output. Use generate_video with this exact model unless they explicitly ask for an image. If this is an I2V (image-to-video) model and no source image is available, first generate an image with generate_image, then explain you need them to say "animate this" to create the video, OR use a text-to-video model instead.` : ''}
+${isImageModelSelected ? `\n⚠️ THE USER HAS AN IMAGE MODEL SELECTED (${userPreferredModel}). This means they want IMAGE output. Use generate_image with this exact model.` : ''}
+${userPreferredModel === 'none' ? `\nNo model preference set — you choose the best model. Use context clues: action words like "chase", "run", "walk", "fly", camera movements like "dolly", "pan", "tracking shot" suggest VIDEO. Static descriptions like "a portrait of", "a photo of", "design a" suggest IMAGE.` : ''}
+
+**MODEL SELECTION RULES:**
+1. If the user has a specific model selected, USE THAT MODEL. Do not substitute your own choice.
+2. If the selected model is a video model, call generate_video (not generate_image).
+3. If the selected model is an image model, call generate_image (not generate_video).
+4. If no model is selected ("none"), YOU decide based on the prompt content.
+5. Action verbs (chasing, running, dancing, flying, walking) = likely VIDEO.
+6. Camera movements (dolly, pan, tracking, crane, tilt) = definitely VIDEO.
+7. Static descriptions (portrait, photo, design, concept art) = likely IMAGE.
 
 **CREATIVE DIRECTION — APPLY THIS STYLE TO EVERY PROMPT YOU CRAFT:**
 ${styleGuide}
-When writing prompts, weave this visual style into your descriptions. For example, if the style is "noir" and the user says "a detective in an alley", your prompt should include noir-specific terms like "high contrast shadows, rain-slicked cobblestones, venetian blind light patterns, cigarette smoke curling in a single overhead lamp".
+Weave this visual style into your descriptions naturally.
 
 IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unless they explicitly request a different one.`;
 

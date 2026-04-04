@@ -108,6 +108,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Handle style reference image (for style transfer models)
+    if (body.style_image_url) {
+      const styleUrl = await convertLocalhostToBase64(body.style_image_url);
+      // Model-specific mapping for style images:
+      if (model.includes('flux-krea-lora')) {
+        // FLUX LoRA uses image_url as the style source — swap it
+        // Keep original image_url in image_urls for reference if needed
+        if (input.image_url) {
+          input.image_urls = [input.image_url]; // preserve content image
+        }
+        input.image_url = styleUrl; // style becomes the primary reference
+        console.log(`🎨 [Generate API] [${requestId}] Style transfer: flux-krea-lora using style as image_url`);
+      } else if (model.includes('omni-zero') || model.includes('style-transfer')) {
+        // Models with explicit style_image_url param
+        input.style_image_url = styleUrl;
+        console.log(`🎨 [Generate API] [${requestId}] Style transfer: using style_image_url param`);
+      } else {
+        // For other models, pass as style_image_url — backend models may support it
+        input.style_image_url = styleUrl;
+        console.log(`🎨 [Generate API] [${requestId}] Style image provided but model may not support it`);
+      }
+    }
+
     // Add model-specific parameters
     if (body.aspect_ratio) {
       input.aspect_ratio = body.aspect_ratio;

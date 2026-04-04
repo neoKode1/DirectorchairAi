@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userInput, conversationHistory, imageUrls, videoUrl, userSettings } = body;
+    const { userInput, conversationHistory, imageUrls, videoUrl, styleImageUrl, userSettings } = body;
 
     if (!userInput || typeof userInput !== 'string') {
       return NextResponse.json({ success: false, error: 'userInput is required' }, { status: 400 });
@@ -378,6 +378,7 @@ ${userResolution !== resolvedRes && resolvedRes ? `\n⚠️ User's resolution is
 - User's preferred resolution: ${userResolution}
 - Creative direction: ${userCreativeDirection}
 - Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
+- Style reference image: ${styleImageUrl ? 'YES — user uploaded a style reference. Use style transfer model (flux-krea-lora) or pass style_image_url.' : 'none'}
 - Video in context: ${videoUrl ? 'YES — user has uploaded a reference video' : 'none'}
 - Selected model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
 ${modelParamGuidance}
@@ -483,7 +484,9 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
                 video_url: videoUrl || (input.video_url && !input.video_url.includes('{{') ? input.video_url : undefined),
                 character_orientation: input.character_orientation || undefined,
                 keep_audio: input.keep_audio !== undefined ? input.keep_audio : undefined,
-                elements: input.elements || undefined
+                elements: input.elements || undefined,
+                // Style transfer — pass user-uploaded style image
+                style_image_url: styleImageUrl || input.style_image_url || undefined
               });
               toolResults.push({
                 type: 'tool_result',

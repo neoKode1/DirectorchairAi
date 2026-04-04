@@ -77,6 +77,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [styleImage, setStyleImage] = useState<string | null>(null);
   const [uploadedVideo, setUploadedVideo] = useState<{ url: string; name: string; size: number } | null>(null);
   const showSuggestions = true;
   const [isDragOver, setIsDragOver] = useState(false);
@@ -94,6 +95,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [waitingForImage, setWaitingForImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const styleFileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
   // ─── MODEL PROMPT EXAMPLES ───
@@ -285,6 +287,15 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Models that support a dedicated style reference image
+  const STYLE_TRANSFER_MODELS = [
+    'flux-krea-lora',     // FLUX LoRA I2I — image_url IS the style source
+    'omni-zero',          // Omni Zero — has explicit style_image_url
+    'style-transfer',     // fal-ai/image-editing/style-transfer
+  ];
+  const isStyleTransferModel = (model: string) =>
+    STYLE_TRANSFER_MODELS.some(key => model.includes(key));
 
   // Helper function to get model icon
   const getModelIcon = (model: string) => {
@@ -492,6 +503,25 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Style image upload handler
+  const handleStyleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    try {
+      const compressed = await compressImage(file);
+      setStyleImage(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result as string;
+        if (result) setStyleImage(result);
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+  }, []);
+
   const clearChatHistory = () => {
     setMessages([]);
     setLastGeneratedImage(null);
@@ -541,6 +571,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     const currentInput = userInput.trim();
     const currentImages = [...uploadedImages];
     const currentVideo = uploadedVideo;
+    const currentStyleImage = styleImage;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -561,6 +592,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setUploadedImages([]);
+    setStyleImage(null);
     if (uploadedVideo?.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url);
     setUploadedVideo(null);
     setIsGenerating(true);
@@ -604,6 +636,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           conversationHistory: agentHistory,
           imageUrls: agentImageUrls,
           videoUrl: agentVideoUrl,
+          styleImageUrl: currentStyleImage || undefined,
           userSettings: {
             aspectRatio,
             resolution,
@@ -653,7 +686,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               ...(action.video_url && { video_url: action.video_url }),
               ...(action.character_orientation && { character_orientation: action.character_orientation }),
               ...(action.keep_audio !== undefined && { keep_audio: action.keep_audio }),
-              ...(action.elements && { elements: action.elements })
+              ...(action.elements && { elements: action.elements }),
+              ...(action.style_image_url && { style_image_url: action.style_image_url })
             };
 
             setCurrentModel(action.model);
@@ -771,9 +805,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
 
     setMessages(prev => [...prev, userMessage]);
-    
+
     setUserInput('');
     setUploadedImages([]);
+    setStyleImage(null);
     if (uploadedVideo?.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url);
     setUploadedVideo(null);
     setIsGenerating(true);
@@ -822,6 +857,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         image_url: imageToUse,
         image_urls: imagesToUse,
         aspect_ratio: aspectRatio,
+        ...(styleImage && { style_image_url: styleImage }),
         ...(wantsVideo && {
           duration: '5s',
           resolution: resolution
@@ -1339,6 +1375,39 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   </button>
                 </div>
               ))}
+
+              {/* Style Reference Slot — appears when image is uploaded */}
+              {uploadedImages.length > 0 && (
+                styleImage ? (
+                  <div className="relative group">
+                    <div className="relative">
+                      <img
+                        src={styleImage}
+                        alt="Style reference"
+                        className="w-16 h-16 object-cover border border-amber-600/60 hover:border-amber-500 transition-colors"
+                      />
+                      <span className="absolute bottom-0 left-0 right-0 bg-amber-600/80 text-[9px] text-white text-center py-0.5 font-medium tracking-wider uppercase">Style</span>
+                    </div>
+                    <button
+                      onClick={() => setStyleImage(null)}
+                      className="absolute -top-1.5 -right-1.5 bg-amber-700 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-amber-600 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => styleFileInputRef.current?.click()}
+                    className="w-16 h-16 border border-dashed border-neutral-700 hover:border-amber-600/60 bg-neutral-900/50 hover:bg-neutral-800/50 transition-all flex flex-col items-center justify-center gap-0.5 group"
+                    title="Upload a style reference image"
+                  >
+                    <FileImage className="w-3.5 h-3.5 text-neutral-600 group-hover:text-amber-500 transition-colors" />
+                    <span className="text-[9px] text-neutral-600 group-hover:text-amber-500 font-medium tracking-wider uppercase transition-colors">Style</span>
+                  </button>
+                )
+              )}
+
               {uploadedVideo && (
                 <div className="relative group">
                   <div className="w-28 h-16 bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors flex flex-col items-center justify-center overflow-hidden">
@@ -1627,7 +1696,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           onChange={handleFileUpload}
           className="hidden"
         />
-        
+        <input
+          ref={styleFileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleStyleImageUpload}
+          className="hidden"
+        />
+
         <p className="text-xs text-muted-foreground mt-2">
           Chat Mode can make mistakes. Double check responses.
         </p>

@@ -861,15 +861,19 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
   };
 
-  // Handle Enter key press to submit
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  // Handle Enter key press to submit — routes to agent or manual based on toggle
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isGenerating && (userInput.trim() || uploadedImages.length > 0)) {
-        handleSubmit(e as any);
+        if (useDirectorAI) {
+          handleAgentSubmit(e as any);
+        } else {
+          handleSubmit(e as any);
+        }
       }
     }
-  }, [isGenerating, userInput, uploadedImages.length, handleSubmit]);
+  };
 
   const handleDownload = (url: string, filename: string) => {
     const link = document.createElement('a');
@@ -899,10 +903,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const handleFloatingSuggestionClick = (suggestion: string) => {
     setUserInput(suggestion);
     setShowFloatingDialog(false);
-    // Auto-submit the suggestion
+    // Auto-submit the suggestion — route to correct handler
     setTimeout(() => {
       const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
-      handleSubmit(fakeEvent);
+      if (useDirectorAI) {
+        handleAgentSubmit(fakeEvent);
+      } else {
+        handleSubmit(fakeEvent);
+      }
     }, 100);
   };
 

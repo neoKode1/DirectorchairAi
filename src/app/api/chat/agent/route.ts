@@ -352,8 +352,8 @@ IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unles
                 first_frame_url: input.first_frame_url || actionImageUrl,
                 last_frame_url: input.last_frame_url || (imageUrls && imageUrls.length >= 2 ? imageUrls[1] : undefined),
                 driving_video: input.driving_video || undefined,
-                // V2V params — video_url falls back to user-uploaded video
-                video_url: input.video_url || videoUrl || undefined,
+                // V2V params — always prefer user-uploaded video over agent placeholder
+                video_url: videoUrl || (input.video_url && !input.video_url.includes('{{') ? input.video_url : undefined),
                 character_orientation: input.character_orientation || undefined,
                 keep_audio: input.keep_audio !== undefined ? input.keep_audio : undefined,
                 elements: input.elements || undefined

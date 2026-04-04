@@ -77,6 +77,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedVideo, setUploadedVideo] = useState<{ url: string; name: string; size: number } | null>(null);
   const [showSuggestions] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
   const [, setIsDragActive] = useState(false);
@@ -256,6 +257,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     });
   }, []);
 
+  const MAX_VIDEO_SIZE_MB = 200;
+
   const processFiles = useCallback((files: FileList) => {
     Array.from(files).forEach(async file => {
       if (file.type.startsWith('image/')) {
@@ -264,7 +267,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           setUploadedImages(prev => [...prev, compressed]);
         } catch (err) {
           console.error('Failed to compress image:', err);
-          // Fallback to raw base64 if compression fails
           const reader = new FileReader();
           reader.onload = (e) => {
             const result = e.target?.result as string;
@@ -272,6 +274,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           };
           reader.readAsDataURL(file);
         }
+      } else if (file.type.startsWith('video/')) {
+        // Validate video: .mp4/.mov, max 200MB
+        const validTypes = ['video/mp4', 'video/quicktime'];
+        if (!validTypes.includes(file.type)) {
+          alert('Only .mp4 and .mov video files are supported.');
+          return;
+        }
+        if (file.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+          alert(`Video too large. Max size is ${MAX_VIDEO_SIZE_MB}MB. Your file is ${(file.size / (1024 * 1024)).toFixed(0)}MB.`);
+          return;
+        }
+        // Create a local object URL for preview/playback
+        const videoUrl = URL.createObjectURL(file);
+        setUploadedVideo({ url: videoUrl, name: file.name, size: file.size });
+        console.log(`🎬 [Chat] Video uploaded: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
       }
     });
   }, [compressImage]);
@@ -364,17 +381,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   // Agent mode submit handler
   const handleAgentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userInput.trim() && uploadedImages.length === 0) return;
+    if (!userInput.trim() && uploadedImages.length === 0 && !uploadedVideo) return;
 
     const currentInput = userInput.trim();
     const currentImages = [...uploadedImages];
+    const currentVideo = uploadedVideo;
 
     const userMessage = {
       id: Date.now().toString(),
       type: 'user' as const,
       content: currentInput,
       timestamp: new Date(),
-      media: currentImages.length > 0 ? {
+      media: currentVideo ? {
+        type: 'video' as const,
+        url: currentVideo.url,
+        filename: currentVideo.name
+      } : currentImages.length > 0 ? {
         type: 'image' as const,
         url: currentImages[0],
         filename: 'uploaded-image'
@@ -384,6 +406,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     setMessages(prev => [...prev, userMessage]);
     setUserInput('');
     setUploadedImages([]);
+    if (uploadedVideo?.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url);
+    setUploadedVideo(null);
     setIsGenerating(true);
     setWaitingForImage(null);
     onGenerationStarted?.();
@@ -401,6 +425,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         agentImageUrls = [lastGeneratedImage];
       }
 
+      // If user uploaded a video, convert blob URL to base64 data URI for the API
+      let agentVideoUrl: string | undefined;
+      if (currentVideo) {
+        try {
+          const videoBlob = await fetch(currentVideo.url).then(r => r.blob());
+          agentVideoUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(videoBlob);
+          });
+        } catch (err) {
+          console.error('Failed to convert video to data URI:', err);
+        }
+      }
+
       const res = await fetch('/api/chat/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -408,6 +448,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           userInput: currentInput,
           conversationHistory: agentHistory,
           imageUrls: agentImageUrls,
+          videoUrl: agentVideoUrl,
           userSettings: {
             aspectRatio,
             resolution,
@@ -449,11 +490,15 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                 resolution: resolution, // Always use user's dropdown setting
                 generate_audio: action.generate_audio
               }),
-              // Special params for specific models (Veo First/Last Frame, Kling end frame, DreamActor)
+              // Special params for specific models
               ...(action.end_image_url && { end_image_url: action.end_image_url }),
               ...(action.first_frame_url && { first_frame_url: action.first_frame_url }),
               ...(action.last_frame_url && { last_frame_url: action.last_frame_url }),
-              ...(action.driving_video && { driving_video: action.driving_video })
+              ...(action.driving_video && { driving_video: action.driving_video }),
+              ...(action.video_url && { video_url: action.video_url }),
+              ...(action.character_orientation && { character_orientation: action.character_orientation }),
+              ...(action.keep_audio !== undefined && { keep_audio: action.keep_audio }),
+              ...(action.elements && { elements: action.elements })
             };
 
             setCurrentModel(action.model);
@@ -632,6 +677,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     
     setUserInput('');
     setUploadedImages([]);
+    if (uploadedVideo?.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url);
+    setUploadedVideo(null);
     setIsGenerating(true);
     onGenerationStarted?.();
 
@@ -865,7 +912,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!isGenerating && (userInput.trim() || uploadedImages.length > 0)) {
+      if (!isGenerating && (userInput.trim() || uploadedImages.length > 0 || uploadedVideo)) {
         if (useDirectorAI) {
           handleAgentSubmit(e as any);
         } else {
@@ -1269,8 +1316,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       {/* Input Area */}
       <div className="p-3 border-t border-neutral-800">
-        {/* Uploaded Images Preview */}
-        {uploadedImages.length > 0 && (
+        {/* Uploaded Media Preview */}
+        {(uploadedImages.length > 0 || uploadedVideo) && (
           <div className="mb-3">
             <p className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-2">Uploaded</p>
             <div className="flex flex-wrap gap-2">
@@ -1289,6 +1336,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   </button>
                 </div>
               ))}
+              {uploadedVideo && (
+                <div className="relative group">
+                  <div className="w-28 h-16 bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors flex flex-col items-center justify-center overflow-hidden">
+                    <video src={uploadedVideo.url} className="w-full h-full object-cover" muted />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                      <span className="text-[10px] text-white bg-neutral-800/80 px-1.5 py-0.5 rounded">🎬 {(uploadedVideo.size / (1024 * 1024)).toFixed(1)}MB</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { if (uploadedVideo.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url); setUploadedVideo(null); }}
+                    className="absolute -top-1.5 -right-1.5 bg-neutral-700 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-neutral-600 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1301,7 +1364,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="flex-shrink-0 p-2 text-neutral-500 hover:text-white border border-neutral-800 hover:border-neutral-600 bg-neutral-900 transition-all duration-200 group"
-              title="Upload images"
+              title="Upload images or video"
             >
               <FileImage className="w-4 h-4" />
             </button>
@@ -1321,7 +1384,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <div className="absolute inset-0 bg-neutral-900/90 flex items-center justify-center z-10 border border-neutral-600">
                     <div className="text-center">
                       <CloudUpload className="w-8 h-8 text-neutral-400 mx-auto mb-1" />
-                      <p className="text-neutral-400 text-xs">Drop images here</p>
+                      <p className="text-neutral-400 text-xs">Drop images or video here</p>
                     </div>
                   </div>
                 )}
@@ -1556,7 +1619,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/mp4,video/quicktime"
           multiple
           onChange={handleFileUpload}
           className="hidden"

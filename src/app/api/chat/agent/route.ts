@@ -105,7 +105,15 @@ You are the Director. When a user describes what they want, you:
 **CHAINING WORKFLOWS:**
 You can chain image → video. Generate an image first, then animate it. The system tracks the last generated image automatically.
 
-**IMAGE CONTEXT:** User-uploaded AND previously generated images are provided as image URLs. When images are available, prefer I2V models for video requests.`;
+**MEDIA CONTEXT:** User-uploaded AND previously generated images are provided as image URLs. When images are available, prefer I2V models for video requests. If a video URL is provided, it means the user uploaded a reference video for V2V or motion transfer.
+
+**MODEL/UPLOAD MISMATCH RULES — ENFORCE THESE:**
+1. V2V Edit models (video-to-video/edit, remix) NEED a source video. If user selects a V2V model but only uploaded an image (no video), tell them: "You selected a video-to-video model but uploaded an image. Please upload an .mp4/.mov video (3-10 seconds, max 200MB) or switch to an I2V model."
+2. Motion Control models NEED both a source image AND a reference video. If missing either, explain what's needed.
+3. I2V models NEED a source image. If user only uploaded a video, tell them: "You selected an image-to-video model but uploaded a video. Please upload a reference image instead, or switch to a V2V model like Kling O3 Video Edit or Sora 2 Remix."
+4. T2I/T2V models don't need uploads — but if the user provides media, acknowledge it and suggest a more appropriate model if relevant.
+5. When the user uploads a video, prefer V2V or motion control models unless they explicitly ask for something else.
+6. Video requirements for V2V models: .mp4/.mov only, 3-10 seconds, 720-2160px resolution, max 200MB.`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userInput, conversationHistory, imageUrls, userSettings } = body;
+    const { userInput, conversationHistory, imageUrls, videoUrl, userSettings } = body;
 
     if (!userInput || typeof userInput !== 'string') {
       return NextResponse.json({ success: false, error: 'userInput is required' }, { status: 400 });
@@ -232,6 +240,7 @@ export async function POST(request: NextRequest) {
 - Resolution: ${userResolution}
 - Creative direction: ${userCreativeDirection}
 - Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
+- Video in context: ${videoUrl ? 'YES — user has uploaded a reference video' : 'none'}
 - Selected model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
 ${isVideoModelSelected ? `\n⚠️ THE USER HAS A VIDEO MODEL SELECTED (${userPreferredModel}). This means they want VIDEO output. Use generate_video with this exact model unless they explicitly ask for an image. If this is an I2V (image-to-video) model and no source image is available, first generate an image with generate_image, then explain you need them to say "animate this" to create the video, OR use a text-to-video model instead.` : ''}
 ${isImageModelSelected ? `\n⚠️ THE USER HAS AN IMAGE MODEL SELECTED (${userPreferredModel}). This means they want IMAGE output. Use generate_image with this exact model.` : ''}

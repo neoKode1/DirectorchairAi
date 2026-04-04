@@ -126,6 +126,27 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
           type: 'string',
           description: 'URL for the last frame. Used ONLY by Veo 3.1 First/Last Frame model. If not set, the system uses the second image in context.'
         },
+        video_url: {
+          type: 'string',
+          description: 'Source video URL for V2V (video-to-video) models: Sora 2 Remix, Kling O1/O3 Video Edit, Kling v2.6 Motion Control. Required for these models.'
+        },
+        character_orientation: {
+          type: 'string',
+          description: 'For Kling v2.6 Motion Control only. "video" = orientation matches reference video (max 30s). "image" = matches reference image (max 10s).',
+          enum: ['video', 'image']
+        },
+        keep_audio: {
+          type: 'boolean',
+          description: 'Whether to keep original audio from reference video. Used by V2V edit models. Defaults to true.'
+        },
+        elements: {
+          type: 'array',
+          description: 'Character/object elements for Kling V2V edit models. Each element has frontal_image_url and reference_image_urls. Referenced in prompt as @Element1, @Element2.'
+        },
+        image_urls: {
+          type: 'array',
+          description: 'Multiple reference images for V2V edit models. Referenced in prompt as @Image1, @Image2. Max 4 total with elements.'
+        },
         requires_reference_image: {
           type: 'boolean',
           description: 'Set to true if the model requires a reference/source image and none was provided.'

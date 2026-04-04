@@ -410,8 +410,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
       messages
     });
 
-    console.log('🤖 [Agent] Initial response stop_reason:', response.stop_reason);
-    console.log('🤖 [Agent] Response content types:', response.content.map(b => b.type));
+    console.log(`🤖 [Agent] Response: stop=${response.stop_reason} types=${response.content.map(b => b.type).join(',')}`);
 
     // Collect all actions the agent wants to take
     const agentActions: any[] = [];

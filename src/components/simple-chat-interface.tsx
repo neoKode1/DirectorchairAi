@@ -78,9 +78,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [currentModel, setCurrentModel] = useState<string>('');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedVideo, setUploadedVideo] = useState<{ url: string; name: string; size: number } | null>(null);
-  const [showSuggestions] = useState(true);
+  const showSuggestions = true;
   const [isDragOver, setIsDragOver] = useState(false);
-  const [, setIsDragActive] = useState(false);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [floatingSuggestions, setFloatingSuggestions] = useState<string[]>([]);
@@ -306,30 +305,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Load data from localStorage on component mount
+  // Load settings from localStorage on mount
   useEffect(() => {
-    localStorage.getItem('directorchair-chat-messages');
     const savedLastImage = localStorage.getItem('directorchair-last-generated-image');
     const savedSettings = localStorage.getItem('directorchair-settings');
-    
-    // Skip loading messages from localStorage to prevent quota exceeded errors
-    // Messages will start fresh on each page load
-    console.log('📝 [Chat] Starting with empty message history to prevent localStorage quota issues');
-    
-    // Clear any existing messages on page load to ensure fresh start
-    setMessages([]);
-    
-    if (savedLastImage) {
-      setLastGeneratedImage(savedLastImage);
-    }
-    
+
+    if (savedLastImage) setLastGeneratedImage(savedLastImage);
+
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
-        // Validate aspect ratio — reject removed values like '1:1'
         const validRatios = ['16:9', '9:16', '4:3', '3:4'];
-        const loadedRatio = settings.aspectRatio;
-        setAspectRatio(validRatios.includes(loadedRatio) ? loadedRatio : '16:9');
+        setAspectRatio(validRatios.includes(settings.aspectRatio) ? settings.aspectRatio : '16:9');
         setResolution(settings.resolution || '1080p');
         setPreferredVideoModel(settings.preferredVideoModel || 'none');
         if (settings.creativeDirection) setCreativeDirection(settings.creativeDirection);
@@ -364,20 +351,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       });
       setMessages(messagesWithoutOldImages);
       console.log(`🧹 [Chat] Cleaned up old messages with images, kept last 10 image messages`);
-    }
-  }, [messages]);
-
-  // Disable localStorage saving for messages to prevent quota exceeded errors
-  // Messages will be lost on page refresh, but this prevents the app from breaking
-  useEffect(() => {
-    // Only save a minimal message count for debugging purposes
-    if (messages.length > 0) {
-      try {
-        const messageCount = messages.length;
-        localStorage.setItem('directorchair-message-count', messageCount.toString());
-      } catch (error) {
-        console.error('Error saving message count to localStorage:', error);
-      }
     }
   }, [messages]);
 
@@ -489,7 +462,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
-    setIsDragActive(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -497,7 +469,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.stopPropagation();
     if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
-      setIsDragActive(false);
     }
   }, []);
 
@@ -510,7 +481,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    setIsDragActive(false);
 
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
@@ -762,46 +732,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (!userInput.trim() && uploadedImages.length === 0) return;
 
     // Detect if user wants video generation based on keywords (very specific to avoid false positives)
-    const videoKeywords = [
-      // Explicit video/animation terms
-      'animate', 'animation', 'video', 'motion', 'cinematic', 'film', 'movie',
-      
-      // Specific camera movements and shots (only when explicitly mentioned)
-      'tracking dolly shot', 'dolly shot', 'dolly in', 'dolly out', 'push in', 'pull out',
-      'low-angle shot', 'low angle shot', 'low-angle tracking', 'low angle tracking',
-      'high-angle shot', 'high angle shot', 'high-angle tracking', 'high angle tracking',
-      'pedestal up shot', 'pedestal upshot', 'pedestal up', 'pedestal down shot', 'pedestal down',
-      'pan right shot', 'pan right', 'panning right', 'pan to right',
-      'pan left shot', 'pan left', 'panning left', 'pan to left',
-      'tilt up shot', 'tilt up', 'tilting up', 'tilt to up',
-      'tilt down shot', 'tilt down', 'tilting down', 'tilt to down',
-      'zoom in shot', 'zoom in', 'zooming in', 'zoom into',
-      'zoom out shot', 'zoom out', 'zooming out', 'zoom away',
-      'crane shot', 'crane up', 'crane down', 'crane movement',
-      'handheld shot', 'handheld', 'shaky cam', 'shaky camera',
-      'steady cam', 'steadicam',
-      'close-up shot', 'close up shot', 'establishing shot',
-      'wide shot', 'wide angle shot', 'medium shot', 'medium close-up', 'medium close up',
-      'over-the-shoulder shot', 'over the shoulder shot', 'over shoulder',
-      'point of view shot', 'pov shot', 'first person shot',
-      'bird\'s eye view', 'birds eye view', 'aerial shot', 'top down',
-      'worm\'s eye view', 'worms eye view', 'ground level',
-      
-      // Advanced camera techniques
-      'rack focus', 'focus pull', 'shallow depth of field', 'bokeh',
-      'slow motion', 'slow-mo', 'time-lapse', 'fast motion',
-      'freeze frame', 'bullet time', 'matrix effect',
-      
-      // Video-specific transitions and effects
-      'fade in', 'fade out', 'crossfade', 'dissolve', 'wipe',
-      'action sequence', 'streaming', 'playing', 'looping',
-      
-      // File formats and playback
-      'gif', 'mp4', 'mov', 'avi', 'playback', 'replay', 'preview', 'trailer',
-      'duration', 'seconds', 'minutes', 'timeline', 'sequence'
-    ];
-    
-    // Special trigger words that force video generation (image-to-video only)
+    // Trigger words that force video generation (image-to-video only)
     const videoTriggers = [
       'make video', 'create video', 'generate video', 'video of', 
       'animate this', 'make it move', 'animate the image', 'bring to life',
@@ -816,29 +747,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'pedestal down shot', 'pan right shot', 'pan left shot'
     ];
     
-    const hasVideoTrigger = videoTriggers.some(trigger => 
+    const hasVideoTrigger = videoTriggers.some(trigger =>
       userInput.toLowerCase().includes(trigger)
     );
-    
-    const matchedVideoKeywords = videoKeywords.filter(keyword => 
-      userInput.toLowerCase().includes(keyword)
-    );
-    const hasVideoKeywords = matchedVideoKeywords.length > 0;
-    
-    // Only generate video if there are explicit video triggers OR if forced by Generate Video button
-    // This preserves the conversational image editing workflow
     const wantsVideo = hasVideoTrigger || forceVideoGeneration;
-    
-    console.log('🎬 [Chat] Video detection:', {
-      userInput: userInput.toLowerCase(),
-      hasVideoTrigger,
-      hasVideoKeywords,
-      matchedVideoKeywords,
-      wantsVideo,
-      preferredVideoModel,
-      forceVideoGeneration,
-      videoTriggers: videoTriggers.filter(trigger => userInput.toLowerCase().includes(trigger))
-    });
 
     // Detect if user is referencing a previously generated image or injected image
     const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this', 'generate video', 'create video', 'animate', 'make video'];
@@ -874,35 +786,23 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       let imagesToUse: string[] | undefined;
 
       // Determine which image to use (uploaded/injected or referenced)
-      console.log('🖼️ [Chat] Uploaded images state:', uploadedImages);
-      console.log('🖼️ [Chat] Last generated image:', lastGeneratedImage);
-      console.log('🖼️ [Chat] Is referencing previous image:', isReferencingPreviousImage);
-      
       if (uploadedImages.length > 0) {
-        // Priority 1: Use injected/uploaded images
         imageToUse = uploadedImages[0];
         imagesToUse = uploadedImages;
-        console.log('🖼️ [Chat] Using uploaded/injected image:', imageToUse);
       } else if (isReferencingPreviousImage && lastGeneratedImage) {
-        // Priority 2: Use last generated image when referencing
         imageToUse = lastGeneratedImage;
         imagesToUse = [lastGeneratedImage];
-        console.log('🖼️ [Chat] Using last generated image:', imageToUse);
       }
 
       // MODEL SELECTION: Always respect the user's dropdown choice first
       if (preferredVideoModel && preferredVideoModel !== 'none') {
-        // User has explicitly selected a model — use it for ALL generation types
         model = preferredVideoModel;
-        console.log('🎯 [Chat] Using user-selected model:', model);
       } else {
-        // No model selected — use smart defaults based on context
         if (wantsVideo) {
-          // Video requested but no model selected — prompt user
           const errorMessage = {
             id: (Date.now() + 1).toString(),
             type: 'assistant' as const,
-            content: `⚠️ Please select a model from the dropdown above before generating. Choose a video model like Sora 2, Kling, or Wan Pro for video generation.`,
+            content: `⚠️ Please select a model from the dropdown above before generating.`,
             timestamp: new Date()
           };
           setMessages(prev => [...prev, errorMessage]);
@@ -910,13 +810,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           onGenerationComplete?.();
           return;
         } else if (imageToUse) {
-          // Image editing with no model selected — default to nano-banana/edit
           model = 'fal-ai/nano-banana/edit';
-          console.log('🎯 [Chat] No model selected, defaulting to Nano Banana Edit for image editing');
         } else {
-          // Text-to-image with no model selected — default to flux-pro
           model = 'fal-ai/flux-pro/v1.1-ultra';
-          console.log('🎯 [Chat] No model selected, defaulting to Flux Pro for text-to-image');
         }
       }
 
@@ -926,50 +822,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         image_url: imageToUse,
         image_urls: imagesToUse,
         aspect_ratio: aspectRatio,
-        // Add required video parameters for video models
         ...(wantsVideo && {
           duration: '5s',
           resolution: resolution
         })
       };
 
-      // Set the current model for the spinning icon
       setCurrentModel(model);
-
-      console.log('🎯 [Chat] Final model selection:', {
-        selectedModel: model,
-        wantsVideo,
-        preferredVideoModel,
-        hasImage: !!imageToUse
-      });
-
-      console.log('🎯 [Chat] Final generation data:', {
-        ...generationData,
-        hasImage: !!imageToUse,
-        imageUrl: imageToUse,
-        imagesCount: imagesToUse?.length || 0
-      });
-
-      console.log('🎯 [Chat] Generation data being sent:', {
-        model,
-        aspect_ratio: aspectRatio,
-        resolution: resolution,
-        wantsVideo,
-        preferredVideoModel,
-        allSettings: { aspectRatio, resolution, preferredVideoModel },
-        userAspectRatio: aspectRatio,
-        userResolution: resolution,
-        detectionReason: hasVideoTrigger ? 'explicit trigger' : hasVideoKeywords ? 'video keywords' : 'default image',
-        userInput: userInput,
-        hasVideoTrigger,
-        hasVideoKeywords,
-        videoKeywords: videoKeywords.filter(keyword => userInput.toLowerCase().includes(keyword))
-      });
+      console.log(`🎯 [Chat] Manual: ${model} | video=${wantsVideo} img=${!!imageToUse}`);
 
       // Call the generation API directly
       try {
         const result = await onContentGenerated(generationData);
-        console.log('✅ [Chat] Generation completed successfully:', result);
         
         // Add success message to chat
         const successMessage = {
@@ -1002,48 +866,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         onGenerationComplete?.();
         
       } catch (error: any) {
-        // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
-        if (error.message?.includes('content policy') && 
-            error.message?.includes('violation') && 
-            generationData.model === 'fal-ai/nano-banana/edit' &&
-            imageToUse) {
-          
-          console.log('🔄 [Chat] Content policy violation detected, trying Seedream 4.0 Edit as fallback...');
-          
-          // Retry with Seedream 4.0 Edit
-          const fallbackGenerationData = {
-            ...generationData,
-            model: 'fal-ai/bytedance/seedream/v4/edit'
-          };
-          
-          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
-          if (generationData.aspect_ratio) {
-            const aspectRatioToDimensions = (ratio: string) => {
-              switch (ratio) {
-                case '16:9':
-                  return { width: 1920, height: 1080 };
-                case '9:16':
-                  return { width: 1080, height: 1920 };
-                case '4:3':
-                  return { width: 1024, height: 768 };
-                case '3:4':
-                  return { width: 768, height: 1024 };
-                default:
-                  return { width: 1920, height: 1080 }; // Default to 16:9
-              }
-            };
-            
-            (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
-            // Remove aspect_ratio since Seedream uses image_size
-            delete (fallbackGenerationData as any).aspect_ratio;
-            
-            console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream queue fallback:', (fallbackGenerationData as any).image_size);
-          }
-          
+        // Content policy fallback: Nano Banana → Seedream v4 (backend handles image_size conversion)
+        if (error.message?.includes('content policy') &&
+            generationData.model === 'fal-ai/nano-banana/edit' && imageToUse) {
           try {
-            const result = await onContentGenerated(fallbackGenerationData);
-            console.log('✅ [Chat] Fallback generation completed successfully:', result);
-            
+            const result = await onContentGenerated({ ...generationData, model: 'fal-ai/bytedance/seedream/v4/edit' });
             const successMessage = {
               id: (Date.now() + 0.5).toString(),
               type: 'assistant' as const,
@@ -1051,31 +878,22 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               timestamp: new Date()
             };
             setMessages(prev => prev.slice(0, -1).concat([successMessage]));
-            
-            // Reset force video generation flag
             setForceVideoGeneration(false);
-            
-            // Track the last generated image for future references
             if (result?.data?.images?.[0]) {
               setLastGeneratedImage(result.data.images[0].url);
-              
-              // Show floating suggestions for images (image-to-video workflow)
               showFloatingSuggestions([
                 "Animate this character walking",
-                "Make video of this character dancing", 
-                "Bring this character to life",
-                "Animate the image with motion",
-                "Create a cinematic video of this character"
+                "Make video of this character dancing",
+                "Bring this character to life"
               ]);
             }
-            
             onGenerationComplete?.();
             return;
           } catch (fallbackError) {
             throw fallbackError;
           }
         } else {
-          throw error; // Re-throw if it's not a content policy issue or not the right model
+          throw error;
         }
       }
       

@@ -27,20 +27,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = Math.random().toString(36).substring(7);
   
   try {
-    console.log(`🔍 [Generate API] ===== GENERATION REQUEST START [${requestId}] =====`);
-    console.log(`🔍 [Generate API] Timestamp: ${new Date().toISOString()}`);
-    
     const body = await request.json();
-    console.log(`🔍 [Generate API] [${requestId}] Request received:`, {
-      model: body.model,
-      prompt: body.prompt?.substring(0, 100) + '...',
-      hasImage: !!body.image_url,
-      imageUrl: body.image_url,
-      aspectRatio: body.aspect_ratio,
-      duration: body.duration,
-      resolution: body.resolution,
-      allKeys: Object.keys(body)
-    });
+    console.log(`🔍 [Generate API] [${requestId}] ${body.model} | prompt="${body.prompt?.substring(0, 80)}..." | ar=${body.aspect_ratio} res=${body.resolution} dur=${body.duration} img=${!!body.image_url}`);
 
     // Extract model and prompt - these are required
     const model = body.model || body.endpoint || body.endpointId;
@@ -85,13 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('grok-imagine-image') ||
                         (model.includes('wan') && !model.includes('video'));
 
-    console.log(`🔍 [Generate API] [${requestId}] Model classification:`, {
-      model: model,
-      isVideoModel: isVideoModel,
-      isImageModel: isImageModel,
-      videoKeywords: ['video', 'veo', 'kling', 'minimax', 'dreamactor', 'endframe', 'ovi/'].filter(keyword => model.includes(keyword)),
-      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream', 'qwen', 'grok-imagine-image', 'wan'].filter(keyword => model.includes(keyword))
-    });
+    console.log(`🔍 [Generate API] [${requestId}] Classification: video=${isVideoModel} image=${isImageModel}`);
 
     // Prepare FAL API input parameters
     const input: Record<string, any> = {
@@ -315,24 +297,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         delete input.image_urls;
       }
 
-      // Handle Image-to-Video — uses image_url (standard for Veo)
-      // No remapping needed — image_url is correct for veo3.1 i2v
-
-      console.log(`🔧 [Generate API] [${requestId}] Veo 3.1 model parameters:`, {
-        originalDuration: body.duration,
-        originalResolution: body.resolution,
-        finalDuration: input.duration,
-        finalResolution: input.resolution,
-        finalAspectRatio: input.aspect_ratio,
-        generateAudio: input.generate_audio,
-        isFirstLastFrame: model.includes('first-last-frame'),
-        note: 'Veo 3.1: duration 4s/6s/8s, resolution 720p/1080p/4k, aspect_ratio auto/16:9/9:16'
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Veo 3.1: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
     }
 
     // Handle ALL Minimax Hailuo models (Hailuo 02, Hailuo 2.3, EndFrame)
     if (model.includes('minimax/hailuo') || model.includes('minimax-hailuo') || model.includes('endframe')) {
-      console.log(`🔧 [Generate API] [${requestId}] Detected Minimax Hailuo model: ${model}`);
       // Hailuo AI 02 Standard ONLY accepts duration: '6' or '10' (strings)
       // NEVER send '5' or '5s' - it will be rejected!
       if (body.duration) {
@@ -369,15 +338,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.prompt_optimizer = body.prompt_optimizer !== undefined ? body.prompt_optimizer : true;
       }
 
-      console.log(`🔧 [Generate API] [${requestId}] Minimax Hailuo parameters:`, {
-        model: model,
-        originalDuration: body.duration,
-        originalResolution: body.resolution,
-        finalDuration: input.duration,
-        finalResolution: input.resolution,
-        promptOptimizer: input.prompt_optimizer,
-        note: 'Hailuo models: duration 6/10, resolution 512P/768P'
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Hailuo: dur=${input.duration} res=${input.resolution}`);
     }
 
     // Handle Kling model specific parameters
@@ -473,15 +434,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
 
-      console.log(`🔧 [Generate API] [${requestId}] Kling model parameters:`, {
-        originalDuration: body.duration,
-        finalDuration: input.duration,
-        isV3OrO3: isKlingV3OrO3,
-        hasStartImage: !!input.start_image_url,
-        hasEndImage: !!input.end_image_url,
-        generateAudio: input.generate_audio,
-        note: isKlingV3OrO3 ? 'Kling v3/O3: duration 3-15, start_image_url, generate_audio' : 'Kling legacy: duration 5 or 10'
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Kling: dur=${input.duration} v3/o3=${isKlingV3OrO3} startImg=${!!input.start_image_url} audio=${input.generate_audio}`);
     }
 
     // Handle Pixverse V6 — I2V, 1-15s (integer), style presets, generate_audio_switch
@@ -507,9 +460,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       // Remove aspect_ratio — Pixverse doesn't use it
       delete input.aspect_ratio;
-      console.log(`🔧 [Generate API] [${requestId}] Pixverse V6 parameters:`, {
-        duration: input.duration, resolution: input.resolution, generate_audio_switch: input.generate_audio_switch
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution}`);
     }
 
     // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
@@ -535,9 +486,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.end_image_url) {
         input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
       }
-      console.log(`🔧 [Generate API] [${requestId}] Seedance parameters:`, {
-        duration: input.duration, resolution: input.resolution, generate_audio: input.generate_audio, end_image_url: !!input.end_image_url
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Seedance: dur=${input.duration} res=${input.resolution} audio=${input.generate_audio}`);
     }
 
     // Handle Sora 2 model specific parameters
@@ -562,10 +511,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         delete input.image_url;
         delete input.image_urls;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Sora 2 parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio,
-        isRemix: model.includes('remix'), hasVideoUrl: !!input.video_url
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Sora 2: dur=${input.duration} ar=${input.aspect_ratio} remix=${model.includes('remix')}`);
     }
 
     // Handle Wan model specific parameters
@@ -575,9 +521,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.resolution) {
         input.resolution = body.resolution;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Wan model parameters:`, {
-        duration: input.duration, resolution: input.resolution
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Wan: dur=${input.duration} res=${input.resolution}`);
     }
 
     // Handle DreamActor v2 model specific parameters
@@ -593,9 +537,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.image_urls;
       delete input.aspect_ratio;
       delete input.duration;
-      console.log(`🔧 [Generate API] [${requestId}] DreamActor v2 parameters:`, {
-        hasSourceImage: !!input.source_image, hasDrivingVideo: !!input.driving_video
-      });
+      console.log(`🔧 [Generate API] [${requestId}] DreamActor: srcImg=${!!input.source_image} video=${!!input.driving_video}`);
     }
 
     // Handle Luma Ray 2 model specific parameters
@@ -605,9 +547,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!['16:9', '9:16', '4:3', '3:4'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
       }
-      console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Luma: ar=${input.aspect_ratio}`);
     }
 
     // Handle Grok video models — resolution MUST be '480p' or '720p' only
@@ -625,9 +565,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!validGrokRes.includes(input.resolution)) {
         input.resolution = '720p';
       }
-      console.log(`🔧 [Generate API] [${requestId}] Grok Video parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio, resolution: input.resolution
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Grok: dur=${input.duration} res=${input.resolution}`);
     }
 
     // Handle Ovi I2V — image-to-video with synchronized audio
@@ -642,9 +580,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       // Ovi supports generate_audio
       input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
-      console.log(`🔧 [Generate API] [${requestId}] Ovi I2V parameters:`, {
-        duration: input.duration, generateAudio: input.generate_audio
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Ovi: dur=${input.duration} audio=${input.generate_audio}`);
     }
 
     // Handle Hunyuan Video — T2V, no image needed
@@ -659,20 +595,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else {
         input.duration = 5;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Hunyuan Video parameters:`, {
-        duration: input.duration, aspectRatio: input.aspect_ratio
-      });
+      console.log(`🔧 [Generate API] [${requestId}] Hunyuan: dur=${input.duration} ar=${input.aspect_ratio}`);
     }
 
-    console.log(`🔗 [Generate API] [${requestId}] Calling FAL API directly for model:`, model);
-    console.log(`🔗 [Generate API] [${requestId}] Input parameters:`, input);
-    console.log(`🔗 [Generate API] [${requestId}] Aspect ratio being sent:`, input.aspect_ratio);
-    console.log(`🔗 [Generate API] [${requestId}] Resolution being sent:`, input.resolution);
-    console.log(`🔗 [Generate API] [${requestId}] User settings received:`, {
-      aspect_ratio: body.aspect_ratio,
-      resolution: body.resolution,
-      model: body.model
-    });
+    console.log(`🔗 [Generate API] [${requestId}] Calling FAL: ${model} | ar=${input.aspect_ratio} res=${input.resolution} dur=${input.duration}`);
 
     // Call FAL API directly
     let result;
@@ -681,24 +607,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input,
         logs: true,
         onQueueUpdate: (update: any) => {
-          console.log(`📊 [Generate API] [${requestId}] Queue update:`, update.status);
-          if (update.logs) {
-            update.logs.forEach((log: any) => {
-              console.log(`📊 [Generate API] [${requestId}] Queue log:`, log.message);
-            });
+          if (update.status !== 'IN_QUEUE') {
+            console.log(`📊 [Generate API] [${requestId}] Queue: ${update.status}`);
           }
         },
       });
 
-      console.log(`✅ [Generate API] [${requestId}] FAL API call successful`);
-      console.log(`📦 [Generate API] [${requestId}] Result:`, result);
-
       const endTime = Date.now();
       const duration = endTime - startTime;
-
-      console.log(`✅ [Generate API] [${requestId}] Generation successful`);
-      console.log(`✅ [Generate API] [${requestId}] Total duration: ${duration}ms`);
-      console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED =====`);
+      console.log(`✅ [Generate API] [${requestId}] Complete in ${duration}ms`);
       
       return NextResponse.json({
         success: true,
@@ -712,9 +629,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
     } catch (falError: any) {
-      console.error(`❌ [Generate API] [${requestId}] FAL API error:`, falError);
-      console.error(`❌ [Generate API] [${requestId}] Error status:`, falError.status);
-      console.error(`❌ [Generate API] [${requestId}] Error body:`, falError.body);
+      console.error(`❌ [Generate API] [${requestId}] FAL error ${falError.status}:`, falError.body || falError.message);
       
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -730,61 +645,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const hasImageInput = body.image_url || body.image_urls;
       
       if (isContentPolicyViolation && isNanoBananaEdit && hasImageInput) {
-        console.log(`🔄 [Generate API] [${requestId}] Content policy violation detected, trying Seedream 4.0 Edit as fallback...`);
-        
+        console.log(`🔄 [Generate API] [${requestId}] Content policy violation, trying Seedream 4.0 Edit fallback...`);
         try {
-          // Retry with Seedream 4.0 Edit
-          const fallbackInput = {
-            ...input,
-            // Keep the same prompt and image for fallback
+          const arToDims: Record<string, { width: number; height: number }> = {
+            '16:9': { width: 1920, height: 1080 },
+            '9:16': { width: 1080, height: 1920 },
+            '4:3': { width: 1024, height: 768 },
+            '3:4': { width: 768, height: 1024 },
+            '1:1': { width: 1024, height: 1024 },
           };
-          
-          // Convert aspect_ratio to image_size for Seedream 4.0 Edit
+          const fallbackInput = { ...input };
           if (body.aspect_ratio) {
-            const aspectRatioToDimensions = (ratio: string) => {
-              switch (ratio) {
-                case '16:9':
-                  return { width: 1920, height: 1080 };
-                case '9:16':
-                  return { width: 1080, height: 1920 };
-                case '4:3':
-                  return { width: 1024, height: 768 };
-                case '3:4':
-                  return { width: 768, height: 1024 };
-                default:
-                  return { width: 1920, height: 1080 }; // Default to 16:9
-              }
-            };
-            
-            fallbackInput.image_size = aspectRatioToDimensions(body.aspect_ratio);
-            // Remove aspect_ratio since Seedream uses image_size
+            fallbackInput.image_size = arToDims[body.aspect_ratio] || arToDims['16:9'];
             delete fallbackInput.aspect_ratio;
-            
-            console.log(`🔄 [Generate API] [${requestId}] Converted aspect_ratio ${body.aspect_ratio} to image_size:`, fallbackInput.image_size);
           }
-          
+
           const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
             input: fallbackInput,
             logs: true,
-            onQueueUpdate: (update: any) => {
-              console.log(`📊 [Generate API] [${requestId}] Fallback queue update:`, update.status);
-            },
           });
-          
-          const fallbackEndTime = Date.now();
-          const fallbackDuration = fallbackEndTime - startTime;
-          
-          console.log(`✅ [Generate API] [${requestId}] Fallback generation successful with Seedream 4.0 Edit`);
-          console.log(`✅ [Generate API] [${requestId}] Total duration: ${fallbackDuration}ms`);
-          console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST COMPLETED (FALLBACK) =====`);
-          
-        return NextResponse.json({
+
+          const fallbackDuration = Date.now() - startTime;
+          console.log(`✅ [Generate API] [${requestId}] Fallback complete in ${fallbackDuration}ms`);
+
+          return NextResponse.json({
             success: true,
             data: fallbackResult.data,
             requestId: fallbackResult.requestId,
             status: 'completed',
             model: 'fal-ai/bytedance/seedream/v4/edit',
-          prompt: prompt,
+            prompt: prompt,
             duration: fallbackDuration,
             fallbackUsed: 'fal-ai/bytedance/seedream/v4/edit',
             timestamp: new Date().toISOString()
@@ -814,15 +704,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const endTime = Date.now();
     const duration = endTime - startTime;
     
-    console.error(`❌ [Generate API] [${requestId}] General error:`, {
-      error: error.message,
-      stack: error.stack,
-      duration: duration,
-      timestamp: new Date().toISOString()
-    });
-    
-    console.log(`🔍 [Generate API] [${requestId}] ===== GENERATION REQUEST ERROR =====`);
-    
+    console.error(`❌ [Generate API] [${requestId}] Error in ${duration}ms:`, error.message);
+
     return NextResponse.json({
       success: false,
       error: "Failed to process generation request",

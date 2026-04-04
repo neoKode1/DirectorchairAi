@@ -88,7 +88,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/sora-2/image-to-video');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
-  const [useDirectorAI, setUseDirectorAI] = useState<boolean>(false);
+  const [useDirectorAI, setUseDirectorAI] = useState<boolean>(true);
   const [agentHistory, setAgentHistory] = useState<Array<{ role: string; content: string }>>([]);
   const [waitingForImage, setWaitingForImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -456,11 +456,40 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
             try {
               const result = await onContentGenerated(generationData);
-              if (result?.data?.images?.[0]) {
-                setLastGeneratedImage(result.data.images[0].url);
+              const images = result?.data?.images || result?.images || [];
+              const videos = result?.data?.videos || (result?.data?.video ? [result.data.video] : result?.videos || []);
+
+              if (images?.[0]) {
+                setLastGeneratedImage(images[0].url);
+                // Show generated image in chat
+                const imgMsg = {
+                  id: (Date.now() + 2).toString(),
+                  type: 'assistant' as const,
+                  content: `✅ Generated with ${action.model.split('/').pop()}`,
+                  timestamp: new Date(),
+                  media: { type: 'image' as const, url: images[0].url, filename: 'generated.png' }
+                };
+                setMessages(prev => [...prev, imgMsg]);
+              } else if (videos?.[0]) {
+                // Show generated video in chat
+                const vidMsg = {
+                  id: (Date.now() + 2).toString(),
+                  type: 'assistant' as const,
+                  content: `✅ Video generated with ${action.model.split('/').pop()}`,
+                  timestamp: new Date(),
+                  media: { type: 'video' as const, url: videos[0].url, filename: 'generated.mp4' }
+                };
+                setMessages(prev => [...prev, vidMsg]);
               }
             } catch (genError) {
               console.error('🤖 [Agent] Generation failed:', genError);
+              const errMsg = {
+                id: (Date.now() + 2).toString(),
+                type: 'assistant' as const,
+                content: `❌ Generation failed: ${genError instanceof Error ? genError.message : 'Unknown error'}`,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, errMsg]);
             }
           } else if (action.type === 'request_image') {
             setWaitingForImage(action.reason);

@@ -139,7 +139,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
-        setAspectRatio(settings.aspectRatio || '16:9');
+        // Validate aspect ratio — reject removed values like '1:1'
+        const validRatios = ['16:9', '9:16', '4:3', '3:4'];
+        const loadedRatio = settings.aspectRatio;
+        setAspectRatio(validRatios.includes(loadedRatio) ? loadedRatio : '16:9');
         setResolution(settings.resolution || '1080p');
         setPreferredVideoModel(settings.preferredVideoModel || 'none');
       } catch (error) {

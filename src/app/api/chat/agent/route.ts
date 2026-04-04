@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
     const userAspectRatio = userSettings?.aspectRatio || '16:9';
     const userResolution = userSettings?.resolution || '1080p';
     const userPreferredModel = userSettings?.preferredVideoModel || 'none';
+    const userCreativeDirection = userSettings?.creativeDirection || 'cinematic';
 
     const client = new Anthropic({ apiKey });
 
@@ -180,12 +181,37 @@ export async function POST(request: NextRequest) {
 
     console.log('🤖 [Agent] Starting agentic chat, messages:', messages.length);
 
+    // Creative direction style descriptions for the AI
+    const styleGuides: Record<string, string> = {
+      'cinematic': 'CINEMATIC — Use film-grade composition: dramatic chiaroscuro lighting, shallow depth of field, anamorphic lens flares, golden hour warmth, Kodak film stock look. Think Villeneuve, Deakins, Lubezki.',
+      'realistic': 'REALISTIC / PHOTOREALISTIC — Natural ambient lighting, true-to-life colors, no stylization. Documentary-quality, DSLR camera look, neutral color grading.',
+      'surreal': 'SURREAL / DREAMLIKE — Otherworldly, impossible geometry, floating elements, ethereal glow, distorted reality, Salvador Dalí meets modern digital art. Vivid unnatural colors, soft atmospheric haze.',
+      'noir': 'NOIR — High contrast black and white tones, deep dramatic shadows, venetian blind light patterns, rain-slicked streets, moody fog, 1940s detective aesthetic. Minimal color if any.',
+      'anime': 'ANIME / STYLIZED — Japanese animation style, cel-shaded, vibrant saturated colors, expressive characters, dynamic action lines, Studio Ghibli or Makoto Shinkai inspired backgrounds.',
+      'music-video': 'MUSIC VIDEO — Flashy, dynamic, heavy color grading (teal & orange, neon, monochrome), performance-driven energy, smoke/haze, concert-style lighting, fast cuts feel.',
+      'fashion': 'FASHION / EDITORIAL — High-fashion studio lighting, clean backgrounds, editorial composition, Vogue-quality, beauty dish lighting, sharp focus on wardrobe and styling.',
+      'horror': 'HORROR — Dark unsettling atmosphere, desaturated muted palette, long shadows, fog, tension-building composition, uncomfortable angles, dim practical lighting.',
+      'scifi': 'SCI-FI / FUTURISTIC — Neon accent lighting, cyberpunk cityscapes, holographic UI elements, volumetric fog with colored light, chrome and glass surfaces, Blade Runner aesthetic.',
+      'vintage': 'VINTAGE / RETRO — Analog film grain, faded warm tones, light leaks, muted pastels, 70s/80s color grading, Polaroid texture, vignette.',
+      'epic': 'EPIC / FANTASY — Grand sweeping scale, mythical landscapes, dramatic stormy skies, volumetric god rays, Lord of the Rings grandeur, heroic composition.',
+      'commercial': 'COMMERCIAL — Clean polished look, bright even lighting, product-focused, white/neutral backgrounds, crisp details, professional advertising quality.',
+      'documentary': 'DOCUMENTARY — Handheld camera feel, raw and observational, available light, gritty realism, intimate close-ups, verité style.',
+      'none': 'No specific style direction — choose what fits best for each individual prompt.'
+    };
+
+    const styleGuide = styleGuides[userCreativeDirection] || styleGuides['cinematic'];
+
     // Inject user's current UI settings into the system prompt
     const settingsContext = `\n\n**USER'S CURRENT SETTINGS (use these as defaults — do NOT override unless the user explicitly asks for a different ratio/resolution):**
 - Aspect ratio: ${userAspectRatio}
 - Resolution: ${userResolution}
 - Preferred video model: ${userPreferredModel !== 'none' ? userPreferredModel : 'no preference (you choose)'}
+- Creative direction: ${userCreativeDirection}
 - Images in context: ${imageUrls && imageUrls.length > 0 ? `${imageUrls.length} image(s) available` : 'none'}
+
+**CREATIVE DIRECTION — APPLY THIS STYLE TO EVERY PROMPT YOU CRAFT:**
+${styleGuide}
+When writing prompts, weave this visual style into your descriptions. For example, if the style is "noir" and the user says "a detective in an alley", your prompt should include noir-specific terms like "high contrast shadows, rain-slicked cobblestones, venetian blind light patterns, cigarette smoke curling in a single overhead lamp".
 
 IMPORTANT: Always use the user's aspect ratio setting (${userAspectRatio}) unless they explicitly request a different one.`;
 

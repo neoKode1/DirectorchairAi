@@ -87,6 +87,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [resolution, setResolution] = useState('1080p');
   const [preferredVideoModel, setPreferredVideoModel] = useState<string>('fal-ai/sora-2/image-to-video');
+  const [creativeDirection, setCreativeDirection] = useState<string>('cinematic');
   const [forceVideoGeneration, setForceVideoGeneration] = useState<boolean>(false);
   const [useDirectorAI, setUseDirectorAI] = useState<boolean>(true);
   const [agentHistory, setAgentHistory] = useState<Array<{ role: string; content: string }>>([]);
@@ -145,6 +146,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         setAspectRatio(validRatios.includes(loadedRatio) ? loadedRatio : '16:9');
         setResolution(settings.resolution || '1080p');
         setPreferredVideoModel(settings.preferredVideoModel || 'none');
+        if (settings.creativeDirection) setCreativeDirection(settings.creativeDirection);
       } catch (error) {
         console.error('Error loading saved settings:', error);
       }
@@ -210,13 +212,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       const settings = {
         aspectRatio,
         resolution,
-        preferredVideoModel
+        preferredVideoModel,
+        creativeDirection
       };
       localStorage.setItem('directorchair-settings', JSON.stringify(settings));
     } catch (error) {
       console.error('Error saving settings to localStorage:', error);
     }
-  }, [aspectRatio, resolution, preferredVideoModel]);
+  }, [aspectRatio, resolution, preferredVideoModel, creativeDirection]);
 
 
   // Compress/resize an image to stay under ~2MB base64
@@ -408,7 +411,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           userSettings: {
             aspectRatio,
             resolution,
-            preferredVideoModel
+            preferredVideoModel,
+            creativeDirection
           }
         })
       });
@@ -1380,6 +1384,34 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectItem value="4K">4K (Ultra HD)</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="creative-direction">Creative Direction</Label>
+                    <Select value={creativeDirection} onValueChange={setCreativeDirection}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select style" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cinematic">🎬 Cinematic — Film-grade, dramatic lighting, anamorphic</SelectItem>
+                        <SelectItem value="realistic">📷 Realistic — Natural lighting, true-to-life</SelectItem>
+                        <SelectItem value="surreal">🌀 Surreal — Dreamlike, otherworldly, ethereal</SelectItem>
+                        <SelectItem value="noir">🖤 Noir — High contrast, deep shadows, moody</SelectItem>
+                        <SelectItem value="anime">✨ Anime / Stylized — Cel-shaded, vibrant</SelectItem>
+                        <SelectItem value="music-video">🎵 Music Video — Flashy, dynamic, color-graded</SelectItem>
+                        <SelectItem value="fashion">👗 Fashion / Editorial — Studio lighting, editorial</SelectItem>
+                        <SelectItem value="horror">👻 Horror — Dark, unsettling, atmospheric tension</SelectItem>
+                        <SelectItem value="scifi">🚀 Sci-Fi / Futuristic — Neon, cyberpunk, volumetric</SelectItem>
+                        <SelectItem value="vintage">📼 Vintage / Retro — Film grain, muted tones, 70s/80s</SelectItem>
+                        <SelectItem value="epic">⚔️ Epic / Fantasy — Grand scale, mythical, sweeping</SelectItem>
+                        <SelectItem value="commercial">💎 Commercial — Clean, polished, product-focused</SelectItem>
+                        <SelectItem value="documentary">🎥 Documentary — Handheld, raw, observational</SelectItem>
+                        <SelectItem value="none">○ None — Let AI decide per prompt</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Sets the visual tone for all AI-generated content.
+                    </p>
                   </div>
 
                   <div className="space-y-2">

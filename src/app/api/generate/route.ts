@@ -77,14 +77,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('recraft') ||
                         model.includes('nano-banana') ||
                         model.includes('gemini') ||
-                        model.includes('seedream');
-    
+                        model.includes('seedream') ||
+                        (model.includes('wan') && !model.includes('video'));
+
     console.log(`🔍 [Generate API] [${requestId}] Model classification:`, {
       model: model,
       isVideoModel: isVideoModel,
       isImageModel: isImageModel,
       videoKeywords: ['video', 'veo', 'kling', 'minimax'].filter(keyword => model.includes(keyword)),
-      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream'].filter(keyword => model.includes(keyword))
+      imageKeywords: ['flux', 'imagen', 'stable-diffusion', 'dreamina', 'ideogram', 'photon', 'recraft', 'nano-banana', 'gemini', 'seedream', 'wan'].filter(keyword => model.includes(keyword))
     });
 
     // Prepare FAL API input parameters
@@ -157,6 +158,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
     
+    // Handle Wan 2.7 models — use image_urls array and image_size preset string
+    if (model.includes('wan/v2.7')) {
+      if (body.image_urls && body.image_urls.length > 0) {
+        input.image_urls = await Promise.all(
+          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+        );
+      } else if (body.image_url) {
+        input.image_urls = [await convertLocalhostToBase64(body.image_url)];
+      }
+      // Wan 2.7 uses image_size presets, not aspect_ratio
+      input.image_size = 'square_hd';
+      delete input.aspect_ratio;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Wan 2.7: image_urls=${input.image_urls?.length || 0}, image_size=${input.image_size}`);
+    }
+
+    // Handle Seedream 5.0 Lite Edit — uses image_urls array and image_size string
+    if (model.includes('seedream/v5')) {
+      if (body.image_urls && body.image_urls.length > 0) {
+        input.image_urls = await Promise.all(
+          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
+        );
+      } else if (body.image_url) {
+        input.image_urls = [await convertLocalhostToBase64(body.image_url)];
+      }
+      // Seedream v5 uses image_size as a string preset, not aspect_ratio
+      input.image_size = 'auto_2K';
+      delete input.aspect_ratio;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Seedream v5: image_urls=${input.image_urls?.length || 0}, image_size=${input.image_size}`);
+    }
+
     // Handle other image models that might need special aspect ratio handling
     if (model.includes('flux') || model.includes('stable-diffusion') || model.includes('imagen')) {
       if (body.aspect_ratio) {
@@ -309,6 +342,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         delete input.image_urls;
       }
 
+      // Kling O3 video-to-video edit — needs video_url, image_urls, elements
+      if (model.includes('video-to-video/edit')) {
+        if (body.video_url) {
+          input.video_url = body.video_url;
+        }
+        if (body.image_urls && body.image_urls.length > 0) {
+          input.image_urls = body.image_urls;
+        }
+        if (body.elements && body.elements.length > 0) {
+          input.elements = body.elements;
+        }
+        input.keep_audio = body.keep_audio !== undefined ? body.keep_audio : true;
+        input.shot_type = body.shot_type || 'customize';
+        // V2V edit doesn't use start_image_url or duration
+        delete input.start_image_url;
+        delete input.image_url;
+        delete input.duration;
+        delete input.aspect_ratio;
+      }
+
+      // Kling v2.6 motion-control — needs video_url + character_orientation
+      if (model.includes('motion-control')) {
+        if (body.video_url) {
+          input.video_url = body.video_url;
+        }
+        input.character_orientation = body.character_orientation || 'video';
+        input.keep_original_sound = body.keep_original_sound !== undefined ? body.keep_original_sound : true;
+        // motion-control doesn't use start_image_url, it uses image_url directly
+        delete input.start_image_url;
+        delete input.duration;
+      }
+
+      // Kling v2.6 I2V also supports audio + end_image_url
+      const isKlingV26 = model.includes('/v2.6/');
+      if (isKlingV26 && model.includes('image-to-video')) {
+        input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      }
+
       // Kling v3/O3 support native audio generation
       if (isKlingV3OrO3) {
         input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
@@ -336,6 +407,62 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         hasEndImage: !!input.end_image_url,
         generateAudio: input.generate_audio,
         note: isKlingV3OrO3 ? 'Kling v3/O3: duration 3-15, start_image_url, generate_audio' : 'Kling legacy: duration 5 or 10'
+      });
+    }
+
+    // Handle Pixverse V6 — I2V, 1-15s (integer), style presets, generate_audio_switch
+    if (model.includes('pixverse')) {
+      // Duration is an integer 1-15
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        input.duration = isNaN(dNum) ? 5 : Math.min(Math.max(dNum, 1), 15);
+      } else {
+        input.duration = 5;
+      }
+      // Resolution
+      const validPixRes = ['360p', '540p', '720p', '1080p'];
+      if (body.resolution && validPixRes.includes(body.resolution)) {
+        input.resolution = body.resolution;
+      } else {
+        input.resolution = '720p';
+      }
+      // Pixverse uses generate_audio_switch, not generate_audio
+      if (body.generate_audio !== undefined) {
+        input.generate_audio_switch = body.generate_audio;
+        delete input.generate_audio;
+      }
+      // Remove aspect_ratio — Pixverse doesn't use it
+      delete input.aspect_ratio;
+      console.log(`🔧 [Generate API] [${requestId}] Pixverse V6 parameters:`, {
+        duration: input.duration, resolution: input.resolution, generate_audio_switch: input.generate_audio_switch
+      });
+    }
+
+    // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
+    if (model.includes('seedance')) {
+      // Duration: "4" through "12" as string
+      const validSeedanceDurations = ['4','5','6','7','8','9','10','11','12'];
+      if (body.duration) {
+        const dStr = body.duration.toString().replace(/s$/, '');
+        input.duration = validSeedanceDurations.includes(dStr) ? dStr : '5';
+      } else {
+        input.duration = '5';
+      }
+      // Resolution: 480p, 720p, 1080p
+      const validSeedanceRes = ['480p', '720p', '1080p'];
+      if (body.resolution && validSeedanceRes.includes(body.resolution)) {
+        input.resolution = body.resolution;
+      } else {
+        input.resolution = '720p';
+      }
+      // Audio generation — default true
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      // End frame support
+      if (body.end_image_url) {
+        input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
+      }
+      console.log(`🔧 [Generate API] [${requestId}] Seedance parameters:`, {
+        duration: input.duration, resolution: input.resolution, generate_audio: input.generate_audio, end_image_url: !!input.end_image_url
       });
     }
 

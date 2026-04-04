@@ -26,6 +26,7 @@ You are the Director. When a user describes what they want, you:
 - Google Imagen 4 (fal-ai/imagen4/preview): Highest quality text-to-image, best for photorealistic scenes
 - Flux Pro 1.1 Ultra (fal-ai/flux-pro/v1.1-ultra): Professional-grade, great for cinematic stills
 - Dreamina v3.1 (fal-ai/bytedance/dreamina/v3.1/text-to-image): Superior aesthetics and diverse styles
+- Seedream 5.0 Lite (fal-ai/bytedance/seedream/v5/lite/text-to-image): Latest ByteDance text-to-image, high quality 2K output, great typography rendering. No reference image needed.
 - Stable Diffusion 3.5 Large (fal-ai/stable-diffusion-v35-large): Good typography and complex prompts
 - Nano Banana Edit (fal-ai/nano-banana/edit): Best for editing/transforming existing images (NEEDS reference image)
 - Nano Banana Pro Edit (fal-ai/nano-banana-pro/edit): Pro version of edit model (NEEDS reference image)
@@ -34,10 +35,14 @@ You are the Director. When a user describes what they want, you:
 - FLUX 2 Flex (fal-ai/flux-2-flex): Latest Flux generation
 - FLUX 2 Flex Edit (fal-ai/flux-2-flex/edit): Latest Flux editing (NEEDS reference image)
 - Seedream 4.0 Edit (fal-ai/bytedance/seedream/v4/edit): ByteDance edit model (NEEDS reference image)
+- Seedream 5.0 Lite Edit (fal-ai/bytedance/seedream/v5/lite/edit): Latest ByteDance multi-image editor. Accepts up to 10 input images via image_urls. Best for complex edits referencing multiple images (e.g. "replace product in Figure 1 with Figure 2, add logo from Figure 3"). NEEDS reference image(s).
 - SeeDream 4.5 Edit (fal-ai/bytedance/seedream/v4.5/edit): Latest SeeDream (NEEDS reference image)
 - Qwen Image Edit (fal-ai/qwen-image-edit): Alibaba edit model (NEEDS reference image)
 - Grok Image Edit (xai/grok-imagine-image/edit): xAI edit model (NEEDS reference image)
 - FLUX LoRA I2I (fal-ai/flux-krea-lora/image-to-image): Style transfer (NEEDS reference image)
+- Wan 2.7 Edit (fal-ai/wan/v2.7/edit): Text-guided image editing, 1-4 reference images via image_urls. Reference as "image 1", "image 2" etc in prompt. Supports Chinese & English. (NEEDS reference image)
+- Wan 2.7 Pro Edit (fal-ai/wan/v2.7/pro/edit): Premium version, precise professional-grade edits. Same params as Wan 2.7 Edit. (NEEDS reference image)
+- Wan 2.7 Pro T2I (fal-ai/wan/v2.7/pro/text-to-image): Premium text-to-image, superior detail and composition. No reference image needed.
 
 **AVAILABLE VIDEO MODELS (with parameter details):**
 
@@ -46,6 +51,12 @@ You are the Director. When a user describes what they want, you:
 - Veo 3.1 First/Last Frame (fal-ai/veo3.1/fast/first-last-frame-to-video): Interpolate between two frames. Set first_frame_url and last_frame_url (NOT image_url). duration "4s"/"6s"/"8s", resolution "720p"/"1080p". NEEDS 2 images. Use this when user has 2 images and wants smooth transition between them.
 
 *Kling (Kuaishou) — Cinematic motion, long durations:*
+- Kling v2.6 Pro I2V (fal-ai/kling-video/v2.6/pro/image-to-video): Cinematic visuals, duration "5"/"10", generate_audio true (native audio with speech). Uses start_image_url. Supports end_image_url. Great for dialogue scenes — put speech in prompt with quotes.
+- Kling v2.6 Motion Control Standard (fal-ai/kling-video/v2.6/standard/motion-control): Transfer movements from a reference VIDEO to an IMAGE. Requires image_url + video_url + character_orientation ("video" or "image"). "video" = orientation matches reference video (max 30s, better for complex motions). "image" = orientation matches reference image (max 10s, better for camera movements). NEEDS both source image AND reference video.
+- Kling v2.6 Motion Control Pro (fal-ai/kling-video/v2.6/pro/motion-control): Same as Standard but higher quality output. Ideal for complex dance moves and gestures. NEEDS both source image AND reference video.
+- Kling O1 Video Edit Pro (fal-ai/kling-video/o1/video-to-video/edit): Edit existing videos — replace subjects, settings, style while retaining motion. Reference @Element1/@Image1 in prompt. 3-10s input, 720-2160px. NEEDS source video.
+- Kling O3 Video Edit Standard (fal-ai/kling-video/o3/standard/video-to-video/edit): Budget V2V editing with @refs, same features as Pro but cheaper ($0.126/s vs $0.168/s). NEEDS source video.
+- Kling O3 Video Edit Pro (fal-ai/kling-video/o3/pro/video-to-video/edit): Edit existing videos with text prompts. Reference video as @Video1, images as @Image1/@Image2, character elements as @Element1. Supports keep_audio, image_urls for style refs, elements with frontal_image_url + reference_image_urls. NEEDS source video.
 - Kling v3 Pro I2V (fal-ai/kling-video/v3/pro/image-to-video): duration "3"-"15" seconds, generate_audio true/false. Uses start_image_url (automatically mapped from image_url). Supports end_image_url for start→end frame transitions.
 - Kling O3 Standard I2V (fal-ai/kling-video/o3/standard/image-to-video): Same as v3. duration "3"-"15", start_image_url + optional end_image_url. generate_audio supported.
 - Kling v2.5 Turbo Pro (fal-ai/kling-video/v2.5-turbo/pro/image-to-video): duration "5"/"10", uses start_image_url.
@@ -59,7 +70,14 @@ You are the Director. When a user describes what they want, you:
 
 *Minimax:*
 - Minimax Hailuo 02 (fal-ai/minimax/hailuo-02/standard/image-to-video): duration "6"/"10", resolution "512P"/"768P". NEEDS source image.
+- Minimax Hailuo 2.3 (fal-ai/minimax/hailuo-2.3/standard/image-to-video): Latest Hailuo, 768p, duration "6"/"10". prompt_optimizer on by default. NEEDS source image.
 - EndFrame Minimax (endframe/minimax-hailuo-02): Smooth transitions. NEEDS source image.
+
+*Pixverse V6 — Style presets, long duration, audio:*
+- Pixverse V6 I2V (fal-ai/pixverse/v6/image-to-video): duration 1-15 seconds (integer), resolution "360p"/"540p"/"720p"/"1080p", generate_audio true/false. Has style presets: "anime", "3d_animation", "clay", "comic", "cyberpunk". Supports multi-clip. NEEDS source image.
+
+*Seedance (ByteDance) — Native audio, start+end frame:*
+- Seedance 1.5 Pro I2V (fal-ai/bytedance/seedance/v1.5/pro/image-to-video): duration "4"-"12", resolution "480p"/"720p"/"1080p", generate_audio true/false, supports end_image_url. NEEDS source image. Great for dialogue/speech scenes with native audio.
 
 *Others:*
 - Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): NEEDS source image.
@@ -202,8 +220,10 @@ export async function POST(request: NextRequest) {
     const styleGuide = styleGuides[userCreativeDirection] || styleGuides['cinematic'];
 
     // Classify the user's preferred model to help the agent decide image vs video
-    const videoModelPrefixes = ['kling', 'veo', 'sora', 'minimax', 'hailuo', 'wan', 'luma', 'hunyuan', 'dreamactor', 'grok-imagine-video', 'ovi', 'endframe'];
-    const isVideoModelSelected = userPreferredModel !== 'none' && videoModelPrefixes.some(p => userPreferredModel.includes(p));
+    const videoModelPrefixes = ['kling', 'veo', 'sora', 'minimax', 'hailuo', 'seedance', 'pixverse', 'luma', 'hunyuan', 'dreamactor', 'grok-imagine-video', 'ovi', 'endframe'];
+    // Wan models with 'video' in path are video; Wan 2.7 T2I/edit are image
+    const isWanImageModel = userPreferredModel.includes('wan/v2.7') && !userPreferredModel.includes('video');
+    const isVideoModelSelected = userPreferredModel !== 'none' && !isWanImageModel && videoModelPrefixes.some(p => userPreferredModel.includes(p));
     const isImageModelSelected = userPreferredModel !== 'none' && !isVideoModelSelected;
 
     // Inject user's current UI settings into the system prompt

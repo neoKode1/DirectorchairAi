@@ -752,8 +752,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           if (generationData.aspect_ratio) {
             const aspectRatioToDimensions = (ratio: string) => {
               switch (ratio) {
-                case '1:1':
-                  return { width: 1024, height: 1024 };
                 case '16:9':
                   return { width: 1920, height: 1080 };
                 case '9:16':
@@ -919,8 +917,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             if (generationData.aspect_ratio) {
               const aspectRatioToDimensions = (ratio: string) => {
                 switch (ratio) {
-                  case '1:1':
-                    return { width: 1024, height: 1024 };
                   case '16:9':
                     return { width: 1920, height: 1080 };
                   case '9:16':
@@ -1333,7 +1329,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                       <SelectContent>
                         <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
                         <SelectItem value="9:16">9:16 (Portrait)</SelectItem>
-                        <SelectItem value="1:1">1:1 (Square)</SelectItem>
                         <SelectItem value="4:3">4:3 (Standard)</SelectItem>
                         <SelectItem value="3:4">3:4 (Portrait Standard)</SelectItem>
                       </SelectContent>

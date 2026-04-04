@@ -312,8 +312,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Kling v3/O3 support native audio generation
       if (isKlingV3OrO3) {
         input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
-        // Kling v3 supports aspect_ratio: '16:9', '9:16', '1:1' for T2V
-        if (!['16:9', '9:16', '1:1'].includes(input.aspect_ratio)) {
+        // Kling v3 supports aspect_ratio: '16:9', '9:16' for T2V
+        if (!['16:9', '9:16'].includes(input.aspect_ratio)) {
           input.aspect_ratio = '16:9';
         }
       }
@@ -342,8 +342,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle Sora 2 model specific parameters
     if (model.includes('sora-2')) {
       // Sora 2 I2V uses image_url (correct as-is)
-      // Sora 2 supports aspect_ratio: '16:9', '9:16', '1:1'
-      if (!['16:9', '9:16', '1:1'].includes(input.aspect_ratio)) {
+      // Sora 2 supports aspect_ratio: '16:9', '9:16'
+      if (!['16:9', '9:16'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
       }
       // Sora 2 duration is in seconds (number), default 5
@@ -392,7 +392,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (model.includes('luma-dream-machine')) {
       // Luma Ray 2 uses image_url for I2V (correct as-is)
       // Ensure aspect_ratio is valid for Luma
-      if (!['16:9', '9:16', '1:1', '4:3', '3:4'].includes(input.aspect_ratio)) {
+      if (!['16:9', '9:16', '4:3', '3:4'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
       }
       console.log(`🔧 [Generate API] [${requestId}] Luma Ray 2 parameters:`, {
@@ -494,8 +494,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           if (body.aspect_ratio) {
             const aspectRatioToDimensions = (ratio: string) => {
               switch (ratio) {
-                case '1:1':
-                  return { width: 1024, height: 1024 };
                 case '16:9':
                   return { width: 1920, height: 1080 };
                 case '9:16':

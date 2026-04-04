@@ -36,7 +36,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         aspect_ratio: {
           type: 'string',
           description: 'Aspect ratio for the image',
-          enum: ['16:9', '9:16', '1:1', '4:3', '3:4']
+          enum: ['16:9', '9:16', '4:3', '3:4']
         },
         requires_reference_image: {
           type: 'boolean',
@@ -86,7 +86,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
         aspect_ratio: {
           type: 'string',
           description: 'Aspect ratio for the video',
-          enum: ['16:9', '9:16', '1:1']
+          enum: ['16:9', '9:16']
         },
         duration: {
           type: 'string',

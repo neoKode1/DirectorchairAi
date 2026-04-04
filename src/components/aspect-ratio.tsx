@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-export type AspectRatioOption = "16:9" | "9:16" | "1:1";
+export type AspectRatioOption = "16:9" | "9:16" | "4:3" | "3:4";
 
 interface AspectRatioSelectorProps {
   className?: string;
@@ -26,9 +26,14 @@ const ASPECT_RATIOS: { value: AspectRatioOption; label: string; description: str
     description: "Perfect for mobile and social media stories",
   },
   {
-    value: "1:1",
-    label: "Square (1:1)",
-    description: "Ideal for social media posts",
+    value: "4:3",
+    label: "Standard (4:3)",
+    description: "Classic standard display format",
+  },
+  {
+    value: "3:4",
+    label: "Portrait Standard (3:4)",
+    description: "Vertical standard format",
   },
 ];
 

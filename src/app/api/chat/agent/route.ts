@@ -47,7 +47,7 @@ You are the Director. When a user describes what they want, you:
 - Kling AI Avatar Pro (fal-ai/kling-video/v1/pro/ai-avatar): Lip-sync/talking head from a portrait. NEEDS source image.
 
 *Sora 2 (OpenAI):*
-- Sora 2 I2V (fal-ai/sora-2/image-to-video): duration 1-20 seconds (number), aspect_ratio 16:9/9:16/1:1. NEEDS source image.
+- Sora 2 I2V (fal-ai/sora-2/image-to-video): duration 1-20 seconds (number), aspect_ratio 16:9/9:16. NEEDS source image.
 - Sora 2 Pro (fal-ai/sora-2/image-to-video/pro): Higher quality, same params. NEEDS source image.
 - Sora 2 Remix V2V (fal-ai/sora-2/video-to-video/remix): Restyle existing videos. NEEDS source video URL.
 

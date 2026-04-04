@@ -211,8 +211,8 @@ export default function ExpoPage() {
                   <SelectContent>
                     <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
                     <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
-                    <SelectItem value="1:1">1:1 (Square)</SelectItem>
                     <SelectItem value="4:3">4:3 (Classic)</SelectItem>
+                    <SelectItem value="3:4">3:4 (Portrait Standard)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

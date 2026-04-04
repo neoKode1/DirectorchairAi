@@ -130,18 +130,20 @@ export function getAssetKey(asset: InputAsset): string {
 export type AspectRatioMapping = {
   "16:9": { width: number; height: number };
   "9:16": { width: number; height: number };
-  "1:1": { width: number; height: number };
+  "4:3": { width: number; height: number };
+  "3:4": { width: number; height: number };
 };
 
 export const ASPECT_RATIO_DIMENSIONS: AspectRatioMapping = {
   "16:9": { width: 1024, height: 576 },
   "9:16": { width: 576, height: 1024 },
-  "1:1": { width: 512, height: 512 },
+  "4:3": { width: 1024, height: 768 },
+  "3:4": { width: 768, height: 1024 },
 };
 
 export const MODEL_SUPPORTED_RATIOS = {
   "fal-ai/hunyuan-video": ["16:9", "9:16"],
-  "fal-ai/pixverse-video": ["16:9", "9:16", "1:1"],
+  "fal-ai/pixverse-video": ["16:9", "9:16"],
   // Add other models as needed
 } as const;
 

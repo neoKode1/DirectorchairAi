@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
           'professional character reference sheet, multiple poses and expressions, neutral background, high quality, detailed, consistent character design',
         image_urls: imageUrls,
         num_images: 8,
-        aspect_ratio: '1:1',
+        aspect_ratio: '3:4',
         output_format: 'png',
         resolution: '2K',
       },

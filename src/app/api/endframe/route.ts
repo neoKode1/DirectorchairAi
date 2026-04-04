@@ -11,7 +11,7 @@ function validateImageAspectRatio(_base64Data: string): { isValid: boolean; mess
   try {
     console.log('🔍 Validating image aspect ratio for Minimax API...');
     // Minimax typically requires images with reasonable aspect ratios
-    // Common video aspect ratios: 16:9, 4:3, 1:1, 9:16
+    // Common video aspect ratios: 16:9, 4:3, 9:16
     // We'll let Minimax handle the validation and provide better error messages
     return { isValid: true };
   } catch (error) {

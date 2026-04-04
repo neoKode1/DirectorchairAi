@@ -171,7 +171,7 @@ export class SmartControlsAgent {
       return '16:9';
     }
     if (prompt.includes('square') || prompt.includes('logo') || prompt.includes('icon')) {
-      return '1:1';
+      return '16:9';
     }
     if (prompt.includes('banner') || prompt.includes('poster')) {
       return '4:3';

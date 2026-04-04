@@ -1973,7 +1973,7 @@ Provide enhanced intent analysis with better keyword detection and confidence sc
       const extractedAspectRatio = aspectRatioMatch ? aspectRatioMatch[1].trim() : '16:9';
       
       // Validate aspect ratio format
-      const validAspectRatios = ['1:1', '3:4', '4:3', '16:9', '9:16'];
+      const validAspectRatios = ['3:4', '4:3', '16:9', '9:16'];
       finalAspectRatio = validAspectRatios.includes(extractedAspectRatio) ? extractedAspectRatio : '16:9';
       console.log('📋 [IntelligenceCore] Using aspect ratio from prompt:', finalAspectRatio);
     }

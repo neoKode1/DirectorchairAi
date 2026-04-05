@@ -481,9 +481,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.generate_audio_switch = body.generate_audio;
         delete input.generate_audio;
       }
+      // Pixverse style presets: anime, 3d_animation, clay, comic, cyberpunk
+      if (body.style) {
+        const validStyles = ['anime', '3d_animation', 'clay', 'comic', 'cyberpunk'];
+        if (validStyles.includes(body.style)) {
+          input.style = body.style;
+        }
+      }
       // Remove aspect_ratio — Pixverse doesn't use it
       delete input.aspect_ratio;
-      console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution}`);
+      console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution} style=${input.style || 'none'}`);
     }
 
     // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
@@ -554,8 +561,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.source_image = input.image_url;
         delete input.image_url;
       }
-      if (body.driving_video) {
-        input.driving_video = body.driving_video;
+      // Accept driving_video OR video_url (agent sends video_url via tool schema)
+      if (body.driving_video || body.video_url) {
+        input.driving_video = body.driving_video || body.video_url;
       }
       delete input.image_urls;
       delete input.aspect_ratio;

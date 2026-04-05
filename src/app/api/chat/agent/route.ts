@@ -223,6 +223,10 @@ export async function POST(request: NextRequest) {
       'flux-krea-lora': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'I2I style transfer — NEEDS source image.' },
       'flux-pro/kontext': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'I2I Edit — NEEDS source image. Precise local edits.' },
       'stable-diffusion': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16','4:3','3:4','1:1'], supportsAudio: false, needsImage: false, needsVideo: false, notes: 'T2I — no image needed.' },
+      // ── Missing image model entries ──
+      'dreamina': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16','4:3','3:4','1:1'], supportsAudio: false, needsImage: false, needsVideo: false, notes: 'T2I — uses image_size dimensions, not aspect_ratio string.' },
+      'seedream': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16','4:3','3:4','1:1'], supportsAudio: false, needsImage: false, needsVideo: false, notes: 'T2I or I2I Edit. Edit variants NEED source image. Uses image_size, not aspect_ratio.' },
+      'wan/v2.7': { validResolutions: [], defaultResolution: '', validDurations: [], defaultDuration: '', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: false, needsVideo: false, notes: 'T2I or I2I Edit. Edit variants NEED source image(s). Uses image_size presets, not aspect_ratio.' },
     };
 
     // Find the matching model params for the selected model
@@ -486,7 +490,11 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
                 keep_audio: input.keep_audio !== undefined ? input.keep_audio : undefined,
                 elements: input.elements || undefined,
                 // Style transfer — pass user-uploaded style image
-                style_image_url: styleImageUrl || input.style_image_url || undefined
+                style_image_url: styleImageUrl || input.style_image_url || undefined,
+                // Pixverse style preset
+                style: input.style || undefined,
+                // Negative prompt
+                negative_prompt: input.negative_prompt || undefined
               });
               toolResults.push({
                 type: 'tool_result',

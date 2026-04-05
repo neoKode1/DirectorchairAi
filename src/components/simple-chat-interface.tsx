@@ -687,7 +687,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               ...(action.character_orientation && { character_orientation: action.character_orientation }),
               ...(action.keep_audio !== undefined && { keep_audio: action.keep_audio }),
               ...(action.elements && { elements: action.elements }),
-              ...(action.style_image_url && { style_image_url: action.style_image_url })
+              ...(action.style_image_url && { style_image_url: action.style_image_url }),
+              ...(action.style && { style: action.style }),
+              ...(action.negative_prompt && { negative_prompt: action.negative_prompt })
             };
 
             setCurrentModel(action.model);

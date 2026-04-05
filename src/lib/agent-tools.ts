@@ -147,6 +147,15 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
           type: 'array',
           description: 'Multiple reference images for V2V edit models. Referenced in prompt as @Image1, @Image2. Max 4 total with elements.'
         },
+        style: {
+          type: 'string',
+          description: 'Style preset for Pixverse V6 only. Options: "anime", "3d_animation", "clay", "comic", "cyberpunk".',
+          enum: ['anime', '3d_animation', 'clay', 'comic', 'cyberpunk']
+        },
+        negative_prompt: {
+          type: 'string',
+          description: 'What NOT to generate. Reduces artifacts. Example: "blur, distort, low quality". Supported by Kling v3/O3 and other models.'
+        },
         requires_reference_image: {
           type: 'boolean',
           description: 'Set to true if the model requires a reference/source image and none was provided.'

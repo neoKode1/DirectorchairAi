@@ -1108,18 +1108,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col bg-neutral-950">
+    <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="p-4 border-b border-neutral-800">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-sm font-medium tracking-tighter uppercase text-neutral-100">DirectorChair AI</h2>
+            <h2 className="text-sm font-medium tracking-tighter uppercase text-foreground">DirectorChair AI</h2>
           </div>
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
               <button
                 onClick={() => { clearChatHistory(); setAgentHistory([]); setWaitingForImage(null); }}
-                className="text-xs text-neutral-500 hover:text-white px-2 py-1 border border-neutral-800 hover:border-neutral-700 transition-colors tracking-wider uppercase"
+                className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 border border-border hover:border-border transition-colors tracking-wider uppercase"
                 title="Clear chat history"
               >
                 Clear
@@ -1132,17 +1132,17 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           onClick={() => setUseDirectorAI(!useDirectorAI)}
           className={`w-full mb-3 px-3 py-1.5 text-xs tracking-wider uppercase border transition-all duration-200 ${
             useDirectorAI
-              ? 'bg-white text-neutral-950 border-white font-medium'
-              : 'bg-neutral-900 text-neutral-500 border-neutral-800 hover:text-neutral-300 hover:border-neutral-700'
+              ? 'bg-primary text-primary-foreground border-white font-medium'
+              : 'bg-card text-muted-foreground border-border hover:text-foreground hover:border-border'
           }`}
         >
           {useDirectorAI ? '⚡ Director AI — Active' : '○ Director AI — Off (Manual)'}
         </button>
         {/* Model Dropdown — full width, hidden in agent mode */}
         <div className={`flex items-center gap-2 ${useDirectorAI ? 'opacity-40 pointer-events-none' : ''}`}>
-          <Monitor className="w-4 h-4 text-neutral-500 shrink-0" />
+          <Monitor className="w-4 h-4 text-muted-foreground shrink-0" />
           <Select value={preferredVideoModel} onValueChange={setPreferredVideoModel}>
-            <SelectTrigger className="w-full h-8 text-xs border-neutral-800 bg-neutral-900 text-neutral-300">
+            <SelectTrigger className="w-full h-8 text-xs border-border bg-card text-foreground">
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
                 <SelectContent>
@@ -1248,12 +1248,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center">
-            <p className="text-xs text-neutral-500">Start a conversation to generate content</p>
+            <p className="text-xs text-muted-foreground">Start a conversation to generate content</p>
           </div>
         ) : (
           messages.map((message) => (
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] ${message.type === 'user' ? 'bg-neutral-800 text-neutral-100' : 'bg-neutral-900 text-neutral-300'} p-3`}>
+              <div className={`max-w-[85%] ${message.type === 'user' ? 'bg-secondary text-foreground' : 'bg-card text-foreground'} p-3`}>
                 <p className="text-sm">{message.content}</p>
                 
                 
@@ -1323,8 +1323,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       {/* Suggestions */}
       {showSuggestions && messages.length === 0 && (
-        <div className="p-3 border-t border-neutral-800">
-          <p className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-2">Suggestions</p>
+        <div className="p-3 border-t border-border">
+          <p className="text-xs font-medium text-muted-foreground tracking-wider uppercase mb-2">Suggestions</p>
           <div className="space-y-1">
             {[
               "Create a cinematic shot with dramatic lighting",
@@ -1336,7 +1336,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               <button
                 key={index}
                 onClick={() => setUserInput(suggestion)}
-                className="block w-full text-left text-xs text-neutral-500 hover:text-neutral-100 hover:bg-neutral-900 p-2 transition-colors truncate"
+                className="block w-full text-left text-xs text-muted-foreground hover:text-foreground hover:bg-card p-2 transition-colors truncate"
               >
                 {suggestion}
               </button>
@@ -1347,30 +1347,30 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
       {/* Waiting for Image Banner */}
       {waitingForImage && useDirectorAI && (
-        <div className="mx-3 mt-2 p-3 bg-neutral-900 border border-neutral-700 text-xs text-neutral-300">
-          <p className="font-medium text-white mb-1">📸 Director needs an image</p>
+        <div className="mx-3 mt-2 p-3 bg-card border border-border text-xs text-foreground">
+          <p className="font-medium text-foreground mb-1">📸 Director needs an image</p>
           <p>{waitingForImage}</p>
-          <p className="text-neutral-500 mt-1">Drag & drop or click the upload button below.</p>
+          <p className="text-muted-foreground mt-1">Drag & drop or click the upload button below.</p>
         </div>
       )}
 
       {/* Input Area */}
-      <div className="p-3 border-t border-neutral-800">
+      <div className="p-3 border-t border-border">
         {/* Uploaded Media Preview */}
         {(uploadedImages.length > 0 || uploadedVideo) && (
           <div className="mb-3">
-            <p className="text-xs font-medium text-neutral-400 tracking-wider uppercase mb-2">Uploaded</p>
+            <p className="text-xs font-medium text-muted-foreground tracking-wider uppercase mb-2">Uploaded</p>
             <div className="flex flex-wrap gap-2">
               {uploadedImages.map((image, index) => (
                 <div key={index} className="relative group">
                   <img
                     src={image}
                     alt={`Uploaded ${index + 1}`}
-                    className="w-16 h-16 object-cover border border-neutral-800 hover:border-neutral-600 transition-colors"
+                    className="w-16 h-16 object-cover border border-border hover:border-ring transition-colors"
                   />
                   <button
                     onClick={() => handleRemoveImage(index)}
-                    className="absolute -top-1.5 -right-1.5 bg-neutral-700 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-neutral-600 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute -top-1.5 -right-1.5 bg-secondary text-foreground w-5 h-5 flex items-center justify-center text-xs hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1387,11 +1387,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         alt="Style reference"
                         className="w-16 h-16 object-cover border border-amber-600/60 hover:border-amber-500 transition-colors"
                       />
-                      <span className="absolute bottom-0 left-0 right-0 bg-amber-600/80 text-[9px] text-white text-center py-0.5 font-medium tracking-wider uppercase">Style</span>
+                      <span className="absolute bottom-0 left-0 right-0 bg-amber-600/80 text-[9px] text-foreground text-center py-0.5 font-medium tracking-wider uppercase">Style</span>
                     </div>
                     <button
                       onClick={() => setStyleImage(null)}
-                      className="absolute -top-1.5 -right-1.5 bg-amber-700 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-amber-600 transition-colors opacity-0 group-hover:opacity-100"
+                      className="absolute -top-1.5 -right-1.5 bg-amber-700 text-foreground w-5 h-5 flex items-center justify-center text-xs hover:bg-amber-600 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -1400,26 +1400,26 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   <button
                     type="button"
                     onClick={() => styleFileInputRef.current?.click()}
-                    className="w-16 h-16 border border-dashed border-neutral-700 hover:border-amber-600/60 bg-neutral-900/50 hover:bg-neutral-800/50 transition-all flex flex-col items-center justify-center gap-0.5 group"
+                    className="w-16 h-16 border border-dashed border-border hover:border-amber-600/60 bg-card/50 hover:bg-secondary/50 transition-all flex flex-col items-center justify-center gap-0.5 group"
                     title="Upload a style reference image"
                   >
-                    <FileImage className="w-3.5 h-3.5 text-neutral-600 group-hover:text-amber-500 transition-colors" />
-                    <span className="text-[9px] text-neutral-600 group-hover:text-amber-500 font-medium tracking-wider uppercase transition-colors">Style</span>
+                    <FileImage className="w-3.5 h-3.5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                    <span className="text-[9px] text-muted-foreground group-hover:text-amber-500 font-medium tracking-wider uppercase transition-colors">Style</span>
                   </button>
                 )
               )}
 
               {uploadedVideo && (
                 <div className="relative group">
-                  <div className="w-28 h-16 bg-neutral-900 border border-neutral-800 hover:border-neutral-600 transition-colors flex flex-col items-center justify-center overflow-hidden">
+                  <div className="w-28 h-16 bg-card border border-border hover:border-ring transition-colors flex flex-col items-center justify-center overflow-hidden">
                     <video src={uploadedVideo.url} className="w-full h-full object-cover" muted />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <span className="text-[10px] text-white bg-neutral-800/80 px-1.5 py-0.5 rounded">🎬 {(uploadedVideo.size / (1024 * 1024)).toFixed(1)}MB</span>
+                      <span className="text-[10px] text-foreground bg-secondary/80 px-1.5 py-0.5 rounded">🎬 {(uploadedVideo.size / (1024 * 1024)).toFixed(1)}MB</span>
                     </div>
                   </div>
                   <button
                     onClick={() => { if (uploadedVideo.url.startsWith('blob:')) URL.revokeObjectURL(uploadedVideo.url); setUploadedVideo(null); }}
-                    className="absolute -top-1.5 -right-1.5 bg-neutral-700 text-white w-5 h-5 flex items-center justify-center text-xs hover:bg-neutral-600 transition-colors opacity-0 group-hover:opacity-100"
+                    className="absolute -top-1.5 -right-1.5 bg-secondary text-foreground w-5 h-5 flex items-center justify-center text-xs hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1436,7 +1436,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="flex-shrink-0 p-2 text-neutral-500 hover:text-white border border-neutral-800 hover:border-neutral-600 bg-neutral-900 transition-all duration-200 group"
+              className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground border border-border hover:border-ring bg-card transition-all duration-200 group"
               title="Upload images or video"
             >
               <FileImage className="w-4 h-4" />
@@ -1454,10 +1454,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               >
                 {/* Drop Zone Visual Overlay */}
                 {isDragOver && (
-                  <div className="absolute inset-0 bg-neutral-900/90 flex items-center justify-center z-10 border border-neutral-600">
+                  <div className="absolute inset-0 bg-card/90 flex items-center justify-center z-10 border border-ring">
                     <div className="text-center">
-                      <CloudUpload className="w-8 h-8 text-neutral-400 mx-auto mb-1" />
-                      <p className="text-neutral-400 text-xs">Drop images or video here</p>
+                      <CloudUpload className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
+                      <p className="text-muted-foreground text-xs">Drop images or video here</p>
                     </div>
                   </div>
                 )}
@@ -1467,8 +1467,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={placeholderText}
-                  className={`min-h-[60px] resize-none border-neutral-800 bg-neutral-900 text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-600 focus:ring-0 pr-10 text-sm transition-all duration-200 ${
-                    isDragOver ? 'border-neutral-600' : ''
+                  className={`min-h-[60px] resize-none border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-0 pr-10 text-sm transition-all duration-200 ${
+                    isDragOver ? 'border-ring' : ''
                   }`}
                   disabled={isGenerating}
                 />
@@ -1478,10 +1478,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                   type="submit"
                   disabled={isGenerating || (!userInput.trim() && uploadedImages.length === 0)}
                   size="sm"
-                  className="absolute bottom-2 right-2 bg-white hover:bg-neutral-200 text-neutral-950 h-7 w-7 p-0"
+                  className="absolute bottom-2 right-2 bg-primary hover:bg-primary/80 text-primary-foreground h-7 w-7 p-0"
                 >
                   {isGenerating ? (
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-neutral-950"></div>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-primary-foreground"></div>
                   ) : (
                     <Send className="w-3.5 h-3.5" />
                   )}
@@ -1491,7 +1491,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           </div>
 
           {/* Help Text */}
-          <div className="flex justify-between items-center text-xs text-neutral-600">
+          <div className="flex justify-between items-center text-xs text-muted-foreground">
             <span>{useDirectorAI ? 'AI picks the best model' : 'Auto-optimized prompts'}</span>
             <span>JPG, PNG, WebP</span>
           </div>

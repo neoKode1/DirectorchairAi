@@ -32,8 +32,8 @@ function PersonaDetailContent() {
 
   if (!persona) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <p className="text-neutral-500">Persona not found</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Persona not found</p>
       </div>
     );
   }
@@ -264,7 +264,7 @@ function PersonaDetailContent() {
             </p>
             <div className="flex gap-4">
               <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 border border-border text-muted-foreground hover:text-foreground hover:border-ring transition-all text-sm tracking-wider">CANCEL</button>
-              <button onClick={handleDelete} className="flex-1 py-3 bg-red-600 text-white font-medium hover:bg-red-500 transition-all text-sm tracking-wider">DELETE</button>
+              <button onClick={handleDelete} className="flex-1 py-3 bg-red-600 text-foreground font-medium hover:bg-red-500 transition-all text-sm tracking-wider">DELETE</button>
             </div>
           </div>
         </div>

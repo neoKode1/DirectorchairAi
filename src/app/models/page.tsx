@@ -151,7 +151,7 @@ export default function ModelsPage() {
       {/* Content */}
       <div className="relative z-10 mobile-container-sm mobile-py space-y-8 sm:space-y-12 min-h-screen">
         <div className="space-y-2 text-center">
-          <h1 className="mobile-text-xl sm:text-3xl font-bold text-white drop-shadow-lg">
+          <h1 className="mobile-text-xl sm:text-3xl font-bold text-foreground drop-shadow-lg">
             DirectorchairAI Models
           </h1>
           <p className="mobile-text-sm sm:text-base text-white/90 drop-shadow-md">
@@ -168,7 +168,7 @@ export default function ModelsPage() {
             <div key={category} className="space-y-4">
               <div className="flex items-center gap-3">
                 <CategoryIcon className="w-6 h-6 text-white/80" />
-                <h2 className="mobile-text-lg sm:text-xl font-semibold text-white drop-shadow-lg">
+                <h2 className="mobile-text-lg sm:text-xl font-semibold text-foreground drop-shadow-lg">
                   {categoryLabels[category]}
                 </h2>
               </div>
@@ -195,7 +195,7 @@ export default function ModelsPage() {
                       <div className="relative z-10 p-3 h-full flex flex-col justify-between">
                         {/* Model Name */}
                         <div className="flex-1 flex items-start">
-                          <h3 className="mobile-text-xs sm:text-sm font-semibold text-white group-hover:text-white/90 transition-colors leading-tight line-clamp-2">
+                          <h3 className="mobile-text-xs sm:text-sm font-semibold text-foreground group-hover:text-white/90 transition-colors leading-tight line-clamp-2">
                             {model.label}
                           </h3>
                         </div>
@@ -210,7 +210,7 @@ export default function ModelsPage() {
                             }}
                             size="sm"
                             variant="outline"
-                            className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 hover:border-white/50 text-xs"
+                            className="w-full bg-white/20 hover:bg-white/30 text-foreground border-white/30 hover:border-white/50 text-xs"
                           >
                             <MessageSquare className="w-3 h-3 mr-1" />
                             <span>Use in Chat</span>

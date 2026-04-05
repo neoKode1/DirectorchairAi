@@ -464,10 +464,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       />
                     )}
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <Play className="w-8 h-8 text-white" />
+                      <Play className="w-8 h-8 text-foreground" />
                     </div>
                     {item.metadata?.duration && (
-                      <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-foreground text-xs px-2 py-1 rounded">
                         {formatDuration(item.metadata.duration)}
                       </div>
                     )}
@@ -485,7 +485,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
+                      className="h-8 px-3 bg-white/20 text-foreground border-white/30 hover:bg-white/30 backdrop-blur-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(item);
@@ -499,7 +499,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 px-3 bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm"
+                        className="h-8 px-3 bg-white/20 text-foreground border-white/30 hover:bg-white/30 backdrop-blur-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           onItemClick?.(item);
@@ -550,7 +550,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             {/* Close Button - Top Right */}
             <button
               onClick={() => setIsFullscreen(false)}
-              className="absolute top-6 right-6 z-30 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+              className="absolute top-6 right-6 z-30 p-3 bg-black/50 hover:bg-black/70 text-foreground rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
               aria-label="Close fullscreen"
             >
               <X className="w-6 h-6" />
@@ -560,7 +560,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             {currentIndex > 0 && (
               <button
                 onClick={handlePrevious}
-                className="absolute left-6 top-1/2 transform -translate-y-1/2 z-30 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                className="absolute left-6 top-1/2 transform -translate-y-1/2 z-30 p-3 bg-black/50 hover:bg-black/70 text-foreground rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -570,7 +570,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             {currentIndex < items.length - 1 && (
               <button
                 onClick={handleNext}
-                className="absolute right-6 top-1/2 transform -translate-y-1/2 z-30 p-3 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                className="absolute right-6 top-1/2 transform -translate-y-1/2 z-30 p-3 bg-black/50 hover:bg-black/70 text-foreground rounded-full transition-all duration-200 hover:scale-110 backdrop-blur-sm"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -605,7 +605,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             {/* Image Counter - Top Center */}
             <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30">
               <div className="bg-black/50 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-700/50">
-                <span className="text-sm text-white font-medium">
+                <span className="text-sm text-foreground font-medium">
                   {currentIndex + 1} of {items.length}
                 </span>
               </div>
@@ -616,7 +616,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
               <div className="bg-black/70 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-white mb-2">{selectedItem.title}</h3>
+                    <h3 className="font-semibold text-lg text-foreground mb-2">{selectedItem.title}</h3>
                     {selectedItem.prompt && (
                       <p className="text-sm text-gray-300 mb-3 leading-relaxed">"{selectedItem.prompt}"</p>
                     )}
@@ -640,7 +640,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                      className="bg-white/20 text-foreground border-white/30 hover:bg-white/30"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownload(selectedItem);
@@ -656,7 +656,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                          className="bg-white/20 text-foreground border-white/30 hover:bg-white/30"
                           onClick={(e) => {
                             e.stopPropagation();
                             onItemClick?.(selectedItem);
@@ -668,7 +668,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+                          className="bg-white/20 text-foreground border-white/30 hover:bg-white/30"
                           onClick={(e) => {
                             e.stopPropagation();
                             onAnimate?.(selectedItem);

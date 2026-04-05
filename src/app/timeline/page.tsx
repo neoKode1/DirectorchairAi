@@ -26,8 +26,8 @@ const queryClient = new QueryClient({
 const LoadingSpinner = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
     <div className="flex flex-col items-center gap-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neutral-100"></div>
-      <p className="text-neutral-400">Loading...</p>
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-foreground"></div>
+      <p className="text-muted-foreground">Loading...</p>
     </div>
   </div>
 );
@@ -367,9 +367,9 @@ function TimelineContent() {
   }
 
   return (
-    <div className="h-[calc(100vh-72px)] flex bg-neutral-950 overflow-hidden max-w-[100vw]">
+    <div className="h-[calc(100vh-72px)] flex bg-background overflow-hidden max-w-[100vw]">
       {/* Left Column — Chat Interface */}
-      <div className="hidden md:flex w-80 border-r border-neutral-800 flex-col bg-neutral-950 shrink-0 max-h-full overflow-hidden">
+      <div className="hidden md:flex w-80 border-r border-border flex-col bg-background shrink-0 max-h-full overflow-hidden">
         <SimpleChatInterface
             onContentGenerated={handleGenerate}
             onGenerationStarted={() => console.log('Generation started')}
@@ -379,22 +379,22 @@ function TimelineContent() {
         </div>
 
       {/* Center Column — Main Preview Area */}
-      <div className="flex-1 flex flex-col bg-neutral-950 min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-background min-w-0 overflow-hidden">
         <div ref={contentAreaRef} className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden">
           <div className="space-y-6 h-full">
 
             {generatedContent.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <p className="text-xs text-neutral-600 tracking-wider uppercase">Generate content to preview here</p>
+                <p className="text-xs text-muted-foreground tracking-wider uppercase">Generate content to preview here</p>
               </div>
             ) : (
               generatedContent.map((content, index) => (
-                <div key={index} className="bg-neutral-900 border border-neutral-800 p-6">
+                <div key={index} className="bg-card border border-border p-6">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-neutral-100 truncate">
+                    <h3 className="text-sm font-medium text-foreground truncate">
                       {content.prompt}
                     </h3>
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(content.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
@@ -414,11 +414,11 @@ function TimelineContent() {
                               className="w-full h-auto max-h-[80vh] object-contain"
                             />
                           </ImageSelector>
-                          <div className="absolute inset-0 bg-neutral-950/0 group-hover:bg-neutral-950/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                          <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                             <div className="flex space-x-2 pointer-events-auto">
                               <button
                                 onClick={() => handleEditImage(image.url)}
-                                className="h-8 px-3 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
+                                className="h-8 px-3 bg-white/10 text-foreground border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
                                 disabled={isDownloading}
                               >
                                 <Edit className="w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ function TimelineContent() {
                               </button>
                               <button
                                 onClick={() => handleAnimateImage(image.url)}
-                                className="h-8 px-3 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
+                                className="h-8 px-3 bg-white/10 text-foreground border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
                                 disabled={isDownloading}
                               >
                                 <Video className="w-3.5 h-3.5" />
@@ -434,7 +434,7 @@ function TimelineContent() {
                               </button>
                               <button
                                 onClick={() => handleDownload(image.url, `image-${Date.now()}`, 'image')}
-                                className="h-8 px-3 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
+                                className="h-8 px-3 bg-white/10 text-foreground border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
                                 disabled={isDownloading}
                               >
                                 <Download className="w-3.5 h-3.5" />
@@ -457,14 +457,14 @@ function TimelineContent() {
                             preload="metadata"
                             playsInline
                           />
-                          <div className="absolute top-3 right-3 bg-neutral-950/70 text-neutral-100 px-3 py-1 text-xs font-medium tracking-wider backdrop-blur-sm border border-neutral-700">
+                          <div className="absolute top-3 right-3 bg-background/70 text-foreground px-3 py-1 text-xs font-medium tracking-wider backdrop-blur-sm border border-border">
                             VIDEO
                           </div>
-                          <div className="absolute inset-0 bg-neutral-950/0 group-hover:bg-neutral-950/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                          <div className="absolute inset-0 bg-background/0 group-hover:bg-background/30 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                             <div className="flex space-x-2 pointer-events-auto">
                               <button
                                 onClick={() => handleEditImage(video.url)}
-                                className="h-8 px-3 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
+                                className="h-8 px-3 bg-white/10 text-foreground border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
                                 disabled={isDownloading}
                               >
                                 <Edit className="w-3.5 h-3.5" />
@@ -472,7 +472,7 @@ function TimelineContent() {
                               </button>
                               <button
                                 onClick={() => handleDownload(video.url, `video-${Date.now()}`, 'video')}
-                                className="h-8 px-3 bg-white/10 text-white border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
+                                className="h-8 px-3 bg-white/10 text-foreground border border-white/20 hover:bg-white/20 backdrop-blur-sm flex items-center space-x-1 transition-all duration-200 text-xs tracking-wider"
                                 disabled={isDownloading}
                               >
                                 <Download className="w-3.5 h-3.5" />
@@ -485,16 +485,16 @@ function TimelineContent() {
                       })}
                     </div>
                   ) : (
-                    <div className="text-neutral-500 text-sm">No media content generated</div>
+                    <div className="text-muted-foreground text-sm">No media content generated</div>
                   )}
 
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-neutral-500">Model: {content.model}</span>
+                    <span className="text-xs text-muted-foreground">Model: {content.model}</span>
                     <div className="flex space-x-3">
-                      <button className="text-neutral-500 hover:text-white text-xs tracking-wider transition-colors">
+                      <button className="text-muted-foreground hover:text-foreground text-xs tracking-wider transition-colors">
                         Share
                       </button>
-                      <button className="text-neutral-500 hover:text-white text-xs tracking-wider transition-colors">
+                      <button className="text-muted-foreground hover:text-foreground text-xs tracking-wider transition-colors">
                         Delete
                       </button>
                     </div>
@@ -507,17 +507,17 @@ function TimelineContent() {
       </div>
 
       {/* Right Column — Gallery */}
-      <div className={`hidden md:flex relative border-l border-neutral-800 flex-col bg-neutral-950 transition-all duration-300 ease-in-out shrink-0 ${
+      <div className={`hidden md:flex relative border-l border-border flex-col bg-background transition-all duration-300 ease-in-out shrink-0 ${
         isGalleryCollapsed ? 'w-12' : 'w-[260px]'
       }`}>
         {/* Collapse/Expand Button */}
         <button
           onClick={() => setIsGalleryCollapsed(!isGalleryCollapsed)}
-          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-neutral-900 border border-neutral-800 px-1.5 py-3 hover:bg-neutral-800 transition-colors"
+          className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 bg-card border border-border px-1.5 py-3 hover:bg-secondary transition-colors"
           title={isGalleryCollapsed ? 'Expand Gallery' : 'Collapse Gallery'}
         >
           <svg
-            className={`w-3 h-3 text-neutral-400 transition-transform duration-200 ${
+            className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${
               isGalleryCollapsed ? 'rotate-180' : ''
             }`}
             fill="none"
@@ -530,8 +530,8 @@ function TimelineContent() {
 
         {!isGalleryCollapsed && (
           <>
-            <div className="px-4 py-3 border-b border-neutral-800">
-              <h2 className="text-xs font-medium text-neutral-400 tracking-wider uppercase">Gallery</h2>
+            <div className="px-4 py-3 border-b border-border">
+              <h2 className="text-xs font-medium text-muted-foreground tracking-wider uppercase">Gallery</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
               <GalleryView
@@ -557,7 +557,7 @@ function TimelineContent() {
         {/* Gallery Tab when collapsed */}
         {isGalleryCollapsed && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="transform -rotate-90 text-xs font-medium text-neutral-500 tracking-wider whitespace-nowrap">
+            <div className="transform -rotate-90 text-xs font-medium text-muted-foreground tracking-wider whitespace-nowrap">
               GALLERY
             </div>
           </div>
@@ -568,7 +568,7 @@ function TimelineContent() {
       {/* Mobile Chat Toggle Button */}
       <button
         onClick={() => setIsMobileChatOpen(!isMobileChatOpen)}
-        className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white text-neutral-950 rounded-full shadow-lg flex items-center justify-center hover:bg-neutral-200 transition-colors"
+        className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-primary/80 transition-colors"
         aria-label="Toggle chat"
       >
         {isMobileChatOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
@@ -576,10 +576,10 @@ function TimelineContent() {
 
       {/* Mobile Chat Overlay */}
       {isMobileChatOpen && (
-        <div className="md:hidden fixed inset-0 z-40 flex flex-col bg-neutral-950">
-          <div className="flex items-center justify-between p-3 border-b border-neutral-800">
-            <span className="text-xs text-neutral-400 tracking-wider uppercase">Chat</span>
-            <button onClick={() => setIsMobileChatOpen(false)} className="text-neutral-500 hover:text-white">
+        <div className="md:hidden fixed inset-0 z-40 flex flex-col bg-background">
+          <div className="flex items-center justify-between p-3 border-b border-border">
+            <span className="text-xs text-muted-foreground tracking-wider uppercase">Chat</span>
+            <button onClick={() => setIsMobileChatOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5" />
             </button>
           </div>

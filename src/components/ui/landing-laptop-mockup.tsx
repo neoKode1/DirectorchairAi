@@ -12,7 +12,7 @@ export function LaptopMockup({ children }: { children: React.ReactNode }) {
       {/* MacBook-style frame */}
       <div className="relative rounded-xl overflow-hidden bg-gray-900 shadow-2xl">
         {/* MacBook top bar */}
-        <div className="relative h-8 bg-neutral-800 backdrop-blur-sm flex items-center px-4">
+        <div className="relative h-8 bg-secondary backdrop-blur-sm flex items-center px-4">
           <div className="flex space-x-2">
             <div className="w-3 h-3 rounded-full bg-red-500/80" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />

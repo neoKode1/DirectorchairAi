@@ -122,21 +122,21 @@ export default function ExpoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 py-16 lg:py-24">
         {/* Header */}
         <div className="mb-12 lg:mb-16">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-xs text-neutral-600 tracking-widest mb-3">GENERATE</p>
-              <h1 className="font-display text-4xl lg:text-5xl font-normal text-white tracking-tight mb-2">
+              <p className="text-xs text-muted-foreground tracking-widest mb-3">GENERATE</p>
+              <h1 className="font-display text-4xl lg:text-5xl font-normal text-foreground tracking-tight mb-2">
                 Seedance 2.0
               </h1>
-              <p className="text-sm text-neutral-400 font-light">
+              <p className="text-sm text-muted-foreground font-light">
                 Generate cinematic videos with BytePlus Seedance AI
               </p>
             </div>
-            <Link href="/timeline" className="text-xs font-light text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 px-4 py-2 transition-all">
+            <Link href="/timeline" className="text-xs font-light text-muted-foreground hover:text-foreground border border-border hover:border-ring px-4 py-2 transition-all">
               Back to Studio
             </Link>
           </div>
@@ -144,36 +144,36 @@ export default function ExpoPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Generation Controls */}
-          <div className="border border-neutral-800 p-8">
+          <div className="border border-border p-8">
             <div className="mb-6">
-              <h2 className="flex items-center gap-2 text-lg font-medium text-white tracking-tight">
-                <Sparkles className="w-5 h-5 text-neutral-500" />
+              <h2 className="flex items-center gap-2 text-lg font-medium text-foreground tracking-tight">
+                <Sparkles className="w-5 h-5 text-muted-foreground" />
                 Video Generation
               </h2>
-              <p className="text-sm text-neutral-500 font-light mt-1">
+              <p className="text-sm text-muted-foreground font-light mt-1">
                 Describe your vision and let Seedance 2.0 bring it to life
               </p>
             </div>
             <div className="space-y-6">
               {/* Prompt Input */}
               <div className="space-y-2">
-                <Label htmlFor="prompt" className="text-xs text-neutral-400 tracking-wider uppercase">Prompt</Label>
+                <Label htmlFor="prompt" className="text-xs text-muted-foreground tracking-wider uppercase">Prompt</Label>
                 <Textarea
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g., Tom Cruise fighting Brad Pitt on a rooftop, cinematic action scene with dramatic lighting..."
-                  className="min-h-[120px] resize-none bg-neutral-900 border-neutral-800 text-neutral-100 placeholder:text-neutral-600 focus:border-neutral-600"
+                  className="min-h-[120px] resize-none bg-card border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
                   disabled={loading}
                 />
-                <p className="text-xs text-neutral-600">
+                <p className="text-xs text-muted-foreground">
                   Be specific and descriptive for best results
                 </p>
               </div>
 
               {/* Duration Slider */}
               <div className="space-y-2">
-                <Label htmlFor="duration" className="text-xs text-neutral-400 tracking-wider uppercase">Duration: {duration}s</Label>
+                <Label htmlFor="duration" className="text-xs text-muted-foreground tracking-wider uppercase">Duration: {duration}s</Label>
                 <Slider
                   id="duration"
                   min={5}
@@ -188,7 +188,7 @@ export default function ExpoPage() {
 
               {/* Resolution Select */}
               <div className="space-y-2">
-                <Label htmlFor="resolution" className="text-xs text-neutral-400 tracking-wider uppercase">Resolution</Label>
+                <Label htmlFor="resolution" className="text-xs text-muted-foreground tracking-wider uppercase">Resolution</Label>
                 <Select value={resolution} onValueChange={setResolution} disabled={loading}>
                   <SelectTrigger id="resolution">
                     <SelectValue />
@@ -203,7 +203,7 @@ export default function ExpoPage() {
 
               {/* Aspect Ratio Select */}
               <div className="space-y-2">
-                <Label htmlFor="ratio" className="text-xs text-neutral-400 tracking-wider uppercase">Aspect Ratio</Label>
+                <Label htmlFor="ratio" className="text-xs text-muted-foreground tracking-wider uppercase">Aspect Ratio</Label>
                 <Select value={ratio} onValueChange={setRatio} disabled={loading}>
                   <SelectTrigger id="ratio">
                     <SelectValue />
@@ -221,7 +221,7 @@ export default function ExpoPage() {
               <button
                 onClick={generate}
                 disabled={loading || !prompt.trim()}
-                className="w-full py-3 bg-white text-neutral-950 hover:bg-neutral-100 transition-all duration-300 text-sm font-medium tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 text-sm font-medium tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -240,8 +240,8 @@ export default function ExpoPage() {
               {loading && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-500">{status}</span>
-                    <span className="text-neutral-500">{progress}%</span>
+                    <span className="text-muted-foreground">{status}</span>
+                    <span className="text-muted-foreground">{progress}%</span>
                   </div>
                   <Progress value={progress} className="w-full" />
                 </div>
@@ -250,20 +250,20 @@ export default function ExpoPage() {
           </div>
 
           {/* Right Column - Video Preview */}
-          <div className="border border-neutral-800 p-8">
+          <div className="border border-border p-8">
             <div className="mb-6">
-              <h2 className="flex items-center gap-2 text-lg font-medium text-white tracking-tight">
-                <Play className="w-5 h-5 text-neutral-500" />
+              <h2 className="flex items-center gap-2 text-lg font-medium text-foreground tracking-tight">
+                <Play className="w-5 h-5 text-muted-foreground" />
                 Preview
               </h2>
-              <p className="text-sm text-neutral-500 font-light mt-1">
+              <p className="text-sm text-muted-foreground font-light mt-1">
                 Your generated video will appear here
               </p>
             </div>
             <div>
               {videoUrl ? (
                 <div className="space-y-4">
-                  <div className="relative aspect-video bg-neutral-900 overflow-hidden">
+                  <div className="relative aspect-video bg-card overflow-hidden">
                     <video
                       src={videoUrl}
                       controls
@@ -275,7 +275,7 @@ export default function ExpoPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={downloadVideo}
-                      className="flex-1 py-3 text-xs font-light tracking-wider text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 py-3 text-xs font-light tracking-wider text-muted-foreground hover:text-foreground border border-border hover:border-ring transition-all flex items-center justify-center gap-2"
                     >
                       <Download className="w-4 h-4" />
                       DOWNLOAD
@@ -287,18 +287,18 @@ export default function ExpoPage() {
                         setProgress(0);
                         setStatus('');
                       }}
-                      className="flex-1 py-3 text-xs font-light tracking-wider text-neutral-400 hover:text-white border border-neutral-800 hover:border-neutral-600 transition-all"
+                      className="flex-1 py-3 text-xs font-light tracking-wider text-muted-foreground hover:text-foreground border border-border hover:border-ring transition-all"
                     >
                       GENERATE NEW
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="aspect-video bg-neutral-900 flex items-center justify-center border border-dashed border-neutral-800">
+                <div className="aspect-video bg-card flex items-center justify-center border border-dashed border-border">
                   <div className="text-center p-8">
-                    <Video className="w-12 h-12 mx-auto mb-4 text-neutral-700" />
-                    <p className="text-neutral-500 text-sm mb-1">No video generated yet</p>
-                    <p className="text-xs text-neutral-600">
+                    <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground text-sm mb-1">No video generated yet</p>
+                    <p className="text-xs text-muted-foreground">
                       Enter a prompt and click Generate to create your video
                     </p>
                   </div>
@@ -315,10 +315,10 @@ export default function ExpoPage() {
             { icon: "🎬", title: "Cinematic Quality", desc: "Professional-grade video output with advanced AI models" },
             { icon: "🎨", title: "Creative Control", desc: "Fine-tune duration, resolution, and aspect ratio" },
           ].map((card, i) => (
-            <div key={i} className="p-6 border border-neutral-800 hover:border-neutral-700 transition-all">
+            <div key={i} className="p-6 border border-border hover:border-border transition-all">
               <p className="text-lg mb-3">{card.icon}</p>
-              <h3 className="text-sm font-medium text-white tracking-tight mb-2">{card.title}</h3>
-              <p className="text-xs text-neutral-500 font-light leading-relaxed">{card.desc}</p>
+              <h3 className="text-sm font-medium text-foreground tracking-tight mb-2">{card.title}</h3>
+              <p className="text-xs text-muted-foreground font-light leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>

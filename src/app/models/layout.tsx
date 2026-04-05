@@ -98,7 +98,7 @@ export default function ModelsLayout({
       <div className="mobile-sidebar w-64 border-r border-white/10 bg-white/5 backdrop-blur-[0.5px] relative z-10">
         <div className="space-y-4 py-4">
           <div className="px-3 py-2">
-            <h2 className="mb-4 px-4 mobile-text-base sm:text-lg font-semibold text-white drop-shadow-lg">Models</h2>
+            <h2 className="mb-4 px-4 mobile-text-base sm:text-lg font-semibold text-foreground drop-shadow-lg">Models</h2>
             <div className="space-y-1">
               {categoryOrder.map(
                 (category) =>
@@ -120,7 +120,7 @@ export default function ModelsLayout({
                               key={endpoint.endpointId}
                               href={`/models/${category}/${encodeURIComponent(endpoint.endpointId)}`}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-2 mobile-text-xs sm:text-sm text-white/90 hover:text-white",
+                                "flex items-center gap-3 px-4 py-2 mobile-text-xs sm:text-sm text-white/90 hover:text-foreground",
                                 "hover:bg-white/20 rounded-md transition-all duration-300 mobile-touch-target",
                                 "group relative overflow-hidden"
                               )}

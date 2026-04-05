@@ -216,7 +216,7 @@ export default function GalleryPage() {
                   </Link>
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">
+                  <h1 className="text-2xl font-bold text-foreground">
                     Gallery
                   </h1>
                   <p className="text-sm text-muted-foreground">
@@ -326,7 +326,7 @@ export default function GalleryPage() {
                 <Card key={item.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 bg-background/95 backdrop-blur border-border/50">
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-muted overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-neutral-700/20 to-neutral-500/20 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-muted/20 to-muted-foreground/20 flex items-center justify-center">
                       {getTypeIcon(item.type)}
                     </div>
                     

@@ -78,10 +78,12 @@ function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) 
 
 export default function PersonasPage() {
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     seedDemoPersonas();
     setPersonas(getPersonas());
+    setLoaded(true);
   }, []);
 
   function handleLike(id: string) {
@@ -118,7 +120,13 @@ export default function PersonasPage() {
           ))}
         </div>
 
-        {personas.length === 0 && (
+        {!loaded && (
+          <div className="flex items-center justify-center py-24">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-neutral-500"></div>
+          </div>
+        )}
+
+        {loaded && personas.length === 0 && (
           <div className="text-center py-24">
             <p className="text-neutral-500 mb-6 text-sm font-light">No personas yet</p>
             <Link

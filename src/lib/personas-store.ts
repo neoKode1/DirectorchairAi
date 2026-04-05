@@ -7,7 +7,8 @@ export interface Persona {
   description: string;
   imageUrl: string;
   characterSheet: {
-    referenceImages: string[];
+    referenceImages: string[];      // thumbnails for display (resized ~300px)
+    fullResImages?: string[];       // kept in sessionStorage, not localStorage
     generatedImages: string[] | null;
     status: 'pending' | 'generating' | 'ready';
     imageMetadata: Array<{ name: string; size: number; type: string; index: number }>;
@@ -25,9 +26,64 @@ export interface Persona {
 }
 
 const STORAGE_KEY = 'directorchair-personas';
+const FULL_RES_KEY = 'directorchair-personas-fullres';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+/**
+ * Resize a base64 data URL to a thumbnail (max 300px) to avoid localStorage bloat.
+ * Returns a Promise that resolves to a smaller base64 data URL.
+ */
+export function resizeImageToThumbnail(dataUrl: string, maxSize = 300): Promise<string> {
+  return new Promise((resolve) => {
+    // If it's not a data URL (e.g. external URL), return as-is
+    if (!dataUrl.startsWith('data:')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      if (width > height) {
+        if (width > maxSize) { height = Math.round((height * maxSize) / width); width = maxSize; }
+      } else {
+        if (height > maxSize) { width = Math.round((width * maxSize) / height); height = maxSize; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(dataUrl); // fallback to original
+    img.src = dataUrl;
+  });
+}
+
+/**
+ * Store full-res images in sessionStorage (survives tab refresh, not localStorage quota).
+ */
+export function storeFullResImages(personaId: string, images: string[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = JSON.parse(sessionStorage.getItem(FULL_RES_KEY) || '{}');
+    existing[personaId] = images;
+    sessionStorage.setItem(FULL_RES_KEY, JSON.stringify(existing));
+  } catch { /* sessionStorage full or unavailable */ }
+}
+
+/**
+ * Retrieve full-res images from sessionStorage.
+ */
+export function getFullResImages(personaId: string): string[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const existing = JSON.parse(sessionStorage.getItem(FULL_RES_KEY) || '{}');
+    return existing[personaId] || null;
+  } catch { return null; }
 }
 
 export function getPersonas(): Persona[] {
@@ -116,15 +172,12 @@ export function seedDemoPersonas(): void {
       basePrice: 1299, tags: ['corporate', 'modern', 'tech'], contentRating: 'sfw', adultContentAllowed: false,
     },
   ];
-  demos.forEach((d) => {
-    const persona: Persona = {
-      ...d, id: generateId(), likes: Math.floor(Math.random() * 50) + 5,
-      downloads: Math.floor(Math.random() * 20), views: Math.floor(Math.random() * 200) + 20,
-      isLiked: false, creatorUsername: 'DirectorChair', createdAt: new Date().toISOString(),
-    };
-    const personas = getPersonas();
-    personas.push(persona);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(personas));
-  });
+  // Batch: build all personas, single write
+  const allPersonas: Persona[] = demos.map((d) => ({
+    ...d, id: generateId(), likes: Math.floor(Math.random() * 50) + 5,
+    downloads: Math.floor(Math.random() * 20), views: Math.floor(Math.random() * 200) + 20,
+    isLiked: false, creatorUsername: 'DirectorChair', createdAt: new Date().toISOString(),
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(allPersonas));
 }
 

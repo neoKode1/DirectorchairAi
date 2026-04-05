@@ -1,19 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Heart, Download, Eye, Loader2, Sparkles } from 'lucide-react';
-import { type Persona, getPersona, toggleLike, updatePersona } from '@/lib/personas-store';
+import { ArrowLeft, Heart, Download, Eye, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { type Persona, getPersona, toggleLike, updatePersona, deletePersona, getFullResImages } from '@/lib/personas-store';
+import { Toaster } from '@/components/ui/toaster';
+import { ToastProvider } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default function PersonaDetailPage() {
+function PersonaDetailContent() {
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const [persona, setPersona] = useState<Persona | null>(null);
   const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState<'personal' | 'commercial' | 'exclusive'>('personal');
   const [generating, setGenerating] = useState(false);
 
@@ -47,10 +53,14 @@ export default function PersonaDetailPage() {
     if (!persona || persona.characterSheet.referenceImages.length === 0) return;
     setGenerating(true);
     try {
+      // Prefer full-res images from sessionStorage; fall back to thumbnails
+      const fullRes = getFullResImages(persona.id);
+      const imagesToSend = fullRes && fullRes.length > 0 ? fullRes : persona.characterSheet.referenceImages;
+
       const res = await fetch('/api/personas/generate-character-sheet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: persona.id, referenceImages: persona.characterSheet.referenceImages }),
+        body: JSON.stringify({ personaId: persona.id, referenceImages: imagesToSend }),
       });
       const data = await res.json();
       if (data.success && data.images) {
@@ -58,12 +68,28 @@ export default function PersonaDetailPage() {
           characterSheet: { ...persona.characterSheet, generatedImages: data.images.map((img: { url: string }) => img.url), status: 'ready' },
         });
         if (updated) setPersona(updated);
+        toast({ title: 'Character Sheet Ready', description: `${data.images.length} variations generated!` });
+      } else {
+        throw new Error(data.error || 'Generation returned no images');
       }
     } catch (err) {
       console.error('Generation failed:', err);
+      toast({ title: 'Generation Failed', description: err instanceof Error ? err.message : 'Could not generate character sheet.', variant: 'destructive' });
     } finally {
       setGenerating(false);
     }
+  }
+
+  function handleDelete() {
+    if (!persona) return;
+    deletePersona(persona.id);
+    toast({ title: 'Persona Deleted', description: `"${persona.name}" has been removed.` });
+    router.push('/personas');
+  }
+
+  function handlePurchase() {
+    toast({ title: 'Coming Soon', description: 'Licensing and payments will be available in a future update.' });
+    setShowLicenseModal(false);
   }
 
   return (
@@ -122,6 +148,11 @@ export default function PersonaDetailPage() {
               <button onClick={handleLike} className="w-full py-3 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-all text-sm tracking-wider">
                 {persona.isLiked ? '❤️ LIKED' : '🤍 LIKE'}
               </button>
+              {persona.creatorUsername === 'You' && (
+                <button onClick={() => setShowDeleteConfirm(true)} className="w-full py-3 border border-red-500/30 text-red-400 hover:text-red-300 hover:border-red-500/60 transition-all text-sm tracking-wider flex items-center justify-center gap-2">
+                  <Trash2 className="w-3.5 h-3.5" /> DELETE PERSONA
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -215,14 +246,40 @@ export default function PersonaDetailPage() {
             </div>
             <div className="mt-8 flex gap-4">
               <button onClick={() => setShowLicenseModal(false)} className="flex-1 py-3 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-all text-sm tracking-wider">CANCEL</button>
-              <button className="flex-1 py-3 bg-white text-neutral-950 font-medium hover:bg-neutral-100 transition-all text-sm tracking-wider">
+              <button onClick={handlePurchase} className="flex-1 py-3 bg-white text-neutral-950 font-medium hover:bg-neutral-100 transition-all text-sm tracking-wider">
                 PURCHASE {formatPrice(licenseOptions[selectedLicense].price)}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-neutral-950/90 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="bg-neutral-900 border border-neutral-800 max-w-sm w-full p-8" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-medium text-white tracking-tight mb-2">Delete Persona?</h2>
+            <p className="text-sm text-neutral-500 font-light mb-6">
+              This will permanently delete &ldquo;{persona?.name}&rdquo; and all associated data. This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-3 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 transition-all text-sm tracking-wider">CANCEL</button>
+              <button onClick={handleDelete} className="flex-1 py-3 bg-red-600 text-white font-medium hover:bg-red-500 transition-all text-sm tracking-wider">DELETE</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Toaster />
     </div>
+  );
+}
+
+export default function PersonaDetailPage() {
+  return (
+    <ToastProvider>
+      <PersonaDetailContent />
+    </ToastProvider>
   );
 }
 

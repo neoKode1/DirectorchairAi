@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, X } from 'lucide-react';
-import { savePersona } from '@/lib/personas-store';
+import { savePersona, resizeImageToThumbnail, storeFullResImages } from '@/lib/personas-store';
 
 export default function CreatePersonaPage() {
   const router = useRouter();
@@ -19,17 +19,24 @@ export default function CreatePersonaPage() {
   const [adultContentAllowed, setAdultContentAllowed] = useState(false);
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [fullResImages, setFullResImages] = useState<string[]>([]);
 
   function handleFilesSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files) return;
-    const previews: string[] = [];
+    const fullRes: string[] = [];
+    let loaded = 0;
     Array.from(files).forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        previews.push(ev.target?.result as string);
-        if (previews.length === files.length) {
-          setImagePreviews((prev) => [...prev, ...previews].slice(0, 8));
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target?.result as string;
+        fullRes.push(dataUrl);
+        loaded++;
+        if (loaded === files.length) {
+          // Store full-res in memory, thumbnails for localStorage
+          setFullResImages((prev) => [...prev, ...fullRes].slice(0, 8));
+          const thumbs = await Promise.all(fullRes.map((img) => resizeImageToThumbnail(img)));
+          setImagePreviews((prev) => [...prev, ...thumbs].slice(0, 8));
         }
       };
       reader.readAsDataURL(file);
@@ -38,6 +45,7 @@ export default function CreatePersonaPage() {
 
   function removeImage(index: number) {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    setFullResImages((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -52,9 +60,9 @@ export default function CreatePersonaPage() {
       const persona = savePersona({
         name,
         description,
-        imageUrl: imagePreviews[0],
+        imageUrl: imagePreviews[0], // thumbnail — safe for localStorage
         characterSheet: {
-          referenceImages: imagePreviews,
+          referenceImages: imagePreviews, // thumbnails for display
           generatedImages: null,
           status: 'pending',
           imageMetadata: imagePreviews.map((_, i) => ({ name: `image_${i}`, size: 0, type: 'image/jpeg', index: i })),
@@ -64,6 +72,10 @@ export default function CreatePersonaPage() {
         contentRating,
         adultContentAllowed,
       });
+      // Store full-res images in sessionStorage for character sheet generation
+      if (fullResImages.length > 0) {
+        storeFullResImages(persona.id, fullResImages);
+      }
       router.push(`/personas/${persona.id}`);
     } catch {
       setError('Failed to create persona');

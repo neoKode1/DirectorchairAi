@@ -409,7 +409,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
     // Call Claude with tools - execute tool loop
     let response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: AGENT_SYSTEM_PROMPT + settingsContext,
       tools: AGENT_TOOLS,
       messages
@@ -519,16 +519,6 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
             break;
           }
 
-          case 'enhance_prompt': {
-            // The agent enhances prompts internally — just acknowledge
-            toolResults.push({
-              type: 'tool_result',
-              tool_use_id: toolUse.id,
-              content: `Enhanced prompt ready: "${input.original_prompt}" → Apply your cinematic expertise for ${input.content_type} generation${input.style_direction ? ` in ${input.style_direction} style` : ''}.`
-            });
-            break;
-          }
-
           default: {
             toolResults.push({
               type: 'tool_result',
@@ -546,7 +536,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
 
       response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
+        max_tokens: 2048,
         system: AGENT_SYSTEM_PROMPT + settingsContext,
         tools: AGENT_TOOLS,
         messages

@@ -155,26 +155,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle model-specific parameters
     // Nano Banana Edit / Nano Banana Pro Edit
     if (model.includes('nano-banana')) {
-      if (body.image_urls && body.image_urls.length > 0) {
-        input.image_urls = await Promise.all(
-          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
-        );
-      }
+      // image_urls already converted generically above — just add ratio alias
       if (body.aspect_ratio) {
-        input.aspect_ratio = body.aspect_ratio;
         input.ratio = body.aspect_ratio;
       }
       console.log(`🔧 [Generate API] [${requestId}] Nano Banana: image_urls=${input.image_urls?.length || 0}`);
     }
-    
+
     // Handle Wan 2.7 models — use image_urls array and image_size preset string
     if (model.includes('wan/v2.7')) {
-      if (body.image_urls && body.image_urls.length > 0) {
-        input.image_urls = await Promise.all(
-          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
-        );
-      } else if (body.image_url) {
-        input.image_urls = [await convertLocalhostToBase64(body.image_url)];
+      // image_urls already converted generically above
+      // If only image_url was provided, promote to image_urls (already base64-converted)
+      if (!input.image_urls && input.image_url) {
+        input.image_urls = [input.image_url];
       }
       // Wan 2.7 uses image_size presets, not aspect_ratio
       input.image_size = 'square_hd';
@@ -185,12 +178,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Handle ALL Seedream models (v4, v4.5, v5) — uses image_urls array and image_size
     if (model.includes('seedream')) {
-      if (body.image_urls && body.image_urls.length > 0) {
-        input.image_urls = await Promise.all(
-          body.image_urls.map((url: string) => convertLocalhostToBase64(url))
-        );
-      } else if (body.image_url) {
-        input.image_urls = [await convertLocalhostToBase64(body.image_url)];
+      // image_urls already converted generically above
+      // If only image_url was provided, promote to image_urls (already base64-converted)
+      if (!input.image_urls && input.image_url) {
+        input.image_urls = [input.image_url];
       }
       // All Seedream models use image_size presets, not aspect_ratio
       if (model.includes('seedream/v5')) {

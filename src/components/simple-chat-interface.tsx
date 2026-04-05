@@ -338,32 +338,31 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   }, []);
 
   // Auto-cleanup old messages to prevent localStorage quota exceeded errors
+  // Single effect on messages.length to avoid re-render loops
   useEffect(() => {
-    if (messages.length > 25) {
-      // Keep only the last 25 messages to prevent quota exceeded
-      const messagesToKeep = messages.slice(-25);
-      setMessages(messagesToKeep);
-      console.log(`🧹 [Chat] Cleaned up old messages, kept last ${messagesToKeep.length} messages`);
-    }
-  }, [messages.length]);
+    const MAX_MESSAGES = 25;
+    const MAX_MEDIA_MESSAGES = 10;
 
-  // Additional cleanup for messages with images (they take up the most space)
-  useEffect(() => {
-    const messagesWithImages = messages.filter(msg => msg.media && msg.media.url);
-    if (messagesWithImages.length > 10) {
-      // If we have more than 10 messages with images, remove the oldest ones
-      const messagesWithoutOldImages = messages.filter((msg) => {
-        if (msg.media && msg.media.url) {
-          // Keep only the last 10 messages with images
-          const imageMessageIndex = messagesWithImages.findIndex(imgMsg => imgMsg.id === msg.id);
-          return imageMessageIndex >= messagesWithImages.length - 10;
-        }
-        return true; // Keep all messages without images
-      });
-      setMessages(messagesWithoutOldImages);
-      console.log(`🧹 [Chat] Cleaned up old messages with images, kept last 10 image messages`);
+    if (messages.length <= MAX_MESSAGES) return;
+
+    // Start with the last MAX_MESSAGES
+    let cleaned = messages.slice(-MAX_MESSAGES);
+
+    // If still too many media messages, drop oldest media messages
+    const mediaIds = new Set(
+      cleaned
+        .filter(msg => msg.media?.url)
+        .slice(0, -MAX_MEDIA_MESSAGES) // oldest beyond limit
+        .map(msg => msg.id)
+    );
+
+    if (mediaIds.size > 0) {
+      cleaned = cleaned.filter(msg => !mediaIds.has(msg.id));
     }
-  }, [messages]);
+
+    setMessages(cleaned);
+    console.log(`🧹 [Chat] Cleanup: ${messages.length} → ${cleaned.length} msgs, dropped ${mediaIds.size} old media`);
+  }, [messages.length]);
 
   // Save last generated image to localStorage whenever it changes
   useEffect(() => {
@@ -672,10 +671,10 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               prompt: action.prompt,
               image_url: action.image_url,
               image_urls: action.image_urls,
-              aspect_ratio: aspectRatio, // Always use user's dropdown setting
+              aspect_ratio: action.aspect_ratio || aspectRatio, // Trust agent-resolved, fallback to dropdown
               ...(action.generationType === 'video' && {
                 duration: action.duration || '5',
-                resolution: resolution, // Always use user's dropdown setting
+                resolution: action.resolution || resolution, // Trust agent-resolved, fallback to dropdown
                 generate_audio: action.generate_audio
               }),
               // Special params for specific models

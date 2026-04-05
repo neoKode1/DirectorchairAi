@@ -43,6 +43,10 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
           description: 'Aspect ratio for the image',
           enum: ['16:9', '9:16', '4:3', '3:4']
         },
+        negative_prompt: {
+          type: 'string',
+          description: 'What NOT to generate. Reduces artifacts. Example: "blur, distort, low quality". Supported by SD 3.5, Flux, Seedream, and others.'
+        },
         requires_reference_image: {
           type: 'boolean',
           description: 'Set to true if the chosen model requires a reference image (edit/i2i models) and no image has been provided yet.'
@@ -183,28 +187,5 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
       required: ['reason', 'purpose']
     }
   },
-  {
-    name: 'enhance_prompt',
-    description: 'Enhance a basic prompt with cinematic director-level detail. Use this to transform a simple user request into a professional-grade generation prompt before calling generate_image or generate_video.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        original_prompt: {
-          type: 'string',
-          description: 'The user\'s original prompt or description.'
-        },
-        content_type: {
-          type: 'string',
-          enum: ['image', 'video'],
-          description: 'Whether this is for image or video generation.'
-        },
-        style_direction: {
-          type: 'string',
-          description: 'Optional style guidance (e.g., "noir", "Villeneuve-style sci-fi", "warm documentary")'
-        }
-      },
-      required: ['original_prompt', 'content_type']
-    }
-  }
 ];
 

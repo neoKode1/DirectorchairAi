@@ -39,18 +39,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen bg-neutral-950 text-foreground">
+          <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Global interactive warp grid background */}
             <WarpCanvas className="fixed z-0" />
             {/* Film grain overlay */}
             <div className="fixed inset-0 grain pointer-events-none z-[60]" />
 
-            <header className="fixed top-0 left-0 right-0 z-50 px-6 py-5 lg:px-12 border-b border-neutral-800/50 bg-background/80 backdrop-blur-md">
+            <header className="fixed top-0 left-0 right-0 z-50 px-6 py-5 lg:px-12 border-b border-border/50 bg-background/80 backdrop-blur-md">
               <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
                 {/* Left: Brand */}
                 <Link
                   href="/"
-                  className="text-sm font-medium tracking-tighter text-white hover:text-neutral-300 transition-colors shrink-0"
+                  className="text-sm font-medium tracking-tighter text-foreground hover:text-muted-foreground transition-colors shrink-0"
                 >
                   DIRECTORCHAIR AI
                 </Link>
@@ -59,34 +59,34 @@ export default function RootLayout({
                 <nav className="hidden md:flex items-center gap-8">
                   <Link
                     href="/timeline"
-                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors"
+                    className="text-xs font-light text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Studio
                   </Link>
                   <span
-                    className="text-xs font-light text-neutral-600 cursor-not-allowed select-none"
+                    className="text-xs font-light text-muted-foreground/50 cursor-not-allowed select-none"
                     title="Coming soon"
                   >
                     Expo
                   </span>
                   <Link
                     href="/script-maker"
-                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors"
+                    className="text-xs font-light text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Script Maker
                   </Link>
                   <Link
                     href="/personas"
-                    className="text-xs font-light text-neutral-400 hover:text-white transition-colors inline-flex items-center gap-1.5"
+                    className="text-xs font-light text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
                   >
                     Personas
-                    <span className="text-[9px] font-medium tracking-wider uppercase px-1 py-0.5 border border-neutral-700 text-neutral-500">Preview</span>
+                    <span className="text-[9px] font-medium tracking-wider uppercase px-1 py-0.5 border border-border text-muted-foreground">Preview</span>
                   </Link>
                   <ThemeToggle />
                 </nav>
 
                 {/* Right: DeepTech */}
-                <span className="text-xs font-light tracking-wider text-neutral-500 uppercase shrink-0">
+                <span className="text-xs font-light tracking-wider text-muted-foreground uppercase shrink-0">
                   DEEPTECH
                 </span>
               </div>

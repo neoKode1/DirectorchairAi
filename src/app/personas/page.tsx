@@ -7,14 +7,14 @@ import { type Persona, getPersonas, toggleLike, seedDemoPersonas } from '@/lib/p
 
 function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) => void }) {
   return (
-    <article className="border border-neutral-800 overflow-hidden max-w-[470px] w-full mx-auto group">
+    <article className="border border-border overflow-hidden max-w-[470px] w-full mx-auto group">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full border border-neutral-700 flex items-center justify-center">
-            <span className="text-xs font-medium text-neutral-400">{persona.creatorUsername[0]}</span>
+          <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center">
+            <span className="text-xs font-medium text-muted-foreground">{persona.creatorUsername[0]}</span>
           </div>
-          <Link href={`/personas/${persona.id}`} className="text-sm font-medium text-white hover:text-neutral-300 transition-colors">
+          <Link href={`/personas/${persona.id}`} className="text-sm font-medium text-foreground hover:text-muted-foreground transition-colors">
             {persona.creatorUsername}
           </Link>
         </div>
@@ -28,7 +28,7 @@ function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) 
             alt={persona.name}
             className="w-full aspect-square object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-neutral-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-background/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
       </Link>
 
@@ -36,39 +36,39 @@ function PostCard({ persona, onLike }: { persona: Persona; onLike: (id: string) 
       <div className="px-4 pt-3 pb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-4">
-            <button onClick={() => onLike(persona.id)} className="hover:text-neutral-400 transition-colors">
-              <Heart className={`w-5 h-5 ${persona.isLiked ? 'fill-red-500 text-red-500' : 'text-neutral-300'}`} />
+            <button onClick={() => onLike(persona.id)} className="hover:text-muted-foreground transition-colors">
+              <Heart className={`w-5 h-5 ${persona.isLiked ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
             </button>
-            <Link href={`/personas/${persona.id}`} className="hover:text-neutral-400 transition-colors">
-              <MessageCircle className="w-5 h-5 text-neutral-300" />
+            <Link href={`/personas/${persona.id}`} className="hover:text-muted-foreground transition-colors">
+              <MessageCircle className="w-5 h-5 text-muted-foreground" />
             </Link>
-            <button className="hover:text-neutral-400 transition-colors">
-              <Share2 className="w-5 h-5 text-neutral-300" />
+            <button className="hover:text-muted-foreground transition-colors">
+              <Share2 className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
-          <button className="hover:text-neutral-400 transition-colors">
-            <Bookmark className="w-5 h-5 text-neutral-300" />
+          <button className="hover:text-muted-foreground transition-colors">
+            <Bookmark className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
 
-        <span className="text-xs font-medium text-white">
+        <span className="text-xs font-medium text-foreground">
           {persona.likes.toLocaleString()} likes
         </span>
 
         <div className="text-sm mt-1">
-          <Link href={`/personas/${persona.id}`} className="font-medium text-white mr-2 hover:text-neutral-300 transition-colors">
+          <Link href={`/personas/${persona.id}`} className="font-medium text-foreground mr-2 hover:text-muted-foreground transition-colors">
             {persona.name}
           </Link>
-          <span className="text-neutral-500 font-light">{persona.description}</span>
+          <span className="text-muted-foreground font-light">{persona.description}</span>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mt-2">
           {persona.tags.map((tag) => (
-            <span key={tag} className="text-xs text-neutral-500">#{tag}</span>
+            <span key={tag} className="text-xs text-muted-foreground">#{tag}</span>
           ))}
         </div>
 
-        <p className="text-[10px] text-neutral-600 uppercase mt-2 tracking-widest">
+        <p className="text-[10px] text-muted-foreground/60 uppercase mt-2 tracking-widest">
           {new Date(persona.createdAt).toLocaleDateString()}
         </p>
       </div>
@@ -96,17 +96,17 @@ export default function PersonasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-[470px] mx-auto py-16 px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <p className="text-xs text-neutral-600 tracking-widest mb-2">GALLERY</p>
-            <h1 className="font-display text-3xl font-normal text-white tracking-tight">Personas</h1>
+            <p className="text-xs text-muted-foreground/60 tracking-widest mb-2">GALLERY</p>
+            <h1 className="font-display text-3xl font-normal text-foreground tracking-tight">Personas</h1>
           </div>
           <Link
             href="/personas/create"
-            className="flex items-center gap-2 px-4 py-2 bg-white text-neutral-950 text-xs font-medium tracking-wider hover:bg-neutral-100 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium tracking-wider hover:bg-primary/90 transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             CREATE
@@ -128,10 +128,10 @@ export default function PersonasPage() {
 
         {loaded && personas.length === 0 && (
           <div className="text-center py-24">
-            <p className="text-neutral-500 mb-6 text-sm font-light">No personas yet</p>
+            <p className="text-muted-foreground mb-6 text-sm font-light">No personas yet</p>
             <Link
               href="/personas/create"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-neutral-950 text-xs font-medium tracking-wider hover:bg-neutral-100 transition-all"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground text-xs font-medium tracking-wider hover:bg-primary/90 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
               CREATE YOUR FIRST PERSONA

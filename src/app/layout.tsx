@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Inter, Playfair_Display } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MobileMenu } from "@/components/mobile-menu";
 
 import { cn } from "@/lib/utils";
 import { WarpCanvas } from "@/components/warp-canvas";
@@ -85,10 +86,13 @@ export default function RootLayout({
                   <ThemeToggle />
                 </nav>
 
-                {/* Right: DeepTech */}
-                <span className="text-xs font-light tracking-wider text-muted-foreground uppercase shrink-0">
-                  DEEPTECH
-                </span>
+                {/* Right: DeepTech + Mobile Menu */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-light tracking-wider text-muted-foreground uppercase hidden sm:inline">
+                    DEEPTECH
+                  </span>
+                  <MobileMenu />
+                </div>
               </div>
             </header>
             <main className="flex-1 pt-[72px] overflow-x-hidden">{children}</main>

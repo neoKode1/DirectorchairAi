@@ -3,24 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Heart, Download, Eye, Loader2, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, Heart, Download, Eye, Loader2, Sparkles, Trash2, Play } from 'lucide-react';
 import { type Persona, getPersona, toggleLike, updatePersona, deletePersona, getFullResImages } from '@/lib/personas-store';
 import { Toaster } from '@/components/ui/toaster';
 import { ToastProvider } from '@/components/ui/toast';
 import { useToast } from '@/hooks/use-toast';
 
-function formatPrice(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
 
 function PersonaDetailContent() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const [persona, setPersona] = useState<Persona | null>(null);
-  const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [selectedLicense, setSelectedLicense] = useState<'personal' | 'commercial' | 'exclusive'>('personal');
   const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
@@ -38,11 +33,29 @@ function PersonaDetailContent() {
     );
   }
 
-  const licenseOptions = {
-    personal: { name: 'Personal License', price: persona.basePrice, description: 'For personal use only.', features: ['Personal use only', 'Lifetime access', 'Updates included'] },
-    commercial: { name: 'Commercial License', price: persona.basePrice * 3, description: 'For commercial projects.', features: ['Commercial use', 'Lifetime access', 'Updates included', 'Priority support'] },
-    exclusive: { name: 'Exclusive License', price: persona.basePrice * 10, description: 'Exclusive rights. Removed from marketplace.', features: ['Exclusive ownership', 'Full commercial rights', 'Source files included'] },
-  };
+  function handleUsePersona() {
+    if (!persona) return;
+    // Prefer full-res images, fall back to thumbnails, fall back to generated images
+    const fullRes = getFullResImages(persona.id);
+    const images = (fullRes && fullRes.length > 0)
+      ? fullRes
+      : (persona.characterSheet.referenceImages.length > 0)
+        ? persona.characterSheet.referenceImages
+        : persona.characterSheet.generatedImages || [];
+
+    // Store persona injection payload in sessionStorage for the Studio to pick up
+    const payload = {
+      personaId: persona.id,
+      personaName: persona.name,
+      personaDescription: persona.description,
+      images,
+      tags: persona.tags,
+      injectedAt: Date.now(),
+    };
+    sessionStorage.setItem('directorchair-active-persona', JSON.stringify(payload));
+    toast({ title: 'Persona Loaded', description: `"${persona.name}" is ready in Studio.` });
+    router.push('/timeline');
+  }
 
   function handleLike() {
     const result = toggleLike(persona!.id);
@@ -87,10 +100,7 @@ function PersonaDetailContent() {
     router.push('/personas');
   }
 
-  function handlePurchase() {
-    toast({ title: 'Coming Soon', description: 'Licensing and payments will be available in a future update.' });
-    setShowLicenseModal(false);
-  }
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -138,13 +148,12 @@ function PersonaDetailContent() {
             )}
 
             <div className="border border-border p-6 space-y-4">
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-medium text-foreground">{formatPrice(persona.basePrice)}</span>
-                <span className="text-muted-foreground text-sm font-light">starting price</span>
-              </div>
-              <button onClick={() => setShowLicenseModal(true)} className="w-full py-3 bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm tracking-wider">
-                PURCHASE LICENSE
+              <button onClick={handleUsePersona} className="w-full py-3 bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm tracking-wider flex items-center justify-center gap-2">
+                <Play className="w-4 h-4" /> USE PERSONA IN STUDIO
               </button>
+              <p className="text-xs text-muted-foreground text-center font-light">
+                Loads this character into the Studio chat with all reference images
+              </p>
               <button onClick={handleLike} className="w-full py-3 border border-border text-muted-foreground hover:text-foreground hover:border-ring transition-all text-sm tracking-wider">
                 {persona.isLiked ? '❤️ LIKED' : '🤍 LIKE'}
               </button>
@@ -214,45 +223,6 @@ function PersonaDetailContent() {
           </div>
         )}
       </div>
-
-      {/* License Modal */}
-      {showLicenseModal && (
-        <div className="fixed inset-0 bg-background/90 flex items-center justify-center z-50 p-4" onClick={() => setShowLicenseModal(false)}>
-          <div className="bg-card border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-lg font-medium text-foreground tracking-tight">Choose License</h2>
-              <button onClick={() => setShowLicenseModal(false)} className="text-muted-foreground hover:text-foreground text-xl transition-colors">&times;</button>
-            </div>
-            <div className="space-y-4">
-              {(Object.entries(licenseOptions) as [typeof selectedLicense, typeof licenseOptions.personal][]).map(([key, option]) => (
-                <label key={key} className="block cursor-pointer">
-                  <input type="radio" name="license" value={key} checked={selectedLicense === key} onChange={() => setSelectedLicense(key)} className="sr-only peer" />
-                  <div className="border border-border peer-checked:border-foreground p-5 transition-all">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium text-foreground">{option.name}</h3>
-                      <span className="text-xl font-medium text-foreground">{formatPrice(option.price)}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground font-light mb-3">{option.description}</p>
-                    <ul className="space-y-1">
-                      {option.features.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="text-muted-foreground">✓</span> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </label>
-              ))}
-            </div>
-            <div className="mt-8 flex gap-4">
-              <button onClick={() => setShowLicenseModal(false)} className="flex-1 py-3 border border-border text-muted-foreground hover:text-foreground hover:border-ring transition-all text-sm tracking-wider">CANCEL</button>
-              <button onClick={handlePurchase} className="flex-1 py-3 bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all text-sm tracking-wider">
-                PURCHASE {formatPrice(licenseOptions[selectedLicense].price)}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (

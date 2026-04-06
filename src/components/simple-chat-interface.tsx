@@ -93,10 +93,64 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const [useDirectorAI, setUseDirectorAI] = useState<boolean>(true);
   const [agentHistory, setAgentHistory] = useState<Array<{ role: string; content: string }>>([]);
   const [waitingForImage, setWaitingForImage] = useState<string | null>(null);
+  const [activePersona, setActivePersona] = useState<{ personaName: string; personaDescription: string; tags: string[] } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const styleFileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  // ─── PERSONA INJECTION ───
+  // Check sessionStorage for an injected persona from the Personas page
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('directorchair-active-persona');
+      if (!raw) return;
+      const payload = JSON.parse(raw);
+      // Only consume if injected recently (within 30 seconds)
+      if (Date.now() - payload.injectedAt > 30_000) {
+        sessionStorage.removeItem('directorchair-active-persona');
+        return;
+      }
+      // Consume — remove so it doesn't re-inject on refresh
+      sessionStorage.removeItem('directorchair-active-persona');
+
+      // Inject reference images into the upload area
+      if (payload.images && payload.images.length > 0) {
+        setUploadedImages(payload.images);
+      }
+
+      // Set active persona state for UI banner
+      setActivePersona({
+        personaName: payload.personaName,
+        personaDescription: payload.personaDescription,
+        tags: payload.tags || [],
+      });
+
+      // Inject persona context into agent conversation history
+      // so the AI knows what character it's working with
+      const personaContext = [
+        `[PERSONA LOADED] The user has loaded a character persona named "${payload.personaName}".`,
+        payload.personaDescription ? `Character description: ${payload.personaDescription}` : '',
+        payload.tags?.length ? `Tags: ${payload.tags.join(', ')}` : '',
+        `${payload.images?.length || 0} reference image(s) have been uploaded to maintain character consistency.`,
+        `When generating images or videos, use these reference images to keep the character's appearance consistent.`,
+        `Treat all uploaded images as reference photos of the SAME character "${payload.personaName}".`,
+      ].filter(Boolean).join(' ');
+
+      setAgentHistory([{ role: 'user', content: personaContext }]);
+
+      // Add a system message to the chat UI
+      setMessages(prev => [...prev, {
+        id: `persona-${Date.now()}`,
+        type: 'assistant' as const,
+        content: `🎭 **${payload.personaName}** loaded with ${payload.images?.length || 0} reference image(s). I'll use these to maintain character consistency across all generations. What would you like to create with this character?`,
+        timestamp: new Date(),
+      }]);
+    } catch (e) {
+      console.error('[PERSONA INJECT] Failed:', e);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── MODEL PROMPT EXAMPLES ───
   // Cycling placeholder hints per model so users know how to prompt
@@ -1118,7 +1172,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
               <button
-                onClick={() => { clearChatHistory(); setAgentHistory([]); setWaitingForImage(null); }}
+                onClick={() => { clearChatHistory(); setAgentHistory([]); setWaitingForImage(null); setActivePersona(null); setUploadedImages([]); }}
                 className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 border border-border hover:border-border transition-colors tracking-wider uppercase"
                 title="Clear chat history"
               >
@@ -1127,6 +1181,21 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             )}
           </div>
         </div>
+        {/* Active Persona Banner */}
+        {activePersona && (
+          <div className="mb-3 px-3 py-2 border border-purple-500/40 bg-purple-500/10 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground truncate">🎭 {activePersona.personaName}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{uploadedImages.length} reference image(s) loaded</p>
+            </div>
+            <button
+              onClick={() => { setActivePersona(null); setUploadedImages([]); setAgentHistory([]); }}
+              className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-0.5 border border-border hover:border-ring transition-colors shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {/* Director AI Toggle */}
         <button
           onClick={() => setUseDirectorAI(!useDirectorAI)}

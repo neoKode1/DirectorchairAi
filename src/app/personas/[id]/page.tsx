@@ -60,7 +60,7 @@ function PersonaDetailContent() {
       const res = await fetch('/api/personas/generate-character-sheet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: persona.id, referenceImages: imagesToSend }),
+        body: JSON.stringify({ personaId: persona.id, referenceImages: imagesToSend, personaName: persona.name }),
       });
       const data = await res.json();
       if (data.success && data.images) {
@@ -202,7 +202,7 @@ function PersonaDetailContent() {
                 <>
                   <Sparkles className="w-8 h-8 text-muted-foreground/60 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground tracking-tight mb-2">Generate Character Sheet</h3>
-                  <p className="text-muted-foreground text-sm font-light mb-6">AI will create character variations from your reference photos.</p>
+                  <p className="text-muted-foreground text-sm font-light mb-6">AI will compile your reference photos into consistent character portraits with different poses and expressions.</p>
                   <button onClick={handleGenerateSheet}
                     disabled={persona.characterSheet.referenceImages.length === 0}
                     className="px-6 py-3 bg-primary text-primary-foreground text-xs font-medium tracking-wider hover:bg-primary/90 transition-all disabled:opacity-40">

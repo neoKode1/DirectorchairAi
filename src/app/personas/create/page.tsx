@@ -105,7 +105,7 @@ export default function CreatePersonaPage() {
           <div className="border border-border p-6">
             <h2 className="text-sm font-medium text-foreground tracking-tight mb-1">Reference Photos</h2>
             <p className="text-xs text-muted-foreground/60 mb-4">
-              Upload up to 8 high-quality photos: 4 face angles (front, left, right, back) + 4 body angles
+              Upload multiple photos of the same person from different angles and expressions. More variety = better character consistency.
             </p>
             <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium tracking-wider cursor-pointer hover:bg-primary/90 transition-all">
               <Upload className="w-3.5 h-3.5" /> CHOOSE FILES

@@ -6,8 +6,9 @@ fal.config({
   credentials: process.env.FAL_KEY || '',
 });
 
-// nano-banana-pro/edit supports max 4 output images per call
-const MAX_IMAGES_PER_CALL = 4;
+// nano-banana-pro/edit: up to 10 input reference images, max 4 output images per call
+const MAX_OUTPUT_IMAGES = 4;
+const MAX_INPUT_IMAGES = 10;
 
 /**
  * Convert a base64 data URL to a File and upload to fal.ai storage.
@@ -41,13 +42,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'FAL_KEY not configured' }, { status: 500 });
     }
 
-    const imageCount = referenceImages.length;
+    // Clamp input images to model limit (10 max)
+    const clampedImages = referenceImages.slice(0, MAX_INPUT_IMAGES);
+    const imageCount = clampedImages.length;
     console.log(`🎨 [CHARACTER SHEET] Starting for "${personaName || personaId}" — ${imageCount} reference image(s)`);
 
     // Upload all reference images to fal.ai storage
     const imageUrls: string[] = [];
     for (let i = 0; i < imageCount; i++) {
-      const url = await uploadDataUrl(referenceImages[i], i);
+      const url = await uploadDataUrl(clampedImages[i], i);
       imageUrls.push(url);
       console.log(`✅ [CHARACTER SHEET] Uploaded ${i + 1}/${imageCount}`);
     }
@@ -62,8 +65,8 @@ export async function POST(request: NextRequest) {
       `Clean neutral background, studio lighting, high detail, photorealistic.`,
     ].join(' ');
 
-    // Clamp num_images to model limit
-    const numImages = Math.min(MAX_IMAGES_PER_CALL, 4);
+    // Output count: max 4 per call
+    const numImages = MAX_OUTPUT_IMAGES;
 
     console.log(`🤖 [CHARACTER SHEET] Calling nano-banana-pro/edit — ${numImages} outputs requested`);
 
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
           aspect_ratio: '3:4',
           output_format: 'png',
           resolution: '2K',
+          safety_tolerance: '4',
         },
         logs: true,
         onQueueUpdate: (update: { status: string; logs: Array<{ message: string }> }) => {

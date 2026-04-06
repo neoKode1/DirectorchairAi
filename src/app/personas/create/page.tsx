@@ -34,9 +34,9 @@ export default function CreatePersonaPage() {
         loaded++;
         if (loaded === files.length) {
           // Store full-res in memory, thumbnails for localStorage
-          setFullResImages((prev) => [...prev, ...fullRes].slice(0, 8));
+          setFullResImages((prev) => [...prev, ...fullRes].slice(0, 10));
           const thumbs = await Promise.all(fullRes.map((img) => resizeImageToThumbnail(img)));
-          setImagePreviews((prev) => [...prev, ...thumbs].slice(0, 8));
+          setImagePreviews((prev) => [...prev, ...thumbs].slice(0, 10));
         }
       };
       reader.readAsDataURL(file);
@@ -105,7 +105,7 @@ export default function CreatePersonaPage() {
           <div className="border border-border p-6">
             <h2 className="text-sm font-medium text-foreground tracking-tight mb-1">Reference Photos</h2>
             <p className="text-xs text-muted-foreground/60 mb-4">
-              Upload multiple photos of the same person from different angles and expressions. More variety = better character consistency.
+              Upload up to 10 photos of the same person — different angles, expressions, and lighting help the AI build a more consistent character. Even 1-2 photos work, but more variety = better results.
             </p>
             <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-medium tracking-wider cursor-pointer hover:bg-primary/90 transition-all">
               <Upload className="w-3.5 h-3.5" /> CHOOSE FILES
@@ -124,7 +124,7 @@ export default function CreatePersonaPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground/60 mt-2">{imagePreviews.length} / 8 photos</p>
+                <p className="text-xs text-muted-foreground/60 mt-2">{imagePreviews.length} / 10 photos</p>
               </>
             )}
           </div>

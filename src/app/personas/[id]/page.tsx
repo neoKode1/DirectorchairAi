@@ -35,13 +35,19 @@ function PersonaDetailContent() {
 
   function handleUsePersona() {
     if (!persona) return;
-    // Prefer full-res images, fall back to thumbnails, fall back to generated images
+    // Prefer full-res images → thumbnails → generated → main profile image
     const fullRes = getFullResImages(persona.id);
-    const images = (fullRes && fullRes.length > 0)
-      ? fullRes
-      : (persona.characterSheet.referenceImages.length > 0)
-        ? persona.characterSheet.referenceImages
-        : persona.characterSheet.generatedImages || [];
+    let images: string[] = [];
+    if (fullRes && fullRes.length > 0) {
+      images = fullRes;
+    } else if (persona.characterSheet.referenceImages.length > 0) {
+      images = persona.characterSheet.referenceImages;
+    } else if (persona.characterSheet.generatedImages && persona.characterSheet.generatedImages.length > 0) {
+      images = persona.characterSheet.generatedImages;
+    } else if (persona.imageUrl) {
+      // Last resort: use the persona's profile/avatar image
+      images = [persona.imageUrl];
+    }
 
     // Store persona injection payload in sessionStorage for the Studio to pick up
     const payload = {

@@ -57,7 +57,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('minimax') ||
                         model.includes('dreamactor') ||
                         model.includes('endframe') ||
-                        model.includes('ovi/');
+                        model.includes('ovi/') ||
+                        model.includes('seedance-2.0');
 
     const isImageModel = model.includes('flux') ||
                         model.includes('imagen') ||
@@ -484,8 +485,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution} style=${input.style || 'none'}`);
     }
 
+    // Handle Seedance 2.0 Reference-to-Video — uses reference_image_urls (1-4 images)
+    if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
+      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      if (body.duration) {
+        const dStr = body.duration.toString().replace(/s$/, '');
+        input.duration = validDurations.includes(dStr) ? dStr : '5';
+      } else {
+        input.duration = '5';
+      }
+      // Resolution: 480p or 720p only (no 1080p for ref-to-video)
+      const validRes = ['480p', '720p'];
+      input.resolution = (body.resolution && validRes.includes(body.resolution)) ? body.resolution : '720p';
+      // Aspect ratio
+      const validAR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16', 'auto'];
+      input.aspect_ratio = (body.aspect_ratio && validAR.includes(body.aspect_ratio)) ? body.aspect_ratio : 'auto';
+      // Audio generation — default true (Seedance 2.0 has native audio)
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      // Map image_urls → reference_image_urls (the API field name for this model)
+      if (input.image_urls && input.image_urls.length > 0) {
+        input.reference_image_urls = input.image_urls.slice(0, 4); // max 4 reference images
+      } else if (input.image_url) {
+        input.reference_image_urls = [input.image_url];
+      }
+      // Clean up params this model doesn't accept
+      delete input.image_url;
+      delete input.image_urls;
+      delete input.end_image_url;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 Ref2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} refs=${input.reference_image_urls?.length || 0} audio=${input.generate_audio}`);
+    }
     // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
-    if (model.includes('seedance')) {
+    else if (model.includes('seedance')) {
       // Duration: "4" through "12" as string
       const validSeedanceDurations = ['4','5','6','7','8','9','10','11','12'];
       if (body.duration) {
@@ -507,7 +538,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.end_image_url) {
         input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
       }
-      console.log(`🔧 [Generate API] [${requestId}] Seedance: dur=${input.duration} res=${input.resolution} audio=${input.generate_audio}`);
+      console.log(`🔧 [Generate API] [${requestId}] Seedance 1.5: dur=${input.duration} res=${input.resolution} audio=${input.generate_audio}`);
     }
 
     // Handle Sora 2 model specific parameters

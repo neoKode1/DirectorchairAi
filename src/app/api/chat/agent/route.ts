@@ -78,6 +78,7 @@ You are the Director. When a user describes what they want, you:
 
 *Seedance (ByteDance) — Native audio, start+end frame:*
 - Seedance 1.5 Pro I2V (fal-ai/bytedance/seedance/v1.5/pro/image-to-video): duration "4"-"12", resolution "480p"/"720p"/"1080p", generate_audio true/false, supports end_image_url. NEEDS source image. Great for dialogue/speech scenes with native audio.
+- Seedance 2.0 Fast Ref2V (fal-ai/bytedance/seedance-2.0/fast/reference-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Uses reference_image_urls (1-4 images) to maintain character consistency. Perfect for persona-driven videos. Pass uploaded images as image_urls — the backend maps them to reference_image_urls. Aspect ratios: "21:9","16:9","4:3","1:1","3:4","9:16","auto".
 
 *Others:*
 - Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): NEEDS source image.
@@ -106,6 +107,7 @@ You are the Director. When a user describes what they want, you:
   • Hailuo 02/2.3: "6" or "10" (strings, NO "5")
   • Pixverse V6: 5 (integer 1-15)
   • Seedance 1.5: "5" (valid: "4"-"12")
+  • Seedance 2.0 Ref2V: "5" (valid: "2"-"12"), resolution max "720p"
   • Grok Video: 6 (number, max ~10)
   • Ovi I2V: 5 (number, max 10)
   • Hunyuan: 5 (number)
@@ -195,7 +197,8 @@ export async function POST(request: NextRequest) {
       'endframe': { validResolutions: ['512P','768P'], defaultResolution: '768P', validDurations: ['6','10'], defaultDuration: '6', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: false, needsImage: true, needsVideo: false, notes: 'Same params as Hailuo.' },
       // ── Pixverse V6 ──
       'pixverse': { validResolutions: ['360p','540p','720p','1080p'], defaultResolution: '720p', validDurations: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], defaultDuration: '5', durationFormat: 'number', validAspectRatios: [], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Duration is integer 1-15. No aspect_ratio — remove it. Uses generate_audio_switch.' },
-      // ── Seedance 1.5 ──
+      // ── Seedance ──
+      'seedance-2.0': { validResolutions: ['480p','720p'], defaultResolution: '720p', validDurations: ['2','3','4','5','6','7','8','9','10','11','12'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['21:9','16:9','4:3','1:1','3:4','9:16','auto'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Reference-to-video: uses reference_image_urls (1-4). Send images as image_urls — backend maps them. Max resolution 720p. Perfect for persona-consistent character videos.' },
       'seedance': { validResolutions: ['480p','720p','1080p'], defaultResolution: '720p', validDurations: ['4','5','6','7','8','9','10','11','12'], defaultDuration: '5', durationFormat: 'string', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: true, needsVideo: false, notes: 'Supports end_image_url for start→end frame transitions.' },
       // ── Grok Video ──
       'grok-imagine-video': { validResolutions: ['480p','720p'], defaultResolution: '720p', validDurations: ['3','4','5','6','7','8','9','10'], defaultDuration: '6', durationFormat: 'number', validAspectRatios: ['16:9','9:16'], supportsAudio: true, needsImage: false, needsVideo: false, notes: 'Max resolution 720p — NEVER 1080p. T2V needs no image. I2V needs image_url.' },

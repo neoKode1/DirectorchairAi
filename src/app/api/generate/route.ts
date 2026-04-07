@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fal } from '@fal-ai/client';
+import { createFalClient } from '@fal-ai/client';
+
+// Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
+const fal = createFalClient({
+  credentials: process.env.FAL_KEY,
+});
 
 // Allow large request bodies (base64 images can be several MB)
 export const maxDuration = 120; // seconds
@@ -487,7 +492,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Handle Seedance 2.0 Fast Image-to-Video — standard I2V with image_url, native audio
     if (model.includes('seedance-2.0') && model.includes('image-to-video')) {
-      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      const validDurations = ['auto','4','5','6','7','8','9','10','11','12','13','14','15'];
       if (body.duration) {
         const dStr = body.duration.toString().replace(/s$/, '');
         input.duration = validDurations.includes(dStr) ? dStr : '5';
@@ -510,7 +515,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     // Handle Seedance 2.0 Reference-to-Video — uses reference_image_urls (1-4 images)
     else if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
-      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      const validDurations = ['auto','4','5','6','7','8','9','10','11','12','13','14','15'];
       if (body.duration) {
         const dStr = body.duration.toString().replace(/s$/, '');
         input.duration = validDurations.includes(dStr) ? dStr : '5';
@@ -540,7 +545,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     // Handle Seedance 2.0 Fast Text-to-Video — pure T2V, no image needed
     else if (model.includes('seedance-2.0') && model.includes('text-to-video')) {
-      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      const validDurations = ['auto','4','5','6','7','8','9','10','11','12','13','14','15'];
       if (body.duration) {
         const dStr = body.duration.toString().replace(/s$/, '');
         input.duration = validDurations.includes(dStr) ? dStr : '5';

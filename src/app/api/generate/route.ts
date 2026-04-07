@@ -485,8 +485,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution} style=${input.style || 'none'}`);
     }
 
+    // Handle Seedance 2.0 Fast Image-to-Video — standard I2V with image_url, native audio
+    if (model.includes('seedance-2.0') && model.includes('image-to-video')) {
+      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      if (body.duration) {
+        const dStr = body.duration.toString().replace(/s$/, '');
+        input.duration = validDurations.includes(dStr) ? dStr : '5';
+      } else {
+        input.duration = '5';
+      }
+      const validRes = ['480p', '720p'];
+      input.resolution = (body.resolution && validRes.includes(body.resolution)) ? body.resolution : '720p';
+      const validAR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16', 'auto'];
+      input.aspect_ratio = (body.aspect_ratio && validAR.includes(body.aspect_ratio)) ? body.aspect_ratio : 'auto';
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      // End frame support
+      if (body.end_image_url) {
+        input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
+      }
+      // Clean up — uses image_url (already set generically)
+      delete input.image_urls;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 I2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
+    }
     // Handle Seedance 2.0 Reference-to-Video — uses reference_image_urls (1-4 images)
-    if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
+    else if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
       const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
       if (body.duration) {
         const dStr = body.duration.toString().replace(/s$/, '');

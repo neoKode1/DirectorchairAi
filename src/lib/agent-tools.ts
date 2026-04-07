@@ -95,6 +95,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'fal-ai/pixverse/v6/image-to-video',
             'fal-ai/bytedance/seedance/v1.5/pro/image-to-video',
             'fal-ai/bytedance/seedance-2.0/fast/reference-to-video',
+            'fal-ai/bytedance/seedance-2.0/fast/image-to-video',
             'fal-ai/hunyuan-video',
             'xai/grok-imagine-video/text-to-video',
             'xai/grok-imagine-video/image-to-video',

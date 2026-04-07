@@ -78,7 +78,8 @@ You are the Director. When a user describes what they want, you:
 
 *Seedance (ByteDance) — Native audio, start+end frame:*
 - Seedance 1.5 Pro I2V (fal-ai/bytedance/seedance/v1.5/pro/image-to-video): duration "4"-"12", resolution "480p"/"720p"/"1080p", generate_audio true/false, supports end_image_url. NEEDS source image. Great for dialogue/speech scenes with native audio.
-- Seedance 2.0 Fast Ref2V (fal-ai/bytedance/seedance-2.0/fast/reference-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Uses reference_image_urls (1-4 images) to maintain character consistency. Perfect for persona-driven videos. Pass uploaded images as image_urls — the backend maps them to reference_image_urls. Aspect ratios: "21:9","16:9","4:3","1:1","3:4","9:16","auto".
+- Seedance 2.0 Fast I2V (fal-ai/bytedance/seedance-2.0/fast/image-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Standard I2V — NEEDS source image. Supports end_image_url. Native audio. Best general-purpose 2.0 video model.
+- Seedance 2.0 Fast Ref2V (fal-ai/bytedance/seedance-2.0/fast/reference-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Uses reference_image_urls (1-4 images) to maintain character consistency. Perfect for persona-driven videos. Pass uploaded images as image_urls — the backend maps them to reference_image_urls.
 
 *Others:*
 - Luma Ray 2 I2V (fal-ai/luma-dream-machine/ray-2/image-to-video): NEEDS source image.
@@ -107,7 +108,7 @@ You are the Director. When a user describes what they want, you:
   • Hailuo 02/2.3: "6" or "10" (strings, NO "5")
   • Pixverse V6: 5 (integer 1-15)
   • Seedance 1.5: "5" (valid: "4"-"12")
-  • Seedance 2.0 Ref2V: "5" (valid: "2"-"12"), resolution max "720p"
+  • Seedance 2.0 (I2V & Ref2V): "5" (valid: "2"-"12"), resolution max "720p"
   • Grok Video: 6 (number, max ~10)
   • Ovi I2V: 5 (number, max 10)
   • Hunyuan: 5 (number)

@@ -538,6 +538,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.size;
       console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 Ref2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} refs=${input.reference_image_urls?.length || 0} audio=${input.generate_audio}`);
     }
+    // Handle Seedance 2.0 Fast Text-to-Video — pure T2V, no image needed
+    else if (model.includes('seedance-2.0') && model.includes('text-to-video')) {
+      const validDurations = ['2','3','4','5','6','7','8','9','10','11','12'];
+      if (body.duration) {
+        const dStr = body.duration.toString().replace(/s$/, '');
+        input.duration = validDurations.includes(dStr) ? dStr : '5';
+      } else {
+        input.duration = '5';
+      }
+      const validRes = ['480p', '720p'];
+      input.resolution = (body.resolution && validRes.includes(body.resolution)) ? body.resolution : '720p';
+      const validAR = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16', 'auto'];
+      input.aspect_ratio = (body.aspect_ratio && validAR.includes(body.aspect_ratio)) ? body.aspect_ratio : 'auto';
+      input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
+      // T2V — remove image params
+      delete input.image_url;
+      delete input.image_urls;
+      delete input.end_image_url;
+      delete input.size;
+      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 T2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
+    }
     // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
     else if (model.includes('seedance')) {
       // Duration: "4" through "12" as string

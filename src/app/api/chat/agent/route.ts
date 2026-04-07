@@ -78,6 +78,7 @@ You are the Director. When a user describes what they want, you:
 
 *Seedance (ByteDance) — Native audio, start+end frame:*
 - Seedance 1.5 Pro I2V (fal-ai/bytedance/seedance/v1.5/pro/image-to-video): duration "4"-"12", resolution "480p"/"720p"/"1080p", generate_audio true/false, supports end_image_url. NEEDS source image. Great for dialogue/speech scenes with native audio.
+- Seedance 2.0 Fast T2V (fal-ai/bytedance/seedance-2.0/fast/text-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Pure text-to-video — NO image needed. Native audio. Great for generating scenes from scratch.
 - Seedance 2.0 Fast I2V (fal-ai/bytedance/seedance-2.0/fast/image-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Standard I2V — NEEDS source image. Supports end_image_url. Native audio. Best general-purpose 2.0 video model.
 - Seedance 2.0 Fast Ref2V (fal-ai/bytedance/seedance-2.0/fast/reference-to-video): duration "2"-"12", resolution "480p"/"720p", generate_audio true/false. Uses reference_image_urls (1-4 images) to maintain character consistency. Perfect for persona-driven videos. Pass uploaded images as image_urls — the backend maps them to reference_image_urls.
 

@@ -1261,9 +1261,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     <SelectItem value="fal-ai/bytedance/seedream/v5/lite/edit">Seedream 5.0 Lite (I2I Edit)</SelectItem>
                     <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">Seedream 4.5 (I2I Edit)</SelectItem>
                     <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V)</SelectItem>
+                    <SelectItem value="bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V)</SelectItem>
+                    <SelectItem value="bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V)</SelectItem>
+                    <SelectItem value="bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V)</SelectItem>
                     <SelectItem value="fal-ai/bytedance/seedance/v1.5/pro/image-to-video">Seedance 1.5 Pro (I2V)</SelectItem>
                     <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2 (Motion Ctrl)</SelectItem>
                   </SelectGroup>
@@ -1700,9 +1700,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                           <SelectItem value="fal-ai/bytedance/seedream/v5/lite/edit">Seedream 5.0 Lite (I2I Edit) - Multi-image</SelectItem>
                           <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">Seedream 4.5 (I2I Edit) - 10 images</SelectItem>
                           <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 (I2I Edit)</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V) - No image needed</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V) - Native audio, cinematic</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V) - Character consistency</SelectItem>
+                          <SelectItem value="bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V) - No image needed</SelectItem>
+                          <SelectItem value="bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V) - Native audio, cinematic</SelectItem>
+                          <SelectItem value="bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V) - Character consistency</SelectItem>
                           <SelectItem value="fal-ai/bytedance/seedance/v1.5/pro/image-to-video">Seedance 1.5 Pro (I2V) - Audio, end frame</SelectItem>
                           <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2 (Motion Ctrl)</SelectItem>
                         </SelectGroup>

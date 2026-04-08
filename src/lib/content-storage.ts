@@ -80,6 +80,7 @@ export class ContentStorageManager {
   private version = '1.0.0';
   private maxStorageSize = 50 * 1024 * 1024; // 50MB limit
   private maxItems = 1000; // Maximum number of items to store
+  private maxAgeDays = 30; // Auto-delete content older than 30 days
 
   private constructor() {
     this.initializeStorage();

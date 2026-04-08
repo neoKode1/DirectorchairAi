@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claudeAPI } from '@/lib/claude-api';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/script-maker/analyze' });
 
 // Helper function to detect actual image type from base64 data by checking magic bytes
 function detectImageType(base64Data: string): string | null {
@@ -33,7 +36,7 @@ function detectImageType(base64Data: string): string | null {
 
     return null;
   } catch (error) {
-    console.error('Error detecting image type:', error);
+    log.error({ err: error }, 'Error detecting image type');
     return null;
   }
 }
@@ -46,11 +49,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { movieTitle, plot, screenplay, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, analysisType, styleImageUrl } = body;
 
-    console.log('🎬 [Script Maker API] Received analysis request:', { 
-      movieTitle, 
-      genre: genreIdea,
-      analysisType 
-    });
+    log.debug({ movieTitle, genre: genreIdea, analysisType }, 'Received analysis request');
 
     // Check if Claude API is available
     if (!claudeAPI.isAPIAvailable()) {
@@ -337,7 +336,7 @@ Please analyze the reference image I've provided and give me a detailed style an
 
       if (analysisType === 'style-analysis' && styleImageUrl) {
         try {
-          console.log('🖼️ [Script Maker API] Processing image for style analysis:', styleImageUrl.substring(0, 100));
+          log.debug({ url: styleImageUrl.substring(0, 100) }, 'Processing image for style analysis');
 
           let base64Image: string;
           let contentType: string;
@@ -349,25 +348,25 @@ Please analyze the reference image I've provided and give me a detailed style an
             if (matches) {
               contentType = matches[1];
               base64Image = matches[2];
-              console.log('✅ [Script Maker API] Using existing base64 data URL, declared type:', contentType);
+              log.debug({ contentType }, 'Using existing base64 data URL');
 
               // Verify the actual image format by checking magic bytes
               const actualType = detectImageType(base64Image);
               if (actualType && actualType !== contentType) {
-                console.warn(`⚠️ [Script Maker API] Content type mismatch! Declared: ${contentType}, Actual: ${actualType}`);
+                log.warn({ declared: contentType, actual: actualType }, 'Content type mismatch');
                 contentType = actualType; // Use the actual detected type
-                console.log(`✅ [Script Maker API] Corrected content type to: ${contentType}`);
+                log.debug({ contentType }, 'Corrected content type');
               }
             } else {
-              console.error('❌ [Script Maker API] Invalid data URL format');
+              log.error('Invalid data URL format');
               throw new Error('Invalid data URL format');
             }
           } else {
             // Fetch the image from URL
-            console.log('🖼️ [Script Maker API] Fetching image from URL');
+            log.debug('🖼️ [Script Maker API] Fetching image from URL');
             const imageResponse = await fetch(styleImageUrl);
             if (!imageResponse.ok) {
-              console.error('❌ [Script Maker API] Failed to fetch image:', imageResponse.status);
+              log.error({ status: imageResponse.status }, 'Failed to fetch image');
               throw new Error(`Failed to fetch image: ${imageResponse.status}`);
             }
 
@@ -382,17 +381,17 @@ Please analyze the reference image I've provided and give me a detailed style an
             // Verify the actual image format
             const actualType = detectImageType(base64Image);
             if (actualType && actualType !== contentType) {
-              console.warn(`⚠️ [Script Maker API] Content type mismatch! Header: ${contentType}, Actual: ${actualType}`);
+              log.warn({ header: contentType, actual: actualType }, 'Content type mismatch');
               contentType = actualType;
             }
 
-            console.log('✅ [Script Maker API] Image converted to base64, size:', buffer.length, 'bytes, type:', contentType);
+            log.debug({ size: buffer.length, contentType }, 'Image converted to base64');
           }
 
           // Validate content type
           const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
           if (!validTypes.includes(contentType)) {
-            console.warn('⚠️ [Script Maker API] Unsupported content type:', contentType, '- defaulting to image/png');
+            log.warn({ contentType }, 'Unsupported content type, defaulting to image/png');
             contentType = 'image/png'; // Default to PNG as it's more common
           }
 
@@ -412,17 +411,16 @@ Please analyze the reference image I've provided and give me a detailed style an
             }
           ];
 
-          console.log('✅ [Script Maker API] Image included in Claude message');
+          log.debug('✅ [Script Maker API] Image included in Claude message');
         } catch (imageError) {
-          console.error('❌ [Script Maker API] Error processing image for style analysis:', imageError);
-          console.error('❌ [Script Maker API] Error stack:', imageError instanceof Error ? imageError.stack : 'No stack');
+          log.error({ err: imageError }, 'Error processing image for style analysis');
           // Fall back to text-only if image processing fails
           messageContent = userPrompt;
-          console.log('⚠️ [Script Maker API] Falling back to text-only analysis');
+          log.debug('⚠️ [Script Maker API] Falling back to text-only analysis');
         }
       }
 
-      console.log(`🔧 [Script Maker API] Using max_tokens: ${maxTokens} for ${analysisType}`);
+      log.debug({ maxTokens, analysisType }, 'Using max_tokens');
 
       const claudeResponse = await client.messages.create({
         model: 'claude-sonnet-4-5-20250929',
@@ -448,23 +446,22 @@ Please analyze the reference image I've provided and give me a detailed style an
       }
     }
 
-    console.log('✅ [Script Maker API] Analysis complete');
-    console.log('📊 [Script Maker API] Response length:', response.length);
+    log.debug('✅ [Script Maker API] Analysis complete');
+    log.debug({ responseLength: response.length }, 'Claude response received');
 
     // Try to parse as JSON if it's character generation or storyboard breakdown
     let parsedResponse = response;
     if (analysisType === 'character-generation' || analysisType === 'storyboard-breakdown') {
       try {
-        console.log('🔍 [Script Maker API] Raw Claude response length:', response.length);
-        console.log('🔍 [Script Maker API] First 200 chars:', response.substring(0, 200));
+        log.debug({ responseLength: response.length, preview: response.substring(0, 200) }, 'Raw Claude response');
         
         // Extract JSON from response if it's wrapped in markdown code blocks
         const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/) || response.match(/```\n([\s\S]*?)\n```/);
         if (jsonMatch) {
-          console.log('✅ [Script Maker API] Found JSON in markdown code block');
+          log.debug('✅ [Script Maker API] Found JSON in markdown code block');
           parsedResponse = JSON.parse(jsonMatch[1]);
         } else {
-          console.log('🔍 [Script Maker API] Attempting direct JSON parse');
+          log.debug('🔍 [Script Maker API] Attempting direct JSON parse');
           // Clean up the response before parsing
           let cleanedResponse = response.trim();
           
@@ -483,29 +480,27 @@ Please analyze the reference image I've provided and give me a detailed style an
             if (firstArrayBrace !== -1 && lastArrayBrace !== -1) {
               startPos = firstArrayBrace;
               endPos = lastArrayBrace + 1;
-              console.log('🔍 [Script Maker API] Extracting JSON array');
+              log.debug('🔍 [Script Maker API] Extracting JSON array');
             }
           } else if (analysisType === 'storyboard-breakdown') {
             // Storyboard should be an object with minutes array
             if (firstObjectBrace !== -1 && lastObjectBrace !== -1) {
               startPos = firstObjectBrace;
               endPos = lastObjectBrace + 1;
-              console.log('🔍 [Script Maker API] Extracting JSON object');
+              log.debug('🔍 [Script Maker API] Extracting JSON object');
             }
           }
           
           if (startPos !== -1 && endPos !== -1) {
             cleanedResponse = cleanedResponse.substring(startPos, endPos);
-            console.log('🔍 [Script Maker API] Extracted JSON from position', startPos, 'to', endPos);
+            log.debug({ startPos, endPos }, 'Extracted JSON from response');
           }
           
           parsedResponse = JSON.parse(cleanedResponse);
-          console.log('✅ [Script Maker API] Successfully parsed JSON');
+          log.debug('✅ [Script Maker API] Successfully parsed JSON');
         }
       } catch (parseError) {
-        console.error('❌ [Script Maker API] JSON parse error:', parseError);
-        console.error('❌ [Script Maker API] Failed response (first 500 chars):', response.substring(0, 500));
-        console.warn('⚠️ [Script Maker API] Returning raw response as fallback');
+        log.error({ err: parseError, response: response.substring(0, 200) }, 'JSON parse error, returning raw fallback');
         // If parsing fails, return the raw response
       }
     }
@@ -517,7 +512,7 @@ Please analyze the reference image I've provided and give me a detailed style an
     });
 
   } catch (error) {
-    console.error('❌ [Script Maker API] Error:', error);
+    log.error({ err: error }, 'Script maker analysis failed');
     
     return NextResponse.json({
       success: false,

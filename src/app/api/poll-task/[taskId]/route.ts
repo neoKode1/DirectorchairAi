@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/poll-task' });
 
 export async function GET(
   req: NextRequest,
@@ -40,7 +43,7 @@ export async function GET(
         errorData = { message: errorText };
       }
       
-      console.error('Poll task error:', errorData);
+      log.error({ err: errorData }, 'Poll task error:');
       
       return NextResponse.json(
         { error: errorData },
@@ -54,7 +57,7 @@ export async function GET(
     // { status: 'succeeded' | 'running' | 'failed', result: { video_url: '...' }, ... }
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Poll task error:', error);
+    log.error({ err: error }, 'Poll task error:');
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Poll error' },
       { status: 500 }

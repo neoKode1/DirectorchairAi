@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/personas/character-sheet' });
 
 // Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -49,14 +52,14 @@ export async function POST(request: NextRequest) {
     // Clamp input images to model limit (10 max)
     const clampedImages = referenceImages.slice(0, MAX_INPUT_IMAGES);
     const imageCount = clampedImages.length;
-    console.log(`🎨 [CHARACTER SHEET] Starting for "${personaName || personaId}" — ${imageCount} reference image(s)`);
+    log.debug('Starting for "${personaName || personaId}" — ${imageCount} reference image(s)');
 
     // Upload all reference images to fal.ai storage
     const imageUrls: string[] = [];
     for (let i = 0; i < imageCount; i++) {
       const url = await uploadDataUrl(clampedImages[i], i);
       imageUrls.push(url);
-      console.log(`✅ [CHARACTER SHEET] Uploaded ${i + 1}/${imageCount}`);
+      log.info('Complete');
     }
 
     // Build a character-specific prompt
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Output count: max 4 per call
     const numImages = MAX_OUTPUT_IMAGES;
 
-    console.log(`🤖 [CHARACTER SHEET] Calling nano-banana-pro/edit — ${numImages} outputs requested`);
+    log.debug('Calling nano-banana-pro/edit — ${numImages} outputs requested');
 
     // Primary: nano-banana-pro/edit
     try {
@@ -89,13 +92,13 @@ export async function POST(request: NextRequest) {
         logs: true,
         onQueueUpdate: (update: any) => {
           if (update.status === 'IN_PROGRESS' && update.logs) {
-            update.logs.map((log: any) => log.message).forEach(console.log);
+            update.logs.map((log: any) => log.message).forEach((m: string) => log.debug(m));
           }
         },
       });
 
       const duration = Date.now() - startTime;
-      console.log(`✅ [CHARACTER SHEET] Complete in ${duration}ms — ${(result.data as any).images?.length || 0} images`);
+      log.info('Complete');
 
       return NextResponse.json({
         success: true,
@@ -112,7 +115,7 @@ export async function POST(request: NextRequest) {
 
       if (!isRecoverable) throw primaryError;
 
-      console.log(`🔄 [CHARACTER SHEET] nano-banana-pro failed (${status}), falling back to Seedream v4 Edit...`);
+      log.debug('nano-banana-pro failed (${status}), falling back to Seedream v4 Edit...');
 
       const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
         input: {
@@ -125,13 +128,13 @@ export async function POST(request: NextRequest) {
         logs: true,
         onQueueUpdate: (update: any) => {
           if (update.status === 'IN_PROGRESS' && update.logs) {
-            update.logs.map((log: any) => log.message).forEach(console.log);
+            update.logs.map((log: any) => log.message).forEach((m: string) => log.debug(m));
           }
         },
       });
 
       const duration = Date.now() - startTime;
-      console.log(`✅ [CHARACTER SHEET] Seedream fallback complete in ${duration}ms`);
+      log.info('Complete');
 
       return NextResponse.json({
         success: true,
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     const duration = Date.now() - startTime;
-    console.error(`❌ [CHARACTER SHEET] Failed after ${duration}ms:`, error.message || error);
+    log.error({ duration, err: error.message || error }, 'Character sheet generation failed');
     return NextResponse.json(
       {
         error: 'Failed to generate character sheet',

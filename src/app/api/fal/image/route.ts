@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createFalClient } from '@fal-ai/client';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/fal/image' });
 
 // Dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ success: false, error: "video_url is required for frame extraction" }, { status: 400 });
     }
 
-    console.log('🎬 [FFmpeg Proxy] Extracting frame:', { video_url: body.video_url, frame_type: body.frame_type });
+    log.debug({ data: { video_url: body.video_url, frame_type: body.frame_type } }, '🎬 [FFmpeg Proxy] Extracting frame:');
 
     const input: Record<string, unknown> = {
       prompt: body.prompt || 'Extract frame from video',
@@ -45,11 +48,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input,
       logs: true,
       onQueueUpdate: (update: any) => {
-        console.log('📊 [FFmpeg Proxy] Queue:', update.status);
+        log.debug({ data: update.status }, '📊 [FFmpeg Proxy] Queue:');
       },
     });
 
-    console.log('✅ [FFmpeg Proxy] Frame extracted successfully');
+    log.info('Complete');
 
     return NextResponse.json({
       success: true,
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       model,
     });
   } catch (error: any) {
-    console.error('❌ [FFmpeg Proxy] Error:', error.message);
+    log.error({ err: error.message }, '❌ [FFmpeg Proxy] Error:');
     const status = error.status || 500;
     return NextResponse.json({
       success: false,

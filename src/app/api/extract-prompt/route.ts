@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/extract-prompt' });
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +14,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🎨 [ExtractPrompt] Extracting prompt from image:', imageUrl);
+    log.debug({ data: imageUrl }, '🎨 [ExtractPrompt] Extracting prompt from image:');
 
     // Method 1: Use Replicate's BLIP model for image captioning
     const blipPrompt = await extractWithBLIP(imageUrl);
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Combine all methods for best results
     const combinedPrompt = combinePrompts(blipPrompt, extractedPrompt, cinematicAnalysis);
     
-    console.log('✅ [ExtractPrompt] Extracted prompt:', combinedPrompt);
+    log.debug({ data: combinedPrompt }, '✅ [ExtractPrompt] Extracted prompt:');
 
     return NextResponse.json({
       success: true,
@@ -38,7 +41,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ [ExtractPrompt] Error:', error);
+    log.error({ err: error }, '❌ [ExtractPrompt] Error:');
     return NextResponse.json(
       { error: 'Failed to extract prompt from image' },
       { status: 500 }
@@ -53,7 +56,7 @@ async function extractWithBLIP(_imageUrl: string): Promise<string> {
     // For now, return a placeholder analysis
     return 'cinematic scene with natural lighting, professional composition, atmospheric mood';
   } catch (error) {
-    console.error('❌ [ExtractPrompt] BLIP extraction failed:', error);
+    log.error({ err: error }, '❌ [ExtractPrompt] BLIP extraction failed:');
     return '';
   }
 }
@@ -69,7 +72,7 @@ async function extractWithPromptModel(_imageUrl: string): Promise<string> {
     // For now, return a placeholder
     return 'professional cinematography, high production value, cinematic quality';
   } catch (error) {
-    console.error('❌ [ExtractPrompt] Prompt model extraction failed:', error);
+    log.error({ err: error }, '❌ [ExtractPrompt] Prompt model extraction failed:');
     return '';
   }
 }
@@ -87,7 +90,7 @@ async function analyzeCinematicElements(_imageUrl: string): Promise<string> {
     // For now, return a placeholder analysis
     return 'natural lighting, balanced composition, atmospheric mood, professional quality';
   } catch (error) {
-    console.error('❌ [ExtractPrompt] Cinematic analysis failed:', error);
+    log.error({ err: error }, '❌ [ExtractPrompt] Cinematic analysis failed:');
     return '';
   }
 }

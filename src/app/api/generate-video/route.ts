@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/generate-video' });
 
 export async function POST(req: NextRequest) {
   try {
@@ -56,7 +59,7 @@ export async function POST(req: NextRequest) {
         errorData = { message: errorText };
       }
       
-      console.error('BytePlus API Error:', errorData);
+      log.error({ err: errorData }, 'BytePlus API Error:');
       
       return NextResponse.json(
         { error: errorData },
@@ -77,7 +80,7 @@ export async function POST(req: NextRequest) {
     // Return task_id to client for polling
     return NextResponse.json({ task_id });
   } catch (error) {
-    console.error('Generate video error:', error);
+    log.error({ err: error }, 'Generate video error:');
     return NextResponse.json(
       { error: { message: error instanceof Error ? error.message : 'Failed to create task' } },
       { status: 500 }

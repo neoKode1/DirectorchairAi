@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadHandlers } from '@/lib/upload-handlers';
+import { createRequestLogger, logger } from '@/lib/logger';
+
+const log = logger.child({ route: '/api/upload-image' });
 
 export async function POST(request: NextRequest) {
   // Use the shared upload handler with base64 generation for FAL.ai compatibility
@@ -21,9 +24,9 @@ export async function POST(request: NextRequest) {
   const publicUrl = `${baseUrl}${responseData.url}`;
   const dataUrl = responseData.base64 ? `data:${responseData.type};base64,${responseData.base64}` : undefined;
 
-  console.log('📤 [Upload API] Image uploaded successfully:', publicUrl);
+  log.debug({ data: publicUrl }, '📤 [Upload API] Image uploaded successfully:');
   if (dataUrl) {
-    console.log('📤 [Upload API] Base64 data URL generated for FAL.ai compatibility');
+    log.debug('Base64 data URL generated for FAL.ai compatibility');
   }
 
   return NextResponse.json({

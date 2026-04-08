@@ -392,7 +392,6 @@ function ScriptMakerContent() {
           );
 
         setExtractedCharacters(uniqueCharacters);
-        console.log('🎭 [ScriptMaker] Extracted characters from uploaded script:', uniqueCharacters);
       }
 
       toast({
@@ -450,7 +449,6 @@ function ScriptMakerContent() {
     
     try {
       if (type === 'video') {
-        console.log('📥 [ScriptMaker] Starting video download with frame extraction');
         // Import the download function dynamically
         const { downloadVideoWithFrame } = await import('@/lib/video-thumbnail');
         await downloadVideoWithFrame(url, title);
@@ -545,7 +543,6 @@ function ScriptMakerContent() {
         description: `"${movieTitle}" has been saved to your Screenplays gallery.`,
       });
 
-      console.log('🎬 [ScriptMaker] Exported screenplay project:', project);
     } catch (error) {
       console.error('❌ [ScriptMaker] Export failed:', error);
       toast({
@@ -632,41 +629,20 @@ function ScriptMakerContent() {
       const data = await response.json();
       
       if (data.success) {
-        console.log('🎭 [Character Generation] Raw result:', data.result);
-        console.log('🎭 [Character Generation] Result type:', typeof data.result);
-        
-        // Parse character data if it's a string
         let characters = data.result;
         if (typeof characters === 'string') {
           try {
-            // Try to extract JSON from markdown code blocks
             const jsonMatch = characters.match(/```json\n([\s\S]*?)\n```/) || characters.match(/```\n([\s\S]*?)\n```/);
-            if (jsonMatch) {
-              console.log('🎭 [Character Generation] Found JSON in code block');
-              characters = JSON.parse(jsonMatch[1]);
-            } else {
-              console.log('🎭 [Character Generation] Attempting direct parse');
-              characters = JSON.parse(characters);
-            }
+            characters = jsonMatch ? JSON.parse(jsonMatch[1]) : JSON.parse(characters);
           } catch (parseError) {
             console.error('❌ [Character Generation] Parse error:', parseError);
-            console.error('❌ [Character Generation] Failed string:', characters.substring(0, 500));
-            
-            toast({
-              title: "Parsing Error",
-              description: "Claude returned invalid JSON. Using text fallback.",
-              variant: "destructive",
-            });
-            
-            // Fallback: treat as plain text, no characters generated
+            toast({ title: "Parsing Error", description: "Claude returned invalid JSON. Using text fallback.", variant: "destructive" });
             setCharacterProfiles([]);
             setIsGenerating(false);
             return;
           }
         }
-        
-        console.log('🎭 [Character Generation] Parsed characters:', characters);
-        
+
         setCharacterProfiles(Array.isArray(characters) ? characters : []);
         setCurrentStep(2);
         
@@ -753,8 +729,6 @@ function ScriptMakerContent() {
         }
 
         setExtractedCharacters(uniqueCharacters);
-        console.log('🎭 [ScriptMaker] Extracted characters from screenplay:', uniqueCharacters);
-
         setCurrentStep(3); // Move to character upload step
 
         toast({
@@ -812,48 +786,28 @@ function ScriptMakerContent() {
       const data = await response.json();
       
       if (data.success) {
-        console.log('🎬 [Storyboard Generation] Raw result:', data.result);
-        console.log('🎬 [Storyboard Generation] Result type:', typeof data.result);
-        
-        // Parse storyboard data if it's a string
         let storyboard = data.result;
         if (typeof storyboard === 'string') {
           try {
-            // Try to extract JSON from markdown code blocks
             const jsonMatch = storyboard.match(/```json\n([\s\S]*?)\n```/) || storyboard.match(/```\n([\s\S]*?)\n```/);
             if (jsonMatch) {
-              console.log('🎬 [Storyboard Generation] Found JSON in code block');
               storyboard = JSON.parse(jsonMatch[1]);
             } else {
-              console.log('🎬 [Storyboard Generation] Attempting direct parse');
-              
-              // Try to find JSON object boundaries
               const firstBrace = storyboard.indexOf('{');
               const lastBrace = storyboard.lastIndexOf('}');
               if (firstBrace !== -1 && lastBrace !== -1) {
                 storyboard = storyboard.substring(firstBrace, lastBrace + 1);
-                console.log('🎬 [Storyboard Generation] Extracted JSON object');
               }
-              
               storyboard = JSON.parse(storyboard);
             }
           } catch (parseError) {
-            console.error('❌ [Storyboard Generation] Parse error:', parseError);
-            console.error('❌ [Storyboard Generation] Failed string:', storyboard.substring(0, 500));
-            
-            toast({
-              title: "Parsing Error",
-              description: "Claude returned invalid JSON. Please try again.",
-              variant: "destructive",
-            });
-            
+            console.error('❌ [Storyboard] Parse error:', parseError);
+            toast({ title: "Parsing Error", description: "Claude returned invalid JSON. Please try again.", variant: "destructive" });
             setIsGenerating(false);
             return;
           }
         }
-        
-        console.log('🎬 [Storyboard Generation] Parsed storyboard:', storyboard);
-        
+
         // Ensure we have the correct structure
         const minutes = storyboard.minutes || (Array.isArray(storyboard) ? storyboard : []);
         
@@ -893,40 +847,17 @@ function ScriptMakerContent() {
       const matchedImageUrls: string[] = [];
       const matchedCharacterAnalysis: string[] = [];
 
-      console.log('🎬 [ScriptMaker] Character matching debug:', {
-        shotCharacters,
-        totalUploadedImages: characterReferenceImages.length,
-        uploadedCharacterNames: characterReferenceImages.map(img => img.characterName),
-        characterReferenceImages: characterReferenceImages
-      });
-
       if (shotCharacters.length > 0 && characterReferenceImages.length > 0) {
         shotCharacters.forEach((charName: string) => {
-          console.log(`🔍 [ScriptMaker] Looking for character: "${charName}"`);
-          
-          // Find matching character reference by name
-          const matchedChar = characterReferenceImages.find(img => {
-            const match = img.characterName && img.characterName.toLowerCase() === charName.toLowerCase();
-            console.log(`  - Checking "${img.characterName}" === "${charName}": ${match}`);
-            return match;
-          });
-          
+          const matchedChar = characterReferenceImages.find(img =>
+            img.characterName?.toLowerCase() === charName.toLowerCase()
+          );
           if (matchedChar) {
-            console.log(`  ✅ Found match for "${charName}"`);
             matchedImageUrls.push(matchedChar.url);
             matchedCharacterAnalysis.push(`${charName}: ${matchedChar.analysis}`);
-          } else {
-            console.log(`  ❌ No match found for "${charName}"`);
           }
         });
       }
-
-      console.log('🎬 [ScriptMaker] Character matching result:', {
-        shotCharacters,
-        matchedCount: matchedImageUrls.length,
-        totalReferences: characterReferenceImages.length,
-        matchedImageUrls: matchedImageUrls.length > 0 ? 'Has images' : 'No images'
-      });
 
       // Build a cinematic prompt from the shot details
       const promptParts = [
@@ -967,16 +898,6 @@ function ScriptMakerContent() {
       const seedreamModelId = 'fal-ai/bytedance/seedream/v4/edit';
       const flux2ModelId = 'fal-ai/flux-pro/v1.1-ultra';
       const hasCharacterReferences = matchedImageUrls.length > 0;
-
-      console.log('🎬 [ScriptMaker] Generating shot with user-selected model:', {
-        minute: minuteIndex + 1,
-        shot: shotIndex + 1,
-        promptLength: prompt.length,
-        promptPreview: prompt.substring(0, 200),
-        hasCharacterReferences: hasCharacterReferences,
-        characterImageCount: matchedImageUrls.length,
-        matchedCharacters: matchedCharacterAnalysis.map(a => a.substring(0, 50))
-      });
 
       type ModelAttempt = {
         payload: Record<string, any>;
@@ -1050,22 +971,6 @@ function ScriptMakerContent() {
       });
 
       const runModelAttempt = async (payload: Record<string, any>) => {
-        console.log('🎬 [ScriptMaker] Model request attempt:', {
-          model: payload.model,
-          imageUrlsCount: Array.isArray(payload.image_urls)
-            ? payload.image_urls.length
-            : payload.image_url
-              ? 1
-              : 0,
-          promptLength: prompt.length,
-          promptPreview: prompt.substring(0, 100),
-          fullPayload: {
-            ...payload,
-            image_urls: payload.image_urls ? `[${payload.image_urls.length} images]` : undefined,
-            image_url: payload.image_url ? '[image data]' : undefined
-          }
-        });
-
         const response = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1074,35 +979,17 @@ function ScriptMakerContent() {
 
         const result = await response.json();
 
-        console.log('🎬 [ScriptMaker] Model response:', {
-          model: payload.model,
-          ok: response.ok,
-          status: response.status,
-          hasError: !!result.error,
-          error: result.error,
-          hasData: !!result.data,
-          hasImages: !!(result.data?.images || result.images)
-        });
-
         if (!response.ok) {
           const errorMsg = result.error || result.details || `${payload.model} failed`;
-          console.error('❌ [ScriptMaker] Model failed:', {
-            model: payload.model,
-            status: response.status,
-            error: errorMsg,
-            fullResult: result
-          });
+          console.error(`❌ [ScriptMaker] ${payload.model} failed (${response.status}):`, errorMsg);
           throw new Error(errorMsg);
         }
 
         const generatedUrl = result.data?.images?.[0]?.url || result.images?.[0]?.url;
-
         if (!generatedUrl) {
-          console.error('❌ [ScriptMaker] No image URL in response:', result);
           throw new Error(`No image URL from ${payload.model}`);
         }
 
-        console.log('✅ [ScriptMaker] Successfully generated with:', payload.model);
         return generatedUrl;
       };
 

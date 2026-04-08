@@ -7,6 +7,17 @@ import { ToastProvider } from "@/components/ui/toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Film, Download, Play, Pause, RefreshCw, Edit, Video, X, Save, FolderOpen } from "lucide-react";
+import {
+  getModelFriendlyName,
+  GENRE_OPTIONS,
+  ERA_OPTIONS,
+  PHOTO_STYLE_OPTIONS,
+  STORYBOARD_MODEL_OPTIONS,
+  downloadImage,
+  type FullscreenImageState,
+  type CharacterReferenceImage,
+  type StyleReferenceImage,
+} from './script-maker-utils';
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -46,25 +57,17 @@ function ScriptMakerContent() {
   const [hasAnalyzedPlot, setHasAnalyzedPlot] = useState(false);
   const [userPlotInput, setUserPlotInput] = useState('');
   const [claudeEnhancedPlot, setClaudeEnhancedPlot] = useState('');
-  const [characterReferenceImages, setCharacterReferenceImages] = useState<Array<{ url: string; analysis: string; characterName?: string; fileName?: string }>>([]);
+  const [characterReferenceImages, setCharacterReferenceImages] = useState<CharacterReferenceImage[]>([]);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
-  const [fullscreenImage, setFullscreenImage] = useState<{url: string, title: string} | null>(null);
-  const [styleReferenceImage, setStyleReferenceImage] = useState<{ url: string; analysis: string; fileName?: string } | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<FullscreenImageState | null>(null);
+  const [styleReferenceImage, setStyleReferenceImage] = useState<StyleReferenceImage | null>(null);
   const [isAnalyzingStyle, setIsAnalyzingStyle] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>('fal-ai/nano-banana-pro/edit');
   const contentAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const getModelFriendlyName = (modelId?: string) => {
-    if (!modelId) return 'Unknown Model';
-    if (modelId === 'fal-ai/nano-banana-pro/edit') return 'Nano Banana Pro Edit';
-    if (modelId === 'fal-ai/nano-banana/edit') return 'Nano Banana Edit (Legacy)';
-    if (modelId === 'fal-ai/bytedance/seedream/v4/edit') return 'SeeDream 4.0 Edit';
-    if (modelId === 'fal-ai/flux-pro/v1.1-ultra') return 'Flux Pro 1.1 Ultra';
-    if (modelId === 'fal-ai/stable-diffusion-v35-large') return 'Stable Diffusion 3.5';
-    return modelId;
-  };
+  // getModelFriendlyName imported from ./script-maker-utils
 
   useEffect(() => {
     setMounted(true);
@@ -1120,14 +1123,7 @@ function ScriptMakerContent() {
                 className="w-full px-3 py-2 text-sm border border-border focus:border-ring focus:outline-none bg-card text-foreground"
               >
                 <option value="">Select Genre</option>
-                <option value="Action">Action</option>
-                <option value="Comedy">Comedy</option>
-                <option value="Drama">Drama</option>
-                <option value="Horror">Horror</option>
-                <option value="Romance">Romance</option>
-                <option value="Sci-Fi">Sci-Fi</option>
-                <option value="Thriller">Thriller</option>
-                <option value="Fantasy">Fantasy</option>
+                {GENRE_OPTIONS.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
 
@@ -1199,13 +1195,7 @@ function ScriptMakerContent() {
                 onChange={(e) => setPhotoStyle(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-border focus:border-ring focus:outline-none bg-card text-foreground"
               >
-                <option value="cinematic">Cinematic</option>
-                <option value="vhs-aesthetic">VHS Aesthetic</option>
-                <option value="retro">Retro</option>
-                <option value="animation">Animation</option>
-                <option value="manga">Manga/Anime</option>
-                <option value="noir">Film Noir</option>
-                <option value="cyberpunk">Cyberpunk</option>
+                {PHOTO_STYLE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
 

@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ module: 'claude-api' });
 
 export interface ClaudeResponse {
   success: boolean;
@@ -23,7 +26,7 @@ export class ClaudeAPI {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      console.warn('⚠️ [ClaudeAPI] ANTHROPIC_API_KEY not found in environment variables');
+      log.warn('ANTHROPIC_API_KEY not found in environment variables');
       this.isAvailable = false;
       return;
     }
@@ -33,16 +36,16 @@ export class ClaudeAPI {
         apiKey: apiKey,
       });
       this.isAvailable = true;
-      console.log('✅ [ClaudeAPI] Claude API client initialized successfully');
+      log.debug('Claude API client initialized');
     } catch (error) {
-      console.error('❌ [ClaudeAPI] Failed to initialize Claude API client:', error);
+      log.error({ err: error }, 'Failed to initialize Claude API client');
       this.isAvailable = false;
     }
   }
 
   async generateConversationalResponse(userInput: string, conversationHistory: string[] = []): Promise<string> {
     if (!this.isAvailable || !this.client) {
-      console.log('🔄 [ClaudeAPI] Claude API not available, using fallback');
+      log.debug('Claude API not available, using fallback');
       return this.generateFallbackResponse(userInput);
     }
 
@@ -136,7 +139,7 @@ Please provide a thoughtful, conversational response that demonstrates your expe
       if (response.content && response.content.length > 0) {
         const result = response.content[0];
         if (result.type === 'text') {
-          console.log('✅ [ClaudeAPI] Response generated successfully');
+          log.debug('Response generated successfully');
           return result.text.trim();
         }
       }
@@ -144,14 +147,14 @@ Please provide a thoughtful, conversational response that demonstrates your expe
       throw new Error('No valid response content received');
 
     } catch (error) {
-      console.error('❌ [ClaudeAPI] Error generating response:', error);
+      log.error({ err: error }, 'Error generating response');
       return this.generateFallbackResponse(userInput);
     }
   }
 
   async enhancePromptWithClaude(prompt: string, contentType: string, systemPrompt?: string): Promise<string> {
     if (!this.isAvailable || !this.client) {
-      console.log('🔄 [ClaudeAPI] Claude API not available for prompt enhancement');
+      log.debug('Claude API not available for prompt enhancement');
       return prompt; // Return original prompt if API not available
     }
 
@@ -161,7 +164,7 @@ Please provide a thoughtful, conversational response that demonstrates your expe
       
       // Analyze the prompt for genre and director style
       const directorAnalysis = analyzePromptForDirectorStyle(prompt);
-      console.log('🎬 [ClaudeAPI] Genre analysis:', directorAnalysis);
+      log.debug({ director: directorAnalysis?.suggestedDirector }, 'Genre analysis');
       
       const defaultSystemPrompt = `You are an expert film director and cinematographer with decades of experience in Hollywood. Your specialty is enhancing prompts for AI content generation to achieve cinematic, professional-grade results.
 
@@ -272,7 +275,7 @@ Apply your director's knowledge to create a cinematic, professional-grade prompt
       if (response.content && response.content.length > 0) {
         const result = response.content[0];
         if (result.type === 'text') {
-          console.log('✅ [ClaudeAPI] Genre-aware prompt enhancement successful');
+          log.debug('Genre-aware prompt enhancement successful');
           return result.text.trim();
         }
       }
@@ -280,7 +283,7 @@ Apply your director's knowledge to create a cinematic, professional-grade prompt
       throw new Error('No valid response content received for prompt enhancement');
 
     } catch (error) {
-      console.error('❌ [ClaudeAPI] Error enhancing prompt:', error);
+      log.error({ err: error }, 'Error enhancing prompt');
       return prompt; // Return original prompt on error
     }
   }

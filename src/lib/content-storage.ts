@@ -100,7 +100,6 @@ export class ContentStorageManager {
       const existing = localStorage.getItem(this.storageKey);
       if (!existing) {
         this.saveContent([]);
-        console.log('💾 [ContentStorage] Initialized empty storage');
       }
     } catch (error) {
       console.error('❌ [ContentStorage] Failed to initialize storage:', error);
@@ -122,10 +121,6 @@ export class ContentStorageManager {
       };
 
       localStorage.setItem(this.storageKey, JSON.stringify(storageData));
-      console.log('💾 [ContentStorage] Saved content to localStorage:', {
-        itemCount: cleanedContent.length,
-        totalSize: this.calculateStorageSize(cleanedContent)
-      });
     } catch (error) {
       console.error('❌ [ContentStorage] Failed to save content:', error);
       // If storage is full, try to clean up and save again
@@ -145,7 +140,6 @@ export class ContentStorageManager {
       
       // Handle version migration if needed
       if (data.version !== this.version) {
-        console.log('🔄 [ContentStorage] Migrating from version:', data.version, 'to:', this.version);
         return this.migrateContent(data.content, data.version);
       }
 
@@ -156,10 +150,6 @@ export class ContentStorageManager {
         savedAt: new Date(item.savedAt)
       }));
 
-      console.log('📂 [ContentStorage] Loaded content from localStorage:', {
-        itemCount: content.length,
-        version: data.version
-      });
 
       return content;
     } catch (error) {
@@ -184,11 +174,9 @@ export class ContentStorageManager {
     if (existingIndex >= 0) {
       // Update existing content
       existingContent[existingIndex] = newContent;
-      console.log('🔄 [ContentStorage] Updated existing content:', content.id);
     } else {
       // Add new content
       existingContent.unshift(newContent); // Add to beginning
-      console.log('➕ [ContentStorage] Added new content:', content.id);
     }
 
     this.saveContent(existingContent);
@@ -201,14 +189,12 @@ export class ContentStorageManager {
     
     if (filteredContent.length < existingContent.length) {
       this.saveContent(filteredContent);
-      console.log('🗑️ [ContentStorage] Removed content:', contentId);
     }
   }
 
   // Clear all content
   public clearAllContent(): void {
     this.saveContent([]);
-    console.log('🧹 [ContentStorage] Cleared all content');
   }
 
   // Save screenplay project
@@ -226,7 +212,6 @@ export class ContentStorageManager {
     };
 
     this.addContent(screenplayContent);
-    console.log('🎬 [ContentStorage] Saved screenplay project:', project.title);
   }
 
   // Get all screenplay projects
@@ -309,10 +294,6 @@ export class ContentStorageManager {
 
       this.saveContent(mergedContent);
       
-      console.log('📥 [ContentStorage] Imported content:', {
-        imported: newContent.length,
-        total: mergedContent.length
-      });
 
       return true;
     } catch (error) {
@@ -339,7 +320,6 @@ export class ContentStorageManager {
       // Sort by timestamp (oldest first) and remove oldest items
       cleanedContent.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
       cleanedContent = cleanedContent.slice(-this.maxItems);
-      console.log('🧹 [ContentStorage] Cleaned up old content, kept newest', this.maxItems, 'items');
     }
 
     // Check storage size and remove items if needed
@@ -349,7 +329,6 @@ export class ContentStorageManager {
       while (cleanedContent.length > 0 && this.calculateStorageSize(cleanedContent) > this.maxStorageSize) {
         cleanedContent.shift(); // Remove oldest item
       }
-      console.log('🧹 [ContentStorage] Cleaned up content to fit storage limit');
     }
 
     return cleanedContent;
@@ -365,7 +344,6 @@ export class ContentStorageManager {
 
   private migrateContent(content: any[], oldVersion: string): StoredContent[] {
     // Handle version migrations here
-    console.log('🔄 [ContentStorage] Migrating content from version:', oldVersion);
     
     // For now, just update the version and timestamps
     return content.map((item: any) => ({

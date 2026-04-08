@@ -235,7 +235,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     }
 
     setMessages(cleaned);
-    console.log(`🧹 [Chat] Cleanup: ${messages.length} → ${cleaned.length} msgs, dropped ${mediaIds.size} old media`);
   }, [messages.length]);
 
   // Save last generated image to localStorage whenever it changes
@@ -291,7 +290,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
         // Use JPEG at 0.85 quality for good size/quality balance
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        console.log(`📸 [Chat] Compressed image: ${file.name} (${(file.size / 1024).toFixed(0)}KB → ${(dataUrl.length * 0.75 / 1024).toFixed(0)}KB, ${width}x${height})`);
         resolve(dataUrl);
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
@@ -330,7 +328,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         // Create a local object URL for preview/playback
         const videoUrl = URL.createObjectURL(file);
         setUploadedVideo({ url: videoUrl, name: file.name, size: file.size });
-        console.log(`🎬 [Chat] Video uploaded: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
       }
     });
   }, [compressImage]);
@@ -405,7 +402,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       localStorage.removeItem('directorchair-settings');
       // Also clear any content gallery items that might be taking up space
       localStorage.removeItem('directorchair-content-gallery');
-      console.log('✅ [Chat] Chat history and localStorage cleared successfully');
     } catch (error) {
       console.error('Error clearing localStorage:', error);
     }
@@ -414,7 +410,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
 
   const injectImage = (imageUrl: string) => {
-    console.log('🖼️ [Chat] Injecting image:', imageUrl);
     setUploadedImages([imageUrl]);
     // Scroll to bottom to show the injected image
     setTimeout(() => {
@@ -740,7 +735,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       };
 
       setCurrentModel(model);
-      console.log(`🎯 [Chat] Manual: ${model} | video=${wantsVideo} img=${!!imageToUse}`);
 
       // Call the generation API directly
       try {
@@ -910,7 +904,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               error.message?.includes('violation') &&
               generationData.model === 'fal-ai/nano-banana/edit') {
 
-            console.log('🔄 [Chat] Content policy violation detected in variation, trying Seedream 4.0 Edit as fallback...');
 
             // Retry with Seedream 4.0 Edit
             const fallbackGenerationData = {
@@ -939,7 +932,6 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               // Remove aspect_ratio since Seedream uses image_size
               delete (fallbackGenerationData as any).aspect_ratio;
 
-              console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream fallback:', (fallbackGenerationData as any).image_size);
             }
 
             result = await onContentGenerated(fallbackGenerationData);

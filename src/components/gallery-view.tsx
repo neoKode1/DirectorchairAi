@@ -67,7 +67,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     const videoItems = items.filter(item => item.type === 'video');
     if (videoItems.length === 0) return;
 
-    console.log('🎬 [GalleryView] Generating thumbnails for', videoItems.length, 'videos');
     
     for (const videoItem of videoItems) {
       // Skip if we already have a thumbnail for this video
@@ -80,7 +79,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             ...prev,
             [videoItem.id]: thumbnailUrl
           }));
-          console.log('🎬 [GalleryView] Generated thumbnail for video:', videoItem.title);
         }
       } catch (error) {
         console.error('❌ [GalleryView] Failed to generate thumbnail for video:', videoItem.title, error);
@@ -91,18 +89,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   // Load items from localStorage if enabled
   useEffect(() => {
     if (useLocalStorage) {
-      console.log('📂 [GalleryView] Loading items from localStorage');
       const savedContent = contentStorage.loadContent();
       
-      console.log('📂 [GalleryView] Loaded content from storage:', {
-        totalItems: savedContent.length,
-        items: savedContent.map(item => ({
-          id: item.id,
-          type: item.type,
-          url: item.url,
-          title: item.title
-        }))
-      });
       
       // Filter out text items and convert StoredContent to GalleryItem
       const filteredItems: GalleryItem[] = savedContent
@@ -119,7 +107,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       
       setLocalItems(filteredItems);
       setIsLoading(false);
-      console.log('📂 [GalleryView] Loaded', filteredItems.length, 'items from localStorage (filtered from', savedContent.length, 'total)');
       
       // Generate thumbnails for video items
       generateVideoThumbnails(filteredItems);
@@ -139,14 +126,12 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       
       // If it's a video, generate a thumbnail for it
       if (type === 'video' && url && id) {
-        console.log('🎬 [GalleryView] New video detected, generating thumbnail for:', id);
         getVideoThumbnailWithCache(url, 'last').then(thumbnailUrl => {
           if (thumbnailUrl) {
             setVideoThumbnails(prev => ({
               ...prev,
               [id]: thumbnailUrl
             }));
-            console.log('🎬 [GalleryView] Generated thumbnail for new video:', id);
           }
         }).catch(error => {
           console.error('❌ [GalleryView] Failed to generate thumbnail for new video:', error);
@@ -155,20 +140,10 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     };
 
     const handleContentUpdated = () => {
-      console.log('🔄 [GalleryView] Content updated event received, refreshing gallery...');
       // Reload items from localStorage
       if (useLocalStorage) {
         const savedContent = contentStorage.loadContent();
         
-        console.log('🔄 [GalleryView] Refreshed content from storage:', {
-          totalItems: savedContent.length,
-          items: savedContent.map(item => ({
-            id: item.id,
-            type: item.type,
-            url: item.url,
-            title: item.title
-          }))
-        });
         
         // Filter out text items and convert StoredContent to GalleryItem
         const filteredItems: GalleryItem[] = savedContent
@@ -184,7 +159,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           }));
         
         setLocalItems(filteredItems);
-        console.log('🔄 [GalleryView] Refreshed gallery with', filteredItems.length, 'items');
         
         // Generate thumbnails for new video items
         generateVideoThumbnails(filteredItems);
@@ -298,7 +272,6 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     
     try {
       if (item.type === 'video') {
-        console.log('📥 [GalleryView] Starting video download with frame extraction');
         await downloadVideoWithFrame(item.url, item.title);
         
         toast({

@@ -116,7 +116,9 @@ export async function applyRateLimit(
     return null; // Allowed
   } catch (error) {
     // Redis connection failure — fail open (allow request through)
-    console.error('⚠️ [RateLimit] Redis error, failing open:', error);
+    // Log import would create circular dependency risk — keep console for this edge case
+    // eslint-disable-next-line no-console
+    console.error('[RateLimit] Redis error, failing open:', error);
     return null;
   }
 }

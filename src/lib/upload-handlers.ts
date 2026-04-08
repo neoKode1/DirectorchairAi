@@ -3,6 +3,9 @@ import { join } from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { nanoid } from 'nanoid';
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ module: 'upload-handlers' });
 
 export interface FileUploadOptions {
   maxSize: number; // in bytes
@@ -114,7 +117,7 @@ export async function handleFileUpload(
   customOptions?: Partial<FileUploadOptions>
 ): Promise<NextResponse> {
   try {
-    console.log(`📁 [Upload] Starting ${fileType} upload`);
+    log.debug({ fileType }, 'Starting upload');
 
     const formData = await request.formData();
     const fieldName = customOptions?.fieldName || fileType;
@@ -138,7 +141,7 @@ export async function handleFileUpload(
     // Validate file
     const validation = validateFile(file, options);
     if (!validation.isValid) {
-      console.error(`❌ [Upload] Validation error: ${validation.error}`);
+      log.error({ error: validation.error }, 'Upload validation error');
       return NextResponse.json({ 
         success: false, 
         error: validation.error 
@@ -170,12 +173,12 @@ export async function handleFileUpload(
       result.base64 = await fileToBase64(file);
     }
 
-    console.log(`✅ [Upload] ${fileType} uploaded successfully: ${filename}`);
+    log.debug({ fileType, filename }, 'Upload successful');
     
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error(`❌ [Upload] Error uploading ${fileType}:`, error);
+    log.error({ err: error, fileType }, 'Upload failed');
     return NextResponse.json({ 
       success: false, 
       error: 'Upload failed',
@@ -204,7 +207,7 @@ export async function handleMultipleFileUpload(
   customOptions?: Partial<FileUploadOptions>
 ): Promise<NextResponse> {
   try {
-    console.log(`📁 [Multi-Upload] Starting multiple ${fileType} upload`);
+    log.debug({ fileType }, 'Starting multi-upload');
 
     const formData = await request.formData();
     const files: File[] = [];
@@ -280,7 +283,7 @@ export async function handleMultipleFileUpload(
       }
     }
 
-    console.log(`✅ [Multi-Upload] Processed ${files.length} ${fileType} files`);
+    log.debug({ count: files.length, fileType }, 'Multi-upload processed');
     
     return NextResponse.json({
       success: true,
@@ -290,7 +293,7 @@ export async function handleMultipleFileUpload(
     });
 
   } catch (error) {
-    console.error(`❌ [Multi-Upload] Error uploading ${fileType} files:`, error);
+    log.error({ err: error, fileType }, 'Multi-upload failed');
     return NextResponse.json({ 
       success: false, 
       error: 'Multi-upload failed',

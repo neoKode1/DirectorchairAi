@@ -75,7 +75,6 @@ function TimelineContent() {
   };
 
   const handleImageSelection = (selection: ImageSelection) => {
-    console.log('🎯 [Timeline] Image selection completed:', selection);
     
     // Inject the cropped image into the chat interface
     if (typeof window !== 'undefined' && (window as any).injectImageToChat) {
@@ -104,7 +103,6 @@ function TimelineContent() {
     
     try {
       if (type === 'video') {
-        console.log('📥 [Timeline] Starting video download with frame extraction');
         await downloadVideoWithFrame(url, title);
         
         toast({
@@ -152,12 +150,6 @@ function TimelineContent() {
             const clientHeight = contentAreaRef.current.clientHeight;
             const maxScrollTop = scrollHeight - clientHeight;
             
-            console.log('📜 [Timeline] Scrolling to bottom:', {
-              scrollHeight,
-              clientHeight,
-              maxScrollTop,
-              currentScrollTop: contentAreaRef.current.scrollTop
-            });
             
             contentAreaRef.current.scrollTo({
               top: maxScrollTop + 50, // Add 50px buffer to ensure we see everything
@@ -173,11 +165,6 @@ function TimelineContent() {
                 
                 // If we're not at the bottom, scroll again
                 if (currentScrollTop < newMaxScrollTop - 100) {
-                  console.log('📜 [Timeline] Fallback scroll needed:', {
-                    currentScrollTop,
-                    newMaxScrollTop,
-                    difference: newMaxScrollTop - currentScrollTop
-                  });
                   
                   contentAreaRef.current.scrollTo({
                     top: newMaxScrollTop + 50,
@@ -195,8 +182,6 @@ function TimelineContent() {
 
     const handleGenerate = async (generationData: any): Promise<any> => {
     try {
-      console.log('🚀 [Timeline] ===== GENERATION START =====');
-      console.log('🚀 [Timeline] Generation data received:', generationData);
       
       // Validate that generationData is not empty or null
       if (!generationData || typeof generationData !== 'object' || Object.keys(generationData).length === 0) {
@@ -228,11 +213,6 @@ function TimelineContent() {
         ...generationData // Include any other parameters
       };
       
-      console.log('🔧 [Timeline] Calling unified API:', {
-        url: apiEndpoint,
-        method: 'POST',
-        data: cleanGenerationData
-      });
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -280,14 +260,6 @@ function TimelineContent() {
       }
       
       const result = await response.json();
-      console.log('📦 [Timeline] API response:', result);
-      console.log('📦 [Timeline] Video data check:', {
-        hasDataVideo: !!result.data?.video,
-        hasDataVideos: !!result.data?.videos,
-        hasVideos: !!result.videos,
-        dataVideo: result.data?.video,
-        dataVideos: result.data?.videos
-      });
       
       // Create content object for both display and storage
       const contentToStore = {
@@ -300,18 +272,6 @@ function TimelineContent() {
         model: cleanGenerationData.model
       };
       
-      console.log('📦 [Timeline] Content to store:', {
-        rawResult: result,
-        resultData: result.data,
-        resultVideo: result.data?.video,
-        resultVideos: result.data?.videos,
-        images: contentToStore.images,
-        videos: contentToStore.videos,
-        imagesLength: contentToStore.images?.length,
-        videosLength: contentToStore.videos?.length,
-        firstVideo: contentToStore.videos?.[0],
-        firstVideoUrl: contentToStore.videos?.[0]?.url
-      });
       
       // Add to generated content for display in center panel
       setGeneratedContent(prev => [...prev, contentToStore]);
@@ -336,13 +296,6 @@ function TimelineContent() {
             // Store additional info in a way that doesn't conflict with the interface
           }
         };
-        console.log('💾 [Timeline] Adding content to storage:', {
-          newContent,
-          contentToStore,
-          videoUrl: contentToStore.videos?.[0]?.url,
-          imageUrl: contentToStore.images?.[0]?.url,
-          type: newContent.type
-        });
         
         contentStorage.addContent(newContent);
         
@@ -350,7 +303,6 @@ function TimelineContent() {
         window.dispatchEvent(new CustomEvent('contentUpdated'));
       }
       
-      console.log('✅ [Timeline] Generation completed successfully');
       
       // Return the result so it can be displayed in the chat
       return result;
@@ -372,9 +324,9 @@ function TimelineContent() {
       <div className="hidden md:flex w-80 border-r border-border flex-col bg-background shrink-0 max-h-full overflow-hidden">
         <SimpleChatInterface
             onContentGenerated={handleGenerate}
-            onGenerationStarted={() => console.log('Generation started')}
-            onGenerationComplete={() => console.log('Generation complete')}
-          onImageInjected={() => console.log('Image injection ready')}
+            onGenerationStarted={() => {}}
+            onGenerationComplete={() => {}}
+          onImageInjected={() => {}}
           />
         </div>
 
@@ -538,13 +490,11 @@ function TimelineContent() {
                 className="h-full"
                 useLocalStorage={true}
                 onItemClick={(item) => {
-                  console.log('Gallery item clicked for editing:', item);
                   if (item.type === 'image') {
                     handleEditImage(item.url);
                   }
                 }}
                 onAnimate={(item) => {
-                  console.log('Animate item:', item);
                   if (item.type === 'image') {
                     handleAnimateImage(item.url);
                   }
@@ -586,9 +536,9 @@ function TimelineContent() {
           <div className="flex-1 overflow-hidden">
             <SimpleChatInterface
               onContentGenerated={async (content) => { await handleGenerate(content); setIsMobileChatOpen(false); }}
-              onGenerationStarted={() => console.log('Generation started')}
-              onGenerationComplete={() => console.log('Generation complete')}
-              onImageInjected={() => console.log('Image injection ready')}
+              onGenerationStarted={() => {}}
+              onGenerationComplete={() => {}}
+              onImageInjected={() => {}}
             />
           </div>
         </div>

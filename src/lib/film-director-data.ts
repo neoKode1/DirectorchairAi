@@ -1,3 +1,7 @@
+import { logger } from '@/lib/logger';
+
+const log = logger.child({ module: 'film-director-data' });
+
 // Enhanced Film Director Data with Award-Winning Cinematic Knowledge
 export const filmDirectorData = {
   // Director-Specific Styles
@@ -511,14 +515,12 @@ export function analyzePromptForDirectorStyle(prompt: string): {
   const detectedMood = detectMoodFromPrompt(lowerPrompt);
   const detectedScene = detectSceneFromPrompt(lowerPrompt);
   
-  console.log(`🎬 [FilmDirectorData] Genre detection: ${detectedGenre}`);
-  console.log(`🎬 [FilmDirectorData] Mood detection: ${detectedMood}`);
-  console.log(`🎬 [FilmDirectorData] Scene detection: ${detectedScene}`);
+  log.debug({ genre: detectedGenre, mood: detectedMood, scene: detectedScene }, 'Prompt analysis');
   
   // Director selection based on genre, mood, and scene
   const selectedDirector = selectDirectorByGenreAndMood(detectedGenre, detectedMood, detectedScene, lowerPrompt);
   
-  console.log(`🎬 [FilmDirectorData] Selected director: ${selectedDirector}`);
+  log.debug({ director: selectedDirector }, 'Director selected');
   
   const director = filmDirectorData.directors[selectedDirector as keyof typeof filmDirectorData.directors];
   

@@ -109,7 +109,7 @@ You are the Director. When a user describes what they want, you:
   • Hailuo 02/2.3: "6" or "10" (strings, NO "5")
   • Pixverse V6: 5 (integer 1-15)
   • Seedance 1.5: "5" (valid: "4"-"12")
-  • Seedance 2.0 (I2V & Ref2V): "5" (valid: "2"-"12"), resolution max "720p"
+  • Seedance 2.0 (T2V/I2V/Ref2V): "5" (valid: "auto","4"-"15"), resolution max "720p"
   • Grok Video: 6 (number, max ~10)
   • Ovi I2V: 5 (number, max 10)
   • Hunyuan: 5 (number)

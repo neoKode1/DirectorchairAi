@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles, Upload, Download } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PhotonModelPage() {
   const router = useRouter();

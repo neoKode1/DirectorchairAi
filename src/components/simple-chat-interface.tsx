@@ -47,6 +47,117 @@ function CompanyIcon({ name }: { name: string }) {
   );
 }
 
+// ── Shared model dropdown data (single source of truth for both inline & settings dropdowns) ──
+type ModelOption = { value: string; label: string; detail?: string };
+type ModelGroup = { company: string; icon?: string; models: ModelOption[] };
+
+const MODEL_GROUPS: ModelGroup[] = [
+  { company: "OpenAI", icon: "OpenAI", models: [
+    { value: "fal-ai/sora-2/image-to-video", label: "Sora 2 (I2V)", detail: "OpenAI's latest" },
+    { value: "fal-ai/sora-2/image-to-video/pro", label: "Sora 2 Pro (I2V)", detail: "Premium 1080p" },
+    { value: "fal-ai/sora-2/video-to-video/remix", label: "Sora 2 Remix (V2V)", detail: "Style changes" },
+  ]},
+  { company: "Google", icon: "Google", models: [
+    { value: "fal-ai/veo3.1/fast/image-to-video", label: "Veo 3.1 Fast (I2V)", detail: "Latest video" },
+    { value: "fal-ai/veo3.1/fast/first-last-frame-to-video", label: "Veo 3.1 First/Last Frame (I2V)" },
+    { value: "fal-ai/imagen4/preview", label: "Imagen 4 (T2I)", detail: "Highest quality" },
+    { value: "fal-ai/nano-banana-pro/edit", label: "Nano Banana Pro (I2I Edit)", detail: "1K-4K" },
+    { value: "fal-ai/nano-banana/edit", label: "Nano Banana (I2I Edit)", detail: "Multi-image" },
+    { value: "fal-ai/gemini-25-flash-image/edit", label: "Gemini 2.5 Flash (I2I Edit)", detail: "Blending" },
+  ]},
+  { company: "xAI (Grok)", icon: "xAI (Grok)", models: [
+    { value: "xai/grok-imagine-video/text-to-video", label: "Grok Video (T2V)", detail: "Audio, 1-15s" },
+    { value: "xai/grok-imagine-video/image-to-video", label: "Grok Video (I2V)", detail: "Audio, 1-15s" },
+    { value: "xai/grok-imagine-image/edit", label: "Grok Image (I2I Edit)", detail: "Realism" },
+  ]},
+  { company: "Kling", icon: "Kling", models: [
+    { value: "fal-ai/kling-video/v3/pro/image-to-video", label: "Kling v3 Pro (I2V)", detail: "Cinematic, audio" },
+    { value: "fal-ai/kling-video/v2.6/pro/image-to-video", label: "Kling v2.6 Pro (I2V)", detail: "Dialogue/speech" },
+    { value: "fal-ai/kling-video/o3/standard/image-to-video", label: "Kling O3 (I2V)", detail: "Start/end frame" },
+    { value: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", label: "Kling v2.5 Turbo (I2V)", detail: "Fast motion" },
+    { value: "fal-ai/kling-video/v2.1/master/image-to-video", label: "Kling v2.1 Master (I2V)" },
+    { value: "fal-ai/kling-video/o1/video-to-video/edit", label: "Kling O1 (V2V Edit)", detail: "Replace subjects" },
+    { value: "fal-ai/kling-video/o3/standard/video-to-video/edit", label: "Kling O3 Std (V2V Edit)", detail: "Budget" },
+    { value: "fal-ai/kling-video/o3/pro/video-to-video/edit", label: "Kling O3 Pro (V2V Edit)", detail: "@refs" },
+    { value: "fal-ai/kling-video/v2.6/standard/motion-control", label: "Kling v2.6 (Motion Ctrl)", detail: "Video→Image" },
+    { value: "fal-ai/kling-video/v2.6/pro/motion-control", label: "Kling v2.6 Pro (Motion Ctrl)", detail: "HQ" },
+    { value: "fal-ai/kling-video/v1/pro/ai-avatar", label: "Kling Avatar (Lip-sync)" },
+  ]},
+  { company: "ByteDance", icon: "ByteDance", models: [
+    { value: "fal-ai/bytedance/seedream/v5/lite/text-to-image", label: "Seedream 5.0 Lite (T2I)", detail: "2K quality" },
+    { value: "fal-ai/bytedance/dreamina/v3.1/text-to-image", label: "Dreamina v3.1 (T2I)", detail: "Aesthetics" },
+    { value: "fal-ai/bytedance/seedream/v5/lite/edit", label: "Seedream 5.0 Lite (I2I Edit)", detail: "Multi-image" },
+    { value: "fal-ai/bytedance/seedream/v4.5/edit", label: "Seedream 4.5 (I2I Edit)", detail: "10 images" },
+    { value: "fal-ai/bytedance/seedream/v4/edit", label: "Seedream 4.0 (I2I Edit)" },
+    { value: "bytedance/seedance-2.0/fast/text-to-video", label: "Seedance 2.0 Fast (T2V)", detail: "No image needed" },
+    { value: "bytedance/seedance-2.0/fast/image-to-video", label: "Seedance 2.0 Fast (I2V)", detail: "Native audio, cinematic" },
+    { value: "bytedance/seedance-2.0/fast/reference-to-video", label: "Seedance 2.0 Fast (Ref2V)", detail: "Character consistency" },
+    { value: "fal-ai/bytedance/seedance/v1.5/pro/image-to-video", label: "Seedance 1.5 Pro (I2V)", detail: "Audio, end frame" },
+    { value: "fal-ai/bytedance/dreamactor/v2", label: "DreamActor v2 (Motion Ctrl)" },
+  ]},
+  { company: "Black Forest Labs", icon: "Black Forest Labs", models: [
+    { value: "fal-ai/flux-pro/v1.1-ultra", label: "Flux Pro 1.1 Ultra (T2I)", detail: "Pro-grade" },
+    { value: "fal-ai/flux-2-flex", label: "FLUX 2 Flex (T2I)", detail: "Typography" },
+    { value: "fal-ai/flux-2-flex/edit", label: "FLUX 2 Flex (I2I Edit)", detail: "Multi-ref" },
+    { value: "fal-ai/flux-pro/kontext/max", label: "Flux Kontext Max (I2I Edit)", detail: "Consistency" },
+    { value: "fal-ai/flux-krea-lora/image-to-image", label: "FLUX LoRA (I2I)", detail: "Style transfer" },
+  ]},
+  { company: "Minimax", icon: "Minimax", models: [
+    { value: "fal-ai/minimax/hailuo-2.3/standard/image-to-video", label: "Hailuo 2.3 (I2V)", detail: "Latest, 768p" },
+    { value: "fal-ai/minimax/hailuo-02/standard/image-to-video", label: "Hailuo 02 (I2V)" },
+    { value: "endframe/minimax-hailuo-02", label: "EndFrame Hailuo (I2V)", detail: "Smooth" },
+  ]},
+  { company: "Wan AI", models: [
+    { value: "fal-ai/wan/v2.7/pro/text-to-image", label: "Wan 2.7 Pro (T2I)", detail: "Superior detail" },
+    { value: "fal-ai/wan/v2.7/pro/edit", label: "Wan 2.7 Pro (I2I Edit)", detail: "Professional" },
+    { value: "fal-ai/wan/v2.7/edit", label: "Wan 2.7 (I2I Edit)", detail: "Text-guided" },
+    { value: "fal-ai/wan-pro/image-to-video", label: "Wan Pro (I2V)", detail: "1080p 30fps" },
+    { value: "fal-ai/wan-25-preview/image-to-video", label: "Wan 2.5 Preview (I2V)" },
+    { value: "fal-ai/wan/v2.2-a14b/image-to-video", label: "Wan v2.2-A14B (I2V)" },
+  ]},
+  { company: "Pixverse", icon: "Pixverse", models: [
+    { value: "fal-ai/pixverse/v6/image-to-video", label: "Pixverse V6 (I2V)", detail: "Style presets, 1-15s" },
+  ]},
+  { company: "Luma AI", icon: "Luma AI", models: [
+    { value: "fal-ai/luma-dream-machine/ray-2/image-to-video", label: "Luma Ray 2 (I2V)", detail: "Realistic motion" },
+  ]},
+  { company: "Tencent", icon: "Tencent", models: [
+    { value: "fal-ai/hunyuan-video", label: "Hunyuan Video (T2V)" },
+  ]},
+  { company: "Stability AI", icon: "Stability AI", models: [
+    { value: "fal-ai/stable-diffusion-v35-large", label: "SD 3.5 Large (T2I)" },
+  ]},
+  { company: "Alibaba", icon: "Alibaba", models: [
+    { value: "fal-ai/qwen-image-edit", label: "Qwen (I2I Edit)", detail: "Text editing" },
+  ]},
+  { company: "Ovi", models: [
+    { value: "fal-ai/ovi/image-to-video", label: "Ovi (I2V + Audio)" },
+  ]},
+];
+
+/** Render model dropdown groups — `detailed` adds the detail suffix for the settings panel */
+function renderModelGroups(detailed: boolean) {
+  return (
+    <>
+      {MODEL_GROUPS.map((group) => (
+        <SelectGroup key={group.company}>
+          <SelectLabel className="flex items-center gap-2">
+            {group.icon && <CompanyIcon name={group.icon} />}
+            {group.company}
+          </SelectLabel>
+          {group.models.map((m) => (
+            <SelectItem key={m.value} value={m.value}>
+              {detailed && m.detail ? `${m.label} - ${m.detail}` : m.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      ))}
+      <SelectItem value="none">None (Ask me)</SelectItem>
+    </>
+  );
+}
+
+
 interface SimpleChatInterfaceProps {
   onContentGenerated: (generationData: any) => Promise<any>;
   onGenerationStarted?: () => void;
@@ -72,7 +183,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     };
     suggestions?: string[];
   }>>([]);
-  
+
   const [userInput, setUserInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentModel, setCurrentModel] = useState<string>('');
@@ -827,7 +938,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
     // Detect if user wants video generation based on keywords (very specific to avoid false positives)
     // Trigger words that force video generation (image-to-video only)
     const videoTriggers = [
-      'make video', 'create video', 'generate video', 'video of', 
+      'make video', 'create video', 'generate video', 'video of',
       'animate this', 'make it move', 'animate the image', 'bring to life',
       'animate this image', 'make this move', 'bring this to life',
       'create animation', 'make animation', 'generate animation',
@@ -839,7 +950,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       'tracking shot', 'pull out shot', 'push in shot', 'pedestal up shot',
       'pedestal down shot', 'pan right shot', 'pan left shot'
     ];
-    
+
     const hasVideoTrigger = videoTriggers.some(trigger =>
       userInput.toLowerCase().includes(trigger)
     );
@@ -847,7 +958,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
     // Detect if user is referencing a previously generated image or injected image
     const imageReferenceKeywords = ['that character', 'that image', 'this character', 'this image', 'the character', 'the image', 'behind that', 'over the shoulder', 'close-up', 'detail shot', 'low-angle', 'different angle', 'another angle', 'variation', 'edit this', 'modify this', 'generate video', 'create video', 'animate', 'make video'];
-    const isReferencingPreviousImage = imageReferenceKeywords.some(keyword => 
+    const isReferencingPreviousImage = imageReferenceKeywords.some(keyword =>
       userInput.toLowerCase().includes(keyword)
     ) && (lastGeneratedImage || uploadedImages.length > 0);
 
@@ -929,37 +1040,37 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       // Call the generation API directly
       try {
         const result = await onContentGenerated(generationData);
-        
+
         // Add success message to chat
         const successMessage = {
           id: (Date.now() + 0.5).toString(),
           type: 'assistant' as const,
-          content: wantsVideo 
+          content: wantsVideo
             ? `✅ Video generated successfully! Check the center panel and gallery.`
             : `✅ Image generated successfully! Check the center panel and gallery.`,
           timestamp: new Date()
         };
         setMessages(prev => prev.slice(0, -1).concat([successMessage]));
-        
+
         // Reset force video generation flag
         setForceVideoGeneration(false);
-        
+
         // Track the last generated image for future references
         if (result?.data?.images?.[0]) {
           setLastGeneratedImage(result.data.images[0].url);
-          
+
           // Show floating suggestions for images (image-to-video workflow)
           showFloatingSuggestions([
             "Animate this character walking",
-            "Make video of this character dancing", 
+            "Make video of this character dancing",
             "Bring this character to life",
             "Animate the image with motion",
             "Create a cinematic video of this character"
           ]);
         }
-        
+
         onGenerationComplete?.();
-        
+
       } catch (error: any) {
         // Content policy fallback: Nano Banana → Seedream v4 (backend handles image_size conversion)
         if (error.message?.includes('content policy') &&
@@ -991,7 +1102,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           throw error;
         }
       }
-      
+
     } catch (error) {
       console.error('Generation error:', error);
       const errorMessage = {
@@ -1034,7 +1145,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
   const showFloatingSuggestions = (suggestions: string[]) => {
     setFloatingSuggestions(suggestions);
     setShowFloatingDialog(true);
-    
+
     // Auto-hide after 8 seconds
     setTimeout(() => {
       setShowFloatingDialog(false);
@@ -1073,7 +1184,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
       for (const variationPrompt of variationPrompts) {
         // Prioritize user's prompt first, then add the specific shot variation
         const enhancedPrompt = `${prompt}. ${variationPrompt}`;
-        
+
         // Use user's selected model for variations, fallback to nano-banana/edit
         const variationModel = (preferredVideoModel && preferredVideoModel !== 'none')
           ? preferredVideoModel
@@ -1090,18 +1201,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           result = await onContentGenerated(generationData);
         } catch (error: any) {
           // If we get a content policy violation with Nano Banana Edit, try Seedream 4.0 Edit as fallback
-          if (error.message?.includes('content policy') && 
-              error.message?.includes('violation') && 
+          if (error.message?.includes('content policy') &&
+              error.message?.includes('violation') &&
               generationData.model === 'fal-ai/nano-banana/edit') {
-            
+
             console.log('🔄 [Chat] Content policy violation detected in variation, trying Seedream 4.0 Edit as fallback...');
-            
+
             // Retry with Seedream 4.0 Edit
             const fallbackGenerationData = {
               ...generationData,
               model: 'fal-ai/bytedance/seedream/v4/edit'
             };
-            
+
             // Convert aspect_ratio to image_size for Seedream 4.0 Edit
             if (generationData.aspect_ratio) {
               const aspectRatioToDimensions = (ratio: string) => {
@@ -1118,36 +1229,36 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                     return { width: 1920, height: 1080 }; // Default to 16:9
                 }
               };
-              
+
               (fallbackGenerationData as any).image_size = aspectRatioToDimensions(generationData.aspect_ratio);
               // Remove aspect_ratio since Seedream uses image_size
               delete (fallbackGenerationData as any).aspect_ratio;
-              
+
               console.log('🔄 [Chat] Converted aspect_ratio to image_size for Seedream fallback:', (fallbackGenerationData as any).image_size);
             }
-            
+
             result = await onContentGenerated(fallbackGenerationData);
           } else {
             throw error; // Re-throw if it's not a content policy issue or not the right model
           }
         }
-        
+
         const images = result.data?.images || result.images || [];
         if (images?.[0]) {
           // Track this as the latest generated image
           setLastGeneratedImage(images[0].url);
-          
+
           // Create descriptive labels for each variation
           const variationLabels = [
             'Extreme Close-up (Face)',
-            'Extreme Close-up (Midsection)', 
+            'Extreme Close-up (Midsection)',
             'Extreme Close-up (Environment)',
             'Wide Shot (Character)'
           ];
-          
+
           const currentIndex = variationPrompts.indexOf(variationPrompt);
           const variationLabel = variationLabels[currentIndex] || 'Cinematic Variation';
-          
+
           const variationMessage = {
             id: (Date.now() + Math.random()).toString(),
             type: 'assistant' as const,
@@ -1219,102 +1330,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
               <SelectValue placeholder="Select Model" />
             </SelectTrigger>
                 <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="OpenAI" />OpenAI</SelectLabel>
-                    <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Google" />Google</SelectLabel>
-                    <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/imagen4/preview">Imagen 4 (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/nano-banana/edit">Nano Banana (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash (I2I Edit)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="xAI (Grok)" />xAI (Grok)</SelectLabel>
-                    <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Video (T2V)</SelectItem>
-                    <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Video (I2V)</SelectItem>
-                    <SelectItem value="xai/grok-imagine-image/edit">Grok Image (I2I Edit)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Kling" />Kling</SelectLabel>
-                    <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v2.6/pro/image-to-video">Kling v2.6 Pro (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/o1/video-to-video/edit">Kling O1 (V2V Edit)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/o3/standard/video-to-video/edit">Kling O3 Std (V2V Edit)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/o3/pro/video-to-video/edit">Kling O3 Pro (V2V Edit)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v2.6/standard/motion-control">Kling v2.6 (Motion Ctrl)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v2.6/pro/motion-control">Kling v2.6 Pro (Motion Ctrl)</SelectItem>
-                    <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling Avatar (Lip-sync)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="ByteDance" />ByteDance</SelectLabel>
-                    <SelectItem value="fal-ai/bytedance/seedream/v5/lite/text-to-image">Seedream 5.0 Lite (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1 (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedream/v5/lite/edit">Seedream 5.0 Lite (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">Seedream 4.5 (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 (I2I Edit)</SelectItem>
-                    <SelectItem value="bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V)</SelectItem>
-                    <SelectItem value="bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V)</SelectItem>
-                    <SelectItem value="bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/seedance/v1.5/pro/image-to-video">Seedance 1.5 Pro (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2 (Motion Ctrl)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Black Forest Labs" />Black Forest Labs</SelectLabel>
-                    <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Kontext Max (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA (I2I)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Minimax" />Minimax</SelectLabel>
-                    <SelectItem value="fal-ai/minimax/hailuo-2.3/standard/image-to-video">Hailuo 2.3 (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Hailuo 02 (I2V)</SelectItem>
-                    <SelectItem value="endframe/minimax-hailuo-02">EndFrame Hailuo (I2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Wan AI</SelectLabel>
-                    <SelectItem value="fal-ai/wan/v2.7/pro/text-to-image">Wan 2.7 Pro (T2I)</SelectItem>
-                    <SelectItem value="fal-ai/wan/v2.7/pro/edit">Wan 2.7 Pro (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/wan/v2.7/edit">Wan 2.7 (I2I Edit)</SelectItem>
-                    <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview (I2V)</SelectItem>
-                    <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B (I2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Pixverse" />Pixverse</SelectLabel>
-                    <SelectItem value="fal-ai/pixverse/v6/image-to-video">Pixverse V6 (I2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Luma AI" />Luma AI</SelectLabel>
-                    <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2 (I2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Tencent" />Tencent</SelectLabel>
-                    <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video (T2V)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Stability AI" />Stability AI</SelectLabel>
-                    <SelectItem value="fal-ai/stable-diffusion-v35-large">SD 3.5 Large (T2I)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Alibaba" />Alibaba</SelectLabel>
-                    <SelectItem value="fal-ai/qwen-image-edit">Qwen (I2I Edit)</SelectItem>
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel>Ovi</SelectLabel>
-                    <SelectItem value="fal-ai/ovi/image-to-video">Ovi (I2V + Audio)</SelectItem>
-                  </SelectGroup>
-                  <SelectItem value="none">None (Ask me)</SelectItem>
+                  {renderModelGroups(false)}
                 </SelectContent>
               </Select>
         </div>
@@ -1331,14 +1347,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
             <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] ${message.type === 'user' ? 'bg-secondary text-foreground' : 'bg-card text-foreground'} p-3`}>
                 <p className="text-sm">{message.content}</p>
-                
-                
+
+
                 {message.media && (
                   <div className="mt-2">
                     {message.media.type === 'image' ? (
                       <div className="relative group">
-                        <img 
-                          src={message.media.url} 
+                        <img
+                          src={message.media.url}
                           alt={message.content}
                           className="w-full h-auto rounded"
                         />
@@ -1362,14 +1378,14 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         </div>
                       </div>
                     ) : message.media.type === 'video' ? (
-                      <video 
-                        src={message.media.url} 
+                      <video
+                        src={message.media.url}
                         controls
                         className="w-full h-auto rounded"
                       />
                     ) : (
-                      <audio 
-                        src={message.media.url} 
+                      <audio
+                        src={message.media.url}
                         controls
                         className="w-full"
                       />
@@ -1384,9 +1400,9 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <div className="flex justify-start">
             <div className="bg-muted text-foreground rounded-lg p-3">
               <div className="flex items-center space-x-2">
-                <img 
-                  src={getModelIcon(currentModel)} 
-                  alt="Model" 
+                <img
+                  src={getModelIcon(currentModel)}
+                  alt="Model"
                   className="w-5 h-5 animate-spin"
                 />
                 <span className="text-sm">Generating...</span>
@@ -1576,8 +1592,8 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
           <div className="flex justify-center gap-2 mt-3">
             <Dialog open={showSettings} onOpenChange={setShowSettings}>
               <DialogTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   className="text-xs"
                 >
@@ -1658,102 +1674,7 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
                         <SelectValue placeholder="Select model" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="OpenAI" />OpenAI</SelectLabel>
-                          <SelectItem value="fal-ai/sora-2/image-to-video">Sora 2 (I2V) - OpenAI&apos;s latest</SelectItem>
-                          <SelectItem value="fal-ai/sora-2/image-to-video/pro">Sora 2 Pro (I2V) - Premium 1080p</SelectItem>
-                          <SelectItem value="fal-ai/sora-2/video-to-video/remix">Sora 2 Remix (V2V) - Style changes</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Google" />Google</SelectLabel>
-                          <SelectItem value="fal-ai/veo3.1/fast/image-to-video">Veo 3.1 Fast (I2V) - Latest video</SelectItem>
-                          <SelectItem value="fal-ai/veo3.1/fast/first-last-frame-to-video">Veo 3.1 First/Last Frame (I2V)</SelectItem>
-                          <SelectItem value="fal-ai/imagen4/preview">Imagen 4 (T2I) - Highest quality</SelectItem>
-                          <SelectItem value="fal-ai/nano-banana-pro/edit">Nano Banana Pro (I2I Edit) - 1K-4K</SelectItem>
-                          <SelectItem value="fal-ai/nano-banana/edit">Nano Banana (I2I Edit) - Multi-image</SelectItem>
-                          <SelectItem value="fal-ai/gemini-25-flash-image/edit">Gemini 2.5 Flash (I2I Edit) - Blending</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="xAI (Grok)" />xAI (Grok)</SelectLabel>
-                          <SelectItem value="xai/grok-imagine-video/text-to-video">Grok Video (T2V) - Audio, 1-15s</SelectItem>
-                          <SelectItem value="xai/grok-imagine-video/image-to-video">Grok Video (I2V) - Audio, 1-15s</SelectItem>
-                          <SelectItem value="xai/grok-imagine-image/edit">Grok Image (I2I Edit) - Realism</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Kling" />Kling</SelectLabel>
-                          <SelectItem value="fal-ai/kling-video/v3/pro/image-to-video">Kling v3 Pro (I2V) - Cinematic, audio</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v2.6/pro/image-to-video">Kling v2.6 Pro (I2V) - Dialogue/speech</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/o3/standard/image-to-video">Kling O3 (I2V) - Start/end frame</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v2.5-turbo/pro/image-to-video">Kling v2.5 Turbo (I2V) - Fast motion</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v2.1/master/image-to-video">Kling v2.1 Master (I2V)</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/o1/video-to-video/edit">Kling O1 (V2V Edit) - Replace subjects</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/o3/standard/video-to-video/edit">Kling O3 Std (V2V Edit) - Budget</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/o3/pro/video-to-video/edit">Kling O3 Pro (V2V Edit) - @refs</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v2.6/standard/motion-control">Kling v2.6 (Motion Ctrl) - Video→Image</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v2.6/pro/motion-control">Kling v2.6 Pro (Motion Ctrl) - HQ</SelectItem>
-                          <SelectItem value="fal-ai/kling-video/v1/pro/ai-avatar">Kling Avatar (Lip-sync)</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="ByteDance" />ByteDance</SelectLabel>
-                          <SelectItem value="fal-ai/bytedance/seedream/v5/lite/text-to-image">Seedream 5.0 Lite (T2I) - 2K quality</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/dreamina/v3.1/text-to-image">Dreamina v3.1 (T2I) - Aesthetics</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedream/v5/lite/edit">Seedream 5.0 Lite (I2I Edit) - Multi-image</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedream/v4.5/edit">Seedream 4.5 (I2I Edit) - 10 images</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedream/v4/edit">Seedream 4.0 (I2I Edit)</SelectItem>
-                          <SelectItem value="bytedance/seedance-2.0/fast/text-to-video">Seedance 2.0 Fast (T2V) - No image needed</SelectItem>
-                          <SelectItem value="bytedance/seedance-2.0/fast/image-to-video">Seedance 2.0 Fast (I2V) - Native audio, cinematic</SelectItem>
-                          <SelectItem value="bytedance/seedance-2.0/fast/reference-to-video">Seedance 2.0 Fast (Ref2V) - Character consistency</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/seedance/v1.5/pro/image-to-video">Seedance 1.5 Pro (I2V) - Audio, end frame</SelectItem>
-                          <SelectItem value="fal-ai/bytedance/dreamactor/v2">DreamActor v2 (Motion Ctrl)</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Black Forest Labs" />Black Forest Labs</SelectLabel>
-                          <SelectItem value="fal-ai/flux-pro/v1.1-ultra">Flux Pro 1.1 Ultra (T2I) - Pro-grade</SelectItem>
-                          <SelectItem value="fal-ai/flux-2-flex">FLUX 2 Flex (T2I) - Typography</SelectItem>
-                          <SelectItem value="fal-ai/flux-2-flex/edit">FLUX 2 Flex (I2I Edit) - Multi-ref</SelectItem>
-                          <SelectItem value="fal-ai/flux-pro/kontext/max">Flux Kontext Max (I2I Edit) - Consistency</SelectItem>
-                          <SelectItem value="fal-ai/flux-krea-lora/image-to-image">FLUX LoRA (I2I) - Style transfer</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Minimax" />Minimax</SelectLabel>
-                          <SelectItem value="fal-ai/minimax/hailuo-2.3/standard/image-to-video">Hailuo 2.3 (I2V) - Latest, 768p</SelectItem>
-                          <SelectItem value="fal-ai/minimax/hailuo-02/standard/image-to-video">Hailuo 02 (I2V)</SelectItem>
-                          <SelectItem value="endframe/minimax-hailuo-02">EndFrame Hailuo (I2V) - Smooth</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Wan AI</SelectLabel>
-                          <SelectItem value="fal-ai/wan/v2.7/pro/text-to-image">Wan 2.7 Pro (T2I) - Superior detail</SelectItem>
-                          <SelectItem value="fal-ai/wan/v2.7/pro/edit">Wan 2.7 Pro (I2I Edit) - Professional</SelectItem>
-                          <SelectItem value="fal-ai/wan/v2.7/edit">Wan 2.7 (I2I Edit) - Text-guided</SelectItem>
-                          <SelectItem value="fal-ai/wan-pro/image-to-video">Wan Pro (I2V) - 1080p 30fps</SelectItem>
-                          <SelectItem value="fal-ai/wan-25-preview/image-to-video">Wan 2.5 Preview (I2V)</SelectItem>
-                          <SelectItem value="fal-ai/wan/v2.2-a14b/image-to-video">Wan v2.2-A14B (I2V)</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Pixverse" />Pixverse</SelectLabel>
-                          <SelectItem value="fal-ai/pixverse/v6/image-to-video">Pixverse V6 (I2V) - Style presets, 1-15s</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Luma AI" />Luma AI</SelectLabel>
-                          <SelectItem value="fal-ai/luma-dream-machine/ray-2/image-to-video">Luma Ray 2 (I2V) - Realistic motion</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Tencent" />Tencent</SelectLabel>
-                          <SelectItem value="fal-ai/hunyuan-video">Hunyuan Video (T2V)</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Stability AI" />Stability AI</SelectLabel>
-                          <SelectItem value="fal-ai/stable-diffusion-v35-large">SD 3.5 Large (T2I)</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel className="flex items-center gap-2"><CompanyIcon name="Alibaba" />Alibaba</SelectLabel>
-                          <SelectItem value="fal-ai/qwen-image-edit">Qwen (I2I Edit) - Text editing</SelectItem>
-                        </SelectGroup>
-                        <SelectGroup>
-                          <SelectLabel>Ovi</SelectLabel>
-                          <SelectItem value="fal-ai/ovi/image-to-video">Ovi (I2V + Audio)</SelectItem>
-                        </SelectGroup>
-                        <SelectItem value="none">None (Ask me each time)</SelectItem>
+                        {renderModelGroups(true)}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">

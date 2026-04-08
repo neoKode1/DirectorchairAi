@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
+import { createFalClient } from '@fal-ai/client';
 
-// Configure fal.ai client
-fal.config({
-  credentials: process.env.FAL_KEY || '',
+// Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
+const fal = createFalClient({
+  credentials: process.env.FAL_KEY,
 });
 
 // nano-banana-pro/edit: up to 10 input reference images, max 4 output images per call

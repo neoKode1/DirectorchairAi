@@ -9,6 +9,15 @@ const fal = createFalClient({
 // Allow large request bodies (base64 images can be several MB)
 export const maxDuration = 120; // seconds
 
+// Shared aspect-ratio → pixel dimensions map (used by Seedream, Dreamina, fallback handlers)
+const AR_TO_DIMS: Record<string, { width: number; height: number }> = {
+  '16:9': { width: 1920, height: 1080 },
+  '9:16': { width: 1080, height: 1920 },
+  '4:3': { width: 1024, height: 768 },
+  '3:4': { width: 768, height: 1024 },
+  '1:1': { width: 1024, height: 1024 },
+};
+
 // Helper function to convert localhost URLs to base64 data URIs
 async function convertLocalhostToBase64(url: string): Promise<string> {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
@@ -29,7 +38,7 @@ async function convertLocalhostToBase64(url: string): Promise<string> {
 // Unified generate route that handles all FAL models directly
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
-  const requestId = Math.random().toString(36).substring(7);
+  const requestId = crypto.randomUUID().slice(0, 8);
   
   try {
     const body = await request.json();
@@ -194,14 +203,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.image_size = 'auto_2K';
       } else {
         // v4 and v4.5 use width/height dimensions
-        const arToDims: Record<string, { width: number; height: number }> = {
-          '16:9': { width: 1920, height: 1080 },
-          '9:16': { width: 1080, height: 1920 },
-          '4:3': { width: 1024, height: 768 },
-          '3:4': { width: 768, height: 1024 },
-          '1:1': { width: 1024, height: 1024 },
-        };
-        input.image_size = arToDims[body.aspect_ratio || '16:9'] || arToDims['16:9'];
+        input.image_size = AR_TO_DIMS[body.aspect_ratio || '16:9'] || AR_TO_DIMS['16:9'];
       }
       delete input.aspect_ratio;
       delete input.size;
@@ -257,14 +259,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle Dreamina v3.1 T2I
     if (model.includes('dreamina')) {
       // Dreamina uses image_size dimensions, not aspect_ratio string
-      const arToDims: Record<string, { width: number; height: number }> = {
-        '16:9': { width: 1920, height: 1080 },
-        '9:16': { width: 1080, height: 1920 },
-        '4:3': { width: 1024, height: 768 },
-        '3:4': { width: 768, height: 1024 },
-        '1:1': { width: 1024, height: 1024 },
-      };
-      input.image_size = arToDims[body.aspect_ratio || '16:9'] || arToDims['16:9'];
+      input.image_size = AR_TO_DIMS[body.aspect_ratio || '16:9'] || AR_TO_DIMS['16:9'];
       delete input.aspect_ratio;
       delete input.size;
       console.log(`🔧 [Generate API] [${requestId}] Dreamina: image_size=`, input.image_size);
@@ -749,16 +744,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (isContentPolicyViolation && isNanoBananaEdit && hasImageInput) {
         console.log(`🔄 [Generate API] [${requestId}] Content policy violation, trying Seedream 4.0 Edit fallback...`);
         try {
-          const arToDims: Record<string, { width: number; height: number }> = {
-            '16:9': { width: 1920, height: 1080 },
-            '9:16': { width: 1080, height: 1920 },
-            '4:3': { width: 1024, height: 768 },
-            '3:4': { width: 768, height: 1024 },
-            '1:1': { width: 1024, height: 1024 },
-          };
           const fallbackInput = { ...input };
           if (body.aspect_ratio) {
-            fallbackInput.image_size = arToDims[body.aspect_ratio] || arToDims['16:9'];
+            fallbackInput.image_size = AR_TO_DIMS[body.aspect_ratio] || AR_TO_DIMS['16:9'];
             delete fallbackInput.aspect_ratio;
           }
 

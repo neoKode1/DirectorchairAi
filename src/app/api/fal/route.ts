@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fal } from '@fal-ai/client';
+import { createFalClient } from '@fal-ai/client';
 
-// Only validate FAL_KEY at runtime, not during build
-const validateFalKey = () => {
-  if (!process.env.FAL_KEY) {
-    throw new Error("FAL_KEY environment variable is not set");
-  }
-  // Debug: Log which key is being used (first few characters only)
-  const keyPrefix = process.env.FAL_KEY.substring(0, 8);
-  console.log(`🔑 [FAL API] Using FAL_KEY starting with: ${keyPrefix}...`);
-};
+// Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
+const fal = createFalClient({
+  credentials: process.env.FAL_KEY,
+});
 
 export const runtime = "edge";
 
@@ -17,14 +12,6 @@ interface FalError extends Error {
   status?: number;
   details?: unknown;
 }
-
-// Initialize the FAL client with credentials at runtime
-const initializeFalClient = () => {
-  validateFalKey();
-  fal.config({
-    credentials: process.env.FAL_KEY,
-  });
-};
 
 // Helper function to log errors with more detail
 function logError(error: FalError, method: string) {
@@ -119,7 +106,6 @@ function shouldUseSubscription(model: string): boolean {
 // Handle GET requests
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    initializeFalClient();
     console.log('🔍 [FAL API] Handling GET request');
     const url = new URL(request.url);
     const model = url.searchParams.get('model');
@@ -165,7 +151,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 // Handle POST requests
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    initializeFalClient();
     console.log('🔍 [FAL API] Handling POST request');
     const body = await request.json();
     console.log('📦 [FAL API] Request body:', body);

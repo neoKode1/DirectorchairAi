@@ -11,7 +11,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ModelsPage() {
   const router = useRouter();

@@ -1,3 +1,5 @@
+import { withSentryConfig } from '@sentry/nextjs';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
@@ -48,4 +50,18 @@ const nextConfig = {
   poweredByHeader: false,
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry webpack plugin options
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Upload source maps for production error debugging
+  silent: !process.env.CI, // Suppress logs outside CI
+
+  // Route handler and middleware instrumentation
+  widenClientFileUpload: true,
+  tunnelRoute: '/monitoring', // Bypass ad-blockers
+  disableLogger: true, // Remove Sentry logger from client bundle
+  automaticVercelMonitors: true,
+});

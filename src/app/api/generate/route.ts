@@ -751,7 +751,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           }
 
           const fallbackResult = await fal.subscribe('fal-ai/bytedance/seedream/v4/edit', {
-            input: fallbackInput,
+            input: fallbackInput as any,
             logs: true,
           });
 

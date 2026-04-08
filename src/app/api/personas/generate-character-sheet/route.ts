@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
           output_format: 'png',
           resolution: '2K',
           safety_tolerance: '4',
-        },
+        } as any,
         logs: true,
         onQueueUpdate: (update: any) => {
           if (update.status === 'IN_PROGRESS' && update.logs) {
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           num_images: numImages,
           image_size: { width: 768, height: 1024 }, // 3:4 equivalent
           output_format: 'png',
-        },
+        } as any,
         logs: true,
         onQueueUpdate: (update: any) => {
           if (update.status === 'IN_PROGRESS' && update.logs) {

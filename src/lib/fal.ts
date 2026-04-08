@@ -7,9 +7,6 @@ fal.config({
   proxyUrl: "/api/fal/proxy",
 });
 
-// Create a client using the standard configuration (for legacy compatibility)
-export const falClient = fal;
-
 export type InputAsset =
   | "video"
   | "image"
@@ -27,54 +24,8 @@ export type ApiInfo = {
   inputAsset?: InputAsset[];
   initialInput?: Record<string, unknown>;
   inputMap?: Record<string, string>;
-  supportsMultipleImages?: boolean; // New property to track multi-image capability
-  maxImages?: number; // Maximum number of images supported
-};
-
-export const STYLE_PRESETS = [
-  {
-    id: "cinematic",
-    label: "Cinematic",
-    description: "Professional movie-like style with dramatic lighting and composition",
-    prompt: "cinematic style, dramatic lighting, professional cinematography, high production value",
-    previewImageUrl: "/styles/cinematic.jpg"
-  },
-  {
-    id: "anime",
-    label: "Anime",
-    description: "Japanese animation style with vibrant colors",
-    prompt: "anime style, vibrant colors, cel shading, detailed anime drawing",
-    previewImageUrl: "/styles/anime.jpg"
-  },
-  {
-    id: "3d_animation",
-    label: "3D Animation",
-    description: "Modern 3D animated style with detailed textures",
-    prompt: "3D animation style, detailed texturing, subsurface scattering, ambient occlusion",
-    previewImageUrl: "/styles/3d.jpg"
-  },
-  {
-    id: "photorealistic",
-    label: "Photorealistic",
-    description: "Ultra-realistic style with fine details",
-    prompt: "photorealistic, highly detailed, 8k uhd, professional photography",
-    previewImageUrl: "/styles/photorealistic.jpg"
-  },
-  {
-    id: "watercolor",
-    label: "Watercolor",
-    description: "Traditional watercolor painting style",
-    prompt: "watercolor painting style, artistic, traditional media, painterly",
-    previewImageUrl: "/styles/watercolor.jpg"
-  }
-] as const;
-
-export type StylePreset = {
-  id: string;
-  label: string;
-  description: string;
-  prompt: string;
-  previewImageUrl?: string;
+  supportsMultipleImages?: boolean;
+  maxImages?: number;
 };
 
 export type StyleReference = {
@@ -82,101 +33,7 @@ export type StyleReference = {
   weight: number;
 };
 
-export type StyleConfig = {
-  preset?: StylePreset;
-  reference?: StyleReference;
-  strength: number;
-};
-
-// Add model-specific style configurations
-export const MODEL_STYLE_CONFIG = {
-  "fal-ai/hunyuan-video": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/minimax/video-01-live/image-to-video": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/minimax/video-01-subject-reference": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/flux-pro/v1.1-ultra": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/flux-pro/kontext/max": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/flux-krea-lora/image-to-image": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/flux-2-flex": {
-    supportsStyleReference: true,
-    supportsStylePresets: true,
-    maxStyleStrength: 1.0,
-  },
-  "fal-ai/qwen-image-edit": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-  "xai/grok-imagine-image/edit": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-  "fal-ai/nano-banana-pro/edit": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-  "xai/grok-imagine-video/text-to-video": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-  "xai/grok-imagine-video/image-to-video": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-  "fal-ai/ffmpeg-api/extract-frame": {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  },
-      "fal-ai/sora-2/image-to-video": {
-        supportsStyleReference: false,
-        supportsStylePresets: true,
-        maxStyleStrength: 0,
-      },
-      "fal-ai/sora-2/image-to-video/pro": {
-        supportsStyleReference: false,
-        supportsStylePresets: true,
-        maxStyleStrength: 0,
-      }
-} as const;
-
-// Helper function to check if a model supports style features
-export function getModelStyleSupport(modelId: string) {
-  return MODEL_STYLE_CONFIG[modelId as keyof typeof MODEL_STYLE_CONFIG] || {
-    supportsStyleReference: false,
-    supportsStylePresets: false,
-    maxStyleStrength: 0,
-  };
-}
-
-// Client-side endpoint information (no sensitive data)
+// Client-side endpoint catalog (no sensitive data)
 export const AVAILABLE_ENDPOINTS: ApiInfo[] = [
   // Image Generation Models
   {

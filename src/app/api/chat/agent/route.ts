@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { AGENT_TOOLS } from '@/lib/agent-tools';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { validateChatInput } from '@/lib/input-validation';
+import { createRequestLogger } from '@/lib/logger';
 
 export const maxDuration = 120;
 
@@ -134,6 +135,8 @@ You can chain image → video. Generate an image first, then animate it. The sys
 6. Video requirements for V2V models: .mp4/.mov only, 3-10 seconds, 720-2160px resolution, max 200MB.`;
 
 export async function POST(request: NextRequest) {
+  const log = createRequestLogger({ requestId: crypto.randomUUID().slice(0, 8), route: '/api/chat/agent' });
+
   // Rate limit: 20 requests/minute for Claude chat
   const rateLimited = await applyRateLimit(request, 'chat');
   if (rateLimited) return rateLimited;
@@ -347,7 +350,7 @@ export async function POST(request: NextRequest) {
               }
             });
           } catch (imgError) {
-            console.warn('🤖 [Agent] Failed to fetch image URL, skipping:', url);
+            log.warn({ url: url.slice(0, 100) }, 'Failed to fetch image URL, skipping');
           }
         }
       }
@@ -356,7 +359,7 @@ export async function POST(request: NextRequest) {
     userContent.push({ type: 'text', text: userInput });
     messages.push({ role: 'user', content: userContent });
 
-    console.log('🤖 [Agent] Starting agentic chat, messages:', messages.length);
+    log.info({ messageCount: messages.length }, 'Starting agentic chat');
 
     // Creative direction style descriptions for the AI
     const styleGuides: Record<string, string> = {
@@ -438,7 +441,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
       messages
     });
 
-    console.log(`🤖 [Agent] Response: stop=${response.stop_reason} types=${response.content.map(b => b.type).join(',')}`);
+    log.debug({ stopReason: response.stop_reason, types: response.content.map(b => b.type).join(',') }, 'Agent response');
 
     // Collect all actions the agent wants to take
     const agentActions: any[] = [];
@@ -461,7 +464,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
       for (const toolUse of toolUseBlocks) {
-        console.log('🔧 [Agent] Tool call:', toolUse.name, toolUse.input);
+        log.info({ tool: toolUse.name }, 'Agent tool call');
         const input = toolUse.input as Record<string, any>;
 
         switch (toolUse.name) {
@@ -565,7 +568,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
         messages
       });
 
-      console.log('🤖 [Agent] Follow-up response stop_reason:', response.stop_reason);
+      log.debug({ stopReason: response.stop_reason }, 'Follow-up response');
     }
 
     // Extract final text from the last response
@@ -576,7 +579,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
       finalText += (finalText ? '\n' : '') + lastTextBlocks.map(b => b.text).join('\n');
     }
 
-    console.log('✅ [Agent] Final response ready, actions:', agentActions.length);
+    log.info({ actions: agentActions.length }, 'Final response ready');
 
     return NextResponse.json({
       success: true,
@@ -585,7 +588,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
     });
 
   } catch (error) {
-    console.error('❌ [Agent] Error:', error);
+    log.error({ err: error }, 'Agent error');
 
     if ((error as any).name === 'AbortError') {
       return NextResponse.json({ success: false, error: 'Request timed out' }, { status: 408 });

@@ -1,27 +1,12 @@
 #!/bin/bash
 cd /Users/babypegasus/Desktop/prototypes/DirectorchairAi
 git add -A
-git commit -m "feat: P2 production readiness — CI/CD, input validation, structured logging
+git commit -m "refactor: replace console.log with structured pino logger in API routes
 
-1. CI/CD pipeline (.github/workflows/ci.yml):
-   - Lint + type-check + vitest on every push/PR
-   - Build step with stub env vars
-   - Concurrency control (cancel in-progress)
-
-2. Input validation (src/lib/input-validation.ts):
-   - sanitizePrompt: trim, strip control chars, length limit
-   - isValidModel: allowlist from model catalog
-   - validateGenerateInput: model + prompt + image_urls validation
-   - validateChatInput: message length + conversation size limits
-   - Wired into /api/generate and /api/chat/agent
-
-3. Structured logging (src/lib/logger.ts):
-   - Pino-based JSON logger for production
-   - Request-scoped child loggers with requestId, route, model
-   - Sensitive field redaction (auth, cookies, API keys)
-   - ISO timestamps, service metadata
-
-4. Tests: 28 passing across 4 suites (up from 9)" > /tmp/gc.txt 2>&1
-git push origin main >> /tmp/gc.txt 2>&1
+- generate/route.ts: 35 console calls → 35 pino calls (info/debug/warn/error)
+- chat/agent/route.ts: 7 console calls → 7 pino calls
+- All logs now include requestId, model, duration as structured fields
+- Debug-level for model config, info for request lifecycle, error for failures
+- Sensitive fields (auth, cookies, API keys) auto-redacted by pino config"
+git push origin main
 rm -f /Users/babypegasus/Desktop/prototypes/DirectorchairAi/_gc.sh
-echo "DONE" >> /tmp/gc.txt

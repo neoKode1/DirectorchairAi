@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createFalClient } from '@fal-ai/client';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { validateGenerateInput } from '@/lib/input-validation';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 // Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -30,7 +31,7 @@ async function convertLocalhostToBase64(url: string): Promise<string> {
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       return `data:${contentType};base64,${base64}`;
     } catch (error) {
-      console.error('Failed to convert localhost URL to base64:', error);
+      logger.warn({ err: error }, 'Failed to convert localhost URL to base64');
       return url; // Return original URL if conversion fails
     }
   }
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const startTime = Date.now();
   const requestId = crypto.randomUUID().slice(0, 8);
+  const log = createRequestLogger({ requestId, route: '/api/generate' });
 
   try {
     const body = await request.json();
@@ -52,9 +54,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Validate + sanitize input (model allowlist, prompt length, control chars)
     const validation = validateGenerateInput(body);
     if (!validation.valid) {
+      log.warn({ error: validation.error }, 'Validation failed');
       return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
     }
     const { prompt, model } = validation.sanitized!;
+    log.info({ model, prompt: prompt.slice(0, 80), ar: body.aspect_ratio, res: body.resolution, dur: body.duration, hasImage: !!body.image_url }, 'Generation request');
 
     // Determine if this is a video or image generation request
     const isVideoModel = model.includes('video') ||
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                         model.includes('grok-imagine-image') ||
                         (model.includes('wan') && !model.includes('video'));
 
-    console.log(`🔍 [Generate API] [${requestId}] Classification: video=${isVideoModel} image=${isImageModel}`);
+    log.debug({ isVideoModel, isImageModel }, 'Classification');
 
     // Prepare FAL API input parameters
     const input: Record<string, any> = {
@@ -126,15 +130,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           input.image_urls = [input.image_url]; // preserve content image
         }
         input.image_url = styleUrl; // style becomes the primary reference
-        console.log(`🎨 [Generate API] [${requestId}] Style transfer: flux-krea-lora using style as image_url`);
+        log.debug({ model }, 'Style transfer: flux-krea-lora');
       } else if (model.includes('omni-zero') || model.includes('style-transfer')) {
         // Models with explicit style_image_url param
         input.style_image_url = styleUrl;
-        console.log(`🎨 [Generate API] [${requestId}] Style transfer: using style_image_url param`);
+        log.debug({ model }, 'Style transfer: style_image_url param');
       } else {
         // For other models, pass as style_image_url — backend models may support it
         input.style_image_url = styleUrl;
-        console.log(`🎨 [Generate API] [${requestId}] Style image provided but model may not support it`);
+        log.debug({ model }, 'Style image provided but model may not support it');
       }
     }
 
@@ -166,7 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.aspect_ratio) {
         input.ratio = body.aspect_ratio;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Nano Banana: image_urls=${input.image_urls?.length || 0}`);
+      log.debug({ model, imageUrls: input.image_urls?.length || 0 }, 'Nano Banana config');
     }
 
     // Handle Wan 2.7 models — use image_urls array and image_size preset string
@@ -180,7 +184,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image_size = 'square_hd';
       delete input.aspect_ratio;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Wan 2.7: image_urls=${input.image_urls?.length || 0}, image_size=${input.image_size}`);
+      log.debug({ model, imageUrls: input.image_urls?.length || 0, imageSize: input.image_size }, 'Wan 2.7 config');
     }
 
     // Handle ALL Seedream models (v4, v4.5, v5) — uses image_urls array and image_size
@@ -199,7 +203,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       delete input.aspect_ratio;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Seedream: model=${model}, image_urls=${input.image_urls?.length || 0}, image_size=`, input.image_size);
+      log.debug({ model, imageUrls: input.image_urls?.length || 0, imageSize: input.image_size }, 'Seedream config');
     }
 
     // Handle other image models that might need special aspect ratio handling
@@ -217,7 +221,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!input.image_url && body.image_urls && body.image_urls.length > 0) {
         input.image_url = await convertLocalhostToBase64(body.image_urls[0]);
       }
-      console.log(`🔧 [Generate API] [${requestId}] Gemini Edit: hasImage=${!!input.image_url}`);
+      log.debug({ model, hasImage: !!input.image_url }, 'Gemini Edit config');
     }
 
     // Handle Grok Image Edit (xai/grok-imagine-image/edit)
@@ -231,7 +235,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.ratio;
       delete input.resolution;
       delete input.duration;
-      console.log(`🔧 [Generate API] [${requestId}] Grok Image Edit: hasImage=${!!input.image_url}`);
+      log.debug({ model, hasImage: !!input.image_url }, 'Grok Image Edit config');
     }
 
     // Handle Qwen Image Edit
@@ -245,7 +249,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.ratio;
       delete input.resolution;
       delete input.duration;
-      console.log(`🔧 [Generate API] [${requestId}] Qwen Edit: hasImage=${!!input.image_url}`);
+      log.debug({ model, hasImage: !!input.image_url }, 'Qwen Edit config');
     }
 
     // Handle Dreamina v3.1 T2I
@@ -254,7 +258,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.image_size = AR_TO_DIMS[body.aspect_ratio || '16:9'] || AR_TO_DIMS['16:9'];
       delete input.aspect_ratio;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Dreamina: image_size=`, input.image_size);
+      log.debug({ model, imageSize: input.image_size }, 'Dreamina config');
     }
 
     // Handle Veo 3.1 model specific parameters
@@ -304,7 +308,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         delete input.image_urls;
       }
 
-      console.log(`🔧 [Generate API] [${requestId}] Veo 3.1: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, audio: input.generate_audio }, 'Veo 3.1 config');
     }
 
     // Handle ALL Minimax Hailuo models (Hailuo 02, Hailuo 2.3, EndFrame)
@@ -345,7 +349,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.prompt_optimizer = body.prompt_optimizer !== undefined ? body.prompt_optimizer : true;
       }
 
-      console.log(`🔧 [Generate API] [${requestId}] Hailuo: dur=${input.duration} res=${input.resolution}`);
+      log.debug({ model, dur: input.duration, res: input.resolution }, 'Hailuo config');
     }
 
     // Handle Kling model specific parameters
@@ -441,7 +445,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         }
       }
 
-      console.log(`🔧 [Generate API] [${requestId}] Kling: dur=${input.duration} v3/o3=${isKlingV3OrO3} startImg=${!!input.start_image_url} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, isKlingV3OrO3, startImg: !!input.start_image_url, audio: input.generate_audio }, 'Kling config');
     }
 
     // Handle Pixverse V6 — I2V, 1-15s (integer), style presets, generate_audio_switch
@@ -474,7 +478,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       // Remove aspect_ratio — Pixverse doesn't use it
       delete input.aspect_ratio;
-      console.log(`🔧 [Generate API] [${requestId}] Pixverse: dur=${input.duration} res=${input.resolution} style=${input.style || 'none'}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, style: input.style }, 'Pixverse config');
     }
 
     // Handle Seedance 2.0 Fast Image-to-Video — standard I2V with image_url, native audio
@@ -498,7 +502,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Clean up — uses image_url (already set generically)
       delete input.image_urls;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 I2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, audio: input.generate_audio }, 'Seedance 2.0 I2V config');
     }
     // Handle Seedance 2.0 Reference-to-Video — uses reference_image_urls (1-4 images)
     else if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
@@ -528,7 +532,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.image_urls;
       delete input.end_image_url;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 Ref2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} refs=${input.reference_image_urls?.length || 0} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, refs: input.reference_image_urls?.length || 0, audio: input.generate_audio }, 'Seedance 2.0 Ref2V config');
     }
     // Handle Seedance 2.0 Fast Text-to-Video — pure T2V, no image needed
     else if (model.includes('seedance-2.0') && model.includes('text-to-video')) {
@@ -549,7 +553,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.image_urls;
       delete input.end_image_url;
       delete input.size;
-      console.log(`🔧 [Generate API] [${requestId}] Seedance 2.0 T2V: dur=${input.duration} res=${input.resolution} ar=${input.aspect_ratio} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, audio: input.generate_audio }, 'Seedance 2.0 T2V config');
     }
     // Handle Seedance 1.5 Pro — I2V with audio, start + end frame, 4-12s
     else if (model.includes('seedance')) {
@@ -574,7 +578,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.end_image_url) {
         input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
       }
-      console.log(`🔧 [Generate API] [${requestId}] Seedance 1.5: dur=${input.duration} res=${input.resolution} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, res: input.resolution, audio: input.generate_audio }, 'Seedance 1.5 config');
     }
 
     // Handle Sora 2 model specific parameters
@@ -599,7 +603,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         delete input.image_url;
         delete input.image_urls;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Sora 2: dur=${input.duration} ar=${input.aspect_ratio} remix=${model.includes('remix')}`);
+      log.debug({ model, dur: input.duration, ar: input.aspect_ratio, remix: model.includes('remix') }, 'Sora 2 config');
     }
 
     // Handle Wan model specific parameters
@@ -609,7 +613,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (body.resolution) {
         input.resolution = body.resolution;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Wan: dur=${input.duration} res=${input.resolution}`);
+      log.debug({ model, dur: input.duration, res: input.resolution }, 'Wan config');
     }
 
     // Handle DreamActor v2 model specific parameters
@@ -626,7 +630,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.image_urls;
       delete input.aspect_ratio;
       delete input.duration;
-      console.log(`🔧 [Generate API] [${requestId}] DreamActor: srcImg=${!!input.source_image} video=${!!input.driving_video}`);
+      log.debug({ model, srcImg: !!input.source_image, video: !!input.driving_video }, 'DreamActor config');
     }
 
     // Handle Luma Ray 2 model specific parameters
@@ -636,7 +640,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!['16:9', '9:16', '4:3', '3:4'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
       }
-      console.log(`🔧 [Generate API] [${requestId}] Luma: ar=${input.aspect_ratio}`);
+      log.debug({ model, ar: input.aspect_ratio }, 'Luma config');
     }
 
     // Handle Grok video models — resolution MUST be '480p' or '720p' only
@@ -654,7 +658,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!validGrokRes.includes(input.resolution)) {
         input.resolution = '720p';
       }
-      console.log(`🔧 [Generate API] [${requestId}] Grok: dur=${input.duration} res=${input.resolution}`);
+      log.debug({ model, dur: input.duration, res: input.resolution }, 'Grok config');
     }
 
     // Handle Ovi I2V — image-to-video with synchronized audio
@@ -669,7 +673,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
       // Ovi supports generate_audio
       input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
-      console.log(`🔧 [Generate API] [${requestId}] Ovi: dur=${input.duration} audio=${input.generate_audio}`);
+      log.debug({ model, dur: input.duration, audio: input.generate_audio }, 'Ovi config');
     }
 
     // Handle Hunyuan Video — T2V, no image needed
@@ -684,10 +688,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       } else {
         input.duration = 5;
       }
-      console.log(`🔧 [Generate API] [${requestId}] Hunyuan: dur=${input.duration} ar=${input.aspect_ratio}`);
+      log.debug({ model, dur: input.duration, ar: input.aspect_ratio }, 'Hunyuan config');
     }
 
-    console.log(`🔗 [Generate API] [${requestId}] Calling FAL: ${model} | ar=${input.aspect_ratio} res=${input.resolution} dur=${input.duration}`);
+    log.info({ model, ar: input.aspect_ratio, res: input.resolution, dur: input.duration }, 'Calling FAL');
 
     // Call FAL API directly
     let result;
@@ -697,14 +701,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         logs: true,
         onQueueUpdate: (update: any) => {
           if (update.status !== 'IN_QUEUE') {
-            console.log(`📊 [Generate API] [${requestId}] Queue: ${update.status}`);
+            log.debug({ queueStatus: update.status }, 'Queue update');
           }
         },
       });
 
       const endTime = Date.now();
       const duration = endTime - startTime;
-      console.log(`✅ [Generate API] [${requestId}] Complete in ${duration}ms`);
+      log.info({ duration }, 'Complete');
       
       return NextResponse.json({
         success: true,
@@ -718,7 +722,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
     } catch (falError: any) {
-      console.error(`❌ [Generate API] [${requestId}] FAL error ${falError.status}:`, falError.body || falError.message);
+      log.error({ status: falError.status, body: falError.body, msg: falError.message }, 'FAL API error');
       
       const endTime = Date.now();
       const duration = endTime - startTime;
@@ -734,7 +738,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const hasImageInput = body.image_url || body.image_urls;
       
       if (isContentPolicyViolation && isNanoBananaEdit && hasImageInput) {
-        console.log(`🔄 [Generate API] [${requestId}] Content policy violation, trying Seedream 4.0 Edit fallback...`);
+        log.warn({ model }, 'Content policy violation, trying fallback');
         try {
           const fallbackInput = { ...input };
           if (body.aspect_ratio) {
@@ -748,7 +752,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           });
 
           const fallbackDuration = Date.now() - startTime;
-          console.log(`✅ [Generate API] [${requestId}] Fallback complete in ${fallbackDuration}ms`);
+          log.info({ duration: fallbackDuration, fallback: 'seedream-v4-edit' }, 'Fallback complete');
 
           return NextResponse.json({
             success: true,
@@ -762,7 +766,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             timestamp: new Date().toISOString()
           });
         } catch (fallbackError) {
-          console.error(`❌ [Generate API] [${requestId}] Fallback also failed:`, fallbackError);
+          log.error({ err: fallbackError }, 'Fallback also failed');
         }
       }
 
@@ -786,7 +790,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const endTime = Date.now();
     const duration = endTime - startTime;
     
-    console.error(`❌ [Generate API] [${requestId}] Error in ${duration}ms:`, error.message);
+    log.error({ duration, err: error.message }, 'Generation failed');
 
     return NextResponse.json({
       success: false,

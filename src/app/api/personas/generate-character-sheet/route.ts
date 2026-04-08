@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -30,6 +31,9 @@ async function uploadDataUrl(dataUrl: string, index: number): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimited = await applyRateLimit(request, 'generate');
+  if (rateLimited) return rateLimited;
+
   const startTime = Date.now();
   try {
     const { personaId, referenceImages, personaName } = await request.json();

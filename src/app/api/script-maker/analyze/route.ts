@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claudeAPI } from '@/lib/claude-api';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // Helper function to detect actual image type from base64 data by checking magic bytes
 function detectImageType(base64Data: string): string | null {
@@ -38,6 +39,9 @@ function detectImageType(base64Data: string): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  const rateLimited = await applyRateLimit(request, 'chat');
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
     const { movieTitle, plot, screenplay, genreIdea, eraSetting, photoStyle, minutesToExtract, characterProfiles, analysisType, styleImageUrl } = body;

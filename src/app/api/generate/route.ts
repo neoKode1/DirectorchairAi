@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createFalClient } from '@fal-ai/client';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 // Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -37,9 +38,13 @@ async function convertLocalhostToBase64(url: string): Promise<string> {
 
 // Unified generate route that handles all FAL models directly
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Rate limit: 30 requests/minute for expensive generation calls
+  const rateLimited = await applyRateLimit(request, 'generate');
+  if (rateLimited) return rateLimited;
+
   const startTime = Date.now();
   const requestId = crypto.randomUUID().slice(0, 8);
-  
+
   try {
     const body = await request.json();
     console.log(`🔍 [Generate API] [${requestId}] ${body.model} | prompt="${body.prompt?.substring(0, 80)}..." | ar=${body.aspect_ratio} res=${body.resolution} dur=${body.duration} img=${!!body.image_url}`);
@@ -807,15 +812,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Handle CORS preflight requests
-export async function OPTIONS(_request: NextRequest) {
+// Handle CORS preflight — same-origin only (no wildcard)
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    process.env.NEXTAUTH_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ].filter(Boolean) as string[];
+
+  const isAllowed = allowedOrigins.some(o => origin === o);
+
   return new NextResponse(null, {
     status: 204,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Origin': isAllowed ? origin : '',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400',
+      'Vary': 'Origin',
     },
   });
 }

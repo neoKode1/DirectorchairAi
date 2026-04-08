@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { AGENT_TOOLS } from '@/lib/agent-tools';
+import { applyRateLimit } from '@/lib/rate-limit';
 
 export const maxDuration = 120;
 
@@ -132,6 +133,10 @@ You can chain image → video. Generate an image first, then animate it. The sys
 6. Video requirements for V2V models: .mp4/.mov only, 3-10 seconds, 720-2160px resolution, max 200MB.`;
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 20 requests/minute for Claude chat
+  const rateLimited = await applyRateLimit(request, 'chat');
+  if (rateLimited) return rateLimited;
+
   try {
     const contentLength = request.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_REQUEST_SIZE) {

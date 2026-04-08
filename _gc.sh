@@ -1,27 +1,27 @@
 #!/bin/bash
 cd /Users/babypegasus/Desktop/prototypes/DirectorchairAi
 git add -A
-git commit -m "feat: P1 production readiness — health check, Sentry, tests
+git commit -m "feat: P2 production readiness — CI/CD, input validation, structured logging
 
-1. Health endpoint (/api/health):
-   - Checks FAL, Anthropic, Upstash connectivity
-   - Returns 200 healthy / 503 unhealthy with per-service latency
-   - Public (no auth) for uptime monitoring tools
+1. CI/CD pipeline (.github/workflows/ci.yml):
+   - Lint + type-check + vitest on every push/PR
+   - Build step with stub env vars
+   - Concurrency control (cancel in-progress)
 
-2. Sentry error tracking (@sentry/nextjs):
-   - Client config: replay (1% sessions, 100% errors), browser tracing
-   - Server config: 10% transaction sampling
-   - Edge config for middleware
-   - Global error boundary (global-error.tsx) captures + reports
-   - Instrumentation hook for server/edge runtime init
-   - Wired into next.config.mjs with source map upload
-   - Tunnel route /monitoring to bypass ad-blockers
+2. Input validation (src/lib/input-validation.ts):
+   - sanitizePrompt: trim, strip control chars, length limit
+   - isValidModel: allowlist from model catalog
+   - validateGenerateInput: model + prompt + image_urls validation
+   - validateChatInput: message length + conversation size limits
+   - Wired into /api/generate and /api/chat/agent
 
-3. Integration tests (vitest):
-   - api-generate.test.ts: 5 tests (missing params, success, error, requestId)
-   - rate-limit.test.ts: 2 tests (unconfigured fail-open behavior)
-   - env-validation.test.ts: 2 tests (dev mode warn, valid env)
-   - All 9 tests passing, vitest config updated with @ alias" > /tmp/gc.txt 2>&1
+3. Structured logging (src/lib/logger.ts):
+   - Pino-based JSON logger for production
+   - Request-scoped child loggers with requestId, route, model
+   - Sensitive field redaction (auth, cookies, API keys)
+   - ISO timestamps, service metadata
+
+4. Tests: 28 passing across 4 suites (up from 9)" > /tmp/gc.txt 2>&1
 git push origin main >> /tmp/gc.txt 2>&1
 rm -f /Users/babypegasus/Desktop/prototypes/DirectorchairAi/_gc.sh
 echo "DONE" >> /tmp/gc.txt

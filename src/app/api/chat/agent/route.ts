@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { AGENT_TOOLS } from '@/lib/agent-tools';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { validateChatInput } from '@/lib/input-validation';
 
 export const maxDuration = 120;
 
@@ -144,6 +145,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Validate chat input (message length, conversation size)
+    const chatValidation = validateChatInput({
+      messages: [...(body.conversationHistory || []), { role: 'user', content: body.userInput }]
+    });
+    if (!chatValidation.valid) {
+      return NextResponse.json({ success: false, error: chatValidation.error }, { status: 400 });
+    }
+
     const { userInput, conversationHistory, imageUrls, videoUrl, styleImageUrl, userSettings } = body;
 
     if (!userInput || typeof userInput !== 'string') {

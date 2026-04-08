@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createFalClient } from '@fal-ai/client';
 import { applyRateLimit } from '@/lib/rate-limit';
+import { validateGenerateInput } from '@/lib/input-validation';
 
 // Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
 const fal = createFalClient({
@@ -47,27 +48,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const body = await request.json();
-    console.log(`🔍 [Generate API] [${requestId}] ${body.model} | prompt="${body.prompt?.substring(0, 80)}..." | ar=${body.aspect_ratio} res=${body.resolution} dur=${body.duration} img=${!!body.image_url}`);
 
-    // Extract model and prompt - these are required
-    const model = body.model || body.endpoint || body.endpointId;
-    const prompt = body.prompt;
-    
-    if (!model) {
-      console.error('❌ [Generate API] Missing model parameter');
-      return NextResponse.json({ 
-        success: false,
-        error: "Model parameter is required" 
-      }, { status: 400 });
+    // Validate + sanitize input (model allowlist, prompt length, control chars)
+    const validation = validateGenerateInput(body);
+    if (!validation.valid) {
+      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
     }
-
-    if (!prompt) {
-      console.error('❌ [Generate API] Missing prompt parameter');
-      return NextResponse.json({ 
-        success: false,
-        error: "Prompt parameter is required" 
-      }, { status: 400 });
-    }
+    const { prompt, model } = validation.sanitized!;
 
     // Determine if this is a video or image generation request
     const isVideoModel = model.includes('video') ||

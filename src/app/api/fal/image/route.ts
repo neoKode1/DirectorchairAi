@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fal } from '@fal-ai/client';
+import { createFalClient } from '@fal-ai/client';
+
+// Create a dedicated server-side fal client (avoids singleton proxyUrl contamination)
+const fal = createFalClient({
+  credentials: process.env.FAL_KEY,
+});
 
 // Image-specific FAL proxy that handles all image generation models
 export async function POST(request: NextRequest): Promise<NextResponse> {

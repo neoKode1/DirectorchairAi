@@ -1,6 +1,11 @@
 import { fal } from "@fal-ai/client";
 import type { Result, QueueStatus, RequestLog } from "@fal-ai/client";
-import type { ImageSize, ImageData, ImageResult, FluxOutput } from "@/lib/types/fal-types";
+
+// Inline types (previously imported from deleted fal-types.ts)
+type ImageSize = "square_hd" | "square" | "portrait_4_3" | "portrait_16_9" | "landscape_4_3" | "landscape_16_9";
+interface ImageData { url: string; seed?: number; nsfw_content_detected?: boolean; }
+interface ImageResult { images: ImageData[]; }
+interface FluxOutput { data: ImageResult; }
 
 interface FluxProV11UltraInput {
   prompt: string;

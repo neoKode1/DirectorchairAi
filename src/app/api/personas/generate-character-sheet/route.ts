@@ -83,20 +83,20 @@ export async function POST(request: NextRequest) {
           safety_tolerance: '4',
         },
         logs: true,
-        onQueueUpdate: (update: { status: string; logs: Array<{ message: string }> }) => {
-          if (update.status === 'IN_PROGRESS') {
-            update.logs.map((log: { message: string }) => log.message).forEach(console.log);
+        onQueueUpdate: (update: any) => {
+          if (update.status === 'IN_PROGRESS' && update.logs) {
+            update.logs.map((log: any) => log.message).forEach(console.log);
           }
         },
       });
 
       const duration = Date.now() - startTime;
-      console.log(`✅ [CHARACTER SHEET] Complete in ${duration}ms — ${result.data.images?.length || 0} images`);
+      console.log(`✅ [CHARACTER SHEET] Complete in ${duration}ms — ${(result.data as any).images?.length || 0} images`);
 
       return NextResponse.json({
         success: true,
         requestId: result.requestId,
-        images: result.data.images,
+        images: (result.data as any).images,
         model: 'fal-ai/nano-banana-pro/edit',
         duration,
       });
@@ -119,9 +119,9 @@ export async function POST(request: NextRequest) {
           output_format: 'png',
         },
         logs: true,
-        onQueueUpdate: (update: { status: string; logs: Array<{ message: string }> }) => {
-          if (update.status === 'IN_PROGRESS') {
-            update.logs.map((log: { message: string }) => log.message).forEach(console.log);
+        onQueueUpdate: (update: any) => {
+          if (update.status === 'IN_PROGRESS' && update.logs) {
+            update.logs.map((log: any) => log.message).forEach(console.log);
           }
         },
       });
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         requestId: fallbackResult.requestId,
-        images: fallbackResult.data.images,
+        images: (fallbackResult.data as any).images,
         model: 'fal-ai/bytedance/seedream/v4/edit',
         fallbackUsed: true,
         duration,

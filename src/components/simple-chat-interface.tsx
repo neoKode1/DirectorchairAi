@@ -514,6 +514,12 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         })
       });
 
+      // Check for auth redirects (307 → HTML login page) or non-JSON responses
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error('Session expired. Please refresh the page and sign in again.');
+      }
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ error: 'Agent request failed' }));
         throw new Error(errData.error || `Agent error ${res.status}`);

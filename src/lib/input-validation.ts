@@ -9,7 +9,8 @@ import { MODEL_GROUPS } from '@/components/chat-model-data';
 const MAX_PROMPT_LENGTH = 10_000;    // ~2,500 words
 const MAX_NEGATIVE_PROMPT = 2_000;
 const MAX_IMAGE_URLS = 10;
-const MAX_URL_LENGTH = 50_000;       // base64 data URIs can be large
+const MAX_HTTP_URL_LENGTH = 8_000;     // normal HTTP URLs
+const MAX_DATA_URI_LENGTH = 10_000_000; // ~7.5MB base64 image data URIs
 
 // ── Build model allowlist from the canonical catalog ──
 const ALLOWED_MODELS = new Set<string>();
@@ -76,20 +77,27 @@ export function validateGenerateInput(body: Record<string, any>): ValidationResu
     return { valid: false, error: 'Prompt is required and must be a non-empty string' };
   }
 
-  // Validate image URLs count
+  // Validate image URLs count and size
+  const urlLimit = (url: string) =>
+    url.startsWith('data:') ? MAX_DATA_URI_LENGTH : MAX_HTTP_URL_LENGTH;
+
   if (body.image_urls && Array.isArray(body.image_urls)) {
     if (body.image_urls.length > MAX_IMAGE_URLS) {
       return { valid: false, error: `Too many images (max ${MAX_IMAGE_URLS})` };
     }
     for (const url of body.image_urls) {
-      if (typeof url === 'string' && url.length > MAX_URL_LENGTH) {
-        return { valid: false, error: 'Image URL exceeds maximum size' };
+      if (typeof url === 'string' && url.length > urlLimit(url)) {
+        return { valid: false, error: url.startsWith('data:')
+          ? 'Image file too large (max ~7.5MB). Please use a smaller image.'
+          : 'Image URL exceeds maximum length' };
       }
     }
   }
 
-  if (body.image_url && typeof body.image_url === 'string' && body.image_url.length > MAX_URL_LENGTH) {
-    return { valid: false, error: 'Image URL exceeds maximum size' };
+  if (body.image_url && typeof body.image_url === 'string' && body.image_url.length > urlLimit(body.image_url)) {
+    return { valid: false, error: body.image_url.startsWith('data:')
+      ? 'Image file too large (max ~7.5MB). Please use a smaller image.'
+      : 'Image URL exceeds maximum length' };
   }
 
   const negative_prompt = body.negative_prompt

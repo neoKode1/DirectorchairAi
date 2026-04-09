@@ -595,13 +595,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (!['16:9', '9:16'].includes(input.aspect_ratio)) {
         input.aspect_ratio = '16:9';
       }
-      // Sora 2 duration is in seconds (number), default 5
+      // Sora 2 I2V duration: only 4, 8, 12, 16, or 20 (integers)
+      const validSora2Durations = [4, 8, 12, 16, 20];
       if (body.duration) {
         const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
-        input.duration = isNaN(dNum) ? 5 : Math.min(Math.max(dNum, 1), 20);
+        // Snap to nearest valid duration
+        input.duration = validSora2Durations.reduce((prev, curr) =>
+          Math.abs(curr - (isNaN(dNum) ? 4 : dNum)) < Math.abs(prev - (isNaN(dNum) ? 4 : dNum)) ? curr : prev
+        );
       } else {
-        input.duration = 5;
+        input.duration = 4;
       }
+      // Sora 2 resolution: only 'auto' or '720p'
+      const validSora2Res = ['auto', '720p'];
+      input.resolution = (body.resolution && validSora2Res.includes(body.resolution)) ? body.resolution : '720p';
       // Sora 2 Remix (V2V) — needs video_url as source, no image_url
       if (model.includes('video-to-video/remix')) {
         if (body.video_url) {

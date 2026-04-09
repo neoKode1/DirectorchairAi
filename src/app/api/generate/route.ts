@@ -617,10 +617,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Handle Wan model specific parameters
     if (model.includes('wan-pro') || model.includes('wan/v2') || model.includes('wan-25')) {
       // Wan models use image_url for I2V (correct as-is)
-      // Wan supports resolution parameter for output quality
-      if (body.resolution) {
-        input.resolution = body.resolution;
+      // Duration: Wan accepts 4, 8, 12, 16, or 20 (integers)
+      const validWanDurations = [4, 8, 12, 16, 20];
+      if (body.duration) {
+        const dNum = parseInt(body.duration.toString().replace(/s$/, ''), 10);
+        // Find the closest valid duration
+        input.duration = validWanDurations.reduce((prev, curr) =>
+          Math.abs(curr - dNum) < Math.abs(prev - dNum) ? curr : prev
+        );
+      } else {
+        input.duration = 4; // Default to shortest
       }
+      // Resolution: Wan only accepts 'auto' or '720p'
+      const validWanRes = ['auto', '720p'];
+      input.resolution = (body.resolution && validWanRes.includes(body.resolution)) ? body.resolution : '720p';
       log.debug({ model, dur: input.duration, res: input.resolution }, 'Wan config');
     }
 

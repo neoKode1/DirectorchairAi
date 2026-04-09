@@ -26,7 +26,15 @@ async function convertLocalhostToBase64(url: string): Promise<string> {
   if (url.startsWith('http://localhost:') || url.startsWith('http://127.0.0.1:')) {
     try {
       const response = await fetch(url);
+      if (!response.ok) {
+        logger.warn({ status: response.status, url: url.slice(0, 80) }, 'Localhost image fetch returned error');
+        return url;
+      }
       const arrayBuffer = await response.arrayBuffer();
+      if (arrayBuffer.byteLength < 100) {
+        logger.warn({ size: arrayBuffer.byteLength, url: url.slice(0, 80) }, 'Localhost image too small');
+        return url;
+      }
       const base64 = Buffer.from(arrayBuffer).toString('base64');
       const contentType = response.headers.get('content-type') || 'image/jpeg';
       return `data:${contentType};base64,${base64}`;

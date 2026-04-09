@@ -326,20 +326,38 @@ export async function POST(request: NextRequest) {
           const match = url.match(/^data:(image\/[^;]+);base64,(.+)$/);
           if (match) {
             const data = match[2];
-            userContent.push({
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: detectMediaType(data),
-                data
-              }
-            });
+            // Ensure base64 data is non-empty and looks like real image data (not an error page)
+            if (data.length > 100) {
+              userContent.push({
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: detectMediaType(data),
+                  data
+                }
+              });
+            } else {
+              log.warn({ urlLen: url.length, dataLen: data.length }, 'Skipping data URI: base64 payload too small to be a valid image');
+            }
           }
         } else {
           // For HTTP URLs, fetch and convert to base64 since SDK v0.36.3 doesn't support url source
           try {
             const imgRes = await fetch(url);
+            if (!imgRes.ok) {
+              log.warn({ url: url.slice(0, 100), status: imgRes.status }, 'Image URL returned error, skipping');
+              continue;
+            }
+            const contentType = imgRes.headers.get('content-type') || '';
+            if (!contentType.startsWith('image/')) {
+              log.warn({ url: url.slice(0, 100), contentType }, 'URL did not return image content-type, skipping');
+              continue;
+            }
             const buffer = await imgRes.arrayBuffer();
+            if (buffer.byteLength < 100) {
+              log.warn({ url: url.slice(0, 100), size: buffer.byteLength }, 'Image too small, skipping');
+              continue;
+            }
             const base64 = Buffer.from(buffer).toString('base64');
             userContent.push({
               type: 'image',
@@ -350,7 +368,7 @@ export async function POST(request: NextRequest) {
               }
             });
           } catch (imgError) {
-            log.warn({ url: url.slice(0, 100) }, 'Failed to fetch image URL, skipping');
+            log.warn({ url: url.slice(0, 100), err: (imgError as Error).message }, 'Failed to fetch image URL, skipping');
           }
         }
       }

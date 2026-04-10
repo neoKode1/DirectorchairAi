@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
     const resolvedAR = userPreferredModel !== 'none' ? resolveAspectRatio(userPreferredModel, userAspectRatio) : userAspectRatio;
     const resolvedParams = userPreferredModel !== 'none' ? resolveModelParams(userPreferredModel) : null;
 
-    const client = new Anthropic({ apiKey });
+    const client = new Anthropic({ apiKey, maxRetries: 3 });
 
     // Build messages from conversation history
     const messages: Anthropic.MessageParam[] = [];
@@ -610,6 +610,14 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
 
     if ((error as any).name === 'AbortError') {
       return NextResponse.json({ success: false, error: 'Request timed out' }, { status: 408 });
+    }
+
+    // Anthropic overloaded (529)
+    if ((error as any).status === 529) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI service is temporarily overloaded. Please try again in a few seconds.'
+      }, { status: 503 });
     }
 
     return NextResponse.json({

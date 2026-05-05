@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { createRequestLogger, logger } from '@/lib/logger';
+import { PRIMARY_MODEL, FALLBACK_MODEL } from '@/lib/persona-models';
 
 const log = logger.child({ route: '/api/personas/character-sheet' });
 
@@ -18,9 +19,6 @@ const fal = createFalClient({
 // nano-banana-pro/edit: up to 10 input reference images, max 4 output images per call
 const MAX_OUTPUT_IMAGES = 4;
 const MAX_INPUT_IMAGES = 10;
-
-export const PRIMARY_MODEL = 'fal-ai/nano-banana-pro/edit';
-export const FALLBACK_MODEL = 'fal-ai/bytedance/seedream/v4/edit';
 
 /**
  * Convert a base64 data URL to a File and upload to fal.ai storage.

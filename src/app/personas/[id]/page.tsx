@@ -76,21 +76,64 @@ function PersonaDetailContent() {
       const fullRes = getFullResImages(persona.id);
       const imagesToSend = fullRes && fullRes.length > 0 ? fullRes : persona.characterSheet.referenceImages;
 
-      const res = await fetch('/api/personas/generate-character-sheet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: persona.id, referenceImages: imagesToSend, personaName: persona.name }),
-      });
-      const data = await res.json();
-      if (data.success && data.images) {
-        const updated = updatePersona(persona.id, {
-          characterSheet: { ...persona.characterSheet, generatedImages: data.images.map((img: { url: string }) => img.url), status: 'ready' },
+      const submit = async (useFallback: boolean): Promise<{ requestId: string; model: string }> => {
+        const res = await fetch('/api/personas/generate-character-sheet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            personaId: persona!.id,
+            referenceImages: imagesToSend,
+            personaName: persona!.name,
+            useFallback,
+          }),
         });
-        if (updated) setPersona(updated);
-        toast({ title: 'Character Sheet Ready', description: `${data.images.length} variations generated!` });
-      } else {
-        throw new Error(data.error || 'Generation returned no images');
+        const data = await res.json();
+        if (!data.success) {
+          const err: any = new Error(data.error || data.details || 'Submit failed');
+          err.recoverable = !!data.recoverable;
+          throw err;
+        }
+        return { requestId: data.requestId, model: data.model };
+      };
+
+      const pollUntilDone = async (requestId: string, model: string): Promise<string[]> => {
+        // Poll every 5s for up to ~10 minutes
+        const maxAttempts = 120;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          await new Promise((r) => setTimeout(r, 5000));
+          const qs = `requestId=${encodeURIComponent(requestId)}&model=${encodeURIComponent(model)}`;
+          const res = await fetch(`/api/personas/character-sheet-status?${qs}`);
+          const data = await res.json();
+          if (data.status === 'COMPLETED') {
+            return (data.images || []).map((img: { url: string }) => img.url);
+          }
+          if (data.status === 'FAILED') {
+            const err: any = new Error(data.error || 'Generation failed');
+            err.recoverable = !!data.recoverable;
+            throw err;
+          }
+        }
+        throw new Error('Generation timed out');
+      };
+
+      let imageUrls: string[];
+      try {
+        const submitted = await submit(false);
+        imageUrls = await pollUntilDone(submitted.requestId, submitted.model);
+      } catch (primaryErr: any) {
+        if (!primaryErr?.recoverable) throw primaryErr;
+        toast({ title: 'Retrying with fallback model', description: 'Primary model could not generate; trying Seedream...' });
+        const submitted = await submit(true);
+        imageUrls = await pollUntilDone(submitted.requestId, submitted.model);
       }
+
+      if (imageUrls.length === 0) throw new Error('Generation returned no images');
+
+      const updated = updatePersona(persona.id, {
+        characterSheet: { ...persona.characterSheet, generatedImages: imageUrls, status: 'ready' },
+      });
+      if (updated) setPersona(updated);
+      toast({ title: 'Character Sheet Ready', description: `${imageUrls.length} variations generated!` });
     } catch (err) {
       console.error('Generation failed:', err);
       toast({ title: 'Generation Failed', description: err instanceof Error ? err.message : 'Could not generate character sheet.', variant: 'destructive' });

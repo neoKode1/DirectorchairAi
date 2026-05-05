@@ -239,9 +239,28 @@ function PersonaDetailContent() {
                 <div key={i} className="aspect-square relative group overflow-hidden border border-border">
                   <img src={url} alt={`Variation ${i + 1}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <a href={url} download={`character-${i + 1}.png`} className="px-4 py-2 border border-border text-foreground text-xs tracking-wider hover:bg-foreground/10 transition-colors">
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const res = await fetch(url);
+                          const blob = await res.blob();
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = blobUrl;
+                          link.download = `character-${i + 1}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(blobUrl);
+                        } catch (err) {
+                          console.error('Download failed:', err);
+                        }
+                      }}
+                      className="px-4 py-2 border border-border text-foreground text-xs tracking-wider hover:bg-foreground/10 transition-colors cursor-pointer"
+                    >
                       DOWNLOAD
-                    </a>
+                    </button>
                   </div>
                 </div>
               ))}

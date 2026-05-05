@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
 import { applyRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import {
-  PRIMARY_MODEL,
-  FALLBACK_MODEL,
-} from '@/app/api/personas/generate-character-sheet/route';
+import { ALLOWED_CHARACTER_SHEET_MODELS } from '@/lib/persona-models';
 
 const log = logger.child({ route: '/api/personas/character-sheet-status' });
 
@@ -14,8 +11,6 @@ export const maxDuration = 30;
 const fal = createFalClient({
   credentials: process.env.FAL_KEY,
 });
-
-const ALLOWED_MODELS = new Set<string>([PRIMARY_MODEL, FALLBACK_MODEL]);
 
 function isRecoverableError(err: any): boolean {
   const status = err?.status || 0;
@@ -40,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!requestId || !model) {
       return NextResponse.json({ error: 'Missing requestId or model' }, { status: 400 });
     }
-    if (!ALLOWED_MODELS.has(model)) {
+    if (!ALLOWED_CHARACTER_SHEET_MODELS.has(model)) {
       return NextResponse.json({ error: 'Unsupported model' }, { status: 400 });
     }
 

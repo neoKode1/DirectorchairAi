@@ -8,6 +8,7 @@ import { createRequestLogger } from '@/lib/logger';
 export const maxDuration = 120;
 
 const MAX_REQUEST_SIZE = 4 * 1024 * 1024;
+const DIRECTOR_AGENT_MODEL = 'claude-sonnet-4-5-20250929';
 
 const AGENT_SYSTEM_PROMPT = `You are DirectorChairAI, an autonomous film director and creative AI agent.
 
@@ -452,7 +453,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
 
     // Call Claude with tools - execute tool loop
     let response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: DIRECTOR_AGENT_MODEL,
       max_tokens: 2048,
       system: AGENT_SYSTEM_PROMPT + settingsContext,
       tools: AGENT_TOOLS,
@@ -579,7 +580,7 @@ IMPORTANT: Use the resolved aspect ratio (${resolvedAR}) for the selected model.
       messages.push({ role: 'user', content: toolResults });
 
       response = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: DIRECTOR_AGENT_MODEL,
         max_tokens: 2048,
         system: AGENT_SYSTEM_PROMPT + settingsContext,
         tools: AGENT_TOOLS,

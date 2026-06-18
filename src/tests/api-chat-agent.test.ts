@@ -95,6 +95,9 @@ describe('/api/chat/agent', () => {
     expect(data.success).toBe(true);
     expect(data.response).toContain('DirectorChairAI');
     expect(data.actions).toEqual([]);
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'claude-sonnet-4-5-20250929',
+    }));
   });
 
   it('handles tool_use response for image generation', async () => {

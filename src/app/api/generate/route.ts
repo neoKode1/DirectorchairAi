@@ -338,23 +338,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         input.duration = '6'; // Default to 6 seconds (valid option)
       }
       
-      // Hailuo AI 02 Standard ONLY accepts resolution: '512P' or '768P'
-      // NEVER send '1080p', '720p', etc. - they will be rejected!
-      if (body.resolution) {
-        if (body.resolution === '1080p' || body.resolution === '720p') {
-          input.resolution = '768P'; // Convert high res to 768P
-        } else if (body.resolution === '512P' || body.resolution === '768P') {
-          input.resolution = body.resolution; // Already valid
+      if (model.includes('hailuo-2.3')) {
+        // Hailuo 2.3 Standard is fixed 768p and does not expose a resolution input.
+        input.prompt_optimizer = body.prompt_optimizer !== undefined ? body.prompt_optimizer : true;
+        delete input.resolution;
+      } else {
+        // Hailuo AI 02 Standard ONLY accepts resolution: '512P' or '768P'
+        // NEVER send '1080p', '720p', etc. - they will be rejected!
+        if (body.resolution) {
+          if (body.resolution === '1080p' || body.resolution === '720p') {
+            input.resolution = '768P'; // Convert high res to 768P
+          } else if (body.resolution === '512P' || body.resolution === '768P') {
+            input.resolution = body.resolution; // Already valid
+          } else {
+            input.resolution = '768P'; // Default to 768P (valid option)
+          }
         } else {
           input.resolution = '768P'; // Default to 768P (valid option)
         }
-      } else {
-        input.resolution = '768P'; // Default to 768P (valid option)
-      }
-      
-      // Hailuo 2.3 has prompt_optimizer enabled by default
-      if (model.includes('hailuo-2.3')) {
-        input.prompt_optimizer = body.prompt_optimizer !== undefined ? body.prompt_optimizer : true;
       }
 
       log.debug({ model, dur: input.duration, res: input.resolution }, 'Hailuo config');
@@ -426,6 +427,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // motion-control doesn't use start_image_url, it uses image_url directly
         delete input.start_image_url;
         delete input.duration;
+        delete input.aspect_ratio;
       }
 
       // Kling v2.6 I2V also supports audio + end_image_url
@@ -512,7 +514,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       delete input.size;
       log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, audio: input.generate_audio }, 'Seedance 2.0 I2V config');
     }
-    // Handle Seedance 2.0 Reference-to-Video — uses reference_image_urls (1-4 images)
+    // Handle Seedance 2.0 Reference-to-Video — uses image_urls (up to 9), video_urls, and audio_urls
     else if (model.includes('seedance-2.0') && model.includes('reference-to-video')) {
       const validDurations = ['auto','4','5','6','7','8','9','10','11','12','13','14','15'];
       if (body.duration) {
@@ -529,18 +531,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       input.aspect_ratio = (body.aspect_ratio && validAR.includes(body.aspect_ratio)) ? body.aspect_ratio : 'auto';
       // Audio generation — default true (Seedance 2.0 has native audio)
       input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
-      // Map image_urls → reference_image_urls (the API field name for this model)
-      if (input.image_urls && input.image_urls.length > 0) {
-        input.reference_image_urls = input.image_urls.slice(0, 4); // max 4 reference images
-      } else if (input.image_url) {
-        input.reference_image_urls = [input.image_url];
+      // This endpoint uses image_urls directly and supports up to 9 images.
+      if (input.image_url && (!input.image_urls || input.image_urls.length === 0)) {
+        input.image_urls = [input.image_url];
+      } else if (input.image_urls && input.image_urls.length > 9) {
+        input.image_urls = input.image_urls.slice(0, 9);
+      }
+      if (body.video_urls && Array.isArray(body.video_urls)) {
+        input.video_urls = body.video_urls.slice(0, 3);
+      } else if (body.video_url) {
+        input.video_urls = [body.video_url];
+      }
+      if (body.audio_urls && Array.isArray(body.audio_urls)) {
+        input.audio_urls = body.audio_urls.slice(0, 3);
+      } else if (body.audio_url) {
+        input.audio_urls = [body.audio_url];
       }
       // Clean up params this model doesn't accept
       delete input.image_url;
-      delete input.image_urls;
       delete input.end_image_url;
       delete input.size;
-      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, refs: input.reference_image_urls?.length || 0, audio: input.generate_audio }, 'Seedance 2.0 Ref2V config');
+      log.debug({ model, dur: input.duration, res: input.resolution, ar: input.aspect_ratio, refs: input.image_urls?.length || 0, videos: input.video_urls?.length || 0, audio: input.generate_audio }, 'Seedance 2.0 Ref2V config');
     }
     // Handle Seedance 2.0 Fast Text-to-Video — pure T2V, no image needed
     else if (model.includes('seedance-2.0') && model.includes('text-to-video')) {
@@ -622,7 +633,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Handle Wan model specific parameters
-    if (model.includes('wan-pro') || model.includes('wan/v2') || model.includes('wan-25')) {
+    if (model.includes('image-to-video') && (model.includes('wan-pro') || model.includes('wan/v2') || model.includes('wan-25'))) {
       // Wan models use image_url for I2V (correct as-is)
       // Duration: Wan accepts 4, 8, 12, 16, or 20 (integers)
       const validWanDurations = [4, 8, 12, 16, 20];

@@ -108,4 +108,49 @@ describe('/api/generate', () => {
 
     expect(data.requestId).toBeDefined();
   });
+
+  it('does not send unsupported resolution to Hailuo 2.3', async () => {
+    mockSubscribe.mockResolvedValueOnce({ data: { video: { url: 'https://fal.media/test.mp4' } }, requestId: 'req-hailuo' });
+
+    const model = 'fal-ai/minimax/hailuo-2.3/standard/image-to-video';
+    await POST(createRequest({ model, prompt: 'animate this image', image_url: 'https://example.com/image.jpg', resolution: '720p' }));
+
+    const input = mockSubscribe.mock.calls[0][1].input;
+    expect(input.prompt_optimizer).toBe(true);
+    expect(input.duration).toBe('6');
+    expect(input).not.toHaveProperty('resolution');
+  });
+
+  it('keeps Seedance 2.0 reference inputs in documented fields', async () => {
+    mockSubscribe.mockResolvedValueOnce({ data: { video: { url: 'https://fal.media/test.mp4' } }, requestId: 'req-seedance' });
+
+    const model = 'bytedance/seedance-2.0/fast/reference-to-video';
+    await POST(createRequest({
+      model,
+      prompt: 'use @Image1 as the hero',
+      image_urls: ['https://example.com/ref.png'],
+      video_url: 'https://example.com/ref.mp4',
+      audio_url: 'https://example.com/ref.mp3',
+    }));
+
+    const input = mockSubscribe.mock.calls[0][1].input;
+    expect(input.image_urls).toEqual(['https://example.com/ref.png']);
+    expect(input.video_urls).toEqual(['https://example.com/ref.mp4']);
+    expect(input.audio_urls).toEqual(['https://example.com/ref.mp3']);
+    expect(input).not.toHaveProperty('reference_image_urls');
+  });
+
+  it('does not add video-only Wan fields to Wan 2.7 image edits', async () => {
+    mockSubscribe.mockResolvedValueOnce({ data: { images: [{ url: 'https://fal.media/test.jpg' }] }, requestId: 'req-wan' });
+
+    const model = 'fal-ai/wan/v2.7/edit';
+    await POST(createRequest({ model, prompt: 'turn image 1 into watercolor', image_urls: ['https://example.com/img.jpg'], aspect_ratio: '16:9' }));
+
+    const input = mockSubscribe.mock.calls[0][1].input;
+    expect(input.image_urls).toEqual(['https://example.com/img.jpg']);
+    expect(input.image_size).toBe('square_hd');
+    expect(input).not.toHaveProperty('duration');
+    expect(input).not.toHaveProperty('resolution');
+    expect(input).not.toHaveProperty('aspect_ratio');
+  });
 });

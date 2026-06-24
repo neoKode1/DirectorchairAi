@@ -87,7 +87,6 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'fal-ai/kling-video/v1/pro/ai-avatar',
             'fal-ai/minimax/hailuo-02/standard/image-to-video',
             'fal-ai/minimax/hailuo-2.3/standard/image-to-video',
-            'endframe/minimax-hailuo-02',
             'fal-ai/luma-dream-machine/ray-2/image-to-video',
             'fal-ai/wan-pro/image-to-video',
             'fal-ai/wan/v2.2-a14b/image-to-video',
@@ -100,6 +99,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'fal-ai/hunyuan-video',
             'xai/grok-imagine-video/text-to-video',
             'xai/grok-imagine-video/image-to-video',
+            'xai/grok-imagine-video/v1.5/image-to-video',
             'fal-ai/bytedance/dreamactor/v2',
             'fal-ai/ovi/image-to-video'
           ]

@@ -57,6 +57,7 @@ export const MODEL_GROUPS: ModelGroup[] = [
   { company: "xAI (Grok)", icon: "xAI (Grok)", models: [
     { value: "xai/grok-imagine-video/text-to-video", label: "Grok Video (T2V)", detail: "Audio, 1-15s" },
     { value: "xai/grok-imagine-video/image-to-video", label: "Grok Video (I2V)", detail: "Audio, 1-15s" },
+    { value: "xai/grok-imagine-video/v1.5/image-to-video", label: "Grok Video 1.5 (I2V)", detail: "Premium quality" },
     { value: "xai/grok-imagine-image/edit", label: "Grok Image (I2I Edit)", detail: "Realism" },
   ]},
   { company: "Kling", icon: "Kling", models: [
@@ -94,7 +95,6 @@ export const MODEL_GROUPS: ModelGroup[] = [
   { company: "Minimax", icon: "Minimax", models: [
     { value: "fal-ai/minimax/hailuo-2.3/standard/image-to-video", label: "Hailuo 2.3 (I2V)", detail: "Latest, 768p" },
     { value: "fal-ai/minimax/hailuo-02/standard/image-to-video", label: "Hailuo 02 (I2V)" },
-    { value: "endframe/minimax-hailuo-02", label: "EndFrame Hailuo (I2V)", detail: "Smooth" },
   ]},
   { company: "Wan AI", models: [
     { value: "fal-ai/wan/v2.7/pro/text-to-image", label: "Wan 2.7 Pro (T2I)", detail: "Superior detail" },

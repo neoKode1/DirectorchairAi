@@ -570,6 +570,18 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
 
             try {
               const result = await onContentGenerated(generationData);
+
+              if (result?.queued) {
+                const queuedMsg = {
+                  id: (Date.now() + 2).toString(),
+                  type: 'assistant' as const,
+                  content: `⏳ Queued ${action.generationType === 'video' ? 'video' : 'image'} generation with ${action.model.split('/').pop()}. You can start another request while it runs.`,
+                  timestamp: new Date()
+                };
+                setMessages(prev => [...prev, queuedMsg]);
+                continue;
+              }
+
               const images = result?.data?.images || result?.images || [];
               const videos = result?.data?.videos || (result?.data?.video ? [result.data.video] : result?.videos || []);
 
@@ -750,9 +762,11 @@ export const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({
         const successMessage = {
           id: (Date.now() + 0.5).toString(),
           type: 'assistant' as const,
-          content: wantsVideo
-            ? `✅ Video generated successfully! Check the center panel and gallery.`
-            : `✅ Image generated successfully! Check the center panel and gallery.`,
+          content: result?.queued
+            ? `⏳ Generation queued. You can start another request while it runs in the center panel.`
+            : wantsVideo
+              ? `✅ Video generated successfully! Check the center panel and gallery.`
+              : `✅ Image generated successfully! Check the center panel and gallery.`,
           timestamp: new Date()
         };
         setMessages(prev => prev.slice(0, -1).concat([successMessage]));

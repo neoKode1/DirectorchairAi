@@ -180,7 +180,71 @@ function TimelineContent() {
   };
 
 
-    const handleGenerate = async (generationData: any): Promise<any> => {
+  const normalizeGeneratedContent = (result: any, generationData: any, cleanGenerationData: any) => ({
+    ...result,
+    images: result.data?.images || result.images || [],
+    videos: result.data?.videos || (result.data?.video ? [result.data.video] : result.videos || []),
+    timestamp: new Date().toISOString(),
+    prompt: generationData.prompt,
+    model: cleanGenerationData.model,
+  });
+
+  const storeCompletedContent = async (contentToStore: any) => {
+    if (typeof window === 'undefined') return;
+    const mediaUrl = contentToStore.images?.[0]?.url || contentToStore.videos?.[0]?.url;
+    if (!mediaUrl) return;
+
+    const { contentStorage } = await import('@/lib/content-storage');
+    contentStorage.addContent({
+      id: `generated-${Date.now()}`,
+      type: (contentToStore.images?.length > 0 ? 'image' : 'video') as 'image' | 'video',
+      url: mediaUrl,
+      title: contentToStore.prompt?.substring(0, 50) + '...' || 'Generated Content',
+      prompt: contentToStore.prompt,
+      timestamp: new Date(),
+      metadata: { format: contentToStore.model },
+    });
+    window.dispatchEvent(new CustomEvent('contentUpdated'));
+  };
+
+  const pollQueuedGeneration = async (queuedContentId: string, requestId: string, model: string, prompt: string) => {
+    const maxAttempts = 240; // 20 minutes at 5s intervals
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 2500 : 5000));
+
+      const response = await fetch(`/api/generate/status?model=${encodeURIComponent(model)}&requestId=${encodeURIComponent(requestId)}`);
+      const statusResult = await response.json().catch(() => null);
+      if (!response.ok || !statusResult) {
+        throw new Error(statusResult?.error || `Queue status failed with ${response.status}`);
+      }
+
+      if (statusResult.status !== 'COMPLETED') {
+        setGeneratedContent(prev => prev.map(content =>
+          content.id === queuedContentId ? { ...content, status: statusResult.status || 'IN_PROGRESS' } : content
+        ));
+        continue;
+      }
+
+      const completedContent = normalizeGeneratedContent(statusResult, { prompt }, { model });
+      const finalContent = {
+        ...completedContent,
+        id: queuedContentId,
+        queued: true,
+        status: 'COMPLETED',
+        requestId,
+      };
+
+      setGeneratedContent(prev => prev.map(content =>
+        content.id === queuedContentId ? finalContent : content
+      ));
+      await storeCompletedContent(finalContent);
+      setTimeout(() => scrollToBottom(), 500);
+      return;
+    }
+    throw new Error('Queued generation timed out while polling. It may still complete in Fal history.');
+  };
+
+  const handleGenerate = async (generationData: any): Promise<any> => {
     try {
       
       // Validate that generationData is not empty or null
@@ -198,9 +262,6 @@ function TimelineContent() {
         throw new Error('Missing prompt or image_url in generation data');
       }
       
-      // Use the unified generation API for all FAL models
-      const apiEndpoint = '/api/generate';
-      
       // Clean up the generation data to ensure it has the required fields
       const cleanGenerationData = {
         model: generationData.model || generationData.endpointId,
@@ -213,8 +274,7 @@ function TimelineContent() {
         ...generationData // Include any other parameters
       };
       
-      
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch('/api/generate/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cleanGenerationData)
@@ -266,51 +326,46 @@ function TimelineContent() {
       }
       
       const result = await response.json();
-      
-      // Create content object for both display and storage
-      const contentToStore = {
-        ...result,
-        // Flatten the API response structure for easier display
-        images: result.data?.images || result.images || [],
-        videos: result.data?.videos || result.data?.video ? [result.data.video] : result.videos || [],
-        timestamp: new Date().toISOString(),
-        prompt: generationData.prompt,
-        model: cleanGenerationData.model
-      };
-      
-      
-      // Add to generated content for display in center panel
-      setGeneratedContent(prev => [...prev, contentToStore]);
-      
-      // Scroll to bottom to show the new content (wait for DOM update)
-      setTimeout(() => {
-        scrollToBottom();
-      }, 500);
-      
-      // Store in localStorage for gallery using contentStorage
-      if (typeof window !== 'undefined') {
-        const { contentStorage } = await import('@/lib/content-storage');
-        const newContent = {
-          id: `generated-${Date.now()}`,
-          type: (contentToStore.images?.length > 0 ? 'image' : 'video') as 'image' | 'video',
-          url: contentToStore.images?.[0]?.url || contentToStore.videos?.[0]?.url,
-          title: contentToStore.prompt?.substring(0, 50) + '...' || 'Generated Content',
-          prompt: contentToStore.prompt,
-          timestamp: new Date(),
-          metadata: {
-            format: contentToStore.model,
-            // Store additional info in a way that doesn't conflict with the interface
-          }
+
+      if (result.queued && result.requestId) {
+        const queuedContentId = `queued-${result.requestId}`;
+        const queuedContent = {
+          id: queuedContentId,
+          queued: true,
+          status: result.status || 'IN_QUEUE',
+          requestId: result.requestId,
+          images: [],
+          videos: [],
+          timestamp: new Date().toISOString(),
+          prompt: generationData.prompt,
+          model: cleanGenerationData.model,
         };
-        
-        contentStorage.addContent(newContent);
-        
-        // Trigger a custom event to notify GalleryView to refresh
-        window.dispatchEvent(new CustomEvent('contentUpdated'));
+
+        setGeneratedContent(prev => [...prev, queuedContent]);
+        setTimeout(() => scrollToBottom(), 250);
+
+        pollQueuedGeneration(queuedContentId, result.requestId, cleanGenerationData.model, generationData.prompt)
+          .catch(error => {
+            console.error('❌ [Timeline] Queue polling failed:', error);
+            setGeneratedContent(prev => prev.map(content =>
+              content.id === queuedContentId
+                ? { ...content, status: 'FAILED', error: error instanceof Error ? error.message : 'Queue polling failed' }
+                : content
+            ));
+            toast({
+              title: 'Generation Failed',
+              description: error instanceof Error ? error.message : 'Queue polling failed',
+              variant: 'destructive',
+            });
+          });
+
+        return result;
       }
-      
-      
-      // Return the result so it can be displayed in the chat
+
+      const contentToStore = normalizeGeneratedContent(result, generationData, cleanGenerationData);
+      setGeneratedContent(prev => [...prev, contentToStore]);
+      setTimeout(() => scrollToBottom(), 500);
+      await storeCompletedContent(contentToStore);
       return result;
 
     } catch (error) {
@@ -357,7 +412,19 @@ function TimelineContent() {
                     </span>
                   </div>
                   
-                  {content.images && content.images.length > 0 ? (
+                  {content.queued && content.status !== 'COMPLETED' ? (
+                    <div className="border border-dashed border-border bg-card/60 p-6 text-center">
+                      <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+                      <p className="text-sm font-medium text-foreground">
+                        {content.status === 'FAILED' ? 'Generation failed' : 'Queued generation running'}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {content.status === 'FAILED'
+                          ? content.error || 'Fal returned a failed status.'
+                          : `${content.status || 'IN_QUEUE'} · Request ${content.requestId}`}
+                      </p>
+                    </div>
+                  ) : content.images && content.images.length > 0 ? (
                     <div className="space-y-4">
                       {content.images.map((image: any, imgIndex: number) => (
                         <div key={imgIndex} className="relative group">

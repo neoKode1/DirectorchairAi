@@ -98,9 +98,21 @@ export async function prepareFalGenerationInput(
   if (body.resolution) input.resolution = body.resolution;
   if (body.negative_prompt) input.negative_prompt = body.negative_prompt;
   if (body.seed !== undefined) input.seed = body.seed;
+  if (body.video_url) input.video_url = body.video_url;
+  if (body.audio_url) input.audio_url = body.audio_url;
+  if (body.pdf_url) input.pdf_url = body.pdf_url;
 
   if (model.includes('nano-banana')) {
-    if (body.aspect_ratio) input.ratio = body.aspect_ratio;
+    if (model === 'fal-ai/nano-banana/edit' && body.aspect_ratio) input.ratio = body.aspect_ratio;
+    if (model === 'fal-ai/nano-banana-2/edit') {
+      input.resolution = ['0.5K', '1K', '2K', '4K'].includes(body.resolution) ? body.resolution : '1K';
+      input.aspect_ratio = body.aspect_ratio || 'auto';
+      input.limit_generations = body.limit_generations !== undefined ? body.limit_generations : true;
+      if (body.system_prompt) input.system_prompt = body.system_prompt;
+      if (body.enable_web_search !== undefined) input.enable_web_search = body.enable_web_search;
+      if (['minimal', 'high'].includes(body.thinking_level)) input.thinking_level = body.thinking_level;
+      delete input.ratio;
+    }
   }
   if (model.includes('wan/v2.7')) {
     if (!input.image_urls && input.image_url) input.image_urls = [input.image_url];
@@ -115,7 +127,19 @@ export async function prepareFalGenerationInput(
   if (model.includes('flux') || model.includes('stable-diffusion') || model.includes('imagen')) {
     if (body.aspect_ratio) { input.aspect_ratio = body.aspect_ratio; input.size = body.aspect_ratio; }
   }
-  if ((model.includes('gemini') && model.includes('edit')) || model.includes('grok-imagine-image') || model.includes('qwen')) {
+  if (model.includes('grok-imagine-image/quality')) {
+    if (!input.image_urls && input.image_url) input.image_urls = [input.image_url];
+    if (input.image_urls?.length > 3) input.image_urls = input.image_urls.slice(0, 3);
+    input.resolution = ['1k', '2k'].includes(body.resolution) ? body.resolution : '1k';
+    input.aspect_ratio = body.aspect_ratio || (model.includes('/edit') ? 'auto' : '1:1');
+    input.output_format = ['jpeg', 'png', 'webp'].includes(body.output_format) ? body.output_format : 'jpeg';
+    if (body.num_images) input.num_images = Math.min(Math.max(Number(body.num_images) || 1, 1), 4);
+    delete input.image_url;
+    delete input.size;
+    delete input.ratio;
+    delete input.duration;
+  }
+  if ((model.includes('gemini') && model.includes('edit')) || (model.includes('grok-imagine-image') && !model.includes('/quality/')) || model.includes('qwen')) {
     if (!input.image_url && Array.isArray(body.image_urls) && body.image_urls.length > 0) input.image_url = await convertLocalhostToBase64(body.image_urls[0]);
     if (model.includes('grok-imagine-image') || model.includes('qwen')) {
       delete input.size; delete input.ratio; delete input.resolution; delete input.duration;
@@ -183,8 +207,10 @@ export async function prepareFalGenerationInput(
     delete input.aspect_ratio;
   }
   if (model.includes('seedance-2.0')) {
+    const isSeedanceFast = model.includes('/fast/');
+    const validSeedanceRes = isSeedanceFast ? ['480p', '720p'] : ['480p', '720p', '1080p', '4k'];
     input.duration = clampStringDuration(body.duration, ['auto','4','5','6','7','8','9','10','11','12','13','14','15'], '5');
-    input.resolution = ['480p', '720p'].includes(body.resolution) ? body.resolution : '720p';
+    input.resolution = validSeedanceRes.includes(body.resolution) ? body.resolution : '720p';
     input.aspect_ratio = ['21:9', '16:9', '4:3', '1:1', '3:4', '9:16', 'auto'].includes(body.aspect_ratio) ? body.aspect_ratio : 'auto';
     input.generate_audio = body.generate_audio !== undefined ? body.generate_audio : true;
     if (model.includes('image-to-video')) { if (body.end_image_url) input.end_image_url = await convertLocalhostToBase64(body.end_image_url); delete input.image_urls; delete input.size; }
@@ -220,9 +246,29 @@ export async function prepareFalGenerationInput(
   }
   if (model.includes('luma-dream-machine') && !['16:9', '9:16', '4:3', '3:4'].includes(input.aspect_ratio)) input.aspect_ratio = '16:9';
   if (model.includes('grok-imagine-video')) {
-    const dNum = parseInt(String(normalizeDuration(body.duration, 6)).replace(/s$/, ''), 10);
-    input.duration = Number.isNaN(dNum) ? 6 : dNum;
-    if (!['480p', '720p'].includes(input.resolution)) input.resolution = '720p';
+    if (model.includes('extend-video')) {
+      const dNum = parseInt(String(normalizeDuration(body.duration, 6)).replace(/s$/, ''), 10);
+      input.duration = Number.isNaN(dNum) ? 6 : Math.min(Math.max(dNum, 2), 10);
+      delete input.image_url; delete input.image_urls; delete input.aspect_ratio; delete input.resolution;
+    } else if (model.includes('edit-video')) {
+      input.resolution = ['auto', '480p', '720p'].includes(body.resolution) ? body.resolution : 'auto';
+      delete input.image_url; delete input.image_urls; delete input.aspect_ratio; delete input.duration;
+    } else {
+      const dNum = parseInt(String(normalizeDuration(body.duration, 6)).replace(/s$/, ''), 10);
+      input.duration = Number.isNaN(dNum) ? 6 : dNum;
+      if (!['480p', '720p'].includes(input.resolution)) input.resolution = '720p';
+    }
+  }
+  if (model === 'xai/tts/v1') {
+    input.text = prompt.trim();
+    input.voice = ['eve', 'ara', 'rex', 'sal', 'leo'].includes(body.voice) ? body.voice : 'eve';
+    input.language = body.language || 'auto';
+    delete input.prompt;
+    delete input.aspect_ratio;
+    delete input.duration;
+    delete input.resolution;
+    delete input.image_url;
+    delete input.image_urls;
   }
   if (model.includes('ovi/')) {
     const dNum = parseInt(String(normalizeDuration(body.duration, 5)).replace(/s$/, ''), 10);

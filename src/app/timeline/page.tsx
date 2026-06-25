@@ -184,6 +184,7 @@ function TimelineContent() {
     ...result,
     images: result.data?.images || result.images || [],
     videos: result.data?.videos || (result.data?.video ? [result.data.video] : result.videos || []),
+    audios: result.data?.audios || (result.data?.audio ? [result.data.audio] : result.audios || []),
     timestamp: new Date().toISOString(),
     prompt: generationData.prompt,
     model: cleanGenerationData.model,
@@ -336,6 +337,7 @@ function TimelineContent() {
           requestId: result.requestId,
           images: [],
           videos: [],
+          audios: [],
           timestamp: new Date().toISOString(),
           prompt: generationData.prompt,
           model: cleanGenerationData.model,
@@ -508,6 +510,24 @@ function TimelineContent() {
                         </div>
                         );
                       })}
+                    </div>
+                  ) : content.audios && content.audios.length > 0 ? (
+                    <div className="space-y-4">
+                      {content.audios.map((audio: any, audioIndex: number) => (
+                        <div key={audioIndex} className="border border-border bg-card/70 p-4">
+                          <div className="mb-3 text-xs font-medium tracking-wider text-muted-foreground">AUDIO</div>
+                          <audio src={audio.url} controls className="w-full" preload="metadata" />
+                          <a
+                            href={audio.url}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex text-xs tracking-wider text-muted-foreground hover:text-foreground"
+                          >
+                            Download audio
+                          </a>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-muted-foreground text-sm">No media content generated</div>

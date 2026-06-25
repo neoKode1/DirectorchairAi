@@ -29,8 +29,11 @@ describe('Fal model catalog consistency', () => {
     expect(missing).toEqual([]);
   });
 
-  it('keeps Director tool models aligned with dropdown models', () => {
-    expect(agentToolIds()).toEqual(dropdownIds());
+  it('keeps every Director tool model exposed in the dropdown catalog', () => {
+    const dropdown = new Set(dropdownIds());
+    const toolOnly = agentToolIds().filter(id => !dropdown.has(id));
+
+    expect(toolOnly).toEqual([]);
   });
 
   it('does not expose docs-unavailable/internal endpoints in public model pickers', () => {

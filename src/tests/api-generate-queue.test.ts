@@ -79,6 +79,71 @@ describe('queued /api/generate endpoints', () => {
     expect(input).not.toHaveProperty('resolution');
   });
 
+  it('prepares xAI TTS payloads with text instead of prompt', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'tts-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'xai/tts/v1',
+      prompt: 'Hello from the queue.',
+      voice: 'rex',
+      language: 'en',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.text).toBe('Hello from the queue.');
+    expect(input.voice).toBe('rex');
+    expect(input.language).toBe('en');
+    expect(input).not.toHaveProperty('prompt');
+  });
+
+  it('prepares Grok quality edit payloads with image_urls and 2k resolution', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'grok-img-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'xai/grok-imagine-image/quality/edit',
+      prompt: 'make it cinematic',
+      image_url: 'https://example.com/input.jpg',
+      resolution: '2k',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.image_urls).toEqual(['https://example.com/input.jpg']);
+    expect(input.resolution).toBe('2k');
+    expect(input.aspect_ratio).toBe('auto');
+    expect(input).not.toHaveProperty('image_url');
+  });
+
+  it('allows full-tier Seedance 2.0 4k resolution', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'seedance-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'bytedance/seedance-2.0/text-to-video',
+      prompt: 'cinematic ocean scene',
+      resolution: '4k',
+      duration: 'auto',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.resolution).toBe('4k');
+    expect(input.duration).toBe('auto');
+  });
+
+  it('prepares Grok video edit payloads with video_url and auto resolution', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'grok-v2v-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'xai/grok-imagine-video/edit-video',
+      prompt: 'colorize the video',
+      video_url: 'https://example.com/input.mp4',
+      resolution: '1080p',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.video_url).toBe('https://example.com/input.mp4');
+    expect(input.resolution).toBe('auto');
+    expect(input).not.toHaveProperty('duration');
+  });
+
   it('returns pending queue status without requesting result', async () => {
     mockQueueStatus.mockResolvedValueOnce({ status: 'IN_PROGRESS' });
 

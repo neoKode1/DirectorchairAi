@@ -24,6 +24,7 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'fal-ai/flux-krea-lora/image-to-image',
             'fal-ai/nano-banana/edit',
             'fal-ai/nano-banana-pro/edit',
+            'fal-ai/nano-banana-2/edit',
             'fal-ai/gemini-25-flash-image/edit',
             'fal-ai/bytedance/seedream/v4/edit',
             'fal-ai/bytedance/seedream/v4.5/edit',
@@ -33,6 +34,8 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'fal-ai/flux-2-flex/edit',
             'fal-ai/qwen-image-edit',
             'xai/grok-imagine-image/edit',
+            'xai/grok-imagine-image/quality/text-to-image',
+            'xai/grok-imagine-image/quality/edit',
             'fal-ai/wan/v2.7/edit',
             'fal-ai/wan/v2.7/pro/edit',
             'fal-ai/wan/v2.7/pro/text-to-image'
@@ -96,10 +99,15 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'bytedance/seedance-2.0/fast/reference-to-video',
             'bytedance/seedance-2.0/fast/image-to-video',
             'bytedance/seedance-2.0/fast/text-to-video',
+            'bytedance/seedance-2.0/reference-to-video',
+            'bytedance/seedance-2.0/image-to-video',
+            'bytedance/seedance-2.0/text-to-video',
             'fal-ai/hunyuan-video',
             'xai/grok-imagine-video/text-to-video',
             'xai/grok-imagine-video/image-to-video',
             'xai/grok-imagine-video/v1.5/image-to-video',
+            'xai/grok-imagine-video/edit-video',
+            'xai/grok-imagine-video/extend-video',
             'fal-ai/bytedance/dreamactor/v2',
             'fal-ai/ovi/image-to-video'
           ]

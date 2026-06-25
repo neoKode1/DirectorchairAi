@@ -144,6 +144,44 @@ describe('queued /api/generate endpoints', () => {
     expect(input).not.toHaveProperty('duration');
   });
 
+  it('prepares Luma Ray 3.2 reframe payloads with aspect ratio and no duration', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'ray-reframe-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'luma/agent/ray/v3.2/reframe',
+      prompt: 'extend into widescreen',
+      video_url: 'https://example.com/source.mp4',
+      aspect_ratio: '21:9',
+      resolution: '720p',
+      duration: '10s',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.video_url).toBe('https://example.com/source.mp4');
+    expect(input.aspect_ratio).toBe('21:9');
+    expect(input.resolution).toBe('720p');
+    expect(input).not.toHaveProperty('duration');
+  });
+
+  it('prepares Luma Uni-1 Max Edit with source and reference images', async () => {
+    mockQueueSubmit.mockResolvedValueOnce({ status: 'IN_QUEUE', request_id: 'uni-edit-q' });
+
+    await submitRoute.POST(postRequest({
+      model: 'luma/agent/uni-1/v1/max/edit',
+      prompt: 'replace the background',
+      image_urls: ['https://example.com/source.png', 'https://example.com/ref.png'],
+      style: 'manga',
+      output_format: 'jpeg',
+    }));
+
+    const input = mockQueueSubmit.mock.calls[0][1].input;
+    expect(input.image_url).toBe('https://example.com/source.png');
+    expect(input.reference_image_urls).toEqual(['https://example.com/ref.png']);
+    expect(input.style).toBe('manga');
+    expect(input.output_format).toBe('jpeg');
+    expect(input).not.toHaveProperty('image_urls');
+  });
+
   it('returns pending queue status without requesting result', async () => {
     mockQueueStatus.mockResolvedValueOnce({ status: 'IN_PROGRESS' });
 

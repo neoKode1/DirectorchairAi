@@ -10,7 +10,7 @@ function uniqueMatches(text: string, regex: RegExp): string[] {
   return [...new Set([...text.matchAll(regex)].map(match => match[1]))].sort();
 }
 
-const endpointIdPattern = '((?:fal-ai|xai|bytedance|endframe)/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+)';
+const endpointIdPattern = '((?:fal-ai|xai|bytedance|endframe|luma)/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+)';
 const registryIds = () => uniqueMatches(read('src/lib/fal.ts'), new RegExp(`endpointId:\\s*["']${endpointIdPattern}["']`, 'g'));
 const dropdownIds = () => uniqueMatches(read('src/components/chat-model-data.tsx'), new RegExp(`value:\\s*["']${endpointIdPattern}["']`, 'g'));
 const agentToolIds = () => uniqueMatches(read('src/lib/agent-tools.ts'), new RegExp(`["']${endpointIdPattern}["']`, 'g'));

@@ -117,6 +117,14 @@ export const MODEL_GROUPS: ModelGroup[] = [
     { value: "fal-ai/pixverse/v6/image-to-video", label: "Pixverse V6 (I2V)", detail: "Style presets, 1-15s" },
   ]},
   { company: "Luma AI", icon: "Luma AI", models: [
+    { value: "luma/agent/ray/v3.2/text-to-video", label: "Ray 3.2 (T2V)", detail: "$0.03/s+" },
+    { value: "luma/agent/ray/v3.2/image-to-video", label: "Ray 3.2 (I2V)", detail: "$0.03/s+" },
+    { value: "luma/agent/ray/v3.2/video-to-video", label: "Ray 3.2 (V2V)", detail: "Restyle" },
+    { value: "luma/agent/ray/v3.2/reframe", label: "Ray 3.2 Reframe", detail: "Outpaint video" },
+    { value: "luma/agent/uni-1/v1/text-to-image", label: "Uni-1 (T2I)", detail: "Low-cost" },
+    { value: "luma/agent/uni-1/v1/max", label: "Uni-1 Max (T2I)", detail: "Max quality" },
+    { value: "luma/agent/uni-1/v1/edit", label: "Uni-1 Edit", detail: "Low-cost" },
+    { value: "luma/agent/uni-1/v1/max/edit", label: "Uni-1 Max Edit", detail: "Max quality" },
     { value: "fal-ai/luma-dream-machine/ray-2/image-to-video", label: "Luma Ray 2 (I2V)", detail: "Realistic motion" },
   ]},
   { company: "Tencent", icon: "Tencent", models: [

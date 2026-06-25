@@ -36,6 +36,10 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'xai/grok-imagine-image/edit',
             'xai/grok-imagine-image/quality/text-to-image',
             'xai/grok-imagine-image/quality/edit',
+            'luma/agent/uni-1/v1/text-to-image',
+            'luma/agent/uni-1/v1/max',
+            'luma/agent/uni-1/v1/edit',
+            'luma/agent/uni-1/v1/max/edit',
             'fal-ai/wan/v2.7/edit',
             'fal-ai/wan/v2.7/pro/edit',
             'fal-ai/wan/v2.7/pro/text-to-image'
@@ -108,6 +112,10 @@ export const AGENT_TOOLS: Anthropic.Tool[] = [
             'xai/grok-imagine-video/v1.5/image-to-video',
             'xai/grok-imagine-video/edit-video',
             'xai/grok-imagine-video/extend-video',
+            'luma/agent/ray/v3.2/text-to-video',
+            'luma/agent/ray/v3.2/image-to-video',
+            'luma/agent/ray/v3.2/video-to-video',
+            'luma/agent/ray/v3.2/reframe',
             'fal-ai/bytedance/dreamactor/v2',
             'fal-ai/ovi/image-to-video'
           ]

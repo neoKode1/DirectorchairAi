@@ -70,12 +70,12 @@ export async function prepareFalGenerationInput(
   const { prompt, model } = validation.sanitized!;
   const isVideoModel = model.includes('video') || model.includes('veo') || model.includes('kling') ||
     model.includes('minimax') || model.includes('dreamactor') || model.includes('endframe') ||
-    model.includes('ovi/') || model.includes('seedance-2.0');
+    model.includes('ovi/') || model.includes('seedance-2.0') || model.startsWith('luma/agent/ray/');
   const isImageModel = model.includes('flux') || model.includes('imagen') || model.includes('stable-diffusion') ||
     model.includes('dreamina') || model.includes('ideogram') || model.includes('photon') ||
     model.includes('recraft') || model.includes('nano-banana') || model.includes('gemini') ||
     model.includes('seedream') || model.includes('qwen') || model.includes('grok-imagine-image') ||
-    (model.includes('wan') && !model.includes('video'));
+    model.startsWith('luma/agent/uni-1/') || (model.includes('wan') && !model.includes('video'));
 
   const input: Record<string, any> = { prompt: prompt.trim() };
   if (isVideoModel) {
@@ -101,6 +101,15 @@ export async function prepareFalGenerationInput(
   if (body.video_url) input.video_url = body.video_url;
   if (body.audio_url) input.audio_url = body.audio_url;
   if (body.pdf_url) input.pdf_url = body.pdf_url;
+  if (body.start_image_url) input.start_image_url = await convertLocalhostToBase64(body.start_image_url);
+  if (body.end_image_url) input.end_image_url = await convertLocalhostToBase64(body.end_image_url);
+  if (Array.isArray(body.reference_image_urls)) {
+    input.reference_image_urls = await Promise.all(body.reference_image_urls.map((url: string) => convertLocalhostToBase64(url)));
+  }
+  if (Array.isArray(body.keyframes)) {
+    input.keyframes = await Promise.all(body.keyframes.map((url: string) => convertLocalhostToBase64(url)));
+  }
+  if (Array.isArray(body.keyframe_indexes)) input.keyframe_indexes = body.keyframe_indexes;
 
   if (model.includes('nano-banana')) {
     if (model === 'fal-ai/nano-banana/edit' && body.aspect_ratio) input.ratio = body.aspect_ratio;
@@ -243,6 +252,62 @@ export async function prepareFalGenerationInput(
     if (input.image_url) { input.source_image = input.image_url; delete input.image_url; }
     if (body.driving_video || body.video_url) input.driving_video = body.driving_video || body.video_url;
     delete input.image_urls; delete input.aspect_ratio; delete input.duration;
+  }
+  if (model.startsWith('luma/agent/ray/v3.2/')) {
+    const validLumaAr = ['3:4', '4:3', '1:1', '9:16', '16:9', '21:9'];
+    input.resolution = ['540p', '720p', '1080p'].includes(body.resolution) ? body.resolution : '540p';
+    if (model.includes('/reframe')) {
+      input.aspect_ratio = validLumaAr.includes(body.aspect_ratio) ? body.aspect_ratio : '16:9';
+      delete input.duration;
+      delete input.image_url;
+      delete input.image_urls;
+    } else {
+      const requestedDuration = `${String(normalizeDuration(body.duration, '5s')).replace(/s$/, '')}s`;
+      input.duration = ['5s', '10s'].includes(requestedDuration) ? requestedDuration : '5s';
+      if (validLumaAr.includes(body.aspect_ratio)) input.aspect_ratio = body.aspect_ratio;
+    }
+    if (model.includes('/text-to-video')) {
+      input.aspect_ratio = validLumaAr.includes(body.aspect_ratio) ? body.aspect_ratio : '16:9';
+      delete input.image_url;
+      delete input.image_urls;
+      delete input.video_url;
+    }
+    if (model.includes('/image-to-video')) {
+      if (!input.image_url && Array.isArray(input.image_urls) && input.image_urls.length > 0) input.image_url = input.image_urls[0];
+      if (!input.end_image_url && Array.isArray(input.image_urls) && input.image_urls.length > 1) input.end_image_url = input.image_urls[1];
+      delete input.image_urls;
+    }
+    if (model.includes('/video-to-video')) {
+      delete input.image_url;
+      delete input.image_urls;
+      delete input.aspect_ratio;
+      if (['adhere_1', 'adhere_2', 'adhere_3', 'flex_1', 'flex_2', 'flex_3', 'reimagine_1', 'reimagine_2', 'reimagine_3'].includes(body.edit_strength)) {
+        input.edit_strength = body.edit_strength;
+      }
+      if (body.auto_controls !== undefined) input.auto_controls = body.auto_controls;
+      if (input.auto_controls) delete input.edit_strength;
+    }
+    if (body.loop !== undefined) input.loop = body.loop;
+    if (body.hdr !== undefined) input.hdr = body.hdr;
+    if (body.exr_export !== undefined) input.exr_export = body.exr_export;
+  }
+  if (model.startsWith('luma/agent/uni-1/v1/')) {
+    const validUniAr = ['3:1', '2:1', '16:9', '3:2', '1:1', '2:3', '9:16', '1:2', '1:3'];
+    const isUniEdit = model.endsWith('/edit');
+    if (validUniAr.includes(body.aspect_ratio) && !isUniEdit) input.aspect_ratio = body.aspect_ratio;
+    else delete input.aspect_ratio;
+    input.style = ['auto', 'manga'].includes(body.style) ? body.style : 'auto';
+    if (['png', 'jpeg'].includes(body.output_format)) input.output_format = body.output_format;
+    if (body.enable_web_search !== undefined && !isUniEdit) input.enable_web_search = body.enable_web_search;
+    if (!input.reference_image_urls && Array.isArray(input.image_urls)) {
+      input.reference_image_urls = isUniEdit ? input.image_urls.slice(1) : input.image_urls;
+    }
+    if (isUniEdit && !input.image_url && Array.isArray(input.image_urls) && input.image_urls.length > 0) input.image_url = input.image_urls[0];
+    delete input.image_urls;
+    delete input.duration;
+    delete input.resolution;
+    delete input.size;
+    delete input.ratio;
   }
   if (model.includes('luma-dream-machine') && !['16:9', '9:16', '4:3', '3:4'].includes(input.aspect_ratio)) input.aspect_ratio = '16:9';
   if (model.includes('grok-imagine-video')) {
